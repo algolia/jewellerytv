@@ -11,7 +11,7 @@ The current snapshot is incomplete. See the [Plan 3.1 handoff](docs/PLAN-3.1-STA
 | `src/concierge/ConnectedConcierge.tsx`, `ResponsiveAnswerTable.tsx`, `ConciergeWorkspaceLayout.tsx` and `ConciergeWorkspaceProvider.tsx` | Installed Chat SDK, provisional text streaming, responsive educational tables, session binding, a movable/resizable desktop window with maximize/restore, full-screen mobile layout and the two-column workspace. New clears the visible prior conversation when starting a mission. |
 | `src/concierge/sdkTools.ts` and `toolRuntime.ts` | Three declared client callbacks, version checks, evidence ledger and staged product choices. No generated shopper language. |
 | `src/concierge/sessionPersistence.ts` and `shared/concierge/` | v3 shopping state, lossless migration/backup, scoped facts, exact identities and deterministic selection validation. |
-| `server/api.ts` and `server/concierge/` | Bounded API proxy, fixed read-only `prod_catalog` and `blog` retrieval, exact object lookup and source-bound evidence. |
+| `server/api.ts` and `server/concierge/` | Bounded API proxy, fixed read-only `prod_catalog`, `blog` and `help` retrieval, exact object lookup, live-vocabulary-validated fact compilation and source-bound evidence. |
 | `src/ProductWorkspace.tsx` | Discover, Selected and Compare views with visible product selection, prices and supported details. Agent-proposed complete looks render in Selected with item subtotals. The tabs share one action-grid treatment. Multi-group Discover shows one lead per validated group and reveals up to two preselected variations on demand. |
 | `tests/` and `evaluation/concierge-phases-1-3/` | Local regressions and a prepared but unaccepted live-journey scaffold. |
 
