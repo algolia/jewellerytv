@@ -148,6 +148,25 @@ describe('connected Concierge reset gate', () => {
       '[System notice] This request did not produce a complete response. Existing product choices remain.',
     );
   });
+  it('labels a swallowed transport failure as a transport error, not an incomplete answer', () => {
+    // The SDK resolves sendMessage without onFinish when the stream request
+    // fails (abstract-chat.js createStream rejection path). The send closure's
+    // chat snapshot predates the error, so the component reads a chatErrorRef
+    // populated by the SDK's onError callback; the third parameter here is that
+    // signal. The notice must name the transport, not imply the agent stopped
+    // short.
+    const notice = getConnectedTurnSystemNotice(
+      [
+        { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Find a necklace' }] },
+        { id: 'assistant-1', role: 'assistant', parts: [] },
+      ] as unknown as UIMessage[],
+      null,
+      true,
+    );
+    expect(notice).toBe(
+      '[System notice] This request could not be completed. Existing product choices remain.',
+    );
+  });
   it('preserves an agent-provided system notice without duplicating it', () => {
     const notice = getConnectedTurnSystemNotice(
       [

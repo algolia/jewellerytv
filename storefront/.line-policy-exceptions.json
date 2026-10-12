@@ -7,6 +7,18 @@
       "reason": "Pre-existing catalogue adapter retained as one cohesive compatibility boundary; refactoring is outside Task 1 ownership.",
       "owner": "JTV project",
       "reviewedOn": "2026-10-05"
+    },
+    {
+      "path": "server/concierge/retrieveEvidence.ts",
+      "reason": "Pre-existing evidence compiler over the line limit; Lane B (2026-10-12) extended it additively with the help source rather than splitting it mid-lane. Split candidates: projection constants, Algolia client.",
+      "owner": "JTV project",
+      "reviewedOn": "2026-10-12"
+    },
+    {
+      "path": "src/concierge/toolRuntime.ts",
+      "reason": "Pre-existing tool runtime over the line limit; Lane B (2026-10-12) widened the source union only. Split candidates: alias ledger, presentation resolution.",
+      "owner": "JTV project",
+      "reviewedOn": "2026-10-12"
     }
   ]
 }

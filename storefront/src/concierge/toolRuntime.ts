@@ -90,7 +90,10 @@ function budgetBounds(brief: BriefStateV3): {
     (fact) =>
       fact.status === 'active' && fact.field === 'budget' && fact.strength === 'requirement',
   );
-  if (!facts.length) return { verified: false, bounds: [] };
+  // No active hard budget means there is no budget condition to validate.
+  // An absent optional budget must not make otherwise supported products
+  // undisplayable; explicit but ambiguous budget requirements still fail closed.
+  if (!facts.length) return { verified: true, bounds: [] };
   const bounds: PresentationMoneyBound[] = [];
   for (const fact of facts) {
     if (
@@ -298,7 +301,10 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
         kind: z.literal('product_groups'),
         groups: z.array(
           z
-            .object({ basis: catalogueGroupBasisSchema, items: z.array(semanticLine).min(1) })
+            .object({
+              basis: catalogueGroupBasisSchema,
+              items: z.array(semanticLine).min(1).max(2),
+            })
             .strict(),
         ),
         alternatives: z.null(),
@@ -426,7 +432,7 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
   }
   async function retrieveSemantic(
     raw: {
-      source: 'prod_catalog' | 'blog';
+      source: 'prod_catalog' | 'blog' | 'help';
       query: string;
       count: number;
       exactObjectIDs?: string[] | null;
@@ -442,7 +448,10 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
     if (!session || !turnId || !activeShopperMessageId)
       return { status: 'invalid_input', evidenceBatchRevision: batchRevision };
     if (signal?.aborted) return { status: 'aborted', evidenceBatchRevision: batchRevision };
-    if (raw.source === 'blog' && (raw.target !== null || raw.exactObjectIDs))
+    if (
+      (raw.source === 'blog' || raw.source === 'help') &&
+      (raw.target !== null || raw.exactObjectIDs)
+    )
       return { status: 'invalid_input', evidenceBatchRevision: batchRevision };
     const result = await retrieve(
       {

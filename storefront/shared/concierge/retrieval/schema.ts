@@ -37,8 +37,9 @@ const common = {
 };
 const product = z.object({ ...common, source: z.literal('prod_catalog') }).strict();
 const blog = z.object({ ...common, source: z.literal('blog') }).strict();
+const help = z.object({ ...common, source: z.literal('help') }).strict();
 export const retrieveEvidenceInputSchema = z
-  .discriminatedUnion('source', [product, blog])
+  .discriminatedUnion('source', [product, blog, help])
   .superRefine((input, ctx) => {
     if (input.source === 'blog' && input.exactObjectIDs !== null)
       ctx.addIssue({
@@ -51,6 +52,18 @@ export const retrieveEvidenceInputSchema = z
         code: 'custom',
         path: ['target'],
         message: 'Blog evidence requires target null',
+      });
+    if (input.source === 'help' && input.exactObjectIDs !== null)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['exactObjectIDs'],
+        message: 'Help evidence requires exactObjectIDs null',
+      });
+    if (input.source === 'help' && input.target !== null)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['target'],
+        message: 'Help evidence requires target null',
       });
   });
 

@@ -7,7 +7,7 @@ type Runtime = ReturnType<typeof createConciergeToolRuntime>;
 const updateShape = z.object({ operations: z.array(z.unknown()).min(1).max(12) }).strict();
 const retrieveShape = z
   .object({
-    source: z.enum(['prod_catalog', 'blog']),
+    source: z.enum(['prod_catalog', 'blog', 'help']),
     query: z.string().max(300),
     count: z.number().int().min(1).max(12),
     exactObjectIDs: z
@@ -46,7 +46,7 @@ const presentShape = z
               z
                 .object({
                   basis: catalogueGroupBasisSchema,
-                  items: z.array(lineShape).min(1).max(3),
+                  items: z.array(lineShape).min(1).max(2),
                 })
                 .strict(),
             )
