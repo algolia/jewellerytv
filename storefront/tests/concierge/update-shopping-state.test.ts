@@ -36,6 +36,7 @@ const fixtureVocabulary = {
       'Sterling', '10K', '14K', '18K', '24K', '950',
     ],
     'Catalog_GemstoneInformation.GemstoneColorGroup': ['Blue', 'White', 'Red'],
+    'Catalog_GemstoneInformationPrimary.GemstoneName': ['Diamond', 'Ruby'],
     'Catalog_WatchPrimaryDialPrimaryColor': ['Blue'],
     'Catalog_WatchBandType': ['Bracelet'],
   } as Record<string, string[]>,
@@ -459,6 +460,15 @@ describe('update_shopping_state domain callback', () => {
         await updateShoppingState(
           base(),
           make('gemstone', 'Catalog_GemstoneInformation.GemstoneColorGroup', 'Blue'),
+          { id: message.id, text: 'facet' },
+        )
+      ).result.status,
+    ).toBe('applied');
+    expect(
+      (
+        await updateShoppingState(
+          base(),
+          make('gemstone', 'Catalog_GemstoneInformationPrimary.GemstoneName', 'Diamond'),
           { id: message.id, text: 'facet' },
         )
       ).result.status,

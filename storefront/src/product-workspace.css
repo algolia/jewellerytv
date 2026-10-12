@@ -500,7 +500,9 @@
 /* Discovery groups are evidence-led shelves. When a group has several
    choices, keep each choice visible without making the image consume the
    whole vertical viewport. */
-.pw-discovery-groups:not([data-group-count='1']) .pw-discovery-group .pw-product {
+.pw-discovery-groups:not([data-group-count='1'])
+  .pw-discovery-group
+  .pw-product:not(.pw-product--discover) {
   display: grid;
   grid-template-columns: minmax(80px, 96px) minmax(0, 1fr);
   grid-template-rows: auto;
@@ -782,11 +784,20 @@
 
 /* Compact JTV discovery: three evidence-backed types, two products each. */
 .product-workspace .pw-discovery-title {
-  margin: 0 0 14px;
+  margin: 0 0 4px;
   color: var(--text);
   font-size: clamp(19px, 2vw, 24px);
   line-height: 1.25;
   font-weight: 600;
+}
+.product-workspace .pw-discovery-intro {
+  margin-bottom: 14px;
+}
+.product-workspace .pw-discovery-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
 }
 .product-workspace .pw-discovery-groups {
   grid-template-columns: repeat(3, minmax(0, 1fr));

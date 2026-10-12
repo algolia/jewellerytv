@@ -4,6 +4,10 @@ export const SUPPORTED_FACET_ATTRIBUTES = {
   watch_dial_color: 'Catalog_WatchPrimaryDialPrimaryColor',
   watch_band_type: 'Catalog_WatchBandType',
 } as const;
+export const SUPPORTED_GEMSTONE_FACET_ATTRIBUTES = [
+  SUPPORTED_FACET_ATTRIBUTES.gemstone,
+  'Catalog_GemstoneInformationPrimary.GemstoneName',
+] as const;
 export const WATCH_BAND_MATERIAL_FAMILIES = ['metal'] as const;
 /** LEGACY fallback, used only when no live vocabulary reaches the compiler.
  * Delete alongside the no-vocabulary compiler path. */
