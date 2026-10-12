@@ -19,6 +19,8 @@ test('single discovery card stays compact and multi-card shelves remain balanced
   try {
     for (const viewport of [
       { width: 1440, height: 1000 },
+      { width: 1280, height: 900 },
+      { width: 1024, height: 900 },
       { width: 768, height: 1024 },
       { width: 375, height: 812 },
     ]) {
@@ -26,8 +28,17 @@ test('single discovery card stays compact and multi-card shelves remain balanced
       const page = await context.newPage();
       const apiCalls: string[] = [];
       page.on('request', (request) => {
-        if (new URL(request.url()).pathname.startsWith('/api/')) apiCalls.push(request.url());
+        const pathname = new URL(request.url()).pathname;
+        if (pathname === '/api/chat' || pathname === '/api/agent-product-refresh')
+          apiCalls.push(request.url());
       });
+      await page.route('**/api/catalog-vocabulary', (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ builtAt: 'fixture', values: {} }),
+        }),
+      );
       await page.route('**/product-images/*.svg', async (route) => {
         const name = new URL(route.request().url()).pathname.split('/').at(-1);
         const asset =
@@ -129,20 +140,14 @@ test('single discovery card stays compact and multi-card shelves remain balanced
                   ][index]
                 : undefined,
           }));
-          const discoveries =
-            groupCount === 1
-              ? [{ title: 'Exact catalogue choice', items }]
-              : groupCount === 2
-                ? [
-                    { title: 'Bracelet style: Strand', items: items.slice(0, 2) },
-                    { title: 'Bracelet style: Link', items: items.slice(2) },
-                  ]
-                : count === 9
-                  ? Array.from({ length: 3 }, (_, index) => ({
-                      title: `Necklace style: Direction ${index + 1}`,
-                      items: items.slice(index * 3, index * 3 + 3),
-                    }))
-                  : items.map((item, index) => ({ title: `Choice ${index + 1}`, items: [item] }));
+          const groupSize = Math.ceil(items.length / groupCount);
+          const discoveries = Array.from({ length: groupCount }, (_, index) => ({
+            title:
+              groupCount === 1
+                ? 'Exact catalogue choice'
+                : `Necklace style: Direction ${index + 1}`,
+            items: items.slice(index * groupSize, (index + 1) * groupSize),
+          }));
           return {
             products:
               count === 3
@@ -175,10 +180,10 @@ test('single discovery card stays compact and multi-card shelves remain balanced
 
       for (const scenario of [
         { key: 'single', count: 1, groups: 1 },
-        { key: 'three-card-gallery', count: 3, groups: 1 },
-        { key: 'three-direction-shelves', count: 3, groups: 3 },
-        { key: 'two-actual-styles', count: 3, groups: 2 },
-        { key: 'three-style-families', count: 9, groups: 3 },
+        { key: 'one-family-three-returned', count: 3, groups: 1 },
+        { key: 'two-incomplete-families', count: 3, groups: 2 },
+        { key: 'three-types-six-variations', count: 6, groups: 3 },
+        { key: 'three-types-with-extra-records', count: 9, groups: 3 },
       ]) {
         await page.evaluate(
           ({ count, groups }) => {
@@ -189,33 +194,39 @@ test('single discovery card stays compact and multi-card shelves remain balanced
           { count: scenario.count, groups: scenario.groups },
         );
         const cards = page.locator('.pw-discover .pw-product:visible');
-        await expect(cards).toHaveCount(
-          scenario.count === 9 ? 3 : scenario.groups === 2 ? 2 : scenario.count,
-        );
-        if (scenario.groups === 2) {
-          const more = page.getByRole('button', { name: 'See 1 more in this style' });
-          await expect(more).toHaveCount(1);
-          await expect(page.locator('.pw-discovery-group')).toHaveCount(2);
-          await more.click();
-          await expect(cards).toHaveCount(3);
-        }
-        if (scenario.count === 9) {
-          const more = page.getByRole('button', { name: /See 2 more in this style/ });
-          await expect(more).toHaveCount(3);
+        const expectedCards = Math.min(scenario.count, scenario.groups * 2);
+        await expect(cards).toHaveCount(expectedCards);
+        if (scenario.key === 'three-types-six-variations') {
+          await expect(page.locator('.pw-discovery-title')).toHaveText(
+            'Three different types, two variations of each type.',
+          );
           await page.screenshot({
-            path: path.join(runDir, `${viewport.width}-three-style-families-collapsed.png`),
+            path: path.join(runDir, `${viewport.width}-three-types-six-variations.png`),
             fullPage: true,
           });
-          for (const visibleCount of [5, 7, 9]) {
-            await more.first().click();
-            await expect(cards).toHaveCount(visibleCount);
-          }
-          await expect(page.locator('.pw-discovery-groups .pw-product')).toHaveCount(9);
+          await expect(page.locator('.pw-discovery-group')).toHaveCount(3);
+          await expect(page.locator('.pw-discovery-group .pw-product')).toHaveCount(6);
           expect(
             await cards.evaluateAll(
               (nodes) => new Set(nodes.map((node) => node.getAttribute('data-product-id'))).size,
             ),
-          ).toBe(9);
+          ).toBe(6);
+          if (viewport.width === 1440) {
+            const openDetails = page.getByRole('button', { name: /^View details for/ }).first();
+            await openDetails.focus();
+            await page.keyboard.press('Enter');
+            await expect(page.getByRole('region', { name: 'Product preview' })).toBeVisible();
+            await page.getByRole('button', { name: 'Back to choices' }).click();
+            await expect(cards).toHaveCount(6);
+          }
+        }
+        if (scenario.key === 'two-incomplete-families') {
+          await expect(page.locator('.pw-discovery-title')).toHaveCount(0);
+          await expect(page.locator('.pw-grid-status')).toHaveCount(0);
+        }
+        if (scenario.key === 'three-types-with-extra-records') {
+          await expect(cards).toHaveCount(6);
+          await expect(page.locator('.pw-discovery-title')).toBeVisible();
         }
         await expect
           .poll(() =>
@@ -244,7 +255,7 @@ test('single discovery card stays compact and multi-card shelves remain balanced
           const cardNodes = [...document.querySelectorAll('.pw-discover .pw-product')];
           const images = [...document.querySelectorAll('.pw-discover .pw-image')];
           const image = images[0];
-          const title = document.querySelector('.pw-discover .pw-product h3');
+          const title = document.querySelector('.pw-discover .pw-product-title');
           const price = document.querySelector('.pw-discover .pw-price');
           const groupImages = [
             ...document.querySelectorAll(
@@ -340,9 +351,15 @@ test('single discovery card stays compact and multi-card shelves remain balanced
           if (viewport.width === 768) expect(metrics.image?.height).toBeLessThanOrEqual(300);
           if (viewport.width === 375) expect(metrics.image?.height).toBeLessThanOrEqual(260);
         }
-        if (scenario.key === 'three-card-gallery' && viewport.width >= 768) {
+        if (scenario.key === 'three-types-six-variations' && viewport.width >= 768) {
           const actionBottoms = metrics.actions.map((action) => action.row?.bottom ?? 0);
-          expect(Math.max(...actionBottoms) - Math.min(...actionBottoms)).toBeLessThanOrEqual(2);
+          for (const rowIndexes of [
+            [0, 2, 4],
+            [1, 3, 5],
+          ]) {
+            const bottoms = rowIndexes.map((index) => actionBottoms[index]);
+            expect(Math.max(...bottoms) - Math.min(...bottoms)).toBeLessThanOrEqual(2);
+          }
           const cardWidths = metrics.cards.map((card) => card?.width ?? 0);
           expect(Math.max(...cardWidths) - Math.min(...cardWidths)).toBeLessThanOrEqual(2);
           expect(new Set(metrics.cards.map((card) => Math.round(card?.x ?? 0))).size).toBe(3);
@@ -353,8 +370,8 @@ test('single discovery card stays compact and multi-card shelves remain balanced
           expect(metrics.productImages.every((image) => (image?.naturalWidth ?? 0) > 0)).toBe(true);
           expect(metrics.productImages.every((image) => image?.objectFit === 'contain')).toBe(true);
         }
-        if (scenario.key === 'three-direction-shelves') {
-          expect(metrics.directionImageWidths).toHaveLength(3);
+        if (scenario.key === 'three-types-six-variations') {
+          expect(metrics.directionImageWidths).toHaveLength(6);
           expect(
             metrics.directionImageWidths.every(
               (width, index) => (width ?? Infinity) <= (metrics.cards[index]?.width ?? 0),

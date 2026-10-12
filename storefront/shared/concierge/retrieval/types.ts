@@ -1,4 +1,4 @@
-export const EVIDENCE_SOURCES = ['prod_catalog', 'blog'] as const;
+export const EVIDENCE_SOURCES = ['prod_catalog', 'blog', 'help'] as const;
 export type EvidenceSource = (typeof EVIDENCE_SOURCES)[number];
 
 export type EvidenceRecord = {
@@ -37,7 +37,21 @@ export type BlogEvidenceInput = {
   turnId: string;
   target: null;
 };
-export type RetrieveEvidenceInput = ProductEvidenceInput | BlogEvidenceInput;
+/** Help evidence (help_content index): policy/FAQ content. Blog-like
+ * semantics: free-text query only, no item target, no exact-ID lookup, no
+ * compiled brief filters. Citation-only: help records are never presentable
+ * product lines and never persisted as committed evidence. */
+export type HelpEvidenceInput = {
+  source: 'help';
+  query: string;
+  count: number;
+  exactObjectIDs: null;
+  missionId: string;
+  expectedRevision: number;
+  turnId: string;
+  target: null;
+};
+export type RetrieveEvidenceInput = ProductEvidenceInput | BlogEvidenceInput | HelpEvidenceInput;
 
 export type RetrievalStatus =
   | 'invalid_input'

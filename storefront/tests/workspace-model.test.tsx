@@ -39,20 +39,33 @@ function model(activeView: WorkspaceViewModel['activeView'] = 'discover'): Works
 }
 
 describe('v3-ready workspace view model', () => {
-  it('renders three tabs and supplied action labels without a legacy provider', () => {
+  it('renders Discover, Compare and Save as three primary tabs', () => {
     const html = renderToStaticMarkup(<ProductWorkspace model={model()} />);
     expect(html).toContain('Discover');
-    expect(html).toContain('Compare (2)');
-    expect(html).toContain('Selected (1)');
-    expect(html).not.toContain('Combination');
-    expect(html).toContain('Save');
     expect(html).toContain('Compare');
-    expect(html).toContain('Needs verification');
+    expect(html).toContain('Save');
+    expect(html).not.toContain('Selected');
+    expect(html).not.toContain('Compare (2)');
+    expect(html).not.toContain('Save (1)');
+    expect(html).not.toContain('Combination');
+    expect(html).not.toContain('Needs verification');
   });
 
   it('keeps unknown price and missing record honest in supplied compare view', () => {
     const html = renderToStaticMarkup(<ProductWorkspace model={model('compare')} />);
     expect(html).toContain('1 selected piece needs to be retrieved again');
+    expect(html).toContain('aria-label="View details for Saved necklace"');
+    expect(html).not.toContain('>View details<');
+    expect(html).toContain('Remove Saved necklace from comparison');
+  });
+
+  it('explains when an unresolved proposal is withheld from Discover', () => {
+    const supplied = model();
+    supplied.discoveries = [];
+    supplied.discoveryUnavailable = true;
+    const html = renderToStaticMarkup(<ProductWorkspace model={supplied} />);
+    expect(html).toContain('No confirmed matches are ready to show.');
+    expect(html).not.toContain('MAKE IT YOURS');
   });
 
   it('shows a committed complete look and its verified subtotal without changing manual picks', () => {

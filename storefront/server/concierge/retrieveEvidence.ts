@@ -17,7 +17,11 @@ import {
   SUPPORTED_FACET_ATTRIBUTES,
 } from '../../shared/concierge/catalogueFactContract.js';
 
-const INDEXES: Record<EvidenceSource, string> = { prod_catalog: 'prod_catalog', blog: 'blog' };
+const INDEXES: Record<EvidenceSource, string> = {
+  prod_catalog: 'prod_catalog',
+  blog: 'blog',
+  help: 'help_content',
+};
 const PRODUCT_FIELDS = new Set([
   'Catalog_ProductType',
   'Catalog_Brand',
@@ -112,6 +116,38 @@ const BLOG_REQUIRED = [
   'source_role',
   'content_hash',
 ] as const;
+// help_content record attributes verified live 2026-10-12
+// (scripts/verify-help-index.mjs): document_id, title, content, heading_path,
+// scope_text, canonical_url, source_role, topic, content_hash, fetched_at,
+// modified_at. Same completeness contract as blog, with document_id in place
+// of article_id.
+const HELP_PROJECTION = [
+  'objectID',
+  'document_id',
+  'title',
+  'heading_path',
+  'content',
+  'scope_text',
+  'canonical_url',
+  'source_role',
+  'topic',
+  'content_hash',
+  'fetched_at',
+  'modified_at',
+];
+const HELP_REQUIRED = [
+  'document_id',
+  'title',
+  'content',
+  'canonical_url',
+  'source_role',
+  'content_hash',
+] as const;
+const PROJECTIONS: Record<EvidenceSource, string[]> = {
+  prod_catalog: PRODUCT_PROJECTION,
+  blog: BLOG_PROJECTION,
+  help: HELP_PROJECTION,
+};
 export type EvidenceSearchRequest = {
   source: EvidenceSource;
   query: string;
@@ -153,7 +189,7 @@ export function projection(
   source: EvidenceSource,
   raw: Record<string, unknown>,
 ): Record<string, unknown> {
-  const fields = source === 'blog' ? BLOG_PROJECTION : PRODUCT_PROJECTION;
+  const fields = PROJECTIONS[source];
   return Object.fromEntries(
     fields.filter((field) => Object.hasOwn(raw, field)).map((field) => [field, raw[field]]),
   );
@@ -251,7 +287,8 @@ function compile(
   const filters: EffectiveFilter[] = [];
   const unresolved: Array<{ field: string; reason: string }> = [];
   const material: MaterialRequirement[] = [];
-  const fit: Array<{ field: 'fit'; expectedInches: number; ringSize?: string; factId: string }> = [];
+  const fit: Array<{ field: 'fit'; expectedInches: number; ringSize?: string; factId: string }> =
+    [];
   const unavailable: UnavailableRequirement[] = [];
   const missionTypes = missionProductTypes(state);
   // Live-vocabulary validation: a requested product type that does not exist in
@@ -397,10 +434,7 @@ function compile(
           field: f.field,
           reason: 'Watch feature is not an exact supported catalogue value',
         });
-      else if (
-        vocabulary &&
-        !vocabulary.hasValue(expected, f.value.values[0])
-      )
+      else if (vocabulary && !vocabulary.hasValue(expected, f.value.values[0]))
         unavailable.push({
           field: f.field,
           attribute: expected,
@@ -522,7 +556,12 @@ function compile(
       fit.push({ field: 'fit', expectedInches, factId: f.id });
       continue;
     }
-    if (f.value.kind !== 'facet' || !(vocabulary ? vocabulary.isFilterable(f.value.attribute) : PRODUCT_FIELDS.has(f.value.attribute))) {
+    if (
+      f.value.kind !== 'facet' ||
+      !(vocabulary
+        ? vocabulary.isFilterable(f.value.attribute)
+        : PRODUCT_FIELDS.has(f.value.attribute))
+    ) {
       unresolved.push({
         field: f.field,
         reason: 'Constraint is not in the approved exact catalogue vocabulary',
@@ -567,7 +606,12 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
       const candidate = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
       return {
         status: 'invalid_input',
-        source: candidate.source === 'blog' ? 'blog' : 'prod_catalog',
+        source:
+          candidate.source === 'blog'
+            ? 'blog'
+            : candidate.source === 'help'
+              ? 'help'
+              : 'prod_catalog',
         missionId: typeof candidate.missionId === 'string' ? candidate.missionId : '',
         revision: 0,
         turnId: typeof candidate.turnId === 'string' ? candidate.turnId : '',
@@ -642,7 +686,7 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           })
         : undefined;
     const compiled =
-      input.source === 'blog'
+      input.source === 'blog' || input.source === 'help'
         ? { filters: [], unresolved: [], material: [], fit: [], unavailable: [] }
         : compile(
             state,
@@ -778,7 +822,9 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
             fitUnknown.push({
               field: 'fit',
               reason: `Required size evidence mismatch: record sizes ${JSON.stringify(sizes)} do not contain the expected size(s) ${unmet
-                .map((entry) => entry.ringSize ?? Number(entry.expectedInches.toFixed(6)).toString())
+                .map(
+                  (entry) => entry.ringSize ?? Number(entry.expectedInches.toFixed(6)).toString(),
+                )
                 .join(', ')} (fact ${unmet[0].factId})`,
             });
             return [];
@@ -795,18 +841,21 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           }
           if (watchStatus === 'conflict') return [];
         }
-        if (input.source === 'blog') {
-          const missing: string[] = BLOG_REQUIRED.filter(
+        if (input.source === 'blog' || input.source === 'help') {
+          const required = input.source === 'blog' ? BLOG_REQUIRED : HELP_REQUIRED;
+          const missing: string[] = required.filter(
             (field) => typeof record[field] !== 'string' || !record[field].trim(),
           );
-          if (!(
-            (typeof record.heading_path === 'string' && record.heading_path.trim()) ||
-            (typeof record.scope_text === 'string' && record.scope_text.trim())
-          ))
-            missing.push('heading_path or scope_text');
+          // Passage locator: blog records carry heading_path as a string;
+          // help_content records carry it as an array of path segments.
+          const hasPassageLocator =
+            (typeof record.heading_path === 'string' && !!record.heading_path.trim()) ||
+            (Array.isArray(record.heading_path) && record.heading_path.length > 0) ||
+            (typeof record.scope_text === 'string' && !!record.scope_text.trim());
+          if (!hasPassageLocator) missing.push('heading_path or scope_text');
           if (missing.length) {
             incomplete.push({
-              field: 'blog',
+              field: input.source,
               reason: `Required evidence fields missing: ${missing.join(', ')}`,
             });
             return [];
@@ -916,15 +965,13 @@ export function createAlgoliaEvidenceSearch(options: {
     eq: '=',
   };
   return async ({ source, query, count, exactObjectIDs = null, filters, signal }) => {
-    if (source === 'blog' && exactObjectIDs !== null)
-      throw new Error('Blog exact object lookup is not supported');
+    if ((source === 'blog' || source === 'help') && exactObjectIDs !== null)
+      throw new Error('Exact object lookup is only supported for prod_catalog');
     if (exactObjectIDs?.length) {
       const records = await Promise.all(
         exactObjectIDs.map(async (objectID) => {
           const params = new URLSearchParams({
-            attributesToRetrieve: (source === 'blog' ? BLOG_PROJECTION : PRODUCT_PROJECTION).join(
-              ',',
-            ),
+            attributesToRetrieve: PROJECTIONS[source].join(','),
           });
           const response = await request(
             `https://${options.appId}-dsn.algolia.net/1/indexes/${encodeURIComponent(INDEXES[source])}/${encodeURIComponent(objectID)}?${params.toString()}`,
@@ -964,9 +1011,7 @@ export function createAlgoliaEvidenceSearch(options: {
     const params = new URLSearchParams({
       query,
       hitsPerPage: String(count),
-      attributesToRetrieve: JSON.stringify(
-        source === 'blog' ? BLOG_PROJECTION : PRODUCT_PROJECTION,
-      ),
+      attributesToRetrieve: JSON.stringify(PROJECTIONS[source]),
       analytics: 'false',
       clickAnalytics: 'false',
       ...(numeric.length ? { numericFilters: JSON.stringify(numeric) } : {}),

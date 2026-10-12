@@ -25,7 +25,11 @@ function canonicalJtvUrl(value: unknown): string | null {
   }
 }
 
-/** Only client-tool results from the current transcript can authorize an article link. */
+/** Only client-tool results from the current transcript can authorize an
+ * article or help-page link. Citation-only sources: blog and help. Help
+ * records are never presentable product lines, so this set governs prose
+ * links only. (Function names kept from the blog-only era; they now cover
+ * every citation-capable non-product source.) */
 export function canonicalBlogUrlsFromMessages(
   messages: readonly MessageParts[],
 ): ReadonlySet<string> {
@@ -36,12 +40,17 @@ export function canonicalBlogUrlsFromMessages(
       const part = object(rawPart);
       if (part?.type !== 'tool-retrieve_evidence' || part.state !== 'output-available') continue;
       const output = object(part.output);
-      if (output?.status !== 'ok' || output.source !== 'blog' || !Array.isArray(output.records))
+      if (
+        output?.status !== 'ok' ||
+        (output.source !== 'blog' && output.source !== 'help') ||
+        !Array.isArray(output.records)
+      )
         continue;
       for (const rawRecord of output.records) {
         const evidence = object(rawRecord);
         if (
-          evidence?.source !== 'blog' ||
+          !evidence ||
+          (evidence.source !== 'blog' && evidence.source !== 'help') ||
           typeof evidence.objectID !== 'string' ||
           !evidence.objectID ||
           typeof evidence.contentHash !== 'string' ||

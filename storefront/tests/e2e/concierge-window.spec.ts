@@ -36,6 +36,12 @@ async function openConcierge(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: /open jewelry concierge/i }).click();
   const panel = page.getByRole('complementary', { name: 'Jewelry buying Concierge' });
   await expect(panel).toBeVisible();
+  const body = await panel.locator('.concierge-workspace-body').boundingBox();
+  const composer = await panel.locator('.concierge-composer-footer').boundingBox();
+  expect(body).not.toBeNull();
+  expect(composer).not.toBeNull();
+  expect(composer!.x).toBeCloseTo(body!.x, 0);
+  expect(composer!.width).toBeCloseTo(body!.width, 0);
   return panel;
 }
 
@@ -49,7 +55,31 @@ test('desktop window moves and resizes by pointer and keyboard, then restores fr
     'Shall we find something delighting?',
   );
   const header = panel.locator('.concierge-header');
-  await expect(header.getByRole('button', { name: 'Start a new conversation' })).toBeVisible();
+  const newConversation = header.getByRole('button', { name: 'Start a new conversation' });
+  await expect(newConversation).toBeVisible();
+  expect(await newConversation.evaluate((element) => getComputedStyle(element).fontSize)).toBe(
+    '0px',
+  );
+  expect(
+    await newConversation.evaluate((element) => getComputedStyle(element, '::before').content),
+  ).toBe('"+"');
+  await newConversation.hover();
+  expect(
+    await newConversation.evaluate((element) => getComputedStyle(element, '::after').visibility),
+  ).toBe('visible');
+  const preferences = header.locator('.brief-header-controls button[aria-label="Preferences"]');
+  await expect(preferences).toBeVisible();
+  await expect(preferences.locator('.lucide-sliders-horizontal')).toBeVisible();
+  expect(
+    await preferences.evaluate((element) => getComputedStyle(element, '::after').visibility),
+  ).toBe('hidden');
+  await page.mouse.move(0, 0);
+  await newConversation.focus();
+  await page.keyboard.press('Tab');
+  expect(await preferences.evaluate((element) => element.matches(':focus-visible'))).toBe(true);
+  expect(
+    await preferences.evaluate((element) => getComputedStyle(element, '::after').visibility),
+  ).toBe('visible');
   await expect(header.getByRole('button', { name: 'Close Concierge' })).toBeVisible();
   await expect(header.getByRole('button', { name: /resize concierge window/i })).toHaveCount(0);
   await expect(header.getByRole('button', { name: /maximize concierge window/i })).toHaveCount(1);
@@ -85,7 +115,10 @@ test('desktop window moves and resizes by pointer and keyboard, then restores fr
   expect(await resize.evaluate((element) => getComputedStyle(element).opacity)).toBe('0');
   const resizeBox = await resize.boundingBox();
   expect(resizeBox).not.toBeNull();
-  const resizeStart = { x: (resizeBox?.x ?? 0) + (resizeBox?.width ?? 0) / 2, y: (resizeBox?.y ?? 0) + (resizeBox?.height ?? 0) / 2 };
+  const resizeStart = {
+    x: (resizeBox?.x ?? 0) + (resizeBox?.width ?? 0) / 2,
+    y: (resizeBox?.y ?? 0) + (resizeBox?.height ?? 0) / 2,
+  };
   await page.mouse.move(resizeStart.x, resizeStart.y);
   await page.mouse.down();
   await page.mouse.move(resizeStart.x - 20, resizeStart.y - 20);
@@ -147,12 +180,11 @@ test('mobile keeps the Concierge full-screen without desktop window controls', a
   await expect(panel.getByRole('button', { name: /resize concierge window/i })).toBeHidden();
   await expect(panel.getByRole('button', { name: /maximize concierge window/i })).toBeHidden();
   await expect(panel.getByRole('button', { name: /move concierge window/i })).toBeHidden();
-  await expect(panel.locator('.connected-prompt-hint')).toBeHidden();
+  const composer = page.getByRole('textbox', { name: 'Message the Concierge' });
+  await expect(composer).toBeVisible();
   await page.setViewportSize({ width: 320, height: 812 });
-  await expect(panel.locator('.connected-prompt-hint')).toHaveText(
-    'Shall we find something delighting?',
-  );
-  await expect(panel.locator('.connected-prompt-hint')).toBeVisible();
+  await expect(composer).toBeVisible();
+  await expect(composer).toHaveAttribute('placeholder', 'Shall we find something delighting?');
   await panel.getByRole('button', { name: 'Close Concierge' }).click();
   await expect(panel).toBeHidden();
 });

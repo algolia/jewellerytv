@@ -5,6 +5,7 @@ import {
   connectedProgressLabel,
   getConnectedTurnSystemNotice,
   resetConnectedConversation,
+  visibleConnectedTranscript,
 } from '../../src/concierge/ConnectedConcierge';
 
 describe('connected Concierge progress', () => {
@@ -88,6 +89,17 @@ describe('connected Concierge progress', () => {
 });
 
 describe('connected Concierge reset gate', () => {
+  it('does not reveal prior mission messages while the SDK clears a new conversation', () => {
+    const oldUser = { id: 'shopper-old', role: 'user', parts: [{ type: 'text', text: 'Old question' }] };
+    const oldAssistant = {
+      id: 'assistant-old', role: 'assistant', parts: [{ type: 'text', text: 'Old answer' }],
+    };
+    const newUser = { id: 'shopper-new', role: 'user', parts: [{ type: 'text', text: 'New question' }] };
+    const messages = [oldUser, oldAssistant, newUser] as UIMessage[];
+    const oldIds = new Set(['shopper-old', 'assistant-old']);
+    expect(visibleConnectedTranscript(messages, true, oldIds)).toEqual([]);
+    expect(visibleConnectedTranscript(messages, false, oldIds)).toEqual([newUser]);
+  });
   it('blocks an immediate send while New conversation persistence is settling', () => {
     expect(canSubmitConnectedTurn('Find a ring', false, true)).toBe(false);
     expect(canSubmitConnectedTurn('Find a ring', false, false)).toBe(true);
@@ -146,6 +158,25 @@ describe('connected Concierge reset gate', () => {
     );
     expect(notice).toBe(
       '[System notice] This request did not produce a complete response. Existing product choices remain.',
+    );
+  });
+  it('labels a swallowed transport failure as a transport error, not an incomplete answer', () => {
+    // The SDK resolves sendMessage without onFinish when the stream request
+    // fails (abstract-chat.js createStream rejection path). The send closure's
+    // chat snapshot predates the error, so the component reads a chatErrorRef
+    // populated by the SDK's onError callback; the third parameter here is that
+    // signal. The notice must name the transport, not imply the agent stopped
+    // short.
+    const notice = getConnectedTurnSystemNotice(
+      [
+        { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Find a necklace' }] },
+        { id: 'assistant-1', role: 'assistant', parts: [] },
+      ] as unknown as UIMessage[],
+      null,
+      true,
+    );
+    expect(notice).toBe(
+      '[System notice] This request could not be completed. Existing product choices remain.',
     );
   });
   it('preserves an agent-provided system notice without duplicating it', () => {

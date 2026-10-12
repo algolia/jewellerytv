@@ -28,15 +28,31 @@
 .concierge-workspace .concierge-prompt {
   flex: 0 0 auto;
 }
-.connected-new-conversation {
-  min-height: 38px;
-  padding: 7px 10px;
-  border: 1px solid #ffffff99;
+.concierge-workspace.connected-concierge .concierge-header-actions .connected-new-conversation {
+  position: relative;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
   background: transparent;
   color: #fff;
-  font-size: 13px;
+  font-size: 0;
+  cursor: pointer;
 }
-.connected-new-conversation:hover {
+.concierge-workspace.connected-concierge
+  .concierge-header-actions
+  .connected-new-conversation::before {
+  content: '+';
+  display: block;
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1;
+}
+.concierge-workspace.connected-concierge
+  .concierge-header-actions
+  .connected-new-conversation:hover {
   background: #ffffff20;
 }
 .concierge-workspace .concierge-preferences {

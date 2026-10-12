@@ -8,7 +8,7 @@ The current snapshot is incomplete. See the [Plan 3.1 handoff](docs/PLAN-3.1-STA
 
 | Area | What it owns |
 | --- | --- |
-| `src/concierge/ConnectedConcierge.tsx`, `ResponsiveAnswerTable.tsx`, `ConciergeWorkspaceLayout.tsx` and `ConciergeWorkspaceProvider.tsx` | Installed Chat SDK, provisional text streaming, responsive educational tables, session binding, a movable/resizable desktop window with maximize/restore, full-screen mobile layout and the two-column workspace. |
+| `src/concierge/ConnectedConcierge.tsx`, `ResponsiveAnswerTable.tsx`, `ConciergeWorkspaceLayout.tsx` and `ConciergeWorkspaceProvider.tsx` | Installed Chat SDK, provisional text streaming, responsive educational tables, session binding, a movable/resizable desktop window with maximize/restore, full-screen mobile layout and the two-column workspace. New clears the visible prior conversation when starting a mission. |
 | `src/concierge/sdkTools.ts` and `toolRuntime.ts` | Three declared client callbacks, version checks, evidence ledger and staged product choices. No generated shopper language. |
 | `src/concierge/sessionPersistence.ts` and `shared/concierge/` | v3 shopping state, lossless migration/backup, scoped facts, exact identities and deterministic selection validation. |
 | `server/api.ts` and `server/concierge/` | Bounded API proxy, fixed read-only `prod_catalog` and `blog` retrieval, exact object lookup and source-bound evidence. |
@@ -28,7 +28,7 @@ npm ci
 npm run dev
 ```
 
-The app opens at `http://localhost:5173`, with the API on `127.0.0.1:5174`. The API uses Algolia's search-only key for read-only product and blog calls. Browser state is per tab. This checkout restores the same-session chat transcript on reload using the SDK and completion receipts; connected browser acceptance is still pending. Login, cross-device state, cart, orders and payment are outside this build.
+The app opens at `http://localhost:5173`, with the API on `127.0.0.1:5174`. The API uses Algolia's search-only key for read-only product and blog calls. Browser state is per tab. New clears visible turns from the prior mission. Reload restores the current same-session transcript using the SDK and completion receipts. A connected local check covers New and reload; full shopper-journey acceptance is still pending. Login, cross-device state, cart, orders and payment are outside this build.
 
 ## Checks
 

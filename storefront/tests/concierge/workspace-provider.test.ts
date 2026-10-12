@@ -88,6 +88,55 @@ describe('v3 workspace session adapter', () => {
     expect(model.compareIds).toEqual(['saved-1']);
     expect(model.products[0].product.id).toBe('saved-1');
   });
+  it('withholds Discover cards until every displayed product passes item eligibility', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      V3_SESSION_KEY,
+      JSON.stringify({
+        ...session(),
+        committedProposal: {
+          missionId: 'mission-provider',
+          stateRevision: 0,
+          evidenceBatchRevision: 0,
+          turnId: 'uncertain-turn',
+          proposalId: 'uncertain-proposal',
+          kind: 'product_groups',
+          groups: [
+            {
+              title: 'Halo',
+              itemSubtotalCents: null,
+              lines: [
+                {
+                  evidenceRef: 'ref-1',
+                  objectID: 'saved-1',
+                  contentHash: 'hash-1',
+                  quantity: 1,
+                  componentSlot: 'ring',
+                  explanation: 'Supported by the source record',
+                  unitPriceCents: 12500,
+                  lineSubtotalCents: 12500,
+                },
+              ],
+            },
+          ],
+          combinedItemSubtotalCents: null,
+          assessment: { perItem: 'unresolved', total: 'unresolved', reasons: ['fit:unknown'] },
+        },
+      }),
+    );
+    const adapter = createConciergeWorkspaceSession({
+      storage,
+      initialMissionId: 'unused',
+      getCurrentShopperMessage: () => null,
+      fetchEvidence: async () => {
+        throw new Error('unused');
+      },
+    });
+    expect(adapter.getModel().discoveries).toEqual([]);
+    expect(adapter.getModel().discoveryUnavailable).toBe(true);
+    // Existing saved state remains intact while an unresolved Discover proposal is withheld.
+    expect(adapter.getModel().products.map((item) => item.product.id)).toEqual(['saved-1']);
+  });
   it('marks legacy unbound Saved records as needing verification', () => {
     const storage = new MemoryStorage();
     storage.setItem(V3_SESSION_KEY, JSON.stringify(session('legacy_unbound')));

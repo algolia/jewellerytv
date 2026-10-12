@@ -6,6 +6,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
+import { Check, Copy, Heart, X } from 'lucide-react';
 import { useShopping, type PinnedProduct } from './ShoppingProvider';
 import { type Product } from './catalog';
 import { productURL } from './routing';
@@ -23,6 +24,7 @@ export type WorkspaceViewModel = {
   products: PinnedProduct[];
   selectionRecords: Product[];
   discoveries: Discovery[];
+  discoveryUnavailable?: boolean;
   proposedLooks?: {
     title: string;
     lines: { product: Product; why: string; quantity: number }[];
@@ -67,7 +69,15 @@ function PlainText({ text }: { text: string }) {
     </>
   );
 }
-function ProductImage({ product, binding }: { product: Product; binding?: WorkspaceTraceBinding }) {
+function ProductImage({
+  product,
+  binding,
+  decorative = false,
+}: {
+  product: Product;
+  binding?: WorkspaceTraceBinding;
+  decorative?: boolean;
+}) {
   const [failed, setFailed] = useState(false);
   const img = useRef<HTMLImageElement>(null);
   const source = product.images[0];
@@ -84,7 +94,7 @@ function ProductImage({ product, binding }: { product: Product; binding?: Worksp
         <img
           ref={img}
           src={source}
-          alt={product.title}
+          alt={decorative ? '' : product.title}
           loading="lazy"
           onLoad={() => report('loaded')}
           onError={() => {
@@ -142,17 +152,14 @@ export function ProductWorkspace({
   model?: WorkspaceViewModel;
   focusProductId?: string | null;
   focusProductRequest?: number;
-  onPreviewClose?: () => void;}) {
+  onPreviewClose?: () => void;
+}) {
   const legacy = useShopping();
   const location = typeof window === 'undefined' ? { pathname: '/', search: '' } : window.location;
   const raw = model ?? legacy;
   const supplied = !!model;
   const vocabulary = useCatalogVocabulary();
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const [expandedStyles, setExpandedStyles] = useState<{ signature: string; keys: string[] }>({
-    signature: '',
-    keys: [],
-  });
   useEffect(() => {
     if (!previewId || !raw) return;
     const exists =
@@ -269,17 +276,33 @@ export function ProductWorkspace({
   }
   function actions(p: Product) {
     const saved = s.products.some((x) => x.product.id === p.id);
+    const comparing = s.compareIds.includes(p.id);
     return (
       <div className="pw-actions">
-        <button aria-pressed={saved} onClick={() => workspaceSaveAction(s, p)}>
-          {saved ? 'Remove from Selected' : 'Save'}
+        <button
+          type="button"
+          aria-label={saved ? `Remove ${p.title} from saved` : `Save ${p.title}`}
+          title={saved ? 'Remove from saved' : 'Save'}
+          aria-pressed={saved}
+          onClick={() => workspaceSaveAction(s, p)}
+        >
+          <Heart size={18} aria-hidden="true" fill={saved ? 'currentColor' : 'none'} />
+          <span>{saved ? 'Saved' : 'Save'}</span>
         </button>
         <button
-          aria-pressed={s.compareIds.includes(p.id)}
-          disabled={!s.compareIds.includes(p.id) && s.compareIds.length >= 3}
+          type="button"
+          aria-label={comparing ? `Remove ${p.title} from comparison` : `Compare ${p.title}`}
+          title={comparing ? 'Remove from comparison' : 'Compare'}
+          aria-pressed={comparing}
+          disabled={!comparing && s.compareIds.length >= 3}
           onClick={() => workspaceCompareAction(s, p)}
         >
-          {s.compareIds.includes(p.id) ? 'Comparing ✓' : 'Compare'}
+          {comparing ? (
+            <Check size={18} aria-hidden="true" />
+          ) : (
+            <Copy size={18} aria-hidden="true" />
+          )}
+          <span>{comparing ? 'Comparing' : 'Compare'}</span>
         </button>
       </div>
     );
@@ -289,7 +312,49 @@ export function ProductWorkspace({
     why?: string,
     direction?: string,
     retrievalStatus?: 'compliant' | 'unknown',
+    compact = false,
+    showAssessment = false,
   ) {
+    if (compact) {
+      const stockLabel =
+        p.inStock === true
+          ? 'In stock'
+          : p.inStock === false
+            ? 'Out of stock'
+            : 'Stock unavailable';
+      return (
+        <article className="pw-product pw-product--discover" key={p.id} data-product-id={p.id}>
+          <button
+            type="button"
+            className="pw-product-main"
+            aria-label={`View details for ${p.title}, ${p.price === null ? 'price unavailable' : money(Math.round(p.price * 100))}; ${stockLabel}.`}
+            onClick={() => {
+              setPreviewId(p.id);
+              void s.refreshProducts([p.id]);
+            }}
+          >
+            <ProductImage product={p} binding={imageBinding(p)} decorative />
+            <span className="pw-product-copy">
+              <span className="pw-product-title">{p.title}</span>
+              <span className="pw-price-stock">
+                <Price product={p} />
+                <span
+                  className="pw-stock"
+                  data-stock={p.inStock === null ? 'unknown' : String(p.inStock)}
+                >
+                  <span className="pw-stock-dot" aria-hidden="true" />
+                  {stockLabel}
+                </span>
+              </span>
+            </span>
+          </button>
+          {actions(p)}
+          {showAssessment && (
+            <div className="pw-evidence pw-saved-assessment">{assessment(p, retrievalStatus)}</div>
+          )}
+        </article>
+      );
+    }
     return (
       <article className="pw-product" key={p.id} data-product-id={p.id} tabIndex={-1}>
         <p className="pw-direction">{direction || ''}</p>
@@ -322,15 +387,44 @@ export function ProductWorkspace({
       </article>
     );
   }
-  const groupedDiscoveries = discoveries.map((group) => ({
-    ...group,
-    items: [...new Map(group.items.map((item) => [item.product.id, item] as const)).values()],
-  }));
-  const styleSignature = groupedDiscoveries
-    .map((group) => `${group.title}:${group.items.map((item) => item.product.id).join(',')}`)
-    .join('|');
-  const openStyleKeys = expandedStyles.signature === styleSignature ? expandedStyles.keys : [];
-  const showStyleLeads = groupedDiscoveries.length > 1;
+  const mergedDiscoveries = new Map<string, Discovery>();
+  for (const group of discoveries) {
+    const title = group.title.trim();
+    const key = title.toLowerCase();
+    const existing = mergedDiscoveries.get(key);
+    if (existing) existing.items.push(...group.items);
+    else mergedDiscoveries.set(key, { ...group, title });
+  }
+  const seenDiscoveryIds = new Set<string>();
+  const groupedDiscoveries = [...mergedDiscoveries.values()].slice(0, 3).flatMap((group) => {
+    const items = group.items
+      .filter((item) => {
+        if (seenDiscoveryIds.has(item.product.id)) return false;
+        seenDiscoveryIds.add(item.product.id);
+        return true;
+      })
+      .slice(0, 2);
+    return items.length ? [{ ...group, items }] : [];
+  });
+  const discoveredProductTypes = new Set(
+    groupedDiscoveries
+      .flatMap((group) => group.items.map(({ product }) => product.raw.Catalog_ProductType))
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .map((value) => value.trim().toLocaleLowerCase()),
+  );
+  const headingFor = (group: Discovery) => {
+    const style = /^(.+?) style:\s*(.+)$/i.exec(group.title);
+    if (style && discoveredProductTypes.size === 1 && discoveredProductTypes.has(style[1].toLowerCase()))
+      return style[2].trim();
+    const productType = /^Product type:\s*(.+)$/i.exec(group.title)?.[1]?.trim().toLocaleLowerCase();
+    return productType && discoveredProductTypes.size === 1 && discoveredProductTypes.has(productType)
+      ? null
+      : group.title;
+  };
+  const completeDiscoveryGrid =
+    groupedDiscoveries.length === 3 &&
+    new Set(groupedDiscoveries.map((group) => group.title.trim().toLowerCase())).size === 3 &&
+    groupedDiscoveries.every((group) => group.items.length === 2);
   return (
     <section className="product-workspace" aria-label="Shopping choices">
       <nav className="pw-views" aria-label="Product views">
@@ -340,11 +434,7 @@ export function ProductWorkspace({
             aria-current={view === v ? 'page' : undefined}
             onClick={() => void changeView(v)}
           >
-            {v === 'discover'
-              ? 'Discover'
-              : v === 'compare'
-                ? `Compare${s.compareIds.length ? ` (${s.compareIds.length})` : ''}`
-                : `Selected${s.products.length ? ` (${s.products.length})` : ''}`}
+            {v === 'discover' ? 'Discover' : v === 'compare' ? 'Compare' : 'Save'}
           </button>
         ))}
       </nav>
@@ -395,61 +485,41 @@ export function ProductWorkspace({
       {!activePreview && view === 'discover' && (
         <div className="pw-discover">
           {!discoveries.length ? (
-            <DiscoverWelcome onStart={onStart} />
+            s.discoveryUnavailable ? (
+              <EmptyProducts hint="No confirmed matches are ready to show." />
+            ) : (
+              <DiscoverWelcome onStart={onStart} />
+            )
           ) : (
-            <div className="pw-discovery-groups" data-group-count={groupedDiscoveries.length}>
-              {groupedDiscoveries.map((group, index) => {
-                const styleKey = `${group.title}:${group.items.map((item) => item.product.id).join(',')}`;
-                const variations = showStyleLeads ? group.items.slice(1) : [];
-                const expanded = openStyleKeys.includes(styleKey);
-                return (
-                  <section
-                    className="pw-discovery-group"
-                    key={styleKey}
-                    aria-labelledby={`pw-group-${index}`}
-                  >
-                    <h3 id={`pw-group-${index}`}>{group.title}</h3>
-                    <div className="pw-group-items">
-                      {(showStyleLeads ? group.items.slice(0, 1) : group.items).map(
-                        ({ product, why, assessment: retrievalStatus }) =>
-                          tile(product, why, undefined, retrievalStatus),
-                      )}
-                      {variations.length > 0 && (
-                        <>
-                          <button
-                            type="button"
-                            className="pw-style-toggle"
-                            aria-expanded={expanded}
-                            aria-controls={`pw-style-variations-${index}`}
-                            onClick={() =>
-                              setExpandedStyles({
-                                signature: styleSignature,
-                                keys: expanded
-                                  ? openStyleKeys.filter((key) => key !== styleKey)
-                                  : [...openStyleKeys, styleKey],
-                              })
-                            }
-                          >
-                            {expanded
-                              ? 'Show fewer in this style'
-                              : `See ${variations.length} more in this style`}
-                          </button>
-                          <div
-                            className="pw-style-variations"
-                            id={`pw-style-variations-${index}`}
-                            hidden={!expanded}
-                          >
-                            {variations.map(({ product, why, assessment: retrievalStatus }) =>
-                              tile(product, why, undefined, retrievalStatus),
-                            )}
-                          </div>
-                        </>
-                      )}
+            <>
+              {completeDiscoveryGrid ? (
+                <h2 className="pw-discovery-title">
+                  Three different types, two variations of each type.
+                </h2>
+              ) : null}
+              <div
+                className="pw-discovery-groups"
+                data-group-count={groupedDiscoveries.length}
+                data-grid-complete={String(completeDiscoveryGrid)}
+              >
+                {groupedDiscoveries.map((group) => {
+                  const heading = headingFor(group);
+                  return (
+                    <div
+                      className="pw-discovery-group"
+                      key={`${group.title}:${group.items.map((item) => item.product.id).join(',')}`}
+                    >
+                      {heading ? <h3>{heading}</h3> : null}
+                      <div className="pw-group-items">
+                        {group.items.map(({ product }) =>
+                          tile(product, undefined, undefined, undefined, true),
+                        )}
+                      </div>
                     </div>
-                  </section>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -465,9 +535,7 @@ export function ProductWorkspace({
                       tile(
                         product,
                         why,
-                        s.products.some((x) => x.product.id === product.id)
-                          ? 'Selected ✓'
-                          : undefined,
+                        s.products.some((x) => x.product.id === product.id) ? 'Saved ✓' : undefined,
                       ),
                     )}
                   </div>
@@ -486,7 +554,11 @@ export function ProductWorkspace({
             </div>
           )}
           {s.products.length ? (
-            <div className="pw-grid">{s.products.map(({ product }) => tile(product))}</div>
+            <div className="pw-grid">
+              {s.products.map(({ product }) =>
+                tile(product, undefined, undefined, undefined, true, true),
+              )}
+            </div>
           ) : (
             <EmptyProducts hint="Save a piece you like, and keep it here." />
           )}
@@ -501,7 +573,7 @@ export function ProductWorkspace({
             </p>
           )}
           {!selected.length ? (
-            <EmptyProducts hint="Choose Compare on up to three pieces in Discover or Selected." />
+            <EmptyProducts hint="Choose Compare on up to three pieces in Discover or Save." />
           ) : (
             <>
               <p className="pw-intro">
@@ -520,10 +592,28 @@ export function ProductWorkspace({
               >
                 {selected.map(({ product: p }, productIndex) => (
                   <article className="pw-compare-product" key={p.id} data-product-id={p.id}>
-                    <div className="pw-compare-image">
-                      <ProductImage product={p} binding={imageBinding(p)} />
-                    </div>
-                    <h3>{p.title}</h3>
+                    <button
+                      type="button"
+                      className="pw-compare-image"
+                      aria-label={`View details for ${p.title}`}
+                      onClick={() => {
+                        setPreviewId(p.id);
+                        void s.refreshProducts([p.id]);
+                      }}
+                    >
+                      <ProductImage product={p} binding={imageBinding(p)} decorative />
+                    </button>
+                    <button
+                      type="button"
+                      className="pw-compare-title"
+                      aria-label={`View details for ${p.title}`}
+                      onClick={() => {
+                        setPreviewId(p.id);
+                        void s.refreshProducts([p.id]);
+                      }}
+                    >
+                      {p.title}
+                    </button>
                     <Price product={p} />
                     <div className="pw-compare-assessment">{assessment(p)}</div>
                     {comparisonFacts.length > 0 && (
@@ -539,30 +629,43 @@ export function ProductWorkspace({
                     <div className="pw-compare-actions">
                       <div className="pw-actions">
                         <button
-                          onClick={() => {
-                            setPreviewId(p.id);
-                            void s.refreshProducts([p.id]);
-                          }}
-                        >
-                          View details
-                        </button>
-                        <button
-                          onClick={() =>
+                          type="button"
+                          aria-label={
                             s.products.some((x) => x.product.id === p.id)
-                              ? s.remove(p.id)
-                              : s.pin(p.raw)
+                              ? `Remove ${p.title} from saved`
+                              : `Save ${p.title}`
                           }
+                          title={
+                            s.products.some((x) => x.product.id === p.id)
+                              ? 'Remove from saved'
+                              : 'Save'
+                          }
+                          aria-pressed={s.products.some((x) => x.product.id === p.id)}
+                          onClick={() => workspaceSaveAction(s, p)}
                         >
-                          {s.products.some((x) => x.product.id === p.id)
-                            ? 'Remove from Selected'
-                            : 'Save piece'}
+                          <Heart
+                            size={18}
+                            aria-hidden="true"
+                            fill={
+                              s.products.some((x) => x.product.id === p.id)
+                                ? 'currentColor'
+                                : 'none'
+                            }
+                          />
+                          <span>
+                            {s.products.some((x) => x.product.id === p.id) ? 'Saved' : 'Save'}
+                          </span>
                         </button>
                       </div>
                       <button
+                        type="button"
                         className="pw-compare-remove"
+                        aria-label={`Remove ${p.title} from comparison`}
+                        title="Remove from comparison"
                         onClick={() => s.toggleCompare(p.id)}
                       >
-                        Remove from comparison
+                        <X size={16} aria-hidden="true" />
+                        <span>Remove</span>
                       </button>
                     </div>
                   </article>

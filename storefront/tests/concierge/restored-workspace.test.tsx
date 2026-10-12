@@ -83,9 +83,9 @@ describe('restored approved workspace composition', () => {
     const html = renderToStaticMarkup(modal());
     expect(html).toContain('class="conversation-column"');
     expect(html).toContain('class="shopping-column"');
-    expect(html).toContain('Preferences (0)');
+    expect(html).toContain('Preferences');
     expect(html).toContain('Discover');
-    expect(html).toContain('Selected');
+    expect(html).not.toContain('Selected');
     expect(html).toContain('Compare');
     expect(html).toContain('Save');
     expect(html).not.toContain('Add to combination');
@@ -94,7 +94,7 @@ describe('restored approved workspace composition', () => {
   it('keeps saved and compare labels available for populated views', () => {
     for (const view of ['saved', 'compare'] as const) {
       const html = renderToStaticMarkup(modal(view));
-      expect(html).toContain(view === 'saved' ? 'Remove from Selected' : 'Remove from comparison');
+      expect(html).toContain(view === 'saved' ? 'Remove from saved' : 'Remove from comparison');
     }
   });
 

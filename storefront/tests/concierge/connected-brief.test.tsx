@@ -75,7 +75,9 @@ describe('v3 Connected Preferences', () => {
         onUndo={vi.fn()}
       />,
     );
-    expect(html).toContain('Preferences (3)');
+    expect(html).toContain('aria-label="Preferences"');
+    expect(html).toContain('title="Preferences"');
+    expect(html).toContain('class="cb-sr">Preferences</span>');
     expect(html).toContain('$500.00 total');
     expect(html).toContain('Silver Sterling or Gold White 14K');
     expect(html).toContain('No Hearts or Stars');
@@ -94,7 +96,8 @@ describe('v3 Connected Preferences', () => {
       />,
     );
     expect(html).toContain('aria-expanded="false"');
-    expect(html).toContain('Preferences (0)');
+    expect(html).toContain('aria-label="Preferences"');
+    expect(html).toContain('title="Preferences"');
     expect(html).toContain('Add preference');
     expect(html).toContain('hidden=""');
   });
