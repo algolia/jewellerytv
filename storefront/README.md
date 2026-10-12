@@ -48,4 +48,4 @@ For a read-only configuration backup, run `npm run snapshot -- <agent-id>`. The 
 
 ## Deployment
 
-The public Vercel project deploys automatically when `main` changes: `git.deploymentEnabled` in [vercel.json](storefront/vercel.json) enables the `main` branch only, and pushes to other branches do not deploy. A valid `JTV_CONCIERGE_PRODUCTION_AGENT_ID` must stay in the Production environment. Verify the served commit, unauthenticated access, `/api/health`, a read-only product request and an actual Concierge turn. Follow the [deployment guide](docs/deployment.md).
+Deployments are explicit CLI releases only: `git.deploymentEnabled` in [vercel.json](storefront/vercel.json) is false for every branch including `main`, so GitHub pushes never deploy. Deploy from a clean Git archive of the exact release commit with the canonical project pinned, then verify the served commit, unauthenticated access, `/api/health`, a read-only product request and an actual Concierge turn. Follow the [deployment guide](docs/deployment.md).
