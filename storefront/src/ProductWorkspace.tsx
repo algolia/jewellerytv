@@ -493,9 +493,14 @@ export function ProductWorkspace({
           ) : (
             <>
               {completeDiscoveryGrid ? (
-                <h2 className="pw-discovery-title">
-                  Three different types, two variations of each type.
-                </h2>
+                <div className="pw-discovery-intro">
+                  <h2 className="pw-discovery-title">
+                    Three different types, two variations of each type.
+                  </h2>
+                  <p className="pw-discovery-subtitle">
+                    Explore each style, then save or compare the pieces you like.
+                  </p>
+                </div>
               ) : null}
               <div
                 className="pw-discovery-groups"
