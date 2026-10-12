@@ -10,6 +10,7 @@ import { applyBriefOperationsV3, migrateBriefStateV2ToV3 } from '../../briefStat
 import type { CatalogVocabulary } from '../vocabularyContract.js';
 import {
   SUPPORTED_FACET_ATTRIBUTES,
+  SUPPORTED_GEMSTONE_FACET_ATTRIBUTES,
   MATERIAL_COLOR_EXCLUSION_ATTRIBUTE,
   WATCH_BAND_MATERIAL_FAMILIES,
 } from '../catalogueFactContract.js';
@@ -262,7 +263,7 @@ function toBriefFact(
       f.field === 'product_type'
         ? SUPPORTED_FACET_ATTRIBUTES.product_type
         : f.field === 'gemstone'
-          ? SUPPORTED_FACET_ATTRIBUTES.gemstone
+          ? SUPPORTED_GEMSTONE_FACET_ATTRIBUTES.find((attribute) => attribute === facet.attribute)
           : f.field === 'watch_dial_color'
             ? SUPPORTED_FACET_ATTRIBUTES.watch_dial_color
             : f.field === 'watch_band_type'
