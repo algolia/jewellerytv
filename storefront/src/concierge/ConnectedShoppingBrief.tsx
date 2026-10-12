@@ -113,7 +113,8 @@ export function ConnectedShoppingBrief({
   // empty rather than a frozen copy (the writer validates against the live
   // vocabulary anyway, so a stale option could never be saved).
   const vocabulary = useCatalogVocabulary();
-  const purityOptions = vocabulary?.availableValues('Catalog_MaterialInformation.MaterialPurity') ?? [];
+  const purityOptions =
+    vocabulary?.availableValues('Catalog_MaterialInformation.MaterialPurity') ?? [];
   const facts = brief.facts.filter(
     (fact) => fact.status === 'active' || fact.status === 'tentative',
   );
@@ -254,16 +255,16 @@ export function ConnectedShoppingBrief({
   const controls = (
     <button
       type="button"
-      aria-label={`Preferences (${facts.length})`}
-      title="Review and edit preferences"
+      aria-label="Preferences"
+      title="Preferences"
       aria-expanded={expanded}
       aria-controls={panelId}
       onClick={() => setExpanded((open) => !open)}
     >
       <SlidersHorizontal size={18} aria-hidden="true" />
-      <span>Preferences</span>
+      <span className="cb-sr">Preferences</span>
       <b className="cb-count" aria-hidden="true">
-        ({facts.length})
+        {facts.length}
       </b>
       <ChevronDown
         className={expanded ? 'cb-chevron cb-chevron-open' : 'cb-chevron'}

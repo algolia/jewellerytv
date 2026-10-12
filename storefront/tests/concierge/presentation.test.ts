@@ -112,6 +112,25 @@ describe('API-only present_choices staging', () => {
       ).status,
     ).toBe('invalid_input');
   });
+  it('rejects more than two displayed variations in one product family', () => {
+    const input: PresentChoicesInput = {
+      ...groupsInput,
+      body: {
+        kind: 'product_groups',
+        alternatives: null,
+        groups: [
+          {
+            basis: groupBasis(),
+            items: [line('necklace'), line('earrings', 'earrings'), line('ring', 'ring')],
+          },
+        ],
+      },
+    };
+    expect(presentChoices(input, context())).toMatchObject({
+      status: 'invalid_input',
+      reasons: ['schema_invalid'],
+    });
+  });
   it('stages selected source-bound lines and exact integer-cent subtotals', () => {
     const result = presentChoices(
       groupsInput,
@@ -253,10 +272,10 @@ describe('API-only present_choices staging', () => {
     expect(result.proposal.combinedItemSubtotalCents).toBeNull();
   });
 
-  it('stages nine distinct products in three catalogue-backed style groups', () => {
+  it('stages six distinct products in three catalogue-backed style groups', () => {
     const styles = ['Strand', 'Link', 'Bangle'];
-    const nineRecords = styles.flatMap((style, groupIndex) =>
-      Array.from({ length: 3 }, (_, itemIndex) => {
+    const sixRecords = styles.flatMap((style, groupIndex) =>
+      Array.from({ length: 2 }, (_, itemIndex) => {
         const objectID = `bracelet-${groupIndex}-${itemIndex}`;
         return baseRecord(objectID, 100 + itemIndex, {
           Catalog_ProductType: 'Bracelet',
@@ -273,22 +292,22 @@ describe('API-only present_choices staging', () => {
           alternatives: null,
           groups: styles.map((style, groupIndex) => ({
             basis: { attribute: 'Catalog_BraceletType', value: style },
-            items: Array.from({ length: 3 }, (_, itemIndex) =>
+            items: Array.from({ length: 2 }, (_, itemIndex) =>
               line(`bracelet-${groupIndex}-${itemIndex}`, 'bracelet'),
             ),
           })),
         },
       },
-      context({ evidence: nineRecords }),
+      context({ evidence: sixRecords }),
     );
     expect(result).toMatchObject({ status: 'staged' });
     if (result.status !== 'staged') return;
     expect(result.proposal.groups).toHaveLength(3);
-    expect(result.proposal.groups.map((group) => group.lines.length)).toEqual([3, 3, 3]);
+    expect(result.proposal.groups.map((group) => group.lines.length)).toEqual([2, 2, 2]);
     expect(
       new Set(result.proposal.groups.flatMap((group) => group.lines.map((item) => item.objectID)))
         .size,
-    ).toBe(9);
+    ).toBe(6);
   });
 
   it('accepts catalogue-backed bracelet styles and rejects a mismatched variation', () => {

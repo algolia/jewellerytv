@@ -1,5 +1,5 @@
 import {afterEach,describe,it,expect,vi} from 'vitest';
-import {beginTrace,clientTraces,observeTrace,workspaceTraceForTool,markWorkspace,markWorkspaceImage,type WorkspaceTraceBinding} from '../src/telemetry';
+import {beginTrace,clientTraces,observeTrace,workspaceTraceForTool,markWorkspace,markWorkspaceImage,recordTurnOutcome,turnOutcomes,type WorkspaceTraceBinding} from '../src/telemetry';
 afterEach(()=>{clientTraces.length=0;vi.restoreAllMocks()});
 function setup(){vi.spyOn(performance,'now').mockReturnValue(1000);const trace=beginTrace('turn','mission');const binding:WorkspaceTraceBinding={requestId:trace.requestId,turnId:'turn',missionId:'mission',revision:2};return {trace,binding}}
 describe('request-correlated workspace telemetry',()=>{
@@ -10,3 +10,17 @@ describe('request-correlated workspace telemetry',()=>{
 });
 
 it('preserves a failed upstream outcome after the protocol finish event without logging error text',()=>{const {trace}=setup();observeTrace(trace,{type:'error',errorText:'PRIVATE'},50);observeTrace(trace,{type:'finish'},60);expect(trace.termination).toBe('failed');expect(trace.streamCompletionMs).toBe(60);expect(trace.events.map(e=>e.type)).toEqual(['error','finish']);expect(JSON.stringify(trace)).not.toContain('PRIVATE')});
+
+describe('turn outcome diagnostics',()=>{
+ afterEach(()=>{turnOutcomes.length=0});
+ it('records the transport-error class that renders as the generic incomplete-response notice',()=>{
+  recordTurnOutcome('turn-1','req-1',{finishFired:false,isAbort:false,isError:true,decision:'transport-error'});
+  expect(turnOutcomes[0]).toMatchObject({turnId:'turn-1',requestId:'req-1',finishFired:false,decision:'transport-error'});
+  expect(JSON.stringify(turnOutcomes)).not.toMatch(/moissanite|platinum|message|text/i);
+ });
+ it('stays bounded at 50 records',()=>{
+  for(let i=0;i<60;i++)recordTurnOutcome(String(i),'req',{finishFired:true,isAbort:false,isError:false,decision:'completed'});
+  expect(turnOutcomes).toHaveLength(50);
+  expect(turnOutcomes[0].turnId).toBe('10');
+ });
+});

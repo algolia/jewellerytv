@@ -122,7 +122,7 @@ test('Compare aligns unequal product titles and facts at responsive widths', asy
           id: card.dataset.productId,
           image: rect('.pw-compare-image .pw-image', card),
           media: rect('.pw-compare-image .pw-image img', card),
-          title: rect(':scope > h3', card),
+          title: rect(':scope > .pw-compare-title', card),
           price: rect(':scope > .pw-price', card),
           attributes: [...card.querySelectorAll<HTMLElement>('.pw-compare-attributes > div')].map(
             (row) => {
@@ -209,9 +209,9 @@ test('Compare aligns unequal product titles and facts at responsive widths', asy
       }
 
       await expect(comparison.getByText('Not recorded', { exact: true })).toBeVisible();
-      await expect(comparison.getByRole('button', { name: /remove from comparison/i })).toHaveCount(
-        2,
-      );
+      await expect(
+        comparison.getByRole('button', { name: /remove .* from comparison/i }),
+      ).toHaveCount(2);
     } finally {
       await context.close();
     }

@@ -37,7 +37,7 @@ const productGroups = z
         z
           .object({
             basis: catalogueGroupBasisSchema,
-            items: z.array(selectedLine).min(1).max(3),
+            items: z.array(selectedLine).min(1).max(2),
           })
           .strict(),
       )

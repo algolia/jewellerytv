@@ -161,6 +161,39 @@ describe('installed SDK client-tool callback registration', () => {
       }),
     });
   });
+  it('rejects a third product in one discovery family before presentation', async () => {
+    const presentSemantic = vi.fn(async () => ({ status: 'staged' }));
+    const tools = createSdkClientTools({
+      updateSemantic: vi.fn(async () => ({ status: 'applied' })),
+      retrieveSemantic: vi.fn(async () => ({ status: 'ok' })),
+      presentSemantic,
+      getActiveTurnToken: vi.fn(() => 4),
+      notePresentationAttempt: vi.fn(() => true),
+    } as unknown as Runtime);
+    const item = (id: string) => ({
+      evidenceRef: `prod_catalog/${id}/hash`,
+      quantity: 1,
+      componentSlot: 'ring',
+      explanation: 'Matches the stated ring direction',
+    });
+    const submitted = call(tools.present_choices.onToolCall!, {
+      body: {
+        kind: 'product_groups',
+        groups: [
+          {
+            basis: { attribute: 'Catalog_RingType', value: 'Halo' },
+            items: [item('a'), item('b'), item('c')],
+          },
+        ],
+        alternatives: null,
+      },
+    });
+    await submitted.run();
+    expect(presentSemantic).not.toHaveBeenCalled();
+    expect(submitted.addToolResult).toHaveBeenCalledWith({
+      output: expect.objectContaining({ status: 'invalid_input' }),
+    });
+  });
   it('keeps actual presentation runtime exceptions as tool_failure', async () => {
     const presentSemantic = vi.fn(async () => {
       throw new Error('runtime only');

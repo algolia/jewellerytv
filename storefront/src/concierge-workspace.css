@@ -230,6 +230,53 @@
   text-decoration: none;
   cursor: pointer;
 }
+.concierge-header-actions button[title] {
+  position: relative;
+}
+.concierge-header-actions button[title]::after {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 50%;
+  max-width: min(240px, calc(100vw - 24px));
+  padding: 6px 9px;
+  border-radius: 3px;
+  background: #173e4b;
+  color: #fff;
+  content: attr(title);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -2px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+.concierge-header-actions button[title]:hover::after,
+.concierge-header-actions button[title]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+.brief-header-controls button > span:not(.cb-sr),
+.brief-header-controls .cb-count,
+.brief-header-controls .cb-chevron {
+  display: none;
+}
+.brief-header-controls button .cb-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
 .concierge-header-actions button:hover {
   background: #ffffff20;
 }

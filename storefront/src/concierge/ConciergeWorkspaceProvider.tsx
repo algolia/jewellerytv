@@ -36,7 +36,9 @@ export function createConciergeWorkspaceSession(options: {
   getCurrentShopperMessage: () => ShopperMessage | null;
   fetchEvidence: (body: unknown, signal?: AbortSignal) => Promise<RetrieveEvidenceResult>;
   fetchExactProducts?: (body: unknown, signal?: AbortSignal) => Promise<RetrieveEvidenceResult>;
-  fetchVocabulary?: () => Promise<import('../../shared/concierge/vocabularyContract.js').CatalogVocabulary>;
+  fetchVocabulary?: () => Promise<
+    import('../../shared/concierge/vocabularyContract.js').CatalogVocabulary
+  >;
 }): ConciergeWorkspaceSession {
   const store = createSessionStore(options.storage, options.initialMissionId);
   const runtime = createConciergeToolRuntime({
@@ -83,26 +85,19 @@ export function createConciergeWorkspaceSession(options: {
     const products = new Map(all.map((item) => [item.objectID, item]));
     const proposal = state.committedProposal ?? null;
     const groups =
-      proposal?.groups.flatMap((group) => {
-        const items = group.lines.flatMap((line) => {
-          const persisted = products.get(line.objectID);
-          const raw = persisted?.raw;
-          const product = normalize(raw);
-          return product
-            ? [
-                {
-                  product,
-                  why: line.explanation,
-                  assessment:
-                    proposal.assessment.perItem === 'accepted'
-                      ? ('compliant' as const)
-                      : ('unknown' as const),
-                },
-              ]
-            : [];
-        });
-        return items.length ? [{ title: group.title, items }] : [];
-      }) ?? [];
+      proposal?.assessment.perItem === 'accepted'
+        ? proposal.groups.flatMap((group) => {
+            const items = group.lines.flatMap((line) => {
+              const persisted = products.get(line.objectID);
+              const raw = persisted?.raw;
+              const product = normalize(raw);
+              return product
+                ? [{ product, why: line.explanation, assessment: 'compliant' as const }]
+                : [];
+            });
+            return items.length ? [{ title: group.title, items }] : [];
+          })
+        : [];
     const proposedLooks =
       proposal?.kind === 'complete_looks'
         ? proposal.groups.map((group) => ({
@@ -148,6 +143,11 @@ export function createConciergeWorkspaceSession(options: {
       products: state.products.flatMap(entry).filter((item): item is ProductEntry => item !== null),
       selectionRecords: [...selectedProducts.values()],
       discoveries: groups,
+      discoveryUnavailable:
+        proposal?.kind === 'product_groups' &&
+        (proposal.assessment.perItem !== 'accepted' ||
+          groups.reduce((count, group) => count + group.items.length, 0) !==
+            proposal.groups.reduce((count, group) => count + group.lines.length, 0)),
       proposedLooks,
       activeView: state.activeView ?? 'discover',
       setView: (activeView) => transact((current) => ({ ...current, activeView })),

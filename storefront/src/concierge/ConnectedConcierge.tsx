@@ -12,7 +12,7 @@ import {
   type UIEvent,
 } from 'react';
 import { useChat } from 'react-instantsearch';
-import type { ChatOnFinishCallback, UIMessage } from 'instantsearch.js/es/lib/ai-lite';
+import type { ChatOnErrorCallback, ChatOnFinishCallback, UIMessage } from 'instantsearch.js/es/lib/ai-lite';
 import Markdown from 'markdown-to-jsx';
 import { X } from 'lucide-react';
 import { ShoppingWorkspace } from '../ShoppingWorkspace';
@@ -27,6 +27,7 @@ import type { ShopperMessage } from '../../shared/concierge/state/updateShopping
 import { applyBriefOperationsV3, undoBriefV3 } from '../../shared/briefState.js';
 import { buildTurnContext } from './turnContext.js';
 import { canonicalBlogUrlsFromMessages, verifiedBlogHref } from './verifiedBlogLinks.js';
+import { recordTurnOutcome } from '../telemetry';
 
 type TurnFinish = {
   messages: UIMessage[];
@@ -183,16 +184,56 @@ export function getConnectedChatPersistenceOptions(missionId: string) {
   return { id: missionId, persistence: true as const };
 }
 
-type CompletionReceipt = { version: 1; assistantMessageIds: string[] };
-
-function completionReceiptKey(missionId: string) {
-  return `jtv-concierge-completed-${missionId}`;
+/**
+ * Reveal persisted completed answers after a reload. The SDK fills messages from
+ * storage during widget init, which can land after this reconciliation's first
+ * run, so the reconciliation reveals whatever eligible answers are already
+ * present on each run and stays armed (without consuming itself) until every
+ * receipt id has arrived — a stale receipt id that never arrives must not
+ * suppress the valid answers that did.
+ */
+export function reconcileRestoredReveal(
+  hydratedId: string | null,
+  messages: readonly UIMessage[],
+  storage: Storage,
+): { hydratedId: string | null; revealed: string[] } {
+  if (hydratedId === RECEIPT_RECONCILED) return { hydratedId, revealed: [] };
+  migrateLegacyCompletionReceipts(storage, messages);
+  const completedIds = readCompletedAssistantMessageIds(storage);
+  const revealed = messages
+    .filter((message) => completedIds.has(message.id) && isRestoredAssistantMessage(message))
+    .map((message) => message.id);
+  // Legacy keys only matter while the transcript may still be empty because
+  // hydration has not landed: settling on an empty transcript would delete
+  // them before their ids could ever be migrated.
+  const waitingForHydration = messages.length === 0 && legacyCompletionReceiptKeys(storage).length > 0;
+  const allArrived =
+    !waitingForHydration &&
+    [...completedIds].every((id) => messages.some((message) => message.id === id));
+  if (!allArrived) return { hydratedId, revealed };
+  removeLegacyCompletionReceipts(storage);
+  return { hydratedId: RECEIPT_RECONCILED, revealed };
 }
 
-export function readCompletedAssistantMessageIds(storage: Storage, missionId: string) {
+type CompletionReceipt = { version: 1; assistantMessageIds: string[] };
+
+/**
+ * The completion receipt is session-scoped, deliberately not keyed by the mission
+ * id: the workspace session and the shopping snapshot hold different mission ids,
+ * and the snapshot's id can be replaced mid-turn, so a mission-keyed receipt is
+ * written under an id that no longer exists after a reload.
+ */
+const COMPLETION_RECEIPT_KEY = 'jtv-concierge-completed-assistants';
+const RECEIPT_RECONCILED = 'reconciled';
+
+function completionReceiptKey() {
+  return COMPLETION_RECEIPT_KEY;
+}
+
+export function readCompletedAssistantMessageIds(storage: Storage) {
   try {
     const parsed = JSON.parse(
-      storage.getItem(completionReceiptKey(missionId)) ?? 'null',
+      storage.getItem(completionReceiptKey()) ?? 'null',
     ) as Partial<CompletionReceipt> | null;
     return parsed?.version === 1 && Array.isArray(parsed.assistantMessageIds)
       ? new Set(parsed.assistantMessageIds.filter((id): id is string => typeof id === 'string'))
@@ -204,14 +245,13 @@ export function readCompletedAssistantMessageIds(storage: Storage, missionId: st
 
 export function recordCompletedAssistantMessage(
   storage: Storage,
-  missionId: string,
   assistantMessageId: string,
 ) {
-  const ids = readCompletedAssistantMessageIds(storage, missionId);
+  const ids = readCompletedAssistantMessageIds(storage);
   ids.add(assistantMessageId);
   try {
     storage.setItem(
-      completionReceiptKey(missionId),
+      completionReceiptKey(),
       JSON.stringify({ version: 1, assistantMessageIds: [...ids] } satisfies CompletionReceipt),
     );
   } catch {
@@ -219,16 +259,81 @@ export function recordCompletedAssistantMessage(
   }
 }
 
-export function clearCompletedAssistantMessages(storage: Storage, missionId: string) {
+export function clearCompletedAssistantMessages(storage: Storage) {
   try {
-    storage.removeItem(completionReceiptKey(missionId));
+    storage.removeItem(completionReceiptKey());
   } catch {
     // Storage failures must not block the mission reset itself.
   }
 }
 
-export function visibleConnectedTranscript(messages: UIMessage[], resetting: boolean) {
-  return resetting ? [] : messages;
+/**
+ * Upgrade path from the pre-fix mission-keyed completion receipts. Legacy keys
+ * were written under a mission id that the snapshot could replace mid-turn, so
+ * their ids are only trustworthy when they match the current SDK transcript AND
+ * pass the same completed-answer predicate the session receipt uses. Matching
+ * ids are merged into the session receipt; the legacy keys themselves are
+ * removed only at the reconciliation's terminal run so a not-yet-hydrated
+ * transcript can still migrate on a later pass.
+ */
+const LEGACY_RECEIPT_PREFIX = 'jtv-concierge-completed-';
+
+export function legacyCompletionReceiptKeys(storage: Storage): string[] {
+  const keys: string[] = [];
+  try {
+    for (let index = 0; index < storage.length; index++) {
+      const key = storage.key(index);
+      if (key && key.startsWith(LEGACY_RECEIPT_PREFIX) && key !== completionReceiptKey())
+        keys.push(key);
+    }
+  } catch {
+    // Storage unavailable: nothing to migrate.
+  }
+  return keys;
+}
+
+export function migrateLegacyCompletionReceipts(storage: Storage, messages: readonly UIMessage[]) {
+  const legacyIds = legacyCompletionReceiptKeys(storage).flatMap((key) => {
+    try {
+      const parsed = JSON.parse(storage.getItem(key) ?? 'null') as Partial<CompletionReceipt> | null;
+      return parsed?.version === 1 && Array.isArray(parsed.assistantMessageIds)
+        ? parsed.assistantMessageIds.filter((id): id is string => typeof id === 'string')
+        : [];
+    } catch {
+      return [];
+    }
+  });
+  const alreadyRecorded = readCompletedAssistantMessageIds(storage);
+  const eligible = new Set(
+    messages
+      .filter(
+        (message) =>
+          legacyIds.includes(message.id) &&
+          isRestoredAssistantMessage(message) &&
+          !alreadyRecorded.has(message.id),
+      )
+      .map((message) => message.id),
+  );
+  eligible.forEach((id) => recordCompletedAssistantMessage(storage, id));
+  return [...eligible];
+}
+
+function removeLegacyCompletionReceipts(storage: Storage) {
+  legacyCompletionReceiptKeys(storage).forEach((key) => {
+    try {
+      storage.removeItem(key);
+    } catch {
+      // Best effort cleanup; leftover keys are harmless and tab-scoped.
+    }
+  });
+}
+
+export function visibleConnectedTranscript(
+  messages: UIMessage[],
+  resetting: boolean,
+  hiddenPriorMessageIds: ReadonlySet<string> = new Set(),
+) {
+  return resetting ? [] : messages.filter((message) => !hiddenPriorMessageIds.has(message.id));
 }
 
 function latestAssistant(messages: readonly UIMessage[]) {
@@ -252,13 +357,17 @@ export function parseVerifiedProductLink(
 }
 
 /** Fixed UI status, never presented as generated Concierge language. */
-export function getConnectedTurnSystemNotice(messages: readonly UIMessage[], finish: TurnOutcome) {
+export function getConnectedTurnSystemNotice(
+  messages: readonly UIMessage[],
+  finish: TurnOutcome,
+  hasTransportError = false,
+) {
   const assistant = latestAssistant(messages);
   const text = assistant ? messageText(assistant) : '';
   if (text.startsWith('[System notice]')) return text;
   if (finish?.isAbort)
     return '[System notice] This request was stopped before a complete response. Existing product choices remain.';
-  if (finish?.isError || hasFailedTool(messages))
+  if (finish?.isError || hasFailedTool(messages) || hasTransportError)
     return '[System notice] This request could not be completed. Existing product choices remain.';
   return '[System notice] This request did not produce a complete response. Existing product choices remain.';
 }
@@ -366,6 +475,9 @@ export function ConnectedConcierge({
   const [resetting, setResetting] = useState(false);
   const [error, setError] = useState('');
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
+  const [hiddenPriorMessageIds, setHiddenPriorMessageIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [systemNotices, setSystemNotices] = useState<string[]>([]);
   const [section, setSection] = useState<'conversation' | 'products'>('conversation');
   const [focusProductId, setFocusProductId] = useState<string | null>(null);
@@ -542,29 +654,48 @@ export function ConnectedConcierge({
       isError: value.isError || value.isDisconnect,
     };
   }, []);
+  /**
+   * Transport/stream failures never fire onFinish (the SDK's createStream
+   * rejection path sets error state and calls onError instead), and the send
+   * closure's `chat` snapshot is rendered before the error lands, so the only
+   * reliable transport signal is this ref. Read like finishRef.
+   */
+  const chatErrorRef = useRef<Error | null>(null);
+  const onChatError = useCallback<ChatOnErrorCallback>((error) => {
+    chatErrorRef.current = error;
+  }, []);
+  /** Correlates this page's chat requests with the server's request log. Metadata only. */
+  const chatRequestId = useRef(crypto.randomUUID());
   const chat = useChat<UIMessage>({
     ...chatPersistenceOptions,
-    transport: { api: '/api/chat' },
+    transport: {
+      api: '/api/chat',
+      headers: { 'x-jtv-request-id': chatRequestId.current },
+    },
     context: chatContext,
     tools,
     onFinish,
+    onError: onChatError,
     requiresSearch: false,
   });
 
   const hydratedTranscriptId = useRef<string | null>(null);
   useEffect(() => {
-    if (hydratedTranscriptId.current === chatPersistenceOptions.id) return;
-    hydratedTranscriptId.current = chatPersistenceOptions.id;
-    const completedIds = readCompletedAssistantMessageIds(safeStorage(), chatPersistenceOptions.id);
-    const restored = chat.messages.filter(
-      (message) => completedIds.has(message.id) && isRestoredAssistantMessage(message),
+    const reconciliation = reconcileRestoredReveal(
+      hydratedTranscriptId.current,
+      chat.messages,
+      safeStorage(),
     );
-    if (!restored.length) return;
+    hydratedTranscriptId.current = reconciliation.hydratedId;
+    if (!reconciliation.revealed.length) return;
     setRevealed((previous) => {
       const next = new Set(previous);
-      restored.forEach((message) => next.add(message.id));
+      reconciliation.revealed.forEach((id) => next.add(id));
       return next.size === previous.size ? previous : next;
     });
+    // chatPersistenceOptions.id stays a dependency on purpose: a mid-turn
+    // mission-id swap should re-run the reconciliation even though the body
+    // no longer reads the id (the receipt is session-scoped).
   }, [chat.messages, chatPersistenceOptions.id]);
 
   const onSystemNotice = useCallback((text: string) => {
@@ -582,6 +713,7 @@ export function ConnectedConcierge({
       latestTurn.current = { turnId, sourceMessageId };
       shopperMessage.current = { id: sourceMessageId, text };
       finishRef.current = null;
+      chatErrorRef.current = null;
       runtime.beginTurn(turnId, sourceMessageId);
       setError('');
       setSystemNotices([]);
@@ -608,16 +740,28 @@ export function ConnectedConcierge({
           const committed = await runtime.finishTurnAndPersist(turnId, 'completed');
           const presentationAttempted = runtime.hadPresentationAttempt();
           if (presentationAttempted && !committed) {
+            recordTurnOutcome(turnId, chatRequestId.current, {
+              finishFired: !!finish,
+              isAbort: false,
+              isError: false,
+              decision: 'validated-miss',
+            });
             runtime.endTurn(turnId);
             onSystemNotice(
               '[System notice] This request did not produce a validated product selection. Existing product choices remain.',
             );
             return;
           }
+          recordTurnOutcome(turnId, chatRequestId.current, {
+            finishFired: !!finish,
+            isAbort: false,
+            isError: false,
+            decision: 'completed',
+          });
           runtime.endTurn(turnId);
           const assistant = latestAssistant(messages);
           if (assistant) {
-            recordCompletedAssistantMessage(safeStorage(), chatPersistenceOptions.id, assistant.id);
+            recordCompletedAssistantMessage(safeStorage(), assistant.id);
             setRevealed((previous) => new Set(previous).add(assistant.id));
           }
         } else {
@@ -629,18 +773,43 @@ export function ConnectedConcierge({
               failedTool: hasFailedTool(messages),
               messageCount: messages.length,
             });
+          // The SDK resolves sendMessage without firing onFinish when the
+          // stream request itself fails (abstract-chat.js swallows the
+          // rejection into chat.error via onError), so the error ref is the
+          // only signal that separates a transport failure from an agent turn
+          // that stopped short. Mislabelling the former as the latter sent
+          // this defect unclassified for days.
+          const transportError = !finish && chatErrorRef.current !== null;
+          recordTurnOutcome(turnId, chatRequestId.current, {
+            finishFired: !!finish,
+            isAbort: finish?.isAbort ?? false,
+            isError: finish?.isError ?? false,
+            decision: finish?.isAbort
+              ? 'aborted-notice'
+              : finish?.isError || hasFailedTool(messages)
+                ? 'failed-notice'
+                : transportError
+                  ? 'transport-error'
+                  : 'incomplete-notice',
+          });
           runtime.finishTurn(
             turnId,
-            finish?.isAbort ? 'aborted' : finish?.isError ? 'error' : 'exhausted',
+            finish?.isAbort ? 'aborted' : finish?.isError || transportError ? 'error' : 'exhausted',
           );
           runtime.endTurn(turnId);
-          onSystemNotice(getConnectedTurnSystemNotice(messages, finish));
+          onSystemNotice(getConnectedTurnSystemNotice(messages, finish, transportError));
         }
       } catch (cause) {
         if (import.meta.env.DEV)
           console.warn(
             `JTV Concierge send failed: ${cause instanceof Error ? cause.name : typeof cause}: ${cause instanceof Error ? cause.message.slice(0, 180) : 'unknown'}`,
           );
+        recordTurnOutcome(turnId, chatRequestId.current, {
+          finishFired: finishRef.current !== null,
+          isAbort: false,
+          isError: true,
+          decision: 'transport-error',
+        });
         runtime.finishTurn(turnId, 'error');
         runtime.endTurn(turnId);
         const failedMessages = (finishRef.current as TurnFinish | null)?.messages ?? chat.messages;
@@ -651,13 +820,13 @@ export function ConnectedConcierge({
         setPending(null);
       }
     },
-    [blocked, chat, chatPersistenceOptions.id, onSystemNotice, pending, runtime],
+    [blocked, chat, onSystemNotice, pending, runtime],
   );
 
   const startNewConversation = useCallback(async () => {
     if (resettingRef.current) return;
-    const previousMissionId = chatPersistenceOptions.id;
     setResetting(true);
+    const priorMessageIds = chat.messages.map((message) => message.id);
     const result = await resetConnectedConversation(
       resettingRef,
       async () => {
@@ -681,7 +850,8 @@ export function ConnectedConcierge({
       );
       return;
     }
-    clearCompletedAssistantMessages(safeStorage(), previousMissionId);
+    clearCompletedAssistantMessages(safeStorage());
+    setHiddenPriorMessageIds((previous) => new Set([...previous, ...priorMessageIds]));
     finishRef.current = null;
     shopperMessage.current = null;
     latestTurn.current = { turnId: '', sourceMessageId: '' };
@@ -691,8 +861,8 @@ export function ConnectedConcierge({
     setSystemNotices([]);
     setRevealed(new Set());
     setSection('conversation');
-  }, [chat, chatPersistenceOptions.id, pending, runtime]);
-  const visibleMessages = visibleConnectedTranscript(chat.messages, resetting);
+  }, [chat, pending, runtime]);
+  const visibleMessages = visibleConnectedTranscript(chat.messages, resetting, hiddenPriorMessageIds);
   const pendingSourceIndex = pending
     ? visibleMessages.findIndex(
         (message) => message.role === 'user' && message.id === pending.sourceMessageId,

@@ -116,7 +116,7 @@ it('shows a missing value only when another compared product supplies that field
   expect(html).not.toContain('Gemstone shape');
   expect(html).not.toContain('Gemstone dimensions');
 });
-it('renders curated descriptions safely without literal markdown delimiters', () => {
+it('keeps category-level conversation prose out of compact Discover product tiles', () => {
   mock.state = {
     ...state('discover'),
     displayIntro: 'Choose **blue** <script>bad</script>',
@@ -124,7 +124,8 @@ it('renders curated descriptions safely without literal markdown delimiters', ()
   };
   const html = renderToStaticMarkup(<ProductWorkspace />);
   expect(html).not.toContain('Choose');
-  expect(html).toContain('<strong>Small</strong>');
+  expect(html).not.toContain('Small');
+  expect(html).not.toContain('**Small**');
   expect(html).not.toContain('<script>');
 });
 
