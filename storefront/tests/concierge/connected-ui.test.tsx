@@ -5,6 +5,7 @@ import {
   connectedProgressLabel,
   getConnectedTurnSystemNotice,
   resetConnectedConversation,
+  visibleConnectedTranscript,
 } from '../../src/concierge/ConnectedConcierge';
 
 describe('connected Concierge progress', () => {
@@ -88,6 +89,17 @@ describe('connected Concierge progress', () => {
 });
 
 describe('connected Concierge reset gate', () => {
+  it('does not reveal prior mission messages while the SDK clears a new conversation', () => {
+    const oldUser = { id: 'shopper-old', role: 'user', parts: [{ type: 'text', text: 'Old question' }] };
+    const oldAssistant = {
+      id: 'assistant-old', role: 'assistant', parts: [{ type: 'text', text: 'Old answer' }],
+    };
+    const newUser = { id: 'shopper-new', role: 'user', parts: [{ type: 'text', text: 'New question' }] };
+    const messages = [oldUser, oldAssistant, newUser] as UIMessage[];
+    const oldIds = new Set(['shopper-old', 'assistant-old']);
+    expect(visibleConnectedTranscript(messages, true, oldIds)).toEqual([]);
+    expect(visibleConnectedTranscript(messages, false, oldIds)).toEqual([newUser]);
+  });
   it('blocks an immediate send while New conversation persistence is settling', () => {
     expect(canSubmitConnectedTurn('Find a ring', false, true)).toBe(false);
     expect(canSubmitConnectedTurn('Find a ring', false, false)).toBe(true);

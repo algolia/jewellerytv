@@ -328,8 +328,12 @@ function removeLegacyCompletionReceipts(storage: Storage) {
   });
 }
 
-export function visibleConnectedTranscript(messages: UIMessage[], resetting: boolean) {
-  return resetting ? [] : messages;
+export function visibleConnectedTranscript(
+  messages: UIMessage[],
+  resetting: boolean,
+  hiddenPriorMessageIds: ReadonlySet<string> = new Set(),
+) {
+  return resetting ? [] : messages.filter((message) => !hiddenPriorMessageIds.has(message.id));
 }
 
 function latestAssistant(messages: readonly UIMessage[]) {
@@ -471,6 +475,9 @@ export function ConnectedConcierge({
   const [resetting, setResetting] = useState(false);
   const [error, setError] = useState('');
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
+  const [hiddenPriorMessageIds, setHiddenPriorMessageIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [systemNotices, setSystemNotices] = useState<string[]>([]);
   const [section, setSection] = useState<'conversation' | 'products'>('conversation');
   const [focusProductId, setFocusProductId] = useState<string | null>(null);
@@ -819,6 +826,7 @@ export function ConnectedConcierge({
   const startNewConversation = useCallback(async () => {
     if (resettingRef.current) return;
     setResetting(true);
+    const priorMessageIds = chat.messages.map((message) => message.id);
     const result = await resetConnectedConversation(
       resettingRef,
       async () => {
@@ -843,6 +851,7 @@ export function ConnectedConcierge({
       return;
     }
     clearCompletedAssistantMessages(safeStorage());
+    setHiddenPriorMessageIds((previous) => new Set([...previous, ...priorMessageIds]));
     finishRef.current = null;
     shopperMessage.current = null;
     latestTurn.current = { turnId: '', sourceMessageId: '' };
@@ -853,7 +862,7 @@ export function ConnectedConcierge({
     setRevealed(new Set());
     setSection('conversation');
   }, [chat, pending, runtime]);
-  const visibleMessages = visibleConnectedTranscript(chat.messages, resetting);
+  const visibleMessages = visibleConnectedTranscript(chat.messages, resetting, hiddenPriorMessageIds);
   const pendingSourceIndex = pending
     ? visibleMessages.findIndex(
         (message) => message.role === 'user' && message.id === pending.sourceMessageId,
