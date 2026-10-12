@@ -29,6 +29,7 @@ const PRODUCT_FIELDS = new Set([
   'Catalog_ConsumerProductCategoryDisplayNames',
   'Catalog_PrimaryGemstoneAndPearlColorGroups',
   'Catalog_GemstoneInformation.GemstoneColorGroup',
+  'Catalog_GemstoneInformationPrimary.GemstoneName',
   'Catalog_Motif',
   'Catalog_WatchPrimaryDialPrimaryColor',
   'Catalog_WatchBandType',

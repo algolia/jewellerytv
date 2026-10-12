@@ -201,6 +201,31 @@ describe('retrieve_evidence', () => {
       { field: 'Catalog_GemstoneInformation.GemstoneColorGroup', operator: 'eq', value: 'Blue' },
     ]);
   });
+  it('filters a requested primary gemstone by its live catalogue name', async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () =>
+        state([
+          ring,
+          {
+            field: 'gemstone',
+            scope: { kind: 'mission', key: null },
+            value: {
+              kind: 'facet',
+              attribute: 'Catalog_GemstoneInformationPrimary.GemstoneName',
+              values: ['Diamond'],
+              operator: 'any',
+            },
+          },
+        ]),
+    });
+    await retrieve(productInput({ target: null }));
+    expect(search.mock.calls[0][0].filters).toEqual([
+      { field: 'Catalog_ProductType', operator: 'eq', value: 'Ring' },
+      { field: 'Catalog_GemstoneInformationPrimary.GemstoneName', operator: 'eq', value: 'Diamond' },
+    ]);
+  });
   it('keeps blue watch dials and metal bracelet requirements on watch attributes', async () => {
     const search = vi.fn().mockResolvedValue([
       {

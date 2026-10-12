@@ -42,12 +42,13 @@ const { writeFileSync } = await import('node:fs');
 writeFileSync(`${OUT}/04-visible-text.txt`, visibleText);
 writeFileSync(`${OUT}/05-network.json`, JSON.stringify(network, null, 2));
 writeFileSync(`${OUT}/06-console-errors.json`, JSON.stringify(errors, null, 2));
-const helpRequested = network.some((e) => e.kind === 'response' && e.status === 200);
+const anyEvidenceResponse = network.some((e) => e.kind === 'response' && e.status === 200);
 console.log(
   JSON.stringify(
     {
       screenshots: ['01-initial.png', '02-question-typed.png', '03-after-answer.png'],
       apiCalls: network.length,
+      anyEvidenceResponse,
       helpSourceInTranscript: visibleText.includes('help_content'),
       consoleErrors: errors.length,
       replyExcerpt: visibleText.slice(-600),

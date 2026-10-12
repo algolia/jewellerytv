@@ -66,6 +66,7 @@ describe('grouped discovery workspace', () => {
     expect(html.match(/data-product-id="a"/g)?.length).toBe(1);
     expect(html.match(/data-product-id=/g)?.length).toBe(6);
     expect(html).toContain('Three different types, two variations of each type.');
+    expect(html).toContain('Explore each style, then save or compare the pieces you like.');
     expect(html).toContain('Everyday');
     expect(html).toContain('Statement');
     expect(html).toContain('Gift');
@@ -83,6 +84,7 @@ describe('grouped discovery workspace', () => {
     ];
     const html = renderToStaticMarkup(<ProductWorkspace model={workspace} />);
     expect(html).not.toContain('Three different types, two variations of each type.');
+    expect(html).not.toContain('Explore each style, then save or compare the pieces you like.');
     expect(html).not.toContain('Showing available matching pieces.');
   });
 
