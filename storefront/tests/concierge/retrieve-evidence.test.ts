@@ -2004,3 +2004,157 @@ describe('discovery style overview and batched style search', () => {
     expect(result.styleResults![0]).toMatchObject({ eligibleCount: 2, backfillUsed: false });
   });
 });
+
+describe('ground-truth audit fixes (2026-10-13)', () => {
+  const broadRing = {
+    field: 'product_type',
+    scope: { kind: 'mission', key: null },
+    value: { kind: 'facet', attribute: 'Catalog_ProductType', values: ['Ring'], operator: 'any' },
+  };
+  const productHit = (patch: Record<string, unknown> = {}) => ({
+    objectID: 'R1',
+    Catalog_ProductType: 'Ring',
+    Catalog_TitleDescription: 'Test Ring',
+    Catalog_LongDescription: 'A ring for testing eligibility gates.',
+    Catalog_Condition: 'First Quality',
+    Inventory_InStock: true,
+    Pricing_ActivePrice: 299.99,
+    ...patch,
+  });
+  const auditVocabulary = {
+    values: {
+      'Catalog_ProductType': ['Ring'],
+      'Catalog_RingType': ['Halo', 'Solitaire', 'Tennis'],
+      'Catalog_GemstoneInformationPrimary.GemstoneName': ['Diamond', 'Moissanite'],
+    } as Record<string, string[]>,
+    builtAt: '2026-10-13T00:00:00.000Z',
+    hasValue: (attribute: string, value: string) =>
+      (auditVocabulary.values[attribute] ?? []).includes(value),
+    availableValues: (attribute: string) => auditVocabulary.values[attribute] ?? [],
+    isFilterable: (attribute: string) => attribute in auditVocabulary.values,
+  };
+
+  it('F5: compiles multi-value gemstone requirements as one live-vocabulary OR group', async () => {
+    const search = vi.fn().mockResolvedValue([
+      productHit({ objectID: 'D1', Catalog_TitleDescription: 'Diamond Ring' }),
+      productHit({ objectID: 'M1', Catalog_TitleDescription: 'Moissanite Ring' }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () =>
+        state([
+          broadRing,
+          {
+            field: 'gemstone',
+            scope: { kind: 'mission', key: null },
+            value: {
+              kind: 'facet',
+              attribute: 'Catalog_GemstoneInformationPrimary.GemstoneName',
+              values: ['Diamond', 'Moissanite'],
+              operator: 'any',
+            },
+          },
+        ]),
+      vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
+    });
+    const result = await retrieve(productInput({ target: null, count: 5 }));
+    expect(result.status).toBe('ok');
+    expect(result.effectiveFilters).toContainEqual({
+      field: 'Catalog_GemstoneInformationPrimary.GemstoneName',
+      operator: 'in',
+      value: ['Diamond', 'Moissanite'],
+    });
+    expect(result.records.map((r) => r.objectID)).toEqual(['D1', 'M1']);
+  });
+
+  it('F5: reports gemstone values the live catalogue does not carry as unavailable, not a silent filter', async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () =>
+        state([
+          broadRing,
+          {
+            field: 'gemstone',
+            scope: { kind: 'mission', key: null },
+            value: {
+              kind: 'facet',
+              attribute: 'Catalog_GemstoneInformationPrimary.GemstoneName',
+              values: ['Diamond', 'Unobtainium'],
+              operator: 'any',
+            },
+          },
+        ]),
+      vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
+    });
+    const result = await retrieve(productInput({ target: null }));
+    expect(result.status).toBe('requirement_unavailable');
+    expect(result.unavailableRequirements).toContainEqual(
+      expect.objectContaining({
+        field: 'gemstone',
+        attribute: 'Catalog_GemstoneInformationPrimary.GemstoneName',
+        requested: ['Unobtainium'],
+      }),
+    );
+  });
+
+  it('G2: rejects a styleBatches value outside the live vocabulary and teaches the valid options', async () => {
+    const search = vi.fn();
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+      vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        styleBatches: [{ attribute: 'Catalog_RingType', value: 'Not-A-Style' }],
+      }),
+    );
+    expect(search).not.toHaveBeenCalled();
+    expect(result.unavailableRequirements).toContainEqual(
+      expect.objectContaining({
+        attribute: 'Catalog_RingType',
+        requested: ['Not-A-Style'],
+        availableValues: ['Halo', 'Solitaire', 'Tennis'],
+      }),
+    );
+  });
+
+  it('G2: still accepts styleBatches values the live vocabulary carries', async () => {
+    const search = vi.fn().mockResolvedValue([
+      productHit({ objectID: 'H1', Catalog_TitleDescription: 'Halo Ring One' }),
+      productHit({ objectID: 'H2', Catalog_TitleDescription: 'Halo Ring Two' }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+      vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }],
+      }),
+    );
+    expect(result.status).toBe('ok');
+    expect(result.styleResults![0]).toMatchObject({ value: 'Halo', eligibleCount: 2 });
+  });
+
+  it('cap: accepts candidate counts up to 24 and returns up to that many eligible items', async () => {
+    const many = Array.from({ length: 24 }, (_, i) =>
+      productHit({ objectID: `C${i}`, Catalog_TitleDescription: `Ring ${i}` }),
+    );
+    const search = vi.fn().mockResolvedValue(many);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+      vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
+    });
+    const result = await retrieve(
+      productInput({ target: null, count: 24, styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }] }),
+    );
+    expect(result.status).toBe('ok');
+    expect(result.styleResults![0].eligibleCount).toBe(24);
+  });
+});

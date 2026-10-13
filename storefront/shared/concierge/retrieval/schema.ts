@@ -20,7 +20,7 @@ export const SUPPORTED_PRODUCT_TYPES = [
 ] as const;
 const common = {
   query: z.string().max(300),
-  count: z.number().int().min(1).max(12),
+  count: z.number().int().min(1).max(24),
   exactObjectIDs: z.array(exactObjectId).min(1).max(3).nullable().default(null),
   missionId: boundedId,
   expectedRevision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),

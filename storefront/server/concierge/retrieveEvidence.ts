@@ -34,6 +34,9 @@ const PRODUCT_FIELDS = new Set([
   'Catalog_PrimaryGemstoneAndPearlColorGroups',
   'Catalog_GemstoneInformation.GemstoneColorGroup',
   'Catalog_GemstoneInformationPrimary.GemstoneName',
+  'Catalog_PearlInformationPrimary.PearlFullName',
+  'Catalog_PearlInformation.PearlFullName',
+  'Catalog_NecklaceType',
   'Catalog_Motif',
   'Catalog_WatchPrimaryDialPrimaryColor',
   'Catalog_WatchBandType',
@@ -607,6 +610,32 @@ function compile(
           availableValues: vocabulary.availableValues(attribute),
         });
       else filters.push({ field: f.value.attribute, operator: 'eq', value: f.value.values[0] });
+    } else if (
+      f.value.operator === 'any' &&
+      (f.field === 'pearl' || f.field === 'gemstone')
+    ) {
+      // Multi-value pearl and gemstone requirements ride the full live
+      // vocabulary as one OR group (pearl: Craig-feedback Task 01; gemstone
+      // parity from the 2026-10-13 ground-truth audit F5). Every value the
+      // writer accepted is an exact value the index carries today. Without a
+      // live vocabulary this path stays closed — a frozen copy of the value
+      // list is exactly what the runtime-vocabulary law forbids.
+      if (!vocabulary)
+        unresolved.push({
+          field: f.field,
+          reason: 'Multi-value selection needs the live catalogue vocabulary',
+        });
+      else {
+        const missing = f.value.values.filter((value) => !vocabulary.hasValue(attribute, value));
+        if (missing.length)
+          unavailable.push({
+            field: f.field,
+            attribute,
+            requested: missing,
+            availableValues: vocabulary.availableValues(attribute),
+          });
+        else filters.push({ field: attribute, operator: 'in', value: [...f.value.values] });
+      }
     } else
       unresolved.push({
         field: f.field,
@@ -903,11 +932,17 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
         // deficient style. Eligibility is verified per record; counts never
         // claim more than verified records.
         const styleResults: StyleBatchResult[] = [];
+        const styleUnavailable: UnavailableRequirement[] = [];
         const records: EvidenceRecord[] = [];
         const seenIds = new Set<string>();
         const seenSignatures = new Set<string>();
         const preOwnedSupported = briefSupportsPreOwned(state);
-        const candidateCap = 12;
+        // 24 candidates per style: per-record verification (stock, condition,
+        // material, fit) can only keep what the search returned, and a small
+        // candidate pool starves verification when the catalogue's natural
+        // order is homogeneous (measured 2026-10-13: a 12-deep all-silver ring
+        // pool kept zero gold pieces though the index holds thousands).
+        const candidateCap = 24;
         for (const batch of styleBatches!) {
           if (vocabularySnapshot && !vocabularySnapshot.isFilterable(batch.attribute)) {
             styleResults.push({
@@ -916,6 +951,29 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
               requestedCount: input.count,
               eligibleCount: 0,
               rejected: [{ objectID: '', reason: 'style_attribute_not_filterable' }],
+              backfillUsed: false,
+            });
+            continue;
+          }
+          // G2 hardening (ground-truth audit 2026-10-13): a style value the live
+          // catalogue does not carry can never match; refuse it with the valid
+          // options instead of burning a search that reads as an empty style.
+          if (
+            vocabularySnapshot &&
+            !vocabularySnapshot.hasValue(batch.attribute, batch.value)
+          ) {
+            styleUnavailable.push({
+              field: 'style_batches',
+              attribute: batch.attribute,
+              requested: [batch.value],
+              availableValues: vocabularySnapshot.availableValues(batch.attribute).slice(0, 20),
+            });
+            styleResults.push({
+              attribute: batch.attribute,
+              value: batch.value,
+              requestedCount: input.count,
+              eligibleCount: 0,
+              rejected: [{ objectID: '', reason: 'style_value_not_in_live_vocabulary' }],
               backfillUsed: false,
             });
             continue;
@@ -1078,7 +1136,7 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           [],
           records.slice(0, 36),
           undefined,
-          undefined,
+          styleUnavailable.length ? styleUnavailable : undefined,
           { styleResults },
         );
       } catch (error) {
