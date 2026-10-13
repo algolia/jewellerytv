@@ -201,6 +201,12 @@ function normalizeRetrieve(input: unknown) {
 }
 function normalizePresent(input: unknown) {
   const source = input && typeof input === 'object' ? (input as Record<string, unknown>) : {};
+  // The model occasionally emits the presentation fields flattened (no body wrapper)
+  // with an extra top-level explanation string. The published schema tolerates both
+  // forms, so this layer accepts them and drops the flourish instead of rejecting
+  // the whole call: a fatal SDK-level rejection kills the turn with no structured
+  // feedback, while a normalized payload keeps validation recoverable.
+  const flattened = source.body === undefined && source.kind !== undefined;
   const allowedRoot = new Set([
     'body',
     'missionId',
@@ -208,11 +214,16 @@ function normalizePresent(input: unknown) {
     'expectedEvidenceBatchRevision',
     'turnId',
     'proposalId',
+    ...(flattened ? (['kind', 'mode', 'groups', 'alternatives', 'explanation'] as const) : []),
   ]);
   if (Object.keys(source).some((key) => !allowedRoot.has(key)))
     throw new Error('semantic_presentation_unknown_field');
   const body =
-    source.body && typeof source.body === 'object' ? (source.body as Record<string, unknown>) : {};
+    flattened && typeof source.kind === 'string'
+      ? (source as Record<string, unknown>)
+      : source.body && typeof source.body === 'object'
+        ? (source.body as Record<string, unknown>)
+        : {};
   const normalizeLine = (value: unknown) => {
     if (!value || typeof value !== 'object' || Array.isArray(value))
       throw new Error('semantic_line_invalid');
