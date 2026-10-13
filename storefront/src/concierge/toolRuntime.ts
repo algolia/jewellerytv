@@ -474,6 +474,8 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
       count: number;
       exactObjectIDs?: string[] | null;
       target: null | { kind: 'item'; itemKey: string; productType: string };
+      styleOverview?: boolean;
+      styleBatches?: { attribute: string; value: string }[];
     },
     _toolCallId: string,
     signal?: AbortSignal,
@@ -497,6 +499,8 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
         count: raw.count,
         exactObjectIDs: raw.exactObjectIDs ?? null,
         target: raw.target,
+        ...(raw.styleOverview === undefined ? {} : { styleOverview: raw.styleOverview }),
+        ...(raw.styleBatches === undefined ? {} : { styleBatches: raw.styleBatches }),
         missionId: session.missionId,
         expectedRevision: session.brief.revision,
         turnId,

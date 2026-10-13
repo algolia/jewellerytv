@@ -303,6 +303,64 @@ describe('API-only Concierge client tool runtime', () => {
       ).status,
     ).toBe('invalid_input');
   });
+  it('forwards style overview and style batch requests to the evidence route', async () => {
+    const calls: unknown[] = [];
+    const runtime = createConciergeToolRuntime({
+      fetchVocabulary,
+      storage: memoryStorage(),
+      initialMissionId: 'mission-1',
+      getCurrentShopperMessage: () => shopper,
+      fetchEvidence: async (body) => {
+        calls.push(body);
+        return {
+          status: 'ok',
+          source: body.input.source,
+          missionId: body.input.missionId,
+          revision: body.input.expectedRevision,
+          expectedRevision: body.input.expectedRevision,
+          turnId: body.input.turnId,
+          effectiveFilters: [],
+          unresolved: [],
+          records: [],
+        };
+      },
+    });
+    runtime.beginTurn('turn-1', shopper.id);
+    const overview = await runtime.retrieveSemantic(
+      {
+        source: 'prod_catalog',
+        query: 'bracelets for everyday wear',
+        count: 12,
+        target: null,
+        styleOverview: true,
+      },
+      'call-overview',
+    );
+    expect(overview.status).toBe('ok');
+    const batches = await runtime.retrieveSemantic(
+      {
+        source: 'prod_catalog',
+        query: 'bracelets for everyday wear',
+        count: 2,
+        target: null,
+        styleBatches: [{ attribute: 'Catalog_BraceletType', value: 'Tennis' }],
+      },
+      'call-batches',
+    );
+    expect(batches.status).toBe('ok');
+    expect(
+      (calls[0] as { input: Record<string, unknown> }).input,
+    ).toMatchObject({ styleOverview: true });
+    expect((calls[0] as { input: Record<string, unknown> }).input).not.toHaveProperty(
+      'styleBatches',
+    );
+    expect(
+      (calls[1] as { input: Record<string, unknown> }).input,
+    ).toMatchObject({ styleBatches: [{ attribute: 'Catalog_BraceletType', value: 'Tennis' }] });
+    expect((calls[1] as { input: Record<string, unknown> }).input).not.toHaveProperty(
+      'styleOverview',
+    );
+  });
   it('advertises short turn-scoped aliases and resolves them to canonical evidence', async () => {
     const runtime = createConciergeToolRuntime({
       fetchVocabulary,
