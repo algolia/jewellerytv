@@ -1856,6 +1856,36 @@ describe('discovery style overview and batched style search', () => {
     expect(search).not.toHaveBeenCalled();
   });
 
+  it('scopes batched style searches by the style facet and hard filters, not the conversational query', async () => {
+    const queries: string[] = [];
+    const search = vi.fn(async ({ query }: { query: string }) => {
+      queries.push(query);
+      return [productHit({ objectID: `R${queries.length}`, Catalog_TitleDescription: `Style Ring ${queries.length}`, Catalog_RingType: 'Halo' })];
+    });
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        count: 2,
+        query: 'minimal silver bracelets around $250 for a younger sister',
+        styleBatches: [
+          { attribute: 'Catalog_RingType', value: 'Halo' },
+          { attribute: 'Catalog_RingType', value: 'Solitaire' },
+        ],
+      }),
+    );
+    expect(result.status).toBe('ok');
+    // A conversational sentence ("minimal silver bracelets for a younger sister")
+    // text-matches nothing and would waste a request per style before the backfill.
+    // The style facet plus the compiled hard filters define the column; the query
+    // must not restrict the candidate search.
+    expect(queries.length).toBeGreaterThanOrEqual(2);
+    expect(queries.every((q) => q === '')).toBe(true);
+  });
+
   it('searches each chosen style separately, filters eligibility, and reports per-style outcomes', async () => {
     const search = vi.fn(async ({ filters }: { filters: readonly { field: string; value?: unknown }[] }) => {
       const style = filters.find((f) => f.field === 'Catalog_RingType');

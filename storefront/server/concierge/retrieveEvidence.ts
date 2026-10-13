@@ -1016,7 +1016,14 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           };
           const firstHits = await options.search({
             source: input.source,
-            query: input.query,
+            // The batched call defines each column by the style facet plus the
+            // compiled hard filters. The conversational query text must not
+            // restrict the candidate search: it is agent language with recipient
+            // and phrasing words that text-match nothing, so the first pass
+            // would return zero hits and every style would need its backfill.
+            // Soft preferences still shape the outcome through per-record
+            // verification (material, fit) rather than text ranking.
+            query: '',
             count: candidateCap,
             exactObjectIDs: null,
             filters,
