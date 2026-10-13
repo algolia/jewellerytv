@@ -39,7 +39,7 @@ export function markWorkspaceImage(binding:WorkspaceTraceBinding,identity:string
 export function traceElapsed(trace:ClientTrace){const start=traceStarts.get(trace);return trace.streamCompletionMs??(start===undefined?0:Math.max(0,performance.now()-start))}
 
 /** Bounded, metadata-only turn outcome. Never shopper text, payloads or raw error messages. */
-export type TurnOutcomeRecord={turnId:string;requestId:string;startedAt:string;finishFired:boolean;isAbort:boolean;isError:boolean;decision:'completed'|'validated-miss'|'aborted-notice'|'failed-notice'|'incomplete-notice'|'transport-error'};
+export type TurnOutcomeRecord={turnId:string;requestId:string;startedAt:string;finishFired:boolean;isAbort:boolean;isError:boolean;decision:'completed'|'validated-miss'|'aborted-notice'|'failed-notice'|'incomplete-notice'|'transport-retry'|'transport-error'};
 export const turnOutcomes:TurnOutcomeRecord[]=[];
 /**
  * Record how a chat turn settled, correlated with the server log through the
