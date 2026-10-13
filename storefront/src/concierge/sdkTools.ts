@@ -253,12 +253,9 @@ function normalizePresent(input: unknown) {
           groups: Array.isArray(body.groups)
             ? body.groups.map((group) => {
                 const item = group as Record<string, unknown>;
-                if (
-                  Object.keys(item).some(
-                    (key) => key !== 'basis' && key !== 'items' && key !== 'mode',
-                  )
-                )
-                  throw new Error('semantic_group_unknown_field');
+                // The model sometimes adds body-level fields (alternatives,
+                // explanation) inside a group object (observed in connected
+                // journeys). Strip them; only basis and items carry meaning.
                 return {
                   basis: item.basis,
                   items: Array.isArray(item.items) ? item.items.map(normalizeLine) : [],

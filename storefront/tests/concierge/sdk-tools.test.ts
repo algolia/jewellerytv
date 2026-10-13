@@ -274,6 +274,46 @@ describe('installed SDK client-tool callback registration', () => {
     expect(submitted.addToolResult).toHaveBeenCalledWith({ output: { status: 'staged' } });
   });
 
+  it('strips group-level extras the model adds (observed chat-15 shape) instead of rejecting', async () => {
+    const presentSemantic = vi.fn(async () => ({ status: 'staged' }));
+    const tools = createSdkClientTools({
+      updateSemantic: vi.fn(async () => ({ status: 'applied' })),
+      retrieveSemantic: vi.fn(async () => ({ status: 'ok' })),
+      presentSemantic,
+      getActiveTurnToken: vi.fn(() => 9),
+      notePresentationAttempt: vi.fn(() => true),
+    } as unknown as Runtime);
+    const input = {
+      kind: 'product_groups',
+      mode: 'focused_choice',
+      groups: [
+        {
+          basis: { attribute: 'Catalog_BraceletType', value: 'Dainty' },
+          items: [
+            { evidenceRef: 'prod_catalog/b1/hash', quantity: 1, componentSlot: 'bracelet', explanation: 'pearl option' },
+            { evidenceRef: 'prod_catalog/b2/hash', quantity: 1, componentSlot: 'bracelet', explanation: 'wheat chain' },
+          ],
+          alternatives: null,
+          explanation: 'I narrowed the birthday directions to in-stock bracelets.',
+        },
+      ],
+    };
+    const submitted = call(tools.present_choices.onToolCall!, input);
+    await submitted.run();
+    expect(presentSemantic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          kind: 'product_groups',
+          mode: 'focused_choice',
+          groups: [expect.objectContaining({ basis: { attribute: 'Catalog_BraceletType', value: 'Dainty' } })],
+        }),
+      }),
+      'call-1',
+      9,
+    );
+    expect(submitted.addToolResult).toHaveBeenCalledWith({ output: { status: 'staged' } });
+  });
+
   it('passes a catalogue-backed group basis through to runtime', async () => {
     const presentSemantic = vi.fn(async () => ({ status: 'staged' }));
     const tools = createSdkClientTools({
