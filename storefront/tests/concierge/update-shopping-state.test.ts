@@ -39,6 +39,22 @@ const fixtureVocabulary = {
     'Catalog_GemstoneInformationPrimary.GemstoneName': ['Diamond', 'Ruby'],
     'Catalog_WatchPrimaryDialPrimaryColor': ['Blue'],
     'Catalog_WatchBandType': ['Bracelet'],
+    // Pearl vocabulary mirrors the live prod_catalog facet scan of 2026-10-12
+    // (read-only probe, .checkpoint/runs/craig-task01-pearl-2026-10-12/): ten
+    // distinct PearlFullName values on both pearl attributes.
+    'Catalog_PearlInformationPrimary.PearlFullName': [
+      'Akoya Pearl', 'Baroque Pearl', 'Blister Pearl', 'Freshwater Pearl',
+      'Genusis Pearls', 'Kasumiga Pearl', 'Mabe Pearl', 'Saltwater Pearl',
+      'South Sea Pearl', 'Tahitian Pearl',
+    ],
+    'Catalog_PearlInformation.PearlFullName': [
+      'Akoya Pearl', 'Baroque Pearl', 'Blister Pearl', 'Freshwater Pearl',
+      'Genusis Pearls', 'Kasumiga Pearl', 'Mabe Pearl', 'Saltwater Pearl',
+      'South Sea Pearl', 'Tahitian Pearl',
+    ],
+    'Catalog_NecklaceType': [
+      'Chain', 'Pendant', 'Strand', 'Statement', 'Tennis', 'Beaded',
+    ],
   } as Record<string, string[]>,
   builtAt: '2026-10-08T00:00:00.000Z',
   hasValue: (attribute: string, value: string) =>
@@ -986,5 +1002,233 @@ describe('update_shopping_state with live vocabulary', () => {
   it('still applies money and text facts without vocabulary (fail-open for non-catalogue facts)', async () => {
     const result = await updateShoppingStateBase(base(), add(), message, undefined);
     expect(result.result.status).toBe('applied');
+  });
+});
+
+/* Craig-feedback Task 01 (pearl evidence repair), red-first. The verified
+ * failure: the agent expressed "pearl" as a required gemstone TEXT fact, which
+ * no compiler can turn into a catalogue filter, and the shopper was told pearls
+ * could not be verified although the live index carries explicit pearl facets.
+ * Target behavior: a dedicated pearl field whose ONLY accepted encoding is a
+ * facet on an exact pearl attribute with live-vocabulary values, plus a
+ * necklace_type field for the classic-strand correction. */
+const livePearlNames = fixtureVocabulary.values['Catalog_PearlInformationPrimary.PearlFullName'];
+const pearlFact = (
+  id: string,
+  attribute: string,
+  values: string[],
+  overrides: Record<string, unknown> = {},
+) => ({
+  missionId: 'mission-1',
+  expectedRevision: 0,
+  operationId: id,
+  sourceMessageId: message.id,
+  operations: [
+    {
+      action: 'add',
+      factIds: [],
+      sourceQuote: 'pearl',
+      fact: {
+        id,
+        field: 'pearl',
+        value: { kind: 'facet', attribute, values, operator: 'any' },
+        scope: { kind: 'mission', key: null },
+        strength: 'requirement',
+        certainty: 'explicit',
+        ...overrides,
+      },
+    },
+  ],
+});
+const necklaceTypeFact = (id: string, values: string[]) => ({
+  missionId: 'mission-1',
+  expectedRevision: 0,
+  operationId: id,
+  sourceMessageId: message.id,
+  operations: [
+    {
+      action: 'add',
+      factIds: [],
+      sourceQuote: 'classic strands',
+      fact: {
+        id,
+        field: 'necklace_type',
+        value: { kind: 'facet', attribute: 'Catalog_NecklaceType', values, operator: 'any' },
+        scope: { kind: 'mission', key: null },
+        strength: 'requirement',
+        certainty: 'explicit',
+      },
+    },
+  ],
+});
+
+describe('pearl evidence facts (Craig Task 01)', () => {
+  it('accepts a named primary pearl facet with the exact live value', async () => {
+    const result = await updateShoppingState(
+      base(),
+      pearlFact('pearl-1', 'Catalog_PearlInformationPrimary.PearlFullName', ['Freshwater Pearl']),
+      { id: message.id, text: 'pearl strand' },
+    );
+    expect(result.result.status).toBe('applied');
+  });
+
+  it('accepts a generic primary pearl expressed as every live pearl value', async () => {
+    const result = await updateShoppingState(
+      base(),
+      pearlFact('pearl-2', 'Catalog_PearlInformationPrimary.PearlFullName', livePearlNames),
+      { id: message.id, text: 'pearl necklace' },
+    );
+    expect(result.result.status).toBe('applied');
+  });
+
+  it('accepts a pearl accent on the component-level pearl attribute', async () => {
+    const result = await updateShoppingState(
+      base(),
+      pearlFact('pearl-3', 'Catalog_PearlInformation.PearlFullName', ['Tahitian Pearl']),
+      { id: message.id, text: 'necklace with tahitian pearl accents' },
+    );
+    expect(result.result.status).toBe('applied');
+  });
+
+  it('rejects a pearl requirement expressed as free text', async () => {
+    const result = await updateShoppingState(
+      base(),
+      pearlFact('pearl-4', 'Catalog_PearlInformationPrimary.PearlFullName', ['Freshwater Pearl'], {
+        value: { kind: 'text', text: 'Pearl' },
+      }),
+      { id: message.id, text: 'pearl strand' },
+    );
+    expect(result.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
+  });
+
+  it('never forces pearls into a gemstone name attribute', async () => {
+    const result = await updateShoppingState(
+      base(),
+      pearlFact('pearl-5', 'Catalog_GemstoneInformationPrimary.GemstoneName', ['Pearl']),
+      { id: message.id, text: 'pearl strand' },
+    );
+    expect(result.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
+  });
+
+  it('rejects a pearl value absent from the live vocabulary with the specific code', async () => {
+    const result = await updateShoppingState(
+      base(),
+      pearlFact('pearl-6', 'Catalog_PearlInformationPrimary.PearlFullName', ['Imitation Pearl']),
+      { id: message.id, text: 'pearl strand' },
+    );
+    expect(result.result.failure?.code).toBe('VALUE_NOT_IN_LIVE_VOCABULARY');
+  });
+
+  it('rejects pearl facet operators other than any', async () => {
+    const result = await updateShoppingState(
+      base(),
+      pearlFact('pearl-7', 'Catalog_PearlInformationPrimary.PearlFullName', ['Freshwater Pearl'], {
+        value: {
+          kind: 'facet',
+          attribute: 'Catalog_PearlInformationPrimary.PearlFullName',
+          values: ['Freshwater Pearl'],
+          operator: 'none',
+        },
+      }),
+      { id: message.id, text: 'pearl strand' },
+    );
+    expect(result.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
+  });
+
+  it('refuses pearl facts without a live vocabulary (fail closed)', async () => {
+    const result = await updateShoppingStateBase(
+      base(),
+      pearlFact('pearl-8', 'Catalog_PearlInformationPrimary.PearlFullName', ['Freshwater Pearl']),
+      { id: message.id, text: 'pearl strand' },
+      undefined,
+    );
+    expect(result.result.status).toBe('invalid_input');
+    expect(result.result.failure?.code).toBe('VOCABULARY_UNAVAILABLE');
+  });
+
+  it('keeps a ceiling budget as a ceiling: no invented target, minimum or substitution', async () => {
+    const result = await updateShoppingState(
+      base(),
+      {
+        missionId: 'mission-1',
+        expectedRevision: 0,
+        operationId: 'budget-ceiling-1',
+        sourceMessageId: message.id,
+        operations: [
+          {
+            action: 'add',
+            factIds: [],
+            sourceQuote: 'under $1,000',
+            fact: {
+              id: 'budget-1',
+              field: 'budget',
+              value: { kind: 'money', cents: 100000, currency: 'USD', operator: 'lt', basis: 'per_item' },
+              scope: { kind: 'mission', key: null },
+              strength: 'requirement',
+              certainty: 'explicit',
+            },
+          },
+        ],
+      },
+      { id: message.id, text: 'under $1,000' },
+    );
+    expect(result.result.status).toBe('applied');
+    const brief = result.state.brief as { facts: Array<{ field: string; value: unknown }> };
+    const budget = brief.facts.find((f) => f.field === 'budget') as {
+      value: { operator: string; cents: number };
+    };
+    expect(budget.value.operator).toBe('lt');
+    expect(budget.value.cents).toBe(100000);
+  });
+});
+
+describe('necklace_type facts (Craig Task 01)', () => {
+  it('accepts the classic-strand correction as a necklace_type facet', async () => {
+    const result = await updateShoppingState(
+      base(),
+      necklaceTypeFact('strand-1', ['Strand']),
+      { id: message.id, text: 'classic strands' },
+    );
+    expect(result.result.status).toBe('applied');
+  });
+
+  it('rejects a necklace_type value absent from the live vocabulary', async () => {
+    const result = await updateShoppingState(
+      base(),
+      necklaceTypeFact('strand-2', ['Rosary']),
+      { id: message.id, text: 'classic strands' },
+    );
+    expect(result.result.failure?.code).toBe('VALUE_NOT_IN_LIVE_VOCABULARY');
+  });
+
+  it('rejects necklace_type facets on any other catalogue attribute', async () => {
+    const result = await updateShoppingState(
+      base(),
+      {
+        ...necklaceTypeFact('strand-3', ['Strand']),
+        operations: [
+          {
+            action: 'add',
+            factIds: [],
+            sourceQuote: 'classic strands',
+            fact: {
+              id: 'strand-3',
+              field: 'necklace_type',
+              value: {
+                kind: 'facet',
+                attribute: 'Catalog_ProductType',
+                values: ['Strand'],
+                operator: 'any',
+              },
+              scope: { kind: 'mission', key: null },
+              strength: 'requirement',
+              certainty: 'explicit',
+            },
+          },
+        ],
+      },
+      { id: message.id, text: 'classic strands' },
+    );
+    expect(result.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
   });
 });

@@ -3,10 +3,20 @@ export const SUPPORTED_FACET_ATTRIBUTES = {
   gemstone: 'Catalog_GemstoneInformation.GemstoneColorGroup',
   watch_dial_color: 'Catalog_WatchPrimaryDialPrimaryColor',
   watch_band_type: 'Catalog_WatchBandType',
+  necklace_type: 'Catalog_NecklaceType',
 } as const;
 export const SUPPORTED_GEMSTONE_FACET_ATTRIBUTES = [
   SUPPORTED_FACET_ATTRIBUTES.gemstone,
   'Catalog_GemstoneInformationPrimary.GemstoneName',
+] as const;
+/** Pearl identity lives in the index's dedicated pearl attributes, never in a
+ * gemstone name (Craig-feedback Task 01, verified live 2026-10-12: ten
+ * PearlFullName facet values on both attributes). Primary = the piece's own
+ * pearl; the un-suffixed attribute matches pearls anywhere in the record
+ * (accents and sets). Values always come from the live vocabulary. */
+export const SUPPORTED_PEARL_FACET_ATTRIBUTES = [
+  'Catalog_PearlInformationPrimary.PearlFullName',
+  'Catalog_PearlInformation.PearlFullName',
 ] as const;
 export const WATCH_BAND_MATERIAL_FAMILIES = ['metal'] as const;
 /** LEGACY fallback, used only when no live vocabulary reaches the compiler.
