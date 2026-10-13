@@ -4,7 +4,7 @@ This is the React and Node application behind the [JTV Concierge snapshot](../RE
 
 The current snapshot is incomplete. See the [Plan 3.1 handoff](docs/PLAN-3.1-STATUS.md) for observed passes, failures, pending work, agent inventory and the exact release version. The [workflow diagram](../README.md#how-it-works) shows the runtime boundaries; its editable source is [architecture.mmd](docs/architecture.mmd).
 
-The [three-style Discovery repair plan](docs/DISCOVERY-REPAIR-PLAN.md) is accepted for implementation. It is a plan, not a claim that the connected shopping experience or the revised Agent Studio contracts are complete.
+The application half of the [three-style Discovery repair plan](docs/DISCOVERY-REPAIR-PLAN.md) is implemented: brief-filtered style overview and per-style batch retrieval (query-level facets only, no index setting change), `three_style_grid` and `focused_choice` presentation modes with structured rejections, and a previous-choices note when a committed grid is superseded. Connected acceptance of the agent's adherence to the new retrieval flow is still pending, so this is implemented code, not a claim that the connected shopping experience or the revised Agent Studio contracts are complete.
 
 ## Source map
 
@@ -14,7 +14,7 @@ The [three-style Discovery repair plan](docs/DISCOVERY-REPAIR-PLAN.md) is accept
 | `src/concierge/sdkTools.ts` and `toolRuntime.ts` | Three declared client callbacks, version checks, evidence ledger and staged product choices. No generated shopper language. |
 | `src/concierge/sessionPersistence.ts` and `shared/concierge/` | v3 shopping state, lossless migration/backup, scoped facts, exact identities and deterministic selection validation. |
 | `server/api.ts` and `server/concierge/` | Bounded API proxy, fixed read-only `prod_catalog`, `blog` and `help` retrieval, exact object lookup, live-vocabulary-validated fact compilation and source-bound evidence. |
-| `src/ProductWorkspace.tsx` | Discover, Selected and Compare views with visible product selection, prices and supported details. Agent-proposed complete looks render in Selected with item subtotals. The tabs share one action-grid treatment. Multi-group Discover shows one lead per validated group and reveals up to two preselected variations on demand. |
+| `src/ProductWorkspace.tsx` | Discover, Selected and Compare views with visible product selection, prices and supported details. Agent-proposed complete looks render in Selected with item subtotals. The tabs share one action-grid treatment. Multi-group Discover shows one lead per validated group and reveals up to two preselected variations on demand. In grid mode Discover renders three evidence-backed style columns of two to three eligible items; focused mode renders one verified column. |
 | `tests/` and `evaluation/concierge-phases-1-3/` | Local regressions and a prepared but unaccepted live-journey scaffold. |
 
 The published `Concierge - Development` now serves the public Vercel snapshot as well as the connected local path. Its tool names are `update_shopping_state`, `retrieve_evidence` and `present_choices`. The older Concierge and Interpreter have been removed after configuration backups and explicit confirmation. No product-index setting or record change is part of this application.

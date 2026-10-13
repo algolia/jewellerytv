@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { UserClientSideTools } from 'instantsearch-ui-components';
 import type { createConciergeToolRuntime } from './toolRuntime.js';
-import { catalogueGroupBasisSchema } from '../../shared/concierge/presentation-contract.js';
+import { catalogueGroupBasisSchema, CATALOGUE_GROUP_BASIS_ATTRIBUTES } from '../../shared/concierge/presentation-contract.js';
 
 type Runtime = ReturnType<typeof createConciergeToolRuntime>;
 const updateShape = z.object({ operations: z.array(z.unknown()).min(1).max(12) }).strict();
@@ -25,6 +25,19 @@ const retrieveShape = z
         })
         .strict(),
     ]),
+    styleOverview: z.boolean().optional(),
+    styleBatches: z
+      .array(
+        z
+          .object({
+            attribute: z.enum(CATALOGUE_GROUP_BASIS_ATTRIBUTES),
+            value: z.string().trim().min(1).max(160),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(3)
+      .optional(),
   })
   .strict();
 const lineShape = z
@@ -38,6 +51,45 @@ const lineShape = z
 const presentShape = z
   .object({
     body: z.union([
+      // Grid: exactly three distinct style columns, two or three items each.
+      z
+        .object({
+          kind: z.literal('product_groups'),
+          mode: z.literal('three_style_grid'),
+          groups: z
+            .array(
+              z
+                .object({
+                  basis: catalogueGroupBasisSchema,
+                  items: z.array(lineShape).min(2).max(3),
+                })
+                .strict(),
+            )
+            .min(3)
+            .max(3),
+          alternatives: z.null(),
+        })
+        .strict(),
+      // Focused: the shopper's exact or confirmed narrow scope, one column.
+      z
+        .object({
+          kind: z.literal('product_groups'),
+          mode: z.literal('focused_choice'),
+          groups: z
+            .array(
+              z
+                .object({
+                  basis: catalogueGroupBasisSchema,
+                  items: z.array(lineShape).min(1).max(3),
+                })
+                .strict(),
+            )
+            .min(1)
+            .max(1),
+          alternatives: z.null(),
+        })
+        .strict(),
+      // Deprecated migration shape without a mode.
       z
         .object({
           kind: z.literal('product_groups'),
@@ -113,6 +165,8 @@ function normalizeRetrieve(input: unknown) {
     'missionId',
     'expectedRevision',
     'turnId',
+    'styleOverview',
+    'styleBatches',
   ]);
   if (Object.keys(source).some((key) => !allowedRoot.has(key)) || !Object.hasOwn(source, 'target'))
     throw new Error('semantic_retrieval_unknown_or_missing_field');
@@ -137,6 +191,12 @@ function normalizeRetrieve(input: unknown) {
     count: source.count,
     exactObjectIDs: source.exactObjectIDs ?? null,
     target: targetValue,
+    ...(source.styleOverview === undefined
+      ? {}
+      : { styleOverview: Boolean(source.styleOverview) }),
+    ...(source.styleBatches === undefined
+      ? {}
+      : { styleBatches: source.styleBatches }),
   });
 }
 function normalizePresent(input: unknown) {
@@ -178,10 +238,15 @@ function normalizePresent(input: unknown) {
     body.kind === 'product_groups'
       ? {
           kind: body.kind,
+          ...(typeof body.mode === 'string' ? { mode: body.mode } : {}),
           groups: Array.isArray(body.groups)
             ? body.groups.map((group) => {
                 const item = group as Record<string, unknown>;
-                if (Object.keys(item).some((key) => key !== 'basis' && key !== 'items'))
+                if (
+                  Object.keys(item).some(
+                    (key) => key !== 'basis' && key !== 'items' && key !== 'mode',
+                  )
+                )
                   throw new Error('semantic_group_unknown_field');
                 return {
                   basis: item.basis,
@@ -210,8 +275,10 @@ function normalizePresent(input: unknown) {
 }
 
 function presentationInputFailure(error: unknown) {
+  if (import.meta.env.DEV)
+    console.warn('JTV present_choices input rejected', error instanceof z.ZodError ? JSON.stringify(error.issues.slice(0, 6)) : String(error).slice(0, 200));
   const expected = [
-    'body.kind=product_groups with non-empty groups and alternatives=null',
+    'body.kind=product_groups with mode three_style_grid (exactly three distinct style columns, two or three items each) or mode focused_choice (one confirmed narrow column), and alternatives=null',
     'body.kind=complete_looks with groups=null and non-empty alternatives',
   ];
   if (error instanceof z.ZodError) {

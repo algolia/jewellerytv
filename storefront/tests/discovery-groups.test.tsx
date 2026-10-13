@@ -158,3 +158,102 @@ describe('grouped discovery workspace', () => {
     expect(html).not.toContain('Quantity');
   });
 });
+
+describe('discovery grid modes and previous-choice label', () => {
+  function gridModel(
+    mode: 'three_style_grid' | 'focused_choice' | undefined,
+    thirdRow = false,
+    stale = false,
+  ): WorkspaceViewModel {
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
+    const [a, b, c, d, e, f, g, h, i] = ids.map(product);
+    const columns =
+      mode === 'focused_choice'
+        ? [
+            {
+              title: 'Halo',
+              mode,
+              items: [
+                { product: a, why: 'One' },
+                { product: b, why: 'Two' },
+              ],
+            },
+          ]
+        : [
+            {
+              title: 'Halo',
+              mode,
+              items: [
+                { product: a, why: 'One' },
+                { product: b, why: 'Two' },
+                ...(thirdRow ? [{ product: g, why: 'Seven' }] : []),
+              ],
+            },
+            {
+              title: 'Solitaire',
+              mode,
+              items: [
+                { product: c, why: 'Three' },
+                { product: d, why: 'Four' },
+              ],
+            },
+            {
+              title: 'Pave',
+              mode,
+              items: [
+                { product: e, why: 'Five' },
+                { product: f, why: 'Six' },
+                ...(thirdRow ? [{ product: h, why: 'Eight' }] : []),
+              ],
+            },
+          ];
+    return {
+      products: [],
+      selectionRecords: [a, b, c, d, e, f, g, h, i],
+      discoveries: columns,
+      discoveriesStale: stale,
+      activeView: 'discover',
+      setView: vi.fn(),
+      compareIds: [],
+      toggleCompare: vi.fn(),
+      pin: vi.fn(),
+      remove: vi.fn(),
+      refreshProducts: vi.fn(async () => undefined),
+      refreshing: false,
+      refreshError: '',
+    };
+  }
+
+  it('renders a third row only in grid mode when a column carries it', () => {
+    const html = renderToStaticMarkup(<ProductWorkspace model={gridModel('three_style_grid', true)} />);
+    expect(html.match(/data-product-id=/g)?.length).toBe(8);
+    expect(html).toContain('data-group-count="3"');
+  });
+
+  it('caps non-grid presentations at two variants per column', () => {
+    const html = renderToStaticMarkup(
+      <ProductWorkspace model={gridModel('three_style_grid', false)} />,
+    );
+    expect(html.match(/data-product-id=/g)?.length).toBe(6);
+  });
+
+  it('renders a focused presentation as one column without the grid title', () => {
+    const html = renderToStaticMarkup(<ProductWorkspace model={gridModel('focused_choice')} />);
+    expect(html).toContain('data-group-count="1"');
+    expect(html).not.toContain('Three different types, two variations of each type.');
+  });
+
+  it('labels retained discoveries as previous choices when the flag is set', () => {
+    const html = renderToStaticMarkup(
+      <ProductWorkspace model={gridModel('three_style_grid', false, true)} />,
+    );
+    expect(html).toContain('Showing your previous choices.');
+  });
+
+  it('omits the previous-choice label for a fresh selection', () => {
+    const html = renderToStaticMarkup(
+      <ProductWorkspace model={gridModel('three_style_grid', false, false)} />,
+    );
+    expect(html).not.toContain('Showing your previous choices.');
+  });
+});

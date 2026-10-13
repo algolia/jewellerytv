@@ -95,7 +95,9 @@ export function createConciergeWorkspaceSession(options: {
                 ? [{ product, why: line.explanation, assessment: 'compliant' as const }]
                 : [];
             });
-            return items.length ? [{ title: group.title, items }] : [];
+            return items.length
+              ? [{ title: group.title, items, mode: proposal.mode ?? undefined }]
+              : [];
           })
         : [];
     const proposedLooks =
@@ -143,6 +145,7 @@ export function createConciergeWorkspaceSession(options: {
       products: state.products.flatMap(entry).filter((item): item is ProductEntry => item !== null),
       selectionRecords: [...selectedProducts.values()],
       discoveries: groups,
+      discoveriesStale: runtime.isPublishedStale(),
       discoveryUnavailable:
         proposal?.kind === 'product_groups' &&
         (proposal.assessment.perItem !== 'accepted' ||

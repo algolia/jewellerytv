@@ -155,7 +155,7 @@ describe('installed SDK client-tool callback registration', () => {
         status: 'invalid_input',
         reasons: ['semantic_presentation_invalid'],
         expected: expect.arrayContaining([
-          'body.kind=product_groups with non-empty groups and alternatives=null',
+          'body.kind=product_groups with mode three_style_grid (exactly three distinct style columns, two or three items each) or mode focused_choice (one confirmed narrow column), and alternatives=null',
           'body.kind=complete_looks with groups=null and non-empty alternatives',
         ]),
       }),

@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { briefStateV3Schema } from '../../shared/briefSchema.js';
 import { retrieveEvidenceInputSchema } from '../../shared/concierge/retrieval/schema.js';
-import { createAlgoliaEvidenceSearch, createEvidenceRetriever } from './retrieveEvidence.js';
+import {
+  createAlgoliaEvidenceSearch,
+  createAlgoliaFacetSearch,
+  createEvidenceRetriever,
+} from './retrieveEvidence.js';
 import type { CatalogVocabularyCache } from './catalogVocabulary.js';
 
 const requestSchema = z
@@ -27,6 +31,7 @@ export async function runEvidenceRoute(
   const request = requestSchema.parse(raw);
   const retrieve = createEvidenceRetriever({
     search: createAlgoliaEvidenceSearch(options),
+    facetSearch: createAlgoliaFacetSearch(options),
     currentState: () => request.brief,
     signal: options.signal,
     ...(options.vocabulary ? { vocabulary: options.vocabulary } : {}),

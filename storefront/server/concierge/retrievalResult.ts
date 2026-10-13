@@ -14,6 +14,7 @@ export function makeResult(
   records: EvidenceRecord[] = [],
   error?: RetrieveEvidenceResult['error'],
   unavailableRequirements?: UnavailableRequirement[],
+  extras?: Pick<RetrieveEvidenceResult, 'styleOverview' | 'styleResults'>,
 ): RetrieveEvidenceResult {
   return {
     status,
@@ -27,5 +28,7 @@ export function makeResult(
     records,
     ...(error ? { error } : {}),
     ...(unavailableRequirements ? { unavailableRequirements } : {}),
+    ...(extras?.styleOverview ? { styleOverview: extras.styleOverview } : {}),
+    ...(extras?.styleResults ? { styleResults: extras.styleResults } : {}),
   };
 }

@@ -5,7 +5,10 @@ import type {
   EffectiveFilter,
   EvidenceRecord,
   EvidenceSource,
+  RetrievalStatus,
   RetrieveEvidenceResult,
+  StyleBatchResult,
+  StyleOverviewColumn,
 } from '../../shared/concierge/retrieval/types.js';
 import type { RetrieveEvidenceInput } from '../../shared/concierge/retrieval/schema.js';
 import { materialMatch as verifyMaterial, type MaterialRequirement } from './materialEvidence.js';
@@ -16,6 +19,7 @@ import {
   METAL_WATCH_BAND_MATERIALS,
   SUPPORTED_FACET_ATTRIBUTES,
 } from '../../shared/concierge/catalogueFactContract.js';
+import { CATALOGUE_GROUP_BASIS_ATTRIBUTES } from '../../shared/concierge/presentation-contract.js';
 
 const INDEXES: Record<EvidenceSource, string> = {
   prod_catalog: 'prod_catalog',
@@ -160,6 +164,18 @@ export type EvidenceSearchRequest = {
 export type EvidenceSearch = (
   request: EvidenceSearchRequest,
 ) => Promise<readonly Record<string, unknown>[]>;
+/** Read-only facet-count interrogation for the discovery style overview.
+ * Counts are candidates, never proof of eligibility. */
+export type EvidenceFacetRequest = {
+  source: EvidenceSource;
+  query: string;
+  filters: readonly EffectiveFilter[];
+  facets: readonly string[];
+  signal: AbortSignal;
+};
+export type EvidenceFacetSearch = (
+  request: EvidenceFacetRequest,
+) => Promise<Record<string, Record<string, number>>>;
 export type EvidenceRetrieverOptions = {
   search: EvidenceSearch;
   currentState: (missionId: string) => BriefStateV3 | Promise<BriefStateV3>;
@@ -170,6 +186,8 @@ export type EvidenceRetrieverOptions = {
    * backward compatibility: without it the compiler behaves exactly as before
    * the runtime-vocabulary change. */
   vocabulary?: CatalogVocabularyCache;
+  /** Optional facet-count search backing the discovery style overview. */
+  facetSearch?: EvidenceFacetSearch;
 };
 function canonical(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -599,6 +617,30 @@ function compile(
 }
 export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
   const now = options.now ?? (() => new Date().toISOString());
+  /** A shopper-facing Discovery request is purchase-oriented: in-stock is a hard
+   * requirement. Pre-owned pieces are excluded unless the accepted brief states
+   * a condition preference that supports them; when both qualify, first-quality
+   * candidates are ordered first. */
+  function styleEligibility(
+    record: Record<string, unknown>,
+    preOwnedSupported: boolean,
+  ): string | null {
+    if (record.Inventory_InStock !== true) return 'out_of_stock';
+    const condition = typeof record.Catalog_Condition === 'string' ? record.Catalog_Condition : '';
+    return /pre.?owned/i.test(condition) && !preOwnedSupported ? 'pre_owned_not_requested' : null;
+  }
+  function briefSupportsPreOwned(state: BriefStateV3): boolean {
+    return state.facts.some(
+      (fact) =>
+        fact.status === 'active' &&
+        fact.field === 'condition' &&
+        fact.certainty === 'explicit' &&
+        (fact.strength === 'requirement' || fact.strength === 'preference') &&
+        ((fact.value.kind === 'facet' &&
+          fact.value.values.some((value) => /pre.?owned/i.test(value))) ||
+          (fact.value.kind === 'text' && /pre.?owned/i.test(fact.value.text))),
+    );
+  }
   return async function retrieveEvidence(raw: unknown): Promise<RetrieveEvidenceResult> {
     let input: RetrieveEvidenceInput;
     try {
@@ -726,6 +768,320 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           message: 'One or more accepted constraints could not be compiled safely',
         },
       );
+    const wantOverview = input.source === 'prod_catalog' && input.styleOverview === true;
+    const styleBatches =
+      input.source === 'prod_catalog' && input.styleBatches?.length
+        ? input.styleBatches
+        : null;
+    if (wantOverview || styleBatches) {
+      const controller = new AbortController();
+      const parentAbort = () => controller.abort();
+      if (options.signal?.aborted)
+        return makeResult(input, state.revision, 'aborted', compiled.filters, [], [], {
+          code: 'ABORTED',
+          message: 'Evidence retrieval was cancelled',
+        });
+      options.signal?.addEventListener('abort', parentAbort, { once: true });
+      let timedOut = false;
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, options.timeoutMs ?? 15000);
+      const mapError = (error: unknown) => {
+        const status =
+          error &&
+          typeof error === 'object' &&
+          'status' in error &&
+          Number.isInteger((error as { status?: unknown }).status)
+            ? Number((error as { status: number }).status)
+            : undefined;
+        const upstreamStatus =
+          status !== undefined && status >= 400 && status <= 599 ? status : undefined;
+        return {
+          status: (timedOut
+            ? 'timeout'
+            : options.signal?.aborted
+              ? 'aborted'
+              : 'upstream_failure') as RetrievalStatus,
+          error: {
+            code: timedOut
+              ? 'TIMEOUT'
+              : options.signal?.aborted
+                ? 'ABORTED'
+                : upstreamStatus
+                  ? `UPSTREAM_HTTP_${upstreamStatus}`
+                  : 'UPSTREAM_FAILURE',
+            message: timedOut
+              ? 'Evidence retrieval timed out'
+              : options.signal?.aborted
+                ? 'Evidence retrieval was cancelled'
+                : upstreamStatus
+                  ? 'Evidence source returned an upstream HTTP error'
+                  : 'Evidence source failed',
+            ...(upstreamStatus ? { upstreamStatus } : {}),
+          },
+        };
+      };
+      try {
+        // A timeout or an upstream failure is never reported as "no inventory":
+        // the structured status travels to the agent so it can be honest with
+        // the shopper instead of reading an error as an empty catalogue.
+        if (wantOverview) {
+          if (!options.facetSearch)
+            return makeResult(
+              input,
+              state.revision,
+              'upstream_failure',
+              compiled.filters,
+              [],
+              [],
+              {
+                code: 'FACET_SEARCH_UNAVAILABLE',
+                message: 'Style overview is not available in this deployment',
+              },
+            );
+          const attributes =
+            vocabularySnapshot && Object.keys(vocabularySnapshot.values).length
+              ? CATALOGUE_GROUP_BASIS_ATTRIBUTES.filter((attribute) =>
+                  vocabularySnapshot.isFilterable(attribute),
+                )
+              : [...CATALOGUE_GROUP_BASIS_ATTRIBUTES];
+          if (!attributes.length)
+            return makeResult(
+              input,
+              state.revision,
+              'unsupported_constraint',
+              compiled.filters,
+              [],
+              [],
+              {
+                code: 'NO_STYLE_ATTRIBUTES',
+                message: 'No style attributes are filterable in the live catalogue',
+              },
+            );
+          const counts = await options.facetSearch({
+            source: input.source,
+            query: input.query,
+            filters: compiled.filters,
+            facets: attributes,
+            signal: controller.signal,
+          });
+          if (options.signal?.aborted)
+            return makeResult(input, state.revision, 'aborted', compiled.filters, [], [], {
+              code: 'ABORTED',
+              message: 'Evidence retrieval was cancelled',
+            });
+          const styleOverview: StyleOverviewColumn[] = attributes.map((attribute) => ({
+            attribute,
+            values: Object.entries(counts[attribute] ?? {})
+              .map(([value, count]) => ({ value, count }))
+              .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value)),
+          }));
+          return makeResult(
+            input,
+            state.revision,
+            'ok',
+            compiled.filters,
+            [],
+            [],
+            undefined,
+            undefined,
+            { styleOverview },
+          );
+        }
+        // Batched style-direction search: one request per chosen style value,
+        // each with the brief's compiled hard filters plus the style facet, up
+        // to 12 candidates per style, one bounded broad-query backfill for a
+        // deficient style. Eligibility is verified per record; counts never
+        // claim more than verified records.
+        const styleResults: StyleBatchResult[] = [];
+        const records: EvidenceRecord[] = [];
+        const seenIds = new Set<string>();
+        const seenSignatures = new Set<string>();
+        const preOwnedSupported = briefSupportsPreOwned(state);
+        const candidateCap = 12;
+        for (const batch of styleBatches!) {
+          if (vocabularySnapshot && !vocabularySnapshot.isFilterable(batch.attribute)) {
+            styleResults.push({
+              attribute: batch.attribute,
+              value: batch.value,
+              requestedCount: input.count,
+              eligibleCount: 0,
+              rejected: [{ objectID: '', reason: 'style_attribute_not_filterable' }],
+              backfillUsed: false,
+            });
+            continue;
+          }
+          const filters: EffectiveFilter[] = [
+            ...compiled.filters,
+            { field: batch.attribute, operator: 'eq', value: batch.value },
+          ];
+          const rejected: Array<{ objectID: string; reason: string }> = [];
+          let eligibleCount = 0;
+          let backfillUsed = false;
+          const accept = (rawHits: readonly Record<string, unknown>[]) => {
+            for (const raw of rawHits) {
+              if (eligibleCount >= input.count) return;
+              const record = projection(input.source, raw);
+              const objectID =
+                typeof record.objectID === 'string' ? record.objectID : undefined;
+              if (!objectID) {
+                rejected.push({ objectID: '', reason: 'missing_object_id' });
+                continue;
+              }
+              if (seenIds.has(objectID)) {
+                rejected.push({ objectID, reason: 'duplicate_product' });
+                continue;
+              }
+              const reason = styleEligibility(record, preOwnedSupported);
+              if (reason) {
+                rejected.push({ objectID, reason });
+                continue;
+              }
+              const materialStatus = verifyMaterial(record, compiled.material);
+              if (materialStatus === 'unknown') {
+                rejected.push({ objectID, reason: 'material_unknown' });
+                continue;
+              }
+              if (materialStatus === 'conflict') {
+                rejected.push({ objectID, reason: 'material_conflict' });
+                continue;
+              }
+              if (compiled.fit.length) {
+                const sizes = record.Inventory_AvailableSkuSizeNames;
+                const sizeStrings = Array.isArray(sizes)
+                  ? sizes.filter((entry): entry is string => typeof entry === 'string')
+                  : [];
+                const parsedSizes = sizeStrings.map((entry) => Number.parseFloat(entry));
+                const unmet = compiled.fit.filter((entry) => {
+                  if (entry.ringSize !== undefined) return !sizeStrings.includes(entry.ringSize);
+                  return !parsedSizes.some(
+                    (parsed) =>
+                      Number.isFinite(parsed) && Math.abs(parsed - entry.expectedInches) < 1e-9,
+                  );
+                });
+                if (!Array.isArray(sizes) || sizes.length === 0) {
+                  rejected.push({ objectID, reason: 'fit_unknown' });
+                  continue;
+                }
+                if (unmet.length) {
+                  rejected.push({ objectID, reason: 'fit_conflict' });
+                  continue;
+                }
+              }
+              const watchStatus = watchFeatureStatus(record, compiled.filters);
+              if (watchStatus === 'unknown') {
+                rejected.push({ objectID, reason: 'watch_feature_unknown' });
+                continue;
+              }
+              if (watchStatus === 'conflict') {
+                rejected.push({ objectID, reason: 'watch_feature_conflict' });
+                continue;
+              }
+              const title = record.Catalog_TitleDescription,
+                description = record.Catalog_LongDescription;
+              if (
+                typeof title === 'string' &&
+                title.trim() &&
+                typeof description === 'string' &&
+                description.trim()
+              ) {
+                const signature = `${title.trim().toLocaleLowerCase()}\u0000${description.trim().toLocaleLowerCase()}`;
+                if (seenSignatures.has(signature)) {
+                  rejected.push({ objectID, reason: 'duplicate_variant' });
+                  continue;
+                }
+                seenSignatures.add(signature);
+              }
+              seenIds.add(objectID);
+              const contentHash = hashEvidenceRecord(record);
+              records.push({
+                source: input.source,
+                objectID,
+                contentHash,
+                retrievedAt: now(),
+                evidenceRef: evidenceRef(input.source, objectID, contentHash),
+                record,
+              });
+              eligibleCount += 1;
+            }
+          };
+          const firstHits = await options.search({
+            source: input.source,
+            query: input.query,
+            count: candidateCap,
+            exactObjectIDs: null,
+            filters,
+            signal: controller.signal,
+          });
+          accept(firstHits);
+          if (eligibleCount < 2) {
+            // One bounded backfill: broaden the query, keep every hard filter.
+            backfillUsed = true;
+            const backfillHits = await options.search({
+              source: input.source,
+              query: '',
+              count: candidateCap,
+              exactObjectIDs: null,
+              filters,
+              signal: controller.signal,
+            });
+            accept(backfillHits);
+          }
+          styleResults.push({
+            attribute: batch.attribute,
+            value: batch.value,
+            requestedCount: input.count,
+            eligibleCount,
+            rejected: rejected.slice(0, 12),
+            backfillUsed,
+          });
+        }
+        if (options.signal?.aborted)
+          return makeResult(input, state.revision, 'aborted', compiled.filters, [], [], {
+            code: 'ABORTED',
+            message: 'Evidence retrieval was cancelled',
+          });
+        try {
+          state = briefStateV3Schema.parse(await options.currentState(input.missionId));
+        } catch {
+          return makeResult(input, state.revision, 'upstream_failure', compiled.filters, [], [], {
+            code: 'STATE_UNAVAILABLE',
+            message: 'Current mission state could not be resolved',
+          });
+        }
+        if (state.missionId !== input.missionId || state.revision !== input.expectedRevision)
+          return makeResult(input, state.revision, 'stale_revision', compiled.filters, [], [], {
+            code: 'STALE_REVISION',
+            message: 'Mission changed during evidence retrieval',
+          });
+        return makeResult(
+          input,
+          state.revision,
+          records.length ? 'ok' : 'zero_hits',
+          compiled.filters,
+          [],
+          records.slice(0, 36),
+          undefined,
+          undefined,
+          { styleResults },
+        );
+      } catch (error) {
+        const mapped = mapError(error);
+        return makeResult(
+          input,
+          state.revision,
+          mapped.status,
+          compiled.filters,
+          [],
+          [],
+          mapped.error,
+        );
+      } finally {
+        clearTimeout(timeout);
+        options.signal?.removeEventListener('abort', parentAbort);
+      }
+    }
     const controller = new AbortController();
     const parentAbort = () => controller.abort();
     if (options.signal?.aborted)
@@ -944,6 +1300,68 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
 }
 export function retrieveEvidence(raw: unknown, options: EvidenceRetrieverOptions) {
   return createEvidenceRetriever(options)(raw);
+}
+/** Read-only facet-count interrogation for the discovery style overview: a
+ * regular query-level `facets` request, brief filters applied as facet/numeric
+ * filters. No index settings are read or changed. */
+export function createAlgoliaFacetSearch(options: {
+  appId: string;
+  searchOnlyApiKey: string;
+  fetch?: typeof fetch;
+}): EvidenceFacetSearch {
+  if (!/^[A-Za-z0-9]+$/.test(options.appId) || !options.searchOnlyApiKey.trim())
+    throw new Error('Search-only Algolia credentials are required');
+  const request = options.fetch ?? fetch;
+  const numericOperator: Record<string, string> = {
+    lt: '<',
+    lte: '<=',
+    gt: '>',
+    gte: '>=',
+    eq: '=',
+  };
+  return async ({ source, query, filters, facets, signal }) => {
+    const numeric = filters
+      .filter((f) => f.field === 'Pricing_ActivePrice')
+      .map((f) => `${f.field}${numericOperator[f.operator]}${f.value}`);
+    const facetFilters = filters
+      .filter((f) => f.field !== 'Pricing_ActivePrice')
+      .map((f) =>
+        f.operator === 'in'
+          ? f.value.map((value) => `${f.field}:${value}`)
+          : `${f.field}:${f.operator === 'neq' ? '-' : ''}${String(f.value)}`,
+      );
+    const params = new URLSearchParams({
+      query,
+      hitsPerPage: '0',
+      attributesToRetrieve: JSON.stringify(['objectID']),
+      facets: JSON.stringify([...facets]),
+      analytics: 'false',
+      clickAnalytics: 'false',
+      ...(numeric.length ? { numericFilters: JSON.stringify(numeric) } : {}),
+      ...(facetFilters.length ? { facetFilters: JSON.stringify(facetFilters) } : {}),
+    });
+    const response = await request(`https://${options.appId}.algolia.net/1/indexes/*/queries`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-algolia-application-id': options.appId,
+        'x-algolia-api-key': options.searchOnlyApiKey,
+      },
+      body: JSON.stringify({ requests: [{ indexName: INDEXES[source], params: params.toString() }] }),
+      signal,
+      redirect: 'error',
+    });
+    if (!response.ok) throw new UpstreamFacetHttpError(response.status);
+    const payload = (await response.json()) as {
+      results?: Array<{ facets?: Record<string, Record<string, number>> }>;
+    };
+    return payload.results?.[0]?.facets ?? {};
+  };
+}
+class UpstreamFacetHttpError extends Error {
+  constructor(readonly status: number) {
+    super(`Algolia upstream HTTP ${status}`);
+  }
 }
 export function createAlgoliaEvidenceSearch(options: {
   appId: string;
