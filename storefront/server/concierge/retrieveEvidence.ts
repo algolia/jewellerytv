@@ -861,7 +861,15 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
             );
           const counts = await options.facetSearch({
             source: input.source,
-            query: input.query,
+            // The overview answers "which style families exist under the
+            // accepted brief filters", so facet counts are scoped by the
+            // compiled filters only. The conversational query text must not
+            // restrict the counts: it carries recipient and phrasing words
+            // ("for a younger sister") that text-match nothing and would
+            // zero every column, which reads to the agent as an empty
+            // catalogue. Record retrieval (the batched branch below) keeps
+            // the query for ranking and backfills when it matches nothing.
+            query: '',
             filters: compiled.filters,
             facets: attributes,
             signal: controller.signal,
