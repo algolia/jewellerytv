@@ -1,6 +1,6 @@
 # JTV Concierge storefront
 
-This is the React and Node application behind the [JTV Concierge snapshot](../README.md). It connects a two-column shopping UI to one published Concierge in Algolia's Agent Studio. The application provides typed tools, session state, read-only catalogue and blog retrieval, exact product identity checks, price arithmetic and rendering. The agent generates the shopper conversation.
+This is the React and Node application behind the [JTV Concierge snapshot](../README.md). It connects a two-column shopping UI to one published Concierge in Algolia's Agent Studio. The application provides typed tools, session state, read-only catalogue, blog and Help retrieval, exact product identity checks, price arithmetic and rendering. The agent generates the shopper conversation.
 
 The current snapshot is incomplete. See the [Plan 3.1 handoff](docs/PLAN-3.1-STATUS.md) for observed passes, failures, pending work, agent inventory and the exact release version. The [workflow diagram](../README.md#how-it-works) shows the runtime boundaries; its editable source is [architecture.mmd](docs/architecture.mmd).
 
@@ -30,7 +30,7 @@ npm ci
 npm run dev
 ```
 
-The app opens at `http://localhost:5173`, with the API on `127.0.0.1:5174`. The API uses Algolia's search-only key for read-only product and blog calls. Browser state is per tab. New clears visible turns from the prior mission. Reload restores the current same-session transcript using the SDK and completion receipts. A connected local check covers New and reload; full shopper-journey acceptance is still pending. Login, cross-device state, cart, orders and payment are outside this build.
+The app opens at `http://localhost:5173`, with the API on `127.0.0.1:5174`. The API uses Algolia's search-only key for read-only product, blog and Help calls. Browser state is per tab. New clears visible turns from the prior mission. Reload restores the current same-session transcript using the SDK and completion receipts. A connected local check covers New and reload; full shopper-journey acceptance is still pending. Login, cross-device state, cart, orders and payment are outside this build.
 
 ## Checks
 
