@@ -1074,14 +1074,13 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           };
           const firstHits = await options.search({
             source: input.source,
-            // The batched call defines each column by the style facet plus the
-            // compiled hard filters. The conversational query text must not
-            // restrict the candidate search: it is agent language with recipient
-            // and phrasing words that text-match nothing, so the first pass
-            // would return zero hits and every style would need its backfill.
-            // Soft preferences still shape the outcome through per-record
-            // verification (material, fit) rather than text ranking.
-            query: '',
+            // The assistant decides how to phrase the stockroom question; the
+            // retrieval layer does not overrule it. The agent's query rides the
+            // text search (attribute words like "yellow gold" match instantly),
+            // and the bounded broad-query backfill below remains the safety net
+            // when a phrasing matches nothing. The manager's checks (stock,
+            // condition, material, fit) still verify every candidate after.
+            query: input.query,
             count: candidateCap,
             exactObjectIDs: null,
             filters,

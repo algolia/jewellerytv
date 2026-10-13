@@ -1856,7 +1856,7 @@ describe('discovery style overview and batched style search', () => {
     expect(search).not.toHaveBeenCalled();
   });
 
-  it('scopes batched style searches by the style facet and hard filters, not the conversational query', async () => {
+  it('passes the assistant\'s query to each batched style search; the stockroom is not overruled', async () => {
     const queries: string[] = [];
     const search = vi.fn(async ({ query }: { query: string }) => {
       queries.push(query);
@@ -1870,7 +1870,7 @@ describe('discovery style overview and batched style search', () => {
       productInput({
         target: null,
         count: 2,
-        query: 'minimal silver bracelets around $250 for a younger sister',
+        query: 'yellow gold',
         styleBatches: [
           { attribute: 'Catalog_RingType', value: 'Halo' },
           { attribute: 'Catalog_RingType', value: 'Solitaire' },
@@ -1878,12 +1878,34 @@ describe('discovery style overview and batched style search', () => {
       }),
     );
     expect(result.status).toBe('ok');
-    // A conversational sentence ("minimal silver bracelets for a younger sister")
-    // text-matches nothing and would waste a request per style before the backfill.
-    // The style facet plus the compiled hard filters define the column; the query
-    // must not restrict the candidate search.
-    expect(queries.length).toBeGreaterThanOrEqual(2);
-    expect(queries.every((q) => q === '')).toBe(true);
+    expect(queries.filter((q) => q === 'yellow gold').length).toBe(2);
+  });
+
+  it('falls back to the broad query when the assistant\'s phrasing matches nothing', async () => {
+    const queries: string[] = [];
+    const search = vi.fn(async ({ query }: { query: string }) => {
+      queries.push(query);
+      // The conversational sentence matches nothing; the broad retry matches.
+      return query === ''
+        ? [productHit({ objectID: `R${queries.length}`, Catalog_TitleDescription: `Style Ring ${queries.length}`, Catalog_RingType: 'Halo' })]
+        : [];
+    });
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        count: 2,
+        query: 'minimal silver bracelets around $250 for a younger sister',
+        styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }],
+      }),
+    );
+    expect(result.status).toBe('ok');
+    expect(queries[0]).toBe('minimal silver bracelets around $250 for a younger sister');
+    expect(queries[1]).toBe('');
+    expect(result.styleResults![0].backfillUsed).toBe(true);
   });
 
   it('searches each chosen style separately, filters eligibility, and reports per-style outcomes', async () => {
