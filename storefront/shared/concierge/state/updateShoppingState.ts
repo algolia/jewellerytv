@@ -110,6 +110,7 @@ const inputFact = z
       'gemstone',
       'pearl',
       'necklace_type',
+      'earring_backing',
       'product_audience',
       'watch_dial_color',
       'watch_band_type',
@@ -225,6 +226,155 @@ async function failure(
     failure: { code, message, currentRevision: brief.revision },
   };
 }
+/** CLASSIFICATION evidence (sister-fix-retrieval-2026-10-14, derived from
+ * compile() in server/concierge/retrieveEvidence.ts:346-741, not assumed): the
+ * field x value-kind pairs an active requirement+explicit fact can occupy that
+ * fall through every compile() branch into `unresolved`. One unresolved entry
+ * makes EVERY later prod_catalog call return unsupported_constraint with zero
+ * records until the fact is retracted, so the writer refuses them up front.
+ * Fields omitted here are safe by compile() construction: recipient, occasion,
+ * design and item_reference are skipped as context before any value branch;
+ * product_type resolves through the mission types before the value branches;
+ * text/measurement/product_ref pairs not listed either compile (fit
+ * measurements, exclusion money) or are already refused by the specific gates
+ * above (product_type text, pearl/necklace_type/product_audience non-facet,
+ * exclusion text requirements). */
+const TEXT_REQUIREMENT_POISON_FIELDS = [
+  'material',
+  'gemstone',
+  'watch_dial_color',
+  'watch_band_type',
+  'condition',
+  'wearability',
+  'budget',
+  'fit',
+  'education_depth',
+  'selection',
+  'other',
+] as const;
+const MEASUREMENT_REQUIREMENT_POISON_FIELDS = [
+  'material',
+  'gemstone',
+  'watch_dial_color',
+  'watch_band_type',
+  'condition',
+  'wearability',
+  'budget',
+  'exclusion',
+  'education_depth',
+  'selection',
+  'other',
+] as const;
+const PRODUCT_REF_REQUIREMENT_POISON_FIELDS = [...MEASUREMENT_REQUIREMENT_POISON_FIELDS, 'fit'];
+/** Fields that resolve or skip before compile()'s money branch, where a money
+ * value is context and can never be marked unresolved. On every other field an
+ * explicit money requirement must be an exact USD bound: the around operator
+ * and foreign currencies are marked unresolved by compile() and would block
+ * every search. basis unresolved is deliberately absent: the fact schema
+ * (briefSchema.ts) downgrades it to tentative status, which the compiler
+ * skips, so it defuses itself. */
+const MONEY_CONTEXT_FIELDS = [
+  'recipient',
+  'occasion',
+  'design',
+  'item_reference',
+  'product_type',
+] as const;
+/** When one exists, the exact encoding the compiler DOES support for the same
+ * meaning; the refusal names it before the universal fallbacks. */
+const TEXT_REQUIREMENT_EXACT_ENCODING: Partial<Record<string, string>> = {
+  budget: 'an exact USD money bound (operator lt, lte, gt or gte)',
+  fit: 'a typed measurement with unit in, cm, mm or ring_us',
+  material: 'the material_alternatives encoding with live catalogue values',
+  gemstone:
+    'a facet on Catalog_GemstoneInformation.GemstoneColorGroup or Catalog_GemstoneInformationPrimary.GemstoneName with live catalogue values',
+  watch_dial_color: 'a facet on Catalog_WatchPrimaryDialPrimaryColor with exactly one live value',
+  watch_band_type: 'a facet on Catalog_WatchBandType with exactly one live value',
+};
+const MEASUREMENT_REQUIREMENT_EXACT_ENCODING: Partial<Record<string, string>> = {
+  material: 'the material_alternatives encoding with live catalogue values',
+  exclusion:
+    'a none-operator facet on Catalog_ProductType, Catalog_Motif or Catalog_MaterialInformation.MaterialColor',
+};
+const REQUIREMENT_FALLBACK_ALTERNATIVES =
+  'record the meaning with strength preference or strength context, or with certainty tentative';
+
+/** Returns the full structured refusal detail for a requirement+explicit fact
+ * the compiler can never compile, or null when the encoding is supported.
+ * Thrown by toBriefFact and converted by updateShoppingState's existing
+ * handler into a structured invalid_input result, so the agent always receives
+ * an actionable outcome and never an error surface. */
+function requirementEncodingRefusal(
+  f: NonNullable<UpdateShoppingStateInput['operations'][number]['fact']>,
+): string | null {
+  if (f.strength !== 'requirement' || f.certainty !== 'explicit') return null;
+  const refuse = (alternatives: string) =>
+    `UNSUPPORTED_REQUIREMENT_ENCODING:${f.id}:${f.field}:${f.value.kind}: an explicit ${f.field} requirement with a ${f.value.kind} value has no supported catalogue encoding and would block every later catalogue search until retracted. Supported alternatives: ${alternatives}.`;
+  const kind = f.value.kind;
+  if (kind === 'text' && (TEXT_REQUIREMENT_POISON_FIELDS as readonly string[]).includes(f.field)) {
+    const exact = TEXT_REQUIREMENT_EXACT_ENCODING[f.field];
+    return refuse(
+      exact
+        ? `${exact}, or ${REQUIREMENT_FALLBACK_ALTERNATIVES}`
+        : REQUIREMENT_FALLBACK_ALTERNATIVES,
+    );
+  }
+  if (kind === 'measurement') {
+    if (f.field === 'fit') {
+      if (f.value.unit === 'ring_uk' || f.value.unit === 'unknown')
+        return refuse(
+          'a typed measurement with unit in, cm, mm or ring_us, or ' +
+            REQUIREMENT_FALLBACK_ALTERNATIVES,
+        );
+      return null;
+    }
+    if ((MEASUREMENT_REQUIREMENT_POISON_FIELDS as readonly string[]).includes(f.field)) {
+      const exact = MEASUREMENT_REQUIREMENT_EXACT_ENCODING[f.field];
+      return refuse(
+        exact
+          ? `${exact}, or ${REQUIREMENT_FALLBACK_ALTERNATIVES}`
+          : REQUIREMENT_FALLBACK_ALTERNATIVES,
+      );
+    }
+  }
+  if (
+    kind === 'product_ref' &&
+    (PRODUCT_REF_REQUIREMENT_POISON_FIELDS as readonly string[]).includes(f.field)
+  )
+    return refuse(REQUIREMENT_FALLBACK_ALTERNATIVES);
+  if (kind === 'money' && !(MONEY_CONTEXT_FIELDS as readonly string[]).includes(f.field)) {
+    if (f.value.operator === 'around' || f.value.currency !== 'USD')
+      return refuse(
+        'an exact USD money bound (operator lt, lte, gt or gte with basis total or per_item), or ' +
+          REQUIREMENT_FALLBACK_ALTERNATIVES,
+      );
+  }
+  if (kind === 'facet') {
+    if (
+      (f.field === 'watch_dial_color' || f.field === 'watch_band_type') &&
+      f.value.values.length > 1
+    )
+      return refuse(
+        'one live catalogue value per watch facet fact (operator any), or ' +
+          REQUIREMENT_FALLBACK_ALTERNATIVES,
+      );
+    if (f.field === 'necklace_type' && f.value.values.length > 1)
+      // The compile() multi-value OR tail is pearl and gemstone only; a
+      // multi-value necklace_type any lands in the single-value unresolved
+      // tail and would block every search.
+      return refuse(
+        'one live catalogue value per necklace_type facet fact (operator any), or ' +
+          REQUIREMENT_FALLBACK_ALTERNATIVES,
+      );
+    if (f.field === 'gemstone' && f.value.operator === 'all')
+      return refuse(
+        'operator any with the wanted values (the compiler treats them as alternatives), or ' +
+          REQUIREMENT_FALLBACK_ALTERNATIVES,
+      );
+  }
+  return null;
+}
+
 function toBriefFact(
   f: NonNullable<UpdateShoppingStateInput['operations'][number]['fact']>,
   sourceMessageId: string,
@@ -265,6 +415,22 @@ function toBriefFact(
   // each value must exist in the live vocabulary below.
   if (f.field === 'product_audience' && f.value.kind !== 'facet')
     throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
+  // Earring backing type (backing-type lane, verified live 2026-10-14:
+  // Catalog_BackingType is a filterable facet carrying twenty live values
+  // including Clip-On, Fish Hook, Leverback and Push Back). The requirement
+  // encoding is a facet on Catalog_BackingType whose values are the agent's
+  // meaning-mapped choices validated against the live vocabulary ("clip-ons",
+  // "her ears are not pierced" -> Clip-On). A backing meaning with no live
+  // value is never a bogus facet: it stays as a text CONTEXT fact the
+  // conversation can still use, so the only accepted text encoding here is
+  // strength context. A backing requirement never compiles against a necklace
+  // or any other product direction; the compiler enforces that direction gate.
+  if (
+    f.field === 'earring_backing' &&
+    f.value.kind !== 'facet' &&
+    !(f.value.kind === 'text' && f.strength === 'context')
+  )
+    throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
   if (f.field === 'exclusion' && f.value.kind === 'text' && f.strength === 'requirement')
     throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
   if (f.field !== 'material' && f.value.kind === 'material_alternatives')
@@ -273,11 +439,22 @@ function toBriefFact(
     throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
   if (f.field === 'watch_band_material' && f.value.kind !== 'watch_band_family')
     throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
+  // General classification gate (sister-fix-retrieval-2026-10-14): an active
+  // requirement+explicit fact the compiler can never compile poisons every
+  // later catalogue search, so it is refused here, at the only layer that sees
+  // the fact before it enters state. The refusal is a structured, agent-readable
+  // outcome naming the supported alternatives; preference strength, context
+  // strength and tentative certainty encodings stay accepted by design.
+  const requirementRefusal = requirementEncodingRefusal(f);
+  if (requirementRefusal) throw new Error(requirementRefusal);
   if (f.value.kind === 'material_alternatives') {
     for (const alternative of f.value.alternatives) {
-      if (alternative.type !== null) requireLiveValue('Catalog_MaterialInformation.MaterialType', alternative.type);
-      if (alternative.color !== null) requireLiveValue('Catalog_MaterialInformation.MaterialColor', alternative.color);
-      if (alternative.purity !== null) requireLiveValue('Catalog_MaterialInformation.MaterialPurity', alternative.purity);
+      if (alternative.type !== null)
+        requireLiveValue('Catalog_MaterialInformation.MaterialType', alternative.type);
+      if (alternative.color !== null)
+        requireLiveValue('Catalog_MaterialInformation.MaterialColor', alternative.color);
+      if (alternative.purity !== null)
+        requireLiveValue('Catalog_MaterialInformation.MaterialPurity', alternative.purity);
     }
   }
   if (f.value.kind === 'facet') {
@@ -293,18 +470,20 @@ function toBriefFact(
               ? SUPPORTED_FACET_ATTRIBUTES.necklace_type
               : f.field === 'product_audience'
                 ? SUPPORTED_FACET_ATTRIBUTES.product_audience
-                : f.field === 'watch_dial_color'
-            ? SUPPORTED_FACET_ATTRIBUTES.watch_dial_color
-            : f.field === 'watch_band_type'
-              ? SUPPORTED_FACET_ATTRIBUTES.watch_band_type
-              : f.field === 'exclusion' && facet.attribute === 'Catalog_ProductType'
-                ? 'Catalog_ProductType'
-                : f.field === 'exclusion' && facet.attribute === 'Catalog_Motif'
-                  ? 'Catalog_Motif'
-                  : f.field === 'exclusion' &&
-                      facet.attribute === MATERIAL_COLOR_EXCLUSION_ATTRIBUTE
-                    ? MATERIAL_COLOR_EXCLUSION_ATTRIBUTE
-                    : undefined;
+                : f.field === 'earring_backing'
+                  ? SUPPORTED_FACET_ATTRIBUTES.earring_backing
+                  : f.field === 'watch_dial_color'
+                    ? SUPPORTED_FACET_ATTRIBUTES.watch_dial_color
+                    : f.field === 'watch_band_type'
+                      ? SUPPORTED_FACET_ATTRIBUTES.watch_band_type
+                      : f.field === 'exclusion' && facet.attribute === 'Catalog_ProductType'
+                        ? 'Catalog_ProductType'
+                        : f.field === 'exclusion' && facet.attribute === 'Catalog_Motif'
+                          ? 'Catalog_Motif'
+                          : f.field === 'exclusion' &&
+                              facet.attribute === MATERIAL_COLOR_EXCLUSION_ATTRIBUTE
+                            ? MATERIAL_COLOR_EXCLUSION_ATTRIBUTE
+                            : undefined;
     if (!expected || facet.attribute !== expected)
       throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
     if (
@@ -313,6 +492,7 @@ function toBriefFact(
         f.field !== 'gemstone' &&
         f.field !== 'pearl' &&
         f.field !== 'necklace_type' &&
+        f.field !== 'earring_backing' &&
         f.field !== 'product_audience' &&
         f.field !== 'product_type' &&
         f.field !== 'exclusion') ||
@@ -321,14 +501,19 @@ function toBriefFact(
       // Pearl and necklace-type requirements are always positive selections;
       // a none-operator pearl exclusion is a different product conversation.
       // The same holds for audience scope: excluding a gender is not a
-      // product conversation this contract supports.
-      ((f.field === 'pearl' || f.field === 'necklace_type' || f.field === 'product_audience') &&
+      // product conversation this contract supports, and neither is excluding
+      // a backing type.
+      ((f.field === 'pearl' ||
+        f.field === 'necklace_type' ||
+        f.field === 'earring_backing' ||
+        f.field === 'product_audience') &&
         facet.operator !== 'any')
     )
       throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
     if (
       f.field === 'product_type' &&
-      (facet.operator !== 'any' || facet.values.some((value) => !liveValues('Catalog_ProductType').includes(value)))
+      (facet.operator !== 'any' ||
+        facet.values.some((value) => !liveValues('Catalog_ProductType').includes(value)))
     )
       throw new Error(
         facet.values.some((value) => !liveValues('Catalog_ProductType').includes(value))
@@ -336,7 +521,8 @@ function toBriefFact(
           : `UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`,
       );
     if (f.field === 'exclusion') {
-      if (facet.operator !== 'none') throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
+      if (facet.operator !== 'none')
+        throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
       if (facet.attribute === 'Catalog_ProductType') {
         facet.values.forEach((value) => requireLiveValue('Catalog_ProductType', value));
       } else if (facet.attribute === 'Catalog_Motif') {
@@ -355,6 +541,7 @@ function toBriefFact(
         f.field === 'gemstone' ||
         f.field === 'pearl' ||
         f.field === 'necklace_type' ||
+        f.field === 'earring_backing' ||
         f.field === 'product_audience' ||
         f.field === 'watch_dial_color' ||
         f.field === 'watch_band_type'
@@ -534,6 +721,7 @@ export async function updateShoppingState(
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'operation_rejected';
     const unsupported = detail.startsWith('UNSUPPORTED_FACT_ENCODING');
+    const unsupportedRequirement = detail.startsWith('UNSUPPORTED_REQUIREMENT_ENCODING');
     const notLive = detail.startsWith('VALUE_NOT_IN_LIVE_VOCABULARY');
     const noVocabulary = detail.startsWith('VOCABULARY_UNAVAILABLE');
     const itemScopeCollision = detail === 'ITEM_SCOPE_KEY_COLLISION';
@@ -549,9 +737,11 @@ export async function updateShoppingState(
             ? 'VOCABULARY_UNAVAILABLE'
             : unsupported
               ? 'UNSUPPORTED_FACT_ENCODING'
-              : itemScopeCollision
-                ? 'ITEM_SCOPE_KEY_COLLISION'
-                : 'operation_rejected',
+              : unsupportedRequirement
+                ? 'UNSUPPORTED_REQUIREMENT_ENCODING'
+                : itemScopeCollision
+                  ? 'ITEM_SCOPE_KEY_COLLISION'
+                  : 'operation_rejected',
         itemScopeCollision
           ? 'Item scope key differs only by case from another live item; use its exact key or retract the conflicting scope'
           : detail,
