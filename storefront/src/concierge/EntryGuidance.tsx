@@ -28,25 +28,6 @@ export function shouldShowEntryGuidance(visibleMessageCount: number) {
   return visibleMessageCount === 0;
 }
 
-/** Product workspace view names, shared with ProductWorkspace's View union. */
-export type WorkspaceViewName = 'discover' | 'compare' | 'saved';
-
-/**
- * One line under the tab list stating what each tab actually holds. The text
- * mirrors real behavior: Discover carries the conversation's current eligible
- * recommendations, Compare holds shopper-selected side-by-side products, and
- * Save retains pieces the shopper explicitly saved.
- */
-export const VIEW_GUIDANCE: Record<WorkspaceViewName, string> = {
-  discover: 'Discover shows current recommendations matched to your conversation.',
-  compare: 'Compare holds the pieces you picked to view side by side.',
-  saved: 'Save keeps the pieces you explicitly saved.',
-};
-
-export function viewGuidance(view: WorkspaceViewName) {
-  return VIEW_GUIDANCE[view];
-}
-
 /**
  * The welcome state: JTV logo plus, in the empty state, the starter controls.
  * ConnectedConcierge owns the picked set in conversation state: varied across

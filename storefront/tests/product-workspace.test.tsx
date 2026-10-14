@@ -14,7 +14,6 @@ import type { BriefFactInput } from '../shared/briefSchema';
 const mock = vi.hoisted(() => ({ state: {} as any }));
 vi.mock('../src/ShoppingProvider', () => ({ useShopping: () => mock.state }));
 import { ProductWorkspace } from '../src/ProductWorkspace';
-import { VIEW_GUIDANCE } from '../src/concierge/EntryGuidance';
 const pieces = [
   normalizeProduct({
     objectID: 'a',
@@ -161,31 +160,18 @@ it('keeps the Discover, Compare and Save tab labels in the accepted order', () =
   expect(nav).toContain('>Save</button>');
 });
 
-it('explains the actual role of the active tab in one guidance line under the tab list', () => {
-  const views = ['discover', 'compare', 'saved'] as const;
-  for (const view of views) {
+it('renders no tab guidance line: the panel spends its pixels on products, not copy about itself', () => {
+  // Arijit, 2026-10-14: the guidance sentence under the tab list is redundant
+  // copy above the heading; real estate is at a premium. It must not render
+  // on any view, and its text must not survive anywhere in the panel.
+  for (const view of ['discover', 'compare', 'saved'] as const) {
     mock.state = state(view);
     const html = renderToStaticMarkup(<ProductWorkspace />);
-    const guidance = html.match(
-      /<p class="pw-view-guidance" data-view="[a-z]+">([^<]*)<\/p>/,
-    )?.[1];
-    expect(guidance).toBe(VIEW_GUIDANCE[view]);
-    expect(guidance).not.toMatch(/[—–]/);
-    expect(html.indexOf('class="pw-view-guidance"')).toBeGreaterThan(
-      html.indexOf('class="pw-views"'),
-    );
+    expect(html.indexOf('pw-view-guidance')).toBe(-1);
+    expect(html).not.toContain('shows current recommendations');
+    expect(html).not.toContain('holds the pieces you picked');
+    expect(html).not.toContain('keeps the pieces you explicitly saved');
   }
-});
-
-it('renders tab guidance in normal flow before cards, never covering them', () => {
-  mock.state = {
-    ...state('discover'),
-    discoveries: [{ title: 'Options', items: [{ product: pieces[0] }] }],
-  };
-  const html = renderToStaticMarkup(<ProductWorkspace />);
-  expect(html.indexOf('class="pw-view-guidance"')).toBeLessThan(
-    html.indexOf('class="pw-discovery-groups"'),
-  );
 });
 
 it('warns about a saved record conflicting with the only verified tentative budget', () => {
