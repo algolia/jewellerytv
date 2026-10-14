@@ -877,6 +877,16 @@
   min-width: 0;
   flex-wrap: nowrap;
 }
+/* Scannable fit-and-material line on Discover tiles: catalogue unit labels
+   verbatim ("18 Inch", "Size 6"), metal color and purity, dot-separated. */
+.product-workspace .pw-product-specs {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .product-workspace .pw-product-main .pw-price {
   margin: 0;
   font-size: 18px;

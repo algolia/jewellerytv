@@ -253,7 +253,7 @@ describe('API-only present_choices staging', () => {
     );
     expect(result).toMatchObject({
       status: 'staged',
-      proposal: { groups: [{ title: 'Product type: Necklace' }] },
+      proposal: { groups: [{ title: 'Necklace' }] },
     });
   });
 

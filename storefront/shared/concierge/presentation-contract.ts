@@ -259,6 +259,14 @@ const CATALOGUE_GROUP_BASIS_LABELS: Record<CatalogueGroupBasis['attribute'], str
   Catalog_NecklaceType: 'Necklace style',
   'Catalog_GemstoneInformation.GemstoneColorGroup': 'Gemstone color',
 };
+/**
+ * Discover headings carry a category label, never a schema readout. A
+ * product-type basis IS the label ("Necklace", "Hoop Earrings"); other bases
+ * keep their plain-language dimension prefix ("Watch case size: 36mm"). The
+ * basis attribute stays available to the agent and validation through
+ * CatalogueGroupBasis.
+ */
 export function deriveCatalogueGroupTitle(basis: CatalogueGroupBasis): string {
+  if (basis.attribute === 'Catalog_ProductType') return basis.value || 'Product type';
   return `${CATALOGUE_GROUP_BASIS_LABELS[basis.attribute]}: ${basis.value}`;
 }
