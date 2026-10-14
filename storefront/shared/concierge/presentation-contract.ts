@@ -22,6 +22,7 @@ export const CATALOGUE_GROUP_BASIS_ATTRIBUTES = [
   'Catalog_BraceletType',
   'Catalog_NecklaceType',
   'Catalog_GemstoneInformation.GemstoneColorGroup',
+  'Catalog_JewelryMaterialNavigationName',
 ] as const;
 export const catalogueGroupBasisSchema = z
   .object({
@@ -258,6 +259,7 @@ const CATALOGUE_GROUP_BASIS_LABELS: Record<CatalogueGroupBasis['attribute'], str
   Catalog_BraceletType: 'Bracelet style',
   Catalog_NecklaceType: 'Necklace style',
   'Catalog_GemstoneInformation.GemstoneColorGroup': 'Gemstone color',
+  Catalog_JewelryMaterialNavigationName: 'Material',
 };
 /**
  * Discover headings carry a category label, never a schema readout. A
