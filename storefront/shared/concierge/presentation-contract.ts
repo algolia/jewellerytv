@@ -29,25 +29,62 @@ export const catalogueGroupBasisSchema = z
     value: z.string().trim().min(1).max(160),
   })
   .strict();
-const productGroups = z
+export const PRESENTATION_MODES = ['three_style_grid', 'focused_choice'] as const;
+export type PresentationMode = (typeof PRESENTATION_MODES)[number];
+const gridGroup = z
+  .object({
+    basis: catalogueGroupBasisSchema,
+    items: z.array(selectedLine).min(2).max(3),
+  })
+  .strict();
+const focusedGroup = z
+  .object({
+    basis: catalogueGroupBasisSchema,
+    items: z.array(selectedLine).min(1).max(3),
+  })
+  .strict();
+const legacyGroup = z
+  .object({
+    basis: catalogueGroupBasisSchema,
+    items: z.array(selectedLine).min(1).max(2),
+  })
+  .strict();
+const threeStyleGrid = z
   .object({
     kind: z.literal('product_groups'),
-    groups: z
-      .array(
-        z
-          .object({
-            basis: catalogueGroupBasisSchema,
-            items: z.array(selectedLine).min(1).max(2),
-          })
-          .strict(),
-      )
-      .min(1)
-      .max(3),
+    mode: z.literal('three_style_grid'),
+    groups: z.array(gridGroup).min(3).max(3),
+    alternatives: z.null(),
+  })
+  .strict()
+  .refine(
+    (body) =>
+      new Set(body.groups.map((group) => `${group.basis.attribute}\u0000${group.basis.value}`))
+        .size === body.groups.length,
+    { message: 'Style columns must be distinct' },
+  );
+const focusedChoice = z
+  .object({
+    kind: z.literal('product_groups'),
+    mode: z.literal('focused_choice'),
+    groups: z.array(focusedGroup).min(1).max(1),
+    alternatives: z.null(),
+  })
+  .strict();
+// Deprecated migration shape: the pre-repair contract without a mode. Kept so a
+// presentation from an agent configured before the coordinated save still
+// validates; the published instructions stop using it for open-ended discovery.
+const legacyProductGroups = z
+  .object({
+    kind: z.literal('product_groups'),
+    groups: z.array(legacyGroup).min(1).max(3),
+    alternatives: z.null(),
   })
   .strict();
 const completeLooks = z
   .object({
     kind: z.literal('complete_looks'),
+    groups: z.null(),
     alternatives: z
       .array(
         z
@@ -61,23 +98,11 @@ const completeLooks = z
       .max(3),
   })
   .strict();
-const strictProductGroupsBody = z
-  .object({
-    kind: z.literal('product_groups'),
-    groups: productGroups.shape.groups,
-    alternatives: z.null(),
-  })
-  .strict();
-const strictCompleteLooksBody = z
-  .object({
-    kind: z.literal('complete_looks'),
-    groups: z.null(),
-    alternatives: completeLooks.shape.alternatives,
-  })
-  .strict();
-const strictPresentationBody = z.discriminatedUnion('kind', [
-  strictProductGroupsBody,
-  strictCompleteLooksBody,
+const strictPresentationBody = z.union([
+  threeStyleGrid,
+  focusedChoice,
+  legacyProductGroups,
+  completeLooks,
 ]);
 const envelope = z
   .object({
@@ -144,6 +169,9 @@ export type PresentationContext = {
   unresolved?: readonly PresentationUnresolved[];
   priorProposal?: StagedPresentation | null;
   aborted?: boolean;
+  /** Verified by the runtime against mission state: an accepted exact item or a
+   * shopper-confirmed narrow style scope. Required for focused_choice mode. */
+  focusedScopeVerified?: boolean;
 };
 export type StagedLine = {
   evidenceRef: string;
@@ -163,6 +191,7 @@ export type StagedPresentation = {
   turnId: string;
   proposalId: string;
   kind: PresentationBody['kind'];
+  mode: PresentationMode | null;
   groups: StagedGroup[];
   combinedItemSubtotalCents: number | null;
   assessment: {

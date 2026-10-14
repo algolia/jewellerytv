@@ -11,6 +11,7 @@ import type { CatalogVocabulary } from '../vocabularyContract.js';
 import {
   SUPPORTED_FACET_ATTRIBUTES,
   SUPPORTED_GEMSTONE_FACET_ATTRIBUTES,
+  SUPPORTED_PEARL_FACET_ATTRIBUTES,
   MATERIAL_COLOR_EXCLUSION_ATTRIBUTE,
   WATCH_BAND_MATERIAL_FAMILIES,
 } from '../catalogueFactContract.js';
@@ -107,6 +108,8 @@ const inputFact = z
       'design',
       'material',
       'gemstone',
+      'pearl',
+      'necklace_type',
       'watch_dial_color',
       'watch_band_type',
       'watch_band_material',
@@ -242,6 +245,14 @@ function toBriefFact(
     throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
   if (f.field === 'product_type' && f.value.kind === 'text')
     throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
+  // Pearl requirements accept only the typed facet encoding (Craig Task 01):
+  // a text pearl fact is exactly the encoding that left the shopper with an
+  // unverified "cannot verify pearls" answer, so the writer refuses it up
+  // front instead of letting it fail later at compile time.
+  if (f.field === 'pearl' && f.value.kind !== 'facet')
+    throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
+  if (f.field === 'necklace_type' && f.value.kind !== 'facet')
+    throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
   if (f.field === 'exclusion' && f.value.kind === 'text' && f.strength === 'requirement')
     throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
   if (f.field !== 'material' && f.value.kind === 'material_alternatives')
@@ -264,7 +275,11 @@ function toBriefFact(
         ? SUPPORTED_FACET_ATTRIBUTES.product_type
         : f.field === 'gemstone'
           ? SUPPORTED_GEMSTONE_FACET_ATTRIBUTES.find((attribute) => attribute === facet.attribute)
-          : f.field === 'watch_dial_color'
+          : f.field === 'pearl'
+            ? SUPPORTED_PEARL_FACET_ATTRIBUTES.find((attribute) => attribute === facet.attribute)
+            : f.field === 'necklace_type'
+              ? SUPPORTED_FACET_ATTRIBUTES.necklace_type
+              : f.field === 'watch_dial_color'
             ? SUPPORTED_FACET_ATTRIBUTES.watch_dial_color
             : f.field === 'watch_band_type'
               ? SUPPORTED_FACET_ATTRIBUTES.watch_band_type
@@ -282,10 +297,15 @@ function toBriefFact(
       (f.field !== 'watch_dial_color' &&
         f.field !== 'watch_band_type' &&
         f.field !== 'gemstone' &&
+        f.field !== 'pearl' &&
+        f.field !== 'necklace_type' &&
         f.field !== 'product_type' &&
         f.field !== 'exclusion') ||
       (f.field === 'watch_dial_color' && facet.operator !== 'any') ||
-      (f.field === 'watch_band_type' && facet.operator !== 'any')
+      (f.field === 'watch_band_type' && facet.operator !== 'any') ||
+      // Pearl and necklace-type requirements are always positive selections;
+      // a none-operator pearl exclusion is a different product conversation.
+      ((f.field === 'pearl' || f.field === 'necklace_type') && facet.operator !== 'any')
     )
       throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
     if (
@@ -313,7 +333,13 @@ function toBriefFact(
       }
     }
     if (f.field !== 'exclusion') {
-      if (f.field === 'gemstone' || f.field === 'watch_dial_color' || f.field === 'watch_band_type')
+      if (
+        f.field === 'gemstone' ||
+        f.field === 'pearl' ||
+        f.field === 'necklace_type' ||
+        f.field === 'watch_dial_color' ||
+        f.field === 'watch_band_type'
+      )
         facet.values.forEach((value) => requireLiveValue(facet.attribute, value));
     }
   }

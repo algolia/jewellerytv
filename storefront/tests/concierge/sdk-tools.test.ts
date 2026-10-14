@@ -155,7 +155,7 @@ describe('installed SDK client-tool callback registration', () => {
         status: 'invalid_input',
         reasons: ['semantic_presentation_invalid'],
         expected: expect.arrayContaining([
-          'body.kind=product_groups with non-empty groups and alternatives=null',
+          'body.kind=product_groups with mode three_style_grid (exactly three distinct style columns, two or three items each) or mode focused_choice (one confirmed narrow column), and alternatives=null',
           'body.kind=complete_looks with groups=null and non-empty alternatives',
         ]),
       }),
@@ -230,6 +230,90 @@ describe('installed SDK client-tool callback registration', () => {
       output: { status: 'tool_failure', code: 'PRESENTATION_CALLBACK_FAILED' },
     });
   });
+  it('accepts a flattened presentation payload and drops the extra top-level explanation', async () => {
+    // Observed in connected journeys (2026-10-13): the model sometimes emits the
+    // presentation fields at the top level with an extra explanation string. The
+    // SDK-level published schema must tolerate it, and this layer must not reject
+    // what the published schema accepts.
+    const presentSemantic = vi.fn(async () => ({ status: 'staged' }));
+    const tools = createSdkClientTools({
+      updateSemantic: vi.fn(async () => ({ status: 'applied' })),
+      retrieveSemantic: vi.fn(async () => ({ status: 'ok' })),
+      presentSemantic,
+      getActiveTurnToken: vi.fn(() => 7),
+      notePresentationAttempt: vi.fn(() => true),
+    } as unknown as Runtime);
+    const input = {
+      kind: 'product_groups',
+      mode: 'focused_choice',
+      explanation: 'One verified silver tennis bracelet matches the confirmed focus.',
+      groups: [
+        {
+          basis: { attribute: 'Catalog_BraceletType', value: 'Tennis' },
+          items: [
+            {
+              evidenceRef: 'prod_catalog/bracelet/hash',
+              quantity: 1,
+              componentSlot: 'bracelet',
+              explanation: 'In-stock sterling silver tennis bracelet.',
+            },
+          ],
+        },
+      ],
+      alternatives: null,
+    };
+    const submitted = call(tools.present_choices.onToolCall!, input);
+    await submitted.run();
+    expect(presentSemantic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({ kind: 'product_groups', mode: 'focused_choice' }),
+      }),
+      'call-1',
+      7,
+    );
+    expect(submitted.addToolResult).toHaveBeenCalledWith({ output: { status: 'staged' } });
+  });
+
+  it('strips group-level extras the model adds (observed chat-15 shape) instead of rejecting', async () => {
+    const presentSemantic = vi.fn(async () => ({ status: 'staged' }));
+    const tools = createSdkClientTools({
+      updateSemantic: vi.fn(async () => ({ status: 'applied' })),
+      retrieveSemantic: vi.fn(async () => ({ status: 'ok' })),
+      presentSemantic,
+      getActiveTurnToken: vi.fn(() => 9),
+      notePresentationAttempt: vi.fn(() => true),
+    } as unknown as Runtime);
+    const input = {
+      kind: 'product_groups',
+      mode: 'focused_choice',
+      groups: [
+        {
+          basis: { attribute: 'Catalog_BraceletType', value: 'Dainty' },
+          items: [
+            { evidenceRef: 'prod_catalog/b1/hash', quantity: 1, componentSlot: 'bracelet', explanation: 'pearl option' },
+            { evidenceRef: 'prod_catalog/b2/hash', quantity: 1, componentSlot: 'bracelet', explanation: 'wheat chain' },
+          ],
+          alternatives: null,
+          explanation: 'I narrowed the birthday directions to in-stock bracelets.',
+        },
+      ],
+    };
+    const submitted = call(tools.present_choices.onToolCall!, input);
+    await submitted.run();
+    expect(presentSemantic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          kind: 'product_groups',
+          mode: 'focused_choice',
+          groups: [expect.objectContaining({ basis: { attribute: 'Catalog_BraceletType', value: 'Dainty' } })],
+        }),
+      }),
+      'call-1',
+      9,
+    );
+    expect(submitted.addToolResult).toHaveBeenCalledWith({ output: { status: 'staged' } });
+  });
+
   it('passes a catalogue-backed group basis through to runtime', async () => {
     const presentSemantic = vi.fn(async () => ({ status: 'staged' }));
     const tools = createSdkClientTools({

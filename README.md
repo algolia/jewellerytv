@@ -18,7 +18,7 @@ A public JTV-style storefront for exploring jewelry through conversation. One Co
 
 The [editable workflow source](storefront/docs/architecture.mmd) records the full state, retrieval and exact-ID refresh paths. The static SVG uses system fonts and self-contained shapes, so GitHub can render it without a separate PNG fallback.
 
-The Concierge owns interpretation, tone, questions, search decisions, curation and explanations. The application owns state, identity, source boundaries, exact arithmetic and display validation. Its three client-side tools are `update_shopping_state`, `retrieve_evidence` and `present_choices`. Product and blog indices and all index settings remain read-only. The app does not contain canned Concierge replies or a second conversational router.
+The Concierge owns interpretation, tone, questions, search decisions, curation and explanations. The application owns state, identity, source boundaries, exact arithmetic and display validation. Its three client-side tools are `update_shopping_state`, `retrieve_evidence` and `present_choices`. Product, blog and Help indices and all index settings remain read-only. The app does not contain canned Concierge replies or a second conversational router.
 
 The browser keeps the current shopping mission in session storage. Selected, Discover and Compare share that state. Agent-proposed complete looks land in the Selected view with their item subtotal, and look lines already in the selected grid carry a Selected mark. A new conversation keeps Selected pieces while resetting the brief and working selection. The longer-term Selected/Compare session lifecycle has not been decided. Agent Studio memory is off, and there is no login or cross-device state.
 

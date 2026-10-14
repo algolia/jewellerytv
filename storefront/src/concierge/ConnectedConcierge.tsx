@@ -368,7 +368,7 @@ export function getConnectedTurnSystemNotice(
   if (finish?.isAbort)
     return '[System notice] This request was stopped before a complete response. Existing product choices remain.';
   if (finish?.isError || hasFailedTool(messages) || hasTransportError)
-    return '[System notice] This request could not be completed. Existing product choices remain.';
+    return '[System notice] That message did not go through. Send it again and the conversation picks up right where it left off. Existing product choices remain.';
   return '[System notice] This request did not produce a complete response. Existing product choices remain.';
 }
 
@@ -722,100 +722,136 @@ export function ConnectedConcierge({
       setPending({ sourceMessageId, turnId });
       chat.setInput('');
       try {
-        await chat.sendMessage({ text, messageId: sourceMessageId });
-        await Promise.resolve();
-        // The callback is invoked by the SDK while the promise is settling;
-        // the assertion keeps TypeScript from treating the mutable ref as its
-        // initial null value inside this async closure.
-        const finish = finishRef.current as TurnFinish | null;
-        const messages = finish?.messages ?? chat.messages;
-        const completed =
-          !!finish &&
-          !finish.isAbort &&
-          !finish.isError &&
-          !hasFailedTool(messages) &&
-          manualEditEpoch.current === startManualEditEpoch &&
-          isCompletedAssistantTurn(messages, 'ready');
-        if (completed) {
-          const committed = await runtime.finishTurnAndPersist(turnId, 'completed');
-          const presentationAttempted = runtime.hadPresentationAttempt();
-          if (presentationAttempted && !committed) {
+        // Transparent transport retry. The SDK resolves a failed stream request
+        // without onFinish and leaves the shopper's message parked in state,
+        // so a resend must first drop that message and clear the error state
+        // or the bubble duplicates. One silent retry keeps a transient upstream
+        // blip from becoming a visible system error; it never invents content
+        // and the last-resort notice stays a fixed, clearly-labelled UI status.
+        let retriedTransport = false;
+        const prepareTransportRetry = async () => {
+          recordTurnOutcome(turnId, chatRequestId.current, {
+            finishFired: false,
+            isAbort: false,
+            isError: true,
+            decision: 'transport-retry',
+          });
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+          chat.setMessages((previous) => previous.filter((m) => m.id !== sourceMessageId));
+          chat.clearError();
+        };
+        for (;;) {
+          finishRef.current = null;
+          chatErrorRef.current = null;
+          try {
+            await chat.sendMessage({ text, messageId: sourceMessageId });
+            await Promise.resolve();
+            // The callback is invoked by the SDK while the promise is settling;
+            // the assertion keeps TypeScript from treating the mutable ref as its
+            // initial null value inside this async closure.
+            const finish = finishRef.current as TurnFinish | null;
+            const messages = finish?.messages ?? chat.messages;
+            // The SDK resolves sendMessage without firing onFinish when the
+            // stream request itself fails (abstract-chat.js swallows the
+            // rejection into chat.error via onError), so the error ref is the
+            // only signal that separates a transport failure from an agent turn
+            // that stopped short. Mislabelling the former as the latter sent
+            // this defect unclassified for days.
+            const transportError = !finish && chatErrorRef.current !== null;
+            if (transportError && !retriedTransport) {
+              retriedTransport = true;
+              await prepareTransportRetry();
+              continue;
+            }
+            const completed =
+              !!finish &&
+              !finish.isAbort &&
+              !finish.isError &&
+              !hasFailedTool(messages) &&
+              manualEditEpoch.current === startManualEditEpoch &&
+              isCompletedAssistantTurn(messages, 'ready');
+            if (completed) {
+              const committed = await runtime.finishTurnAndPersist(turnId, 'completed');
+              const presentationAttempted = runtime.hadPresentationAttempt();
+              if (presentationAttempted && !committed) {
+                recordTurnOutcome(turnId, chatRequestId.current, {
+                  finishFired: !!finish,
+                  isAbort: false,
+                  isError: false,
+                  decision: 'validated-miss',
+                });
+                runtime.endTurn(turnId);
+                onSystemNotice(
+                  '[System notice] This request did not produce a validated product selection. Existing product choices remain.',
+                );
+                return;
+              }
+              recordTurnOutcome(turnId, chatRequestId.current, {
+                finishFired: !!finish,
+                isAbort: false,
+                isError: false,
+                decision: 'completed',
+              });
+              runtime.endTurn(turnId);
+              const assistant = latestAssistant(messages);
+              if (assistant) {
+                recordCompletedAssistantMessage(safeStorage(), assistant.id);
+                setRevealed((previous) => new Set(previous).add(assistant.id));
+              }
+            } else {
+              if (import.meta.env.DEV)
+                console.warn('JTV Concierge turn incomplete', {
+                  hasFinish: !!finish,
+                  isAbort: finish?.isAbort ?? false,
+                  isError: finish?.isError ?? false,
+                  failedTool: hasFailedTool(messages),
+                  messageCount: messages.length,
+                });
+              recordTurnOutcome(turnId, chatRequestId.current, {
+                finishFired: !!finish,
+                isAbort: finish?.isAbort ?? false,
+                isError: finish?.isError ?? false,
+                decision: finish?.isAbort
+                  ? 'aborted-notice'
+                  : finish?.isError || hasFailedTool(messages)
+                    ? 'failed-notice'
+                    : transportError
+                      ? 'transport-error'
+                      : 'incomplete-notice',
+              });
+              runtime.finishTurn(
+                turnId,
+                finish?.isAbort ? 'aborted' : finish?.isError || transportError ? 'error' : 'exhausted',
+              );
+              runtime.endTurn(turnId);
+              onSystemNotice(getConnectedTurnSystemNotice(messages, finish, transportError));
+            }
+            return;
+          } catch (cause) {
+            if (!retriedTransport) {
+              retriedTransport = true;
+              await prepareTransportRetry();
+              continue;
+            }
+            if (import.meta.env.DEV)
+              console.warn(
+                `JTV Concierge send failed: ${cause instanceof Error ? cause.name : typeof cause}: ${cause instanceof Error ? cause.message.slice(0, 180) : 'unknown'}`,
+              );
             recordTurnOutcome(turnId, chatRequestId.current, {
-              finishFired: !!finish,
+              finishFired: finishRef.current !== null,
               isAbort: false,
-              isError: false,
-              decision: 'validated-miss',
+              isError: true,
+              decision: 'transport-error',
             });
+            runtime.finishTurn(turnId, 'error');
             runtime.endTurn(turnId);
+            const failedMessages = (finishRef.current as TurnFinish | null)?.messages ?? chat.messages;
             onSystemNotice(
-              '[System notice] This request did not produce a validated product selection. Existing product choices remain.',
+              getConnectedTurnSystemNotice(failedMessages, { isAbort: false, isError: true }),
             );
             return;
           }
-          recordTurnOutcome(turnId, chatRequestId.current, {
-            finishFired: !!finish,
-            isAbort: false,
-            isError: false,
-            decision: 'completed',
-          });
-          runtime.endTurn(turnId);
-          const assistant = latestAssistant(messages);
-          if (assistant) {
-            recordCompletedAssistantMessage(safeStorage(), assistant.id);
-            setRevealed((previous) => new Set(previous).add(assistant.id));
-          }
-        } else {
-          if (import.meta.env.DEV)
-            console.warn('JTV Concierge turn incomplete', {
-              hasFinish: !!finish,
-              isAbort: finish?.isAbort ?? false,
-              isError: finish?.isError ?? false,
-              failedTool: hasFailedTool(messages),
-              messageCount: messages.length,
-            });
-          // The SDK resolves sendMessage without firing onFinish when the
-          // stream request itself fails (abstract-chat.js swallows the
-          // rejection into chat.error via onError), so the error ref is the
-          // only signal that separates a transport failure from an agent turn
-          // that stopped short. Mislabelling the former as the latter sent
-          // this defect unclassified for days.
-          const transportError = !finish && chatErrorRef.current !== null;
-          recordTurnOutcome(turnId, chatRequestId.current, {
-            finishFired: !!finish,
-            isAbort: finish?.isAbort ?? false,
-            isError: finish?.isError ?? false,
-            decision: finish?.isAbort
-              ? 'aborted-notice'
-              : finish?.isError || hasFailedTool(messages)
-                ? 'failed-notice'
-                : transportError
-                  ? 'transport-error'
-                  : 'incomplete-notice',
-          });
-          runtime.finishTurn(
-            turnId,
-            finish?.isAbort ? 'aborted' : finish?.isError || transportError ? 'error' : 'exhausted',
-          );
-          runtime.endTurn(turnId);
-          onSystemNotice(getConnectedTurnSystemNotice(messages, finish, transportError));
         }
-      } catch (cause) {
-        if (import.meta.env.DEV)
-          console.warn(
-            `JTV Concierge send failed: ${cause instanceof Error ? cause.name : typeof cause}: ${cause instanceof Error ? cause.message.slice(0, 180) : 'unknown'}`,
-          );
-        recordTurnOutcome(turnId, chatRequestId.current, {
-          finishFired: finishRef.current !== null,
-          isAbort: false,
-          isError: true,
-          decision: 'transport-error',
-        });
-        runtime.finishTurn(turnId, 'error');
-        runtime.endTurn(turnId);
-        const failedMessages = (finishRef.current as TurnFinish | null)?.messages ?? chat.messages;
-        onSystemNotice(
-          getConnectedTurnSystemNotice(failedMessages, { isAbort: false, isError: true }),
-        );
       } finally {
         setPending(null);
       }

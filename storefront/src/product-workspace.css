@@ -799,6 +799,12 @@
   font-size: 14px;
   line-height: 1.45;
 }
+.product-workspace .pw-previous-note {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
 .product-workspace .pw-discovery-groups {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;

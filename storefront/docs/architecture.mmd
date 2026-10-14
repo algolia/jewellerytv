@@ -12,6 +12,7 @@ flowchart LR
   Retrieve --> API[Read-only application API]
   API --> Product[(prod_catalog)]
   API --> Blog[(blog)]
+  API --> Help[(help_content)]
   API --> Retrieve
   Retrieve --> Agent
   Agent -->|SDK tool call| Present[present_choices callback]

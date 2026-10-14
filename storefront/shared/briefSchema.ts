@@ -170,6 +170,8 @@ const v3Field = z.enum([
   'design',
   'material',
   'gemstone',
+  'pearl',
+  'necklace_type',
   'watch_dial_color',
   'watch_band_type',
   'watch_band_material',
