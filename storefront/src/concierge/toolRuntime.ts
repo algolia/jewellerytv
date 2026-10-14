@@ -716,8 +716,10 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
       .map((fact) => (fact.value.kind === 'product_ref' ? fact.value.objectID : ''))
       .filter(Boolean);
     // Focused Choice gate: the shopper's exact item or an explicit, confirmed
-    // narrow style/design focus in the accepted brief. The agent may present one
-    // column only when this is true.
+    // narrow style/design focus in the accepted brief. Typed catalogue-style
+    // facts (pearl, necklace type, bracelet type) count when the shopper
+    // confirmed them as requirements: "she prefers classic pearl strands" is
+    // exactly the confirmed narrow focus this gate exists to recognize.
     const focusedScopeVerified =
       acceptedAnchorIds.length > 0 ||
       brief.facts.some(
@@ -725,7 +727,10 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
           fact.status === 'active' &&
           fact.strength === 'requirement' &&
           fact.certainty === 'explicit' &&
-          (fact.field === 'style' || fact.field === 'design') &&
+          (fact.field === 'style' ||
+            fact.field === 'design' ||
+            fact.field === 'pearl' ||
+            fact.field === 'necklace_type') &&
           (fact.scope.kind === 'mission' || fact.scope.kind === 'item'),
       );
     const result = presentChoices(parsed.data, {

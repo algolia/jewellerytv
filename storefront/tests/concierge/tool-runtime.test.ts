@@ -24,6 +24,7 @@ const fixtureVocabulary = {
     'Catalog_MaterialInformation.MaterialColor': ['White', 'Yellow', 'Blue'],
     'Catalog_MaterialInformation.MaterialPurity': ['Sterling', '10K', '14K', '18K', '24K', '950'],
     'Catalog_GemstoneInformation.GemstoneColorGroup': ['Blue', 'White'],
+    'Catalog_PearlInformationPrimary.PearlFullName': ['Freshwater', 'Akoya', 'Tahitian'],
     Catalog_WatchPrimaryDialPrimaryColor: ['Blue'],
     Catalog_WatchBandType: ['Bracelet'],
   } as Record<string, string[]>,
@@ -1329,6 +1330,62 @@ describe('discovery grid runtime gating', () => {
       expectedEvidenceBatchRevision: retrieved.evidenceBatchRevision,
       turnId: 'turn-1',
       proposalId: 'proposal-focus',
+      body: focusedBody('focused_choice'),
+    });
+    expect(chosen.status).toBe('staged');
+    if ('proposal' in chosen && chosen.proposal)
+      expect(chosen.proposal.mode).toBe('focused_choice');
+  });
+
+  it('stages focused_choice when the shopper confirmed a narrow style through a typed pearl fact', async () => {
+    const runtime = createConciergeToolRuntime({
+      fetchVocabulary,
+      storage: memoryStorage(),
+      initialMissionId: 'mission-1',
+      getCurrentShopperMessage: () => shopper,
+      fetchEvidence: async () => ({
+        status: 'ok' as const,
+        source: 'prod_catalog' as const,
+        missionId: 'mission-1',
+        revision: 1,
+        expectedRevision: 1,
+        turnId: 'turn-1',
+        effectiveFilters: [],
+        unresolved: [],
+        records: [evidence],
+      }),
+    });
+    await runtime.update({
+      ...stateInput,
+      operations: [
+        ...stateInput.operations,
+        {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'Please show me a ring under $100',
+          fact: {
+            id: 'pearl-strands',
+            field: 'pearl',
+            value: {
+              kind: 'facet',
+              attribute: 'Catalog_PearlInformationPrimary.PearlFullName',
+              values: ['Freshwater'],
+              operator: 'any',
+            },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },
+      ],
+    });
+    const retrieved = await runtime.retrieve(retrievalInput);
+    const chosen = await runtime.present({
+      missionId: 'mission-1',
+      expectedStateRevision: 1,
+      expectedEvidenceBatchRevision: retrieved.evidenceBatchRevision,
+      turnId: 'turn-1',
+      proposalId: 'proposal-pearl-focus',
       body: focusedBody('focused_choice'),
     });
     expect(chosen.status).toBe('staged');
