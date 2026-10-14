@@ -172,6 +172,10 @@ const v3Field = z.enum([
   'gemstone',
   'pearl',
   'necklace_type',
+  // Explicit product-audience scope on the product record itself (Craig Task
+  // 02): what the catalogue markets the piece to, e.g. a men's watch. Never a
+  // guess about the shopper; the authoritative attribute is Catalog_Gender.
+  'product_audience',
   'watch_dial_color',
   'watch_band_type',
   'watch_band_material',

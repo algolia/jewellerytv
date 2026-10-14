@@ -1,0 +1,80 @@
+/* Entry guidance: empty-state starter chips and product workspace tab guidance.
+   Uses the shared palette tokens from src/styles.css. */
+
+.connected-starters {
+  max-width: 480px;
+  margin: 18px auto 0;
+}
+
+.connected-starters-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.connected-starters-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.connected-starter-chip {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+}
+
+.connected-starter-chip:hover:not(:disabled) {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.connected-starter-chip:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.connected-starter-chip:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* One short line under the product workspace tab list. Normal flow only: it
+   never overlaps cards, the composer, or the preview overlay. */
+.pw-view-guidance {
+  margin: 6px 0 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+@media (max-width: 480px) {
+  .connected-starters {
+    max-width: 100%;
+  }
+
+  .connected-starters-list {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .connected-starters-list li {
+    width: 100%;
+  }
+
+  .connected-starter-chip {
+    width: 100%;
+    border-radius: 12px;
+  }
+}

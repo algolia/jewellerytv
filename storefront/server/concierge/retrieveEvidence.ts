@@ -10,13 +10,18 @@ import type {
   StyleBatchResult,
   StyleOverviewColumn,
 } from '../../shared/concierge/retrieval/types.js';
+// Re-export for sibling evidence search modules; the type's single source
+// stays retrieval/types.js.
+export type { EffectiveFilter };
 import type { RetrieveEvidenceInput } from '../../shared/concierge/retrieval/schema.js';
 import { materialMatch as verifyMaterial, type MaterialRequirement } from './materialEvidence.js';
 import type { CatalogVocabularyCache, CatalogVocabularySnapshot } from './catalogVocabulary.js';
 import type { UnavailableRequirement } from '../../shared/concierge/retrieval/types.js';
 import { makeResult } from './retrievalResult.js';
 import {
+  AUDIENCE_CONSUMER_CHECK,
   METAL_WATCH_BAND_MATERIALS,
+  PRODUCT_AUDIENCE_ATTRIBUTE,
   SUPPORTED_FACET_ATTRIBUTES,
 } from '../../shared/concierge/catalogueFactContract.js';
 import { CATALOGUE_GROUP_BASIS_ATTRIBUTES } from '../../shared/concierge/presentation-contract.js';
@@ -95,6 +100,14 @@ const PRODUCT_PROJECTION = [
   'Pricing_PriceLabelName',
   'Media_Images',
   'Ratings_AverageRating',
+  // Audience projection (Craig-feedback Task 02, red test first): the exact
+  // catalogue records carry both audience fields (verified live 2026-10-13 on
+  // JRJ802A, 1ZPF6B and the 2026-10-12 Craig repro exact reads); the
+  // projection previously discarded them, so no downstream identity check or
+  // card display could ground an accepted men's audience scope. Query-level
+  // attributesToRetrieve only; no index setting changes.
+  'Catalog_Gender',
+  'Catalog_TargetConsumer',
 ];
 const BLOG_PROJECTION = [
   'objectID',
@@ -247,6 +260,41 @@ function watchFeatureStatus(
     } else if (filter.operator === 'eq') {
       if (!values.includes(String(filter.value))) return 'conflict';
     } else return 'unknown';
+  }
+  return 'match';
+}
+/** Per-record audience exclusion (Craig-feedback Task 02, red test first).
+ * The compiled Catalog_Gender requirement is the authoritative gate, but the
+ * exact failure Craig saw was records staged despite their recorded audience,
+ * so every returned record is verified against the accepted scope itself:
+ * - a record with no readable Catalog_Gender is 'unknown' and never staged as
+ *   a match (a missing gender never invents one);
+ * - a record whose gender is not among the accepted values is 'conflict';
+ * - defense in depth: a record whose own Catalog_TargetConsumer names no
+ *   audience compatible with the accepted scope is a 'conflict' even if its
+ *   Gender value matched (the mislabel case). Missing TargetConsumer never
+ *   rejects: the authoritative field decides. See AUDIENCE_CONSUMER_CHECK in
+ *   catalogueFactContract for the verified field roles. */
+function audienceStatus(
+  record: Record<string, unknown>,
+  filters: readonly EffectiveFilter[],
+): 'match' | 'unknown' | 'conflict' {
+  for (const filter of filters) {
+    if (filter.field !== PRODUCT_AUDIENCE_ATTRIBUTE) continue;
+    if (filter.operator !== 'in' && filter.operator !== 'eq') continue;
+    const accepted = filter.operator === 'in' ? filter.value : [String(filter.value)];
+    const gender =
+      typeof record.Catalog_Gender === 'string' ? [record.Catalog_Gender] : [];
+    if (!gender.length) return 'unknown';
+    if (!gender.some((value) => accepted.includes(value))) return 'conflict';
+    const consumers = Array.isArray(record.Catalog_TargetConsumer)
+      ? record.Catalog_TargetConsumer.filter((value): value is string => typeof value === 'string')
+      : [];
+    if (consumers.length) {
+      const compatible = accepted.flatMap((value) => AUDIENCE_CONSUMER_CHECK[value] ?? []);
+      if (compatible.length && !consumers.some((value) => compatible.includes(value)))
+        return 'conflict';
+    }
   }
   return 'match';
 }
@@ -464,6 +512,53 @@ function compile(
           availableValues: vocabulary.availableValues(expected),
         });
       else filters.push({ field: expected, operator: 'eq', value: f.value.values[0] });
+      continue;
+    }
+    // Explicit product-audience scope (Craig-feedback Task 02, red tests
+    // first): one OR group over the accepted Catalog_Gender values, every one
+    // a live-verified value. The live vocabulary decides what exists —
+    // without it this path stays closed (no frozen gender list), and a value
+    // the catalogue does not carry is disclosed, never silently matched.
+    // Catalog_TargetConsumer is deliberately NOT compiled as a second filter:
+    // unisex records legitimately target both audiences, so the second field
+    // is enforced per record by audienceStatus instead.
+    if (f.field === 'product_audience') {
+      if (
+        f.value.kind !== 'facet' ||
+        f.value.attribute !== PRODUCT_AUDIENCE_ATTRIBUTE ||
+        f.value.operator !== 'any' ||
+        f.value.values.length === 0
+      ) {
+        unresolved.push({
+          field: f.field,
+          reason: 'Audience scope is not an exact supported catalogue encoding',
+        });
+        continue;
+      }
+      if (!vocabulary) {
+        unresolved.push({
+          field: f.field,
+          reason: 'Audience scope needs the live catalogue vocabulary',
+        });
+        continue;
+      }
+      const missing = f.value.values.filter(
+        (value) => !vocabulary.hasValue(PRODUCT_AUDIENCE_ATTRIBUTE, value),
+      );
+      if (missing.length) {
+        unavailable.push({
+          field: f.field,
+          attribute: PRODUCT_AUDIENCE_ATTRIBUTE,
+          requested: missing,
+          availableValues: vocabulary.availableValues(PRODUCT_AUDIENCE_ATTRIBUTE),
+        });
+        continue;
+      }
+      filters.push({
+        field: PRODUCT_AUDIENCE_ATTRIBUTE,
+        operator: 'in',
+        value: [...f.value.values],
+      });
       continue;
     }
     if (f.value.kind === 'material_alternatives') {
@@ -1004,6 +1099,15 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
                 rejected.push({ objectID, reason });
                 continue;
               }
+              const audienceCheck = audienceStatus(record, compiled.filters);
+              if (audienceCheck === 'unknown') {
+                rejected.push({ objectID, reason: 'audience_unknown' });
+                continue;
+              }
+              if (audienceCheck === 'conflict') {
+                rejected.push({ objectID, reason: 'audience_conflict' });
+                continue;
+              }
               const materialStatus = verifyMaterial(record, compiled.material);
               if (materialStatus === 'unknown') {
                 rejected.push({ objectID, reason: 'material_unknown' });
@@ -1203,6 +1307,7 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
       const retrievedAt = now();
       const incomplete: Array<{ field: string; reason: string }> = [];
       const materialUnknown: Array<{ field: string; reason: string }> = [];
+      const audienceIssues: Array<{ field: string; reason: string }> = [];
       const watchUnknown: Array<{ field: string; reason: string }> = [];
       const fitUnknown: Array<{ field: string; reason: string }> = [];
       const exactIDs = input.exactObjectIDs ? new Set(input.exactObjectIDs) : null;
@@ -1220,6 +1325,28 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           return [];
         }
         if (materialStatus === 'conflict') return [];
+        // Per-record audience exclusion (Craig Task 02): the same gate the
+        // batched flow applies. A record whose audience is unreadable or
+        // conflicts with the accepted scope is dropped with its reason, and
+        // when nothing eligible remains the reasons surface as incomplete
+        // evidence instead of reading as an empty catalogue.
+        if (input.source === 'prod_catalog') {
+          const audienceCheck = audienceStatus(record, compiled.filters);
+          if (audienceCheck === 'unknown') {
+            audienceIssues.push({
+              field: 'audience',
+              reason: 'Audience evidence missing: Catalog_Gender is absent or unreadable on this record',
+            });
+            return [];
+          }
+          if (audienceCheck === 'conflict') {
+            audienceIssues.push({
+              field: 'audience',
+              reason: 'Audience conflict: this record does not satisfy the accepted product audience scope',
+            });
+            return [];
+          }
+        }
         // Fit verification (fail closed, ALL compiled fit expectations): the
         // returned record's own size vocabulary must contain every expected
         // measurement. A record without the size field, or without a matching
@@ -1310,10 +1437,14 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
         ];
       });
       const returned = records.slice(0, input.count);
-      if ((incomplete.length || watchUnknown.length || fitUnknown.length) && !returned.length)
+      if (
+        (incomplete.length || audienceIssues.length || watchUnknown.length || fitUnknown.length) &&
+        !returned.length
+      )
         return makeResult(input, state.revision, 'incomplete_evidence', compiled.filters, [
           ...incomplete,
           ...materialUnknown,
+          ...audienceIssues,
           ...watchUnknown,
           ...fitUnknown,
         ]);
@@ -1322,11 +1453,11 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
         state.revision,
         returned.length
           ? 'ok'
-          : materialUnknown.length || watchUnknown.length || fitUnknown.length
+          : materialUnknown.length || audienceIssues.length || watchUnknown.length || fitUnknown.length
             ? 'incomplete_evidence'
             : 'zero_hits',
         compiled.filters,
-        [...incomplete, ...materialUnknown, ...watchUnknown, ...fitUnknown],
+        [...incomplete, ...materialUnknown, ...audienceIssues, ...watchUnknown, ...fitUnknown],
         returned,
       );
     } catch (error) {
@@ -1505,6 +1636,14 @@ export function createAlgoliaEvidenceSearch(options: {
       attributesToRetrieve: JSON.stringify(PROJECTIONS[source]),
       analytics: 'false',
       clickAnalytics: 'false',
+      // Education passages are short, so one agent-crafted word absent from every
+      // passage zeroes an otherwise well-aimed query (measured 2026-10-13:
+      // "choosing chain necklace guide" -> 0 live blog hits; with allOptional it
+      // returns 871 and well-matched queries keep identical hits, see
+      // .checkpoint/runs/article-audience-2026-10-13/probe/f-mitigation-allOptional.json).
+      // Query-level parameter only; the index setting stays untouched (read-only
+      // boundary). prod_catalog keeps strict AND semantics.
+      ...(source === 'prod_catalog' ? {} : { removeWordsIfNoResults: 'allOptional' }),
       ...(numeric.length ? { numericFilters: JSON.stringify(numeric) } : {}),
       ...(facets.length ? { facetFilters: JSON.stringify(facets) } : {}),
     });

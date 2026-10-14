@@ -114,6 +114,14 @@ export type ApiOptions = {
   telemetryLogger?: TelemetryLogger;
   /** Injected in tests; built from appId/apiKey when absent. */
   vocabulary?: CatalogVocabularyCache;
+  /**
+   * Turn deadlines for the shopper-facing transport. A hung upstream must end
+   * as an honest transport failure inside the shopper's reasonable wait (the
+   * acceptance battery budgets 68s per turn) instead of the 180s request cap.
+   * 0 disables a deadline; production defaults keep healthy paths unchanged.
+   */
+  upstreamHeadersTimeoutMs?: number;
+  upstreamStallTimeoutMs?: number;
 };
 const allowedOrigins = new Set(['http://localhost:5173', 'http://127.0.0.1:5173']);
 function reply(res: ServerResponse, status: number, data: unknown) {
@@ -165,6 +173,14 @@ export function createApiHandler(options: ApiOptions) {
   for (const host of cloudHosts)
     if (!/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/.test(host)) throw new Error('Invalid deployment host');
   const origins = new Set([...allowedOrigins, ...[...cloudHosts].map((host) => `https://${host}`)]);
+  // Agent completions answer headers fast when healthy; silence past these
+  // bounds is a failure the shopper must see, not wait on. The headers bound
+  // applies per attempt (the pre-headers retry gets its own window); the
+  // stall bound guards silence between stream chunks after headers arrived.
+  const upstreamHeadersTimeoutMs = options.upstreamHeadersTimeoutMs ?? 15_000;
+  const upstreamStallTimeoutMs = options.upstreamStallTimeoutMs ?? 30_000;
+  const deadlineSignal = (signal: AbortSignal, ms: number) =>
+    ms > 0 ? AbortSignal.any([signal, AbortSignal.timeout(ms)]) : signal;
   return async (req: IncomingMessage, res: ServerResponse) => {
     const telemetry = new RequestTelemetry(req.headers['x-jtv-request-id']);
     const abort = new AbortController();
@@ -307,7 +323,10 @@ export function createApiHandler(options: ApiOptions) {
             'x-algolia-api-key': options.apiKey,
           },
           body: payload === undefined ? undefined : JSON.stringify(payload),
-          signal: abort.signal,
+          // Per-attempt headers deadline, composed with (never replacing) the
+          // request abort: a deadline breach here stays retryable because the
+          // retry gate below reads abort.signal, not this composed signal.
+          signal: deadlineSignal(abort.signal, upstreamHeadersTimeoutMs),
           redirect: 'error',
         });
       const response = await telemetry.measure('upstream_headers', async () => {
@@ -341,11 +360,30 @@ export function createApiHandler(options: ApiOptions) {
           'server-timing': telemetry.timing(),
           'x-request-id': telemetry.requestId,
         });
-        for await (const chunk of Readable.fromWeb(response.body as any, {
-          signal: abort.signal,
-        })) {
-          if (res.destroyed) break;
-          if (!res.write(chunk)) await once(res, 'drain', { signal: abort.signal });
+        // Inter-chunk stall guard: upstream silence after headers must end the
+        // leg through the honest mid-stream error path below instead of
+        // holding the shopper turn open until the 180s request cap.
+        let stallGuard: NodeJS.Timeout | undefined;
+        const armStallGuard = () => {
+          if (upstreamStallTimeoutMs <= 0) return;
+          if (stallGuard) {
+            stallGuard.refresh();
+            return;
+          }
+          stallGuard = setTimeout(() => abort.abort(), upstreamStallTimeoutMs);
+          stallGuard.unref();
+        };
+        armStallGuard();
+        try {
+          for await (const chunk of Readable.fromWeb(response.body as any, {
+            signal: abort.signal,
+          })) {
+            armStallGuard();
+            if (res.destroyed) break;
+            if (!res.write(chunk)) await once(res, 'drain', { signal: abort.signal });
+          }
+        } finally {
+          if (stallGuard) clearTimeout(stallGuard);
         }
         if (!res.destroyed) res.end();
       } else reply(res, 200, await response.json());

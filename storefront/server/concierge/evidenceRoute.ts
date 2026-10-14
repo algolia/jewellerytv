@@ -6,6 +6,7 @@ import {
   createAlgoliaFacetSearch,
   createEvidenceRetriever,
 } from './retrieveEvidence.js';
+import { createContentEvidenceSearch } from './contentEvidenceSearch.js';
 import type { CatalogVocabularyCache } from './catalogVocabulary.js';
 
 const requestSchema = z
@@ -29,8 +30,18 @@ export async function runEvidenceRoute(
   },
 ) {
   const request = requestSchema.parse(raw);
+  // Blog/help content searches get the zero-hit relaxation ladder (Craig Task
+  // 05): the verbatim query is searched first, and only a zero-hit result is
+  // retried once with query-level removeWordsIfNoResults=lastWords. Product
+  // catalogue and exact-object lookups pass through untouched.
+  const search = createContentEvidenceSearch({
+    appId: options.appId,
+    searchOnlyApiKey: options.searchOnlyApiKey,
+    fetch: options.fetch,
+    inner: createAlgoliaEvidenceSearch(options),
+  });
   const retrieve = createEvidenceRetriever({
-    search: createAlgoliaEvidenceSearch(options),
+    search,
     facetSearch: createAlgoliaFacetSearch(options),
     currentState: () => request.brief,
     signal: options.signal,
