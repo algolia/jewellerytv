@@ -851,7 +851,6 @@
 .product-workspace .pw-product-main > .pw-image {
   width: 100%;
   aspect-ratio: 1.5;
-  background: #f3f6f7;
   border-radius: 3px;
 }
 .product-workspace .pw-product-main > .pw-product-copy {
