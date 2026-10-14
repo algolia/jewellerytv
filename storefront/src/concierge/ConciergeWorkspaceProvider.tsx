@@ -145,7 +145,9 @@ export function createConciergeWorkspaceSession(options: {
       products: state.products.flatMap(entry).filter((item): item is ProductEntry => item !== null),
       selectionRecords: [...selectedProducts.values()],
       discoveries: groups,
-      discoveriesStale: runtime.isPublishedStale(),
+      discoveriesStale:
+        groups.length > 0 &&
+        (runtime.isPublishedStale() || proposal?.stateRevision !== state.brief.revision),
       discoveryUnavailable:
         proposal?.kind === 'product_groups' &&
         (proposal.assessment.perItem !== 'accepted' ||
