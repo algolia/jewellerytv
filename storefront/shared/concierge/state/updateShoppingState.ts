@@ -233,12 +233,13 @@ async function failure(
  * makes EVERY later prod_catalog call return unsupported_constraint with zero
  * records until the fact is retracted, so the writer refuses them up front.
  * Fields omitted here are safe by compile() construction: recipient, occasion,
- * design and item_reference are skipped as context before any value branch;
- * product_type resolves through the mission types before the value branches;
- * text/measurement/product_ref pairs not listed either compile (fit
- * measurements, exclusion money) or are already refused by the specific gates
- * above (product_type text, pearl/necklace_type/product_audience non-facet,
- * exclusion text requirements). */
+ * design, style, selection and item_reference are skipped as context before
+ * any value branch (selection carries the presentation contract's explicit
+ * single focus, never a search filter); product_type resolves through the
+ * mission types before the value branches; text/measurement/product_ref pairs
+ * not listed either compile (fit measurements, exclusion money) or are already
+ * refused by the specific gates above (product_type text, pearl/necklace_type/
+ * product_audience non-facet, exclusion text requirements). */
 const TEXT_REQUIREMENT_POISON_FIELDS = [
   'material',
   'gemstone',
@@ -249,7 +250,6 @@ const TEXT_REQUIREMENT_POISON_FIELDS = [
   'budget',
   'fit',
   'education_depth',
-  'selection',
   'other',
 ] as const;
 const MEASUREMENT_REQUIREMENT_POISON_FIELDS = [
@@ -262,7 +262,6 @@ const MEASUREMENT_REQUIREMENT_POISON_FIELDS = [
   'budget',
   'exclusion',
   'education_depth',
-  'selection',
   'other',
 ] as const;
 const PRODUCT_REF_REQUIREMENT_POISON_FIELDS = [...MEASUREMENT_REQUIREMENT_POISON_FIELDS, 'fit'];
