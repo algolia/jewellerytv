@@ -176,7 +176,7 @@ describe('connected Concierge reset gate', () => {
       true,
     );
     expect(notice).toBe(
-      '[System notice] This request could not be completed. Existing product choices remain.',
+      '[System notice] That message did not go through. Send it again and the conversation picks up right where it left off. Existing product choices remain.',
     );
   });
   it('preserves an agent-provided system notice without duplicating it', () => {

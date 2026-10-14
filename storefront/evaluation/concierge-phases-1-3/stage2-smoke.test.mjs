@@ -45,7 +45,7 @@ test('lastAssistantReplyText ignores product articles and system notices', () =>
   const transcript = [
     assistantReply('Here are some directions.'),
     productArticle('Product card text must never read as a reply'),
-    systemNotice('[System notice] This request could not be completed.'),
+    systemNotice('[System notice] That message did not go through. Send it again and the conversation picks up right where it left off. Existing product choices remain.'),
   ];
   assert.equal(lastAssistantReplyText(transcript), 'Here are some directions.');
 });

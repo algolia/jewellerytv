@@ -64,6 +64,7 @@ const proposal = z
     turnId: z.string().min(1),
     proposalId: z.string().min(1),
     kind: z.enum(['product_groups', 'complete_looks']),
+    mode: z.enum(['three_style_grid', 'focused_choice']).nullable().optional(),
     groups: z
       .array(
         z

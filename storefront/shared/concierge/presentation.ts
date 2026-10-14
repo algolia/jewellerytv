@@ -30,6 +30,14 @@ export function presentChoices(
   const input = parsed.data;
   const body = input.body;
   if (context.aborted) return { status: 'aborted', proposal: prior, reasons: ['turn_aborted'] };
+  const presentationMode =
+    body.kind === 'product_groups' && 'mode' in body ? body.mode : null;
+  if (presentationMode === 'focused_choice' && context.focusedScopeVerified !== true)
+    return {
+      status: 'invalid_input',
+      proposal: prior,
+      reasons: ['focused_scope_unverified'],
+    };
   if (
     input.missionId !== context.missionId ||
     input.expectedStateRevision !== context.stateRevision
@@ -304,6 +312,7 @@ export function presentChoices(
     turnId: input.turnId,
     proposalId: input.proposalId,
     kind: body.kind,
+    mode: presentationMode,
     groups,
     combinedItemSubtotalCents: combined,
     assessment: { perItem, total, reasons: [...reasons] },

@@ -194,6 +194,10 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
   const semanticAliases = new Map<string, SemanticEvidenceAlias>();
   let presentationAttempted = false;
   let lastFinishDiagnostic: FinishDiagnostic | null = null;
+  /** True when a turn attempted a presentation but the previous selection stayed
+   * published (failed or absent new grid). The Discover panel labels those
+   * cards as previous choices until a new presentation commits. */
+  let publishedStale = false;
   const semanticUpdates = new Map<
     string,
     {
@@ -299,6 +303,37 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
     z
       .object({
         kind: z.literal('product_groups'),
+        mode: z.literal('three_style_grid'),
+        groups: z.array(
+          z
+            .object({
+              basis: catalogueGroupBasisSchema,
+              items: z.array(semanticLine).min(2).max(3),
+            })
+            .strict(),
+        ),
+        alternatives: z.null(),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.literal('product_groups'),
+        mode: z.literal('focused_choice'),
+        groups: z.array(
+          z
+            .object({
+              basis: catalogueGroupBasisSchema,
+              items: z.array(semanticLine).min(1).max(3),
+            })
+            .strict(),
+        ),
+        alternatives: z.null(),
+      })
+      .strict(),
+    // Deprecated migration shape without a mode.
+    z
+      .object({
+        kind: z.literal('product_groups'),
         groups: z.array(
           z
             .object({
@@ -390,6 +425,8 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
         proposalId: toolCallId,
         body,
       });
+      if (import.meta.env.DEV && result.status !== 'staged')
+        console.warn('JTV present_choices not staged', JSON.stringify(result).slice(0, 400));
       if (result.status !== 'staged' || !('proposal' in result)) {
         if (
           'basisFailure' in result &&
@@ -437,6 +474,8 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
       count: number;
       exactObjectIDs?: string[] | null;
       target: null | { kind: 'item'; itemKey: string; productType: string };
+      styleOverview?: boolean;
+      styleBatches?: { attribute: string; value: string }[];
     },
     _toolCallId: string,
     signal?: AbortSignal,
@@ -460,6 +499,8 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
         count: raw.count,
         exactObjectIDs: raw.exactObjectIDs ?? null,
         target: raw.target,
+        ...(raw.styleOverview === undefined ? {} : { styleOverview: raw.styleOverview }),
+        ...(raw.styleBatches === undefined ? {} : { styleBatches: raw.styleBatches }),
         missionId: session.missionId,
         expectedRevision: session.brief.revision,
         turnId,
@@ -674,6 +715,24 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
       )
       .map((fact) => (fact.value.kind === 'product_ref' ? fact.value.objectID : ''))
       .filter(Boolean);
+    // Focused Choice gate: the shopper's exact item or an explicit, confirmed
+    // narrow style/design focus in the accepted brief. Typed catalogue-style
+    // facts (pearl, necklace type, bracelet type) count when the shopper
+    // confirmed them as requirements: "she prefers classic pearl strands" is
+    // exactly the confirmed narrow focus this gate exists to recognize.
+    const focusedScopeVerified =
+      acceptedAnchorIds.length > 0 ||
+      brief.facts.some(
+        (fact) =>
+          fact.status === 'active' &&
+          fact.strength === 'requirement' &&
+          fact.certainty === 'explicit' &&
+          (fact.field === 'style' ||
+            fact.field === 'design' ||
+            fact.field === 'pearl' ||
+            fact.field === 'necklace_type') &&
+          (fact.scope.kind === 'mission' || fact.scope.kind === 'item'),
+      );
     const result = presentChoices(parsed.data, {
       missionId: session.missionId as string,
       stateRevision: brief.revision,
@@ -683,6 +742,7 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
       bounds: budget.bounds,
       budgetContextVerified: budget.verified,
       acceptedAnchorIds,
+      focusedScopeVerified,
       priorProposal: published,
     });
     if (result.status === 'staged') staged = result.proposal;
@@ -696,6 +756,7 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
     lastFinishDiagnostic = null;
     if (!staged) {
       lastFinishDiagnostic = { status: 'rejected', reason: 'no_staged_proposal' };
+      if (presentationAttempted && published) publishedStale = true;
       return null;
     }
     if (finishedTurnId !== staged.turnId) {
@@ -717,9 +778,11 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
     staged = null;
     if (result.status !== 'committed') {
       lastFinishDiagnostic = { status: 'rejected', reason: result.status };
+      if (published) publishedStale = true;
       return null;
     }
     lastFinishDiagnostic = { status: 'committed' };
+    publishedStale = false;
     published = result.proposal;
     const refs = new Set(
       published.groups.flatMap((group) => group.lines.map((line) => line.evidenceRef)),
@@ -808,6 +871,7 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
       published = previousPublished;
       publishedRecords = previousRecords;
       lastFinishDiagnostic = { status: 'rejected', reason: result.reason };
+      if (published) publishedStale = true;
       if (presentationAttempted && import.meta.env.DEV)
         console.warn('JTV Concierge presentation commit rejected', lastFinishDiagnostic);
       return null;
@@ -828,6 +892,7 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
     staged = null;
     published = null;
     publishedRecords = [];
+    publishedStale = false;
     presentationAttempted = false;
     return result;
   }
@@ -849,6 +914,7 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
     resetMission,
     getPublished: () => published,
     getPublishedRecords: () => publishedRecords,
+    isPublishedStale: () => publishedStale,
     hadPresentationAttempt: () => presentationAttempted,
     getLastFinishDiagnostic: () => lastFinishDiagnostic,
     getSession: current,

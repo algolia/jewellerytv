@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { briefStateV3Schema, type BriefStateV3 } from '../../shared/briefSchema.js';
+import { CATALOGUE_GROUP_BASIS_ATTRIBUTES } from '../../shared/concierge/presentation-contract.js';
 import {
   createAlgoliaEvidenceSearch,
   createEvidenceRetriever,
@@ -1782,5 +1783,400 @@ describe('ring size and platinum retrieval (live vocabulary era)', () => {
     );
     expect(result.status).toBe('ok');
     expect(result.records[0]?.objectID).toBe('PCG074');
+  });
+});
+
+describe('discovery style overview and batched style search', () => {
+  const broadRing = {
+    field: 'product_type',
+    scope: { kind: 'mission', key: null },
+    value: { kind: 'facet', attribute: 'Catalog_ProductType', values: ['Ring'], operator: 'any' },
+  };
+  const productHit = (patch: Record<string, unknown> = {}) => ({
+    objectID: 'R1',
+    Catalog_ProductType: 'Ring',
+    Catalog_TitleDescription: 'Test Ring',
+    Catalog_LongDescription: 'A ring for testing eligibility gates.',
+    Catalog_Condition: 'First Quality',
+    Inventory_InStock: true,
+    Pricing_ActivePrice: 299.99,
+    ...patch,
+  });
+
+  it('returns brief-filtered style facet counts as candidate columns without records', async () => {
+    const search = vi.fn();
+    const facetSearch = vi.fn().mockResolvedValue({
+      Catalog_RingType: { Halo: 7, Solitaire: 4 },
+      Catalog_ProductType: { Ring: 30 },
+    });
+    const retrieve = createEvidenceRetriever({
+      search,
+      facetSearch,
+      currentState: async () => state([broadRing]),
+    });
+    const result = await retrieve(productInput({ target: null, styleOverview: true }));
+    expect(result.status).toBe('ok');
+    expect(search).not.toHaveBeenCalled();
+    const columns = new Map(result.styleOverview!.map((column) => [column.attribute, column]));
+    expect(columns.get('Catalog_ProductType')).toEqual({
+      attribute: 'Catalog_ProductType',
+      values: [{ value: 'Ring', count: 30 }],
+    });
+    expect(columns.get('Catalog_RingType')).toEqual({
+      attribute: 'Catalog_RingType',
+      values: [{ value: 'Halo', count: 7 }, { value: 'Solitaire', count: 4 }],
+    });
+    expect(result.styleOverview!.every((column) => CATALOGUE_GROUP_BASIS_ATTRIBUTES.includes(column.attribute as (typeof CATALOGUE_GROUP_BASIS_ATTRIBUTES)[number]))).toBe(true);
+    expect(result.records).toEqual([]);
+    const request = facetSearch.mock.calls[0][0];
+    expect(request.filters).toEqual([{ field: 'Catalog_ProductType', operator: 'eq', value: 'Ring' }]);
+  });
+
+  it('fails honestly when the facet search is unavailable', async () => {
+    const retrieve = createEvidenceRetriever({
+      search: vi.fn(),
+      currentState: async () => state([broadRing]),
+    });
+    const result = await retrieve(productInput({ target: null, styleOverview: true }));
+    expect(result.status).toBe('upstream_failure');
+    expect(result.error?.code).toBe('FACET_SEARCH_UNAVAILABLE');
+  });
+
+  it('keeps styleOverview and styleBatches mutually exclusive', async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const retrieve = createEvidenceRetriever({ search, currentState: async () => state([broadRing]) });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        styleOverview: true,
+        styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }],
+      }),
+    );
+    expect(result.status).toBe('invalid_input');
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it('passes the assistant\'s query to each batched style search; the stockroom is not overruled', async () => {
+    const queries: string[] = [];
+    const search = vi.fn(async ({ query }: { query: string }) => {
+      queries.push(query);
+      return [productHit({ objectID: `R${queries.length}`, Catalog_TitleDescription: `Style Ring ${queries.length}`, Catalog_RingType: 'Halo' })];
+    });
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        count: 2,
+        query: 'yellow gold',
+        styleBatches: [
+          { attribute: 'Catalog_RingType', value: 'Halo' },
+          { attribute: 'Catalog_RingType', value: 'Solitaire' },
+        ],
+      }),
+    );
+    expect(result.status).toBe('ok');
+    expect(queries.filter((q) => q === 'yellow gold').length).toBe(2);
+  });
+
+  it('falls back to the broad query when the assistant\'s phrasing matches nothing', async () => {
+    const queries: string[] = [];
+    const search = vi.fn(async ({ query }: { query: string }) => {
+      queries.push(query);
+      // The conversational sentence matches nothing; the broad retry matches.
+      return query === ''
+        ? [productHit({ objectID: `R${queries.length}`, Catalog_TitleDescription: `Style Ring ${queries.length}`, Catalog_RingType: 'Halo' })]
+        : [];
+    });
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        count: 2,
+        query: 'minimal silver bracelets around $250 for a younger sister',
+        styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }],
+      }),
+    );
+    expect(result.status).toBe('ok');
+    expect(queries[0]).toBe('minimal silver bracelets around $250 for a younger sister');
+    expect(queries[1]).toBe('');
+    expect(result.styleResults![0].backfillUsed).toBe(true);
+  });
+
+  it('searches each chosen style separately, filters eligibility, and reports per-style outcomes', async () => {
+    const search = vi.fn(async ({ filters }: { filters: readonly { field: string; value?: unknown }[] }) => {
+      const style = filters.find((f) => f.field === 'Catalog_RingType');
+      if (style?.value === 'Halo')
+        return [
+          productHit({ objectID: 'H0', Catalog_TitleDescription: 'Halo Ring Zero', Catalog_RingType: 'Halo', Inventory_InStock: false }),
+          productHit({ objectID: 'H1', Catalog_TitleDescription: 'Halo Ring One', Catalog_RingType: 'Halo' }),
+          productHit({ objectID: 'H2', Catalog_TitleDescription: 'Halo Ring Two', Catalog_RingType: 'Halo' }),
+        ];
+      if (style?.value === 'Solitaire')
+        return [
+          productHit({ objectID: 'S1', Catalog_TitleDescription: 'Solitaire Ring One', Catalog_RingType: 'Solitaire' }),
+          productHit({
+            objectID: 'S2',
+            Catalog_TitleDescription: 'Solitaire Ring Two',
+            Catalog_RingType: 'Solitaire',
+            Catalog_Condition: 'Pre-Owned',
+          }),
+        ];
+      return [productHit({ objectID: 'P1', Catalog_TitleDescription: 'Eternity Ring One', Catalog_RingType: 'Eternity' })];
+    });
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        count: 2,
+        styleBatches: [
+          { attribute: 'Catalog_RingType', value: 'Halo' },
+          { attribute: 'Catalog_RingType', value: 'Solitaire' },
+          { attribute: 'Catalog_RingType', value: 'Eternity' },
+        ],
+      }),
+    );
+    expect(result.status).toBe('ok');
+    const byValue = new Map(result.styleResults!.map((r) => [r.value, r]));
+    expect(byValue.get('Halo')).toMatchObject({ eligibleCount: 2, backfillUsed: false });
+    expect(byValue.get('Halo')!.rejected).toEqual([
+      { objectID: 'H0', reason: 'out_of_stock' },
+    ]);
+    expect(byValue.get('Solitaire')).toMatchObject({ eligibleCount: 1 });
+    expect(byValue.get('Solitaire')!.rejected).toEqual([
+      { objectID: 'S2', reason: 'pre_owned_not_requested' },
+      { objectID: 'S1', reason: 'duplicate_product' },
+      { objectID: 'S2', reason: 'pre_owned_not_requested' },
+    ]);
+    expect(byValue.get('Solitaire')!.backfillUsed).toBe(true);
+    expect(byValue.get('Eternity')).toMatchObject({ eligibleCount: 1 });
+    expect(result.records.map((record) => record.objectID)).toEqual(['H1', 'H2', 'S1', 'P1']);
+  });
+
+  it('removes duplicate products and near-identical variants across style columns', async () => {
+    const search = vi.fn(async ({ filters }: { filters: readonly { field: string; value?: unknown }[] }) => {
+      const style = filters.find((f) => f.field === 'Catalog_RingType');
+      if (style?.value === 'Halo')
+        return [
+          productHit({ objectID: 'H1', Catalog_TitleDescription: 'Halo Ring One', Catalog_RingType: 'Halo' }),
+          productHit({ objectID: 'H1b', Catalog_TitleDescription: 'Halo Ring Two', Catalog_RingType: 'Halo' }),
+        ];
+      return [
+        productHit({ objectID: 'H1', Catalog_TitleDescription: 'Halo Ring One', Catalog_RingType: 'Pavé' }),
+        productHit({ objectID: 'H1c', Catalog_TitleDescription: 'Halo Ring One', Catalog_RingType: 'Pavé' }),
+      ];
+    });
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        count: 2,
+        styleBatches: [
+          { attribute: 'Catalog_RingType', value: 'Halo' },
+          { attribute: 'Catalog_RingType', value: 'Pavé' },
+        ],
+      }),
+    );
+    expect(result.status).toBe('ok');
+    const byValue = new Map(result.styleResults!.map((r) => [r.value, r]));
+    expect(byValue.get('Pavé')!.rejected).toEqual([
+      { objectID: 'H1', reason: 'duplicate_product' },
+      { objectID: 'H1c', reason: 'duplicate_variant' },
+      { objectID: 'H1', reason: 'duplicate_product' },
+      { objectID: 'H1c', reason: 'duplicate_variant' },
+    ]);
+    expect(byValue.get('Pavé')!.eligibleCount).toBe(0);
+    expect(byValue.get('Pavé')!.backfillUsed).toBe(true);
+    expect(result.records.map((record) => record.objectID)).toEqual(['H1', 'H1b']);
+  });
+
+  it('includes pre-owned records only when the brief states the condition preference', async () => {
+    const conditionFact = {
+      field: 'condition',
+      strength: 'preference',
+      scope: { kind: 'mission', key: null },
+      value: { kind: 'text', text: 'Pre-Owned pieces are welcome' },
+    };
+    const search = vi.fn().mockResolvedValue([
+      productHit({ objectID: 'P1', Catalog_TitleDescription: 'Pre-Owned Ring One', Catalog_Condition: 'Pre-Owned' }),
+      productHit({ objectID: 'P2', Catalog_TitleDescription: 'Pre-Owned Ring Two', Catalog_Condition: 'Pre-Owned' }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing, conditionFact]),
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }],
+      }),
+    );
+    expect(result.status).toBe('ok');
+    expect(result.styleResults![0]).toMatchObject({ eligibleCount: 2, backfillUsed: false });
+  });
+});
+
+describe('ground-truth audit fixes (2026-10-13)', () => {
+  const broadRing = {
+    field: 'product_type',
+    scope: { kind: 'mission', key: null },
+    value: { kind: 'facet', attribute: 'Catalog_ProductType', values: ['Ring'], operator: 'any' },
+  };
+  const productHit = (patch: Record<string, unknown> = {}) => ({
+    objectID: 'R1',
+    Catalog_ProductType: 'Ring',
+    Catalog_TitleDescription: 'Test Ring',
+    Catalog_LongDescription: 'A ring for testing eligibility gates.',
+    Catalog_Condition: 'First Quality',
+    Inventory_InStock: true,
+    Pricing_ActivePrice: 299.99,
+    ...patch,
+  });
+  const auditVocabulary = {
+    values: {
+      'Catalog_ProductType': ['Ring'],
+      'Catalog_RingType': ['Halo', 'Solitaire', 'Tennis'],
+      'Catalog_GemstoneInformationPrimary.GemstoneName': ['Diamond', 'Moissanite'],
+    } as Record<string, string[]>,
+    builtAt: '2026-10-13T00:00:00.000Z',
+    hasValue: (attribute: string, value: string) =>
+      (auditVocabulary.values[attribute] ?? []).includes(value),
+    availableValues: (attribute: string) => auditVocabulary.values[attribute] ?? [],
+    isFilterable: (attribute: string) => attribute in auditVocabulary.values,
+  };
+
+  it('F5: compiles multi-value gemstone requirements as one live-vocabulary OR group', async () => {
+    const search = vi.fn().mockResolvedValue([
+      productHit({ objectID: 'D1', Catalog_TitleDescription: 'Diamond Ring' }),
+      productHit({ objectID: 'M1', Catalog_TitleDescription: 'Moissanite Ring' }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () =>
+        state([
+          broadRing,
+          {
+            field: 'gemstone',
+            scope: { kind: 'mission', key: null },
+            value: {
+              kind: 'facet',
+              attribute: 'Catalog_GemstoneInformationPrimary.GemstoneName',
+              values: ['Diamond', 'Moissanite'],
+              operator: 'any',
+            },
+          },
+        ]),
+      vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
+    });
+    const result = await retrieve(productInput({ target: null, count: 5 }));
+    expect(result.status).toBe('ok');
+    expect(result.effectiveFilters).toContainEqual({
+      field: 'Catalog_GemstoneInformationPrimary.GemstoneName',
+      operator: 'in',
+      value: ['Diamond', 'Moissanite'],
+    });
+    expect(result.records.map((r) => r.objectID)).toEqual(['D1', 'M1']);
+  });
+
+  it('F5: reports gemstone values the live catalogue does not carry as unavailable, not a silent filter', async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () =>
+        state([
+          broadRing,
+          {
+            field: 'gemstone',
+            scope: { kind: 'mission', key: null },
+            value: {
+              kind: 'facet',
+              attribute: 'Catalog_GemstoneInformationPrimary.GemstoneName',
+              values: ['Diamond', 'Unobtainium'],
+              operator: 'any',
+            },
+          },
+        ]),
+      vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
+    });
+    const result = await retrieve(productInput({ target: null }));
+    expect(result.status).toBe('requirement_unavailable');
+    expect(result.unavailableRequirements).toContainEqual(
+      expect.objectContaining({
+        field: 'gemstone',
+        attribute: 'Catalog_GemstoneInformationPrimary.GemstoneName',
+        requested: ['Unobtainium'],
+      }),
+    );
+  });
+
+  it('G2: rejects a styleBatches value outside the live vocabulary and teaches the valid options', async () => {
+    const search = vi.fn();
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+      vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        styleBatches: [{ attribute: 'Catalog_RingType', value: 'Not-A-Style' }],
+      }),
+    );
+    expect(search).not.toHaveBeenCalled();
+    expect(result.unavailableRequirements).toContainEqual(
+      expect.objectContaining({
+        attribute: 'Catalog_RingType',
+        requested: ['Not-A-Style'],
+        availableValues: ['Halo', 'Solitaire', 'Tennis'],
+      }),
+    );
+  });
+
+  it('G2: still accepts styleBatches values the live vocabulary carries', async () => {
+    const search = vi.fn().mockResolvedValue([
+      productHit({ objectID: 'H1', Catalog_TitleDescription: 'Halo Ring One' }),
+      productHit({ objectID: 'H2', Catalog_TitleDescription: 'Halo Ring Two' }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+      vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }],
+      }),
+    );
+    expect(result.status).toBe('ok');
+    expect(result.styleResults![0]).toMatchObject({ value: 'Halo', eligibleCount: 2 });
+  });
+
+  it('cap: accepts candidate counts up to 24 and returns up to that many eligible items', async () => {
+    const many = Array.from({ length: 24 }, (_, i) =>
+      productHit({ objectID: `C${i}`, Catalog_TitleDescription: `Ring ${i}` }),
+    );
+    const search = vi.fn().mockResolvedValue(many);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+      vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
+    });
+    const result = await retrieve(
+      productInput({ target: null, count: 24, styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }] }),
+    );
+    expect(result.status).toBe('ok');
+    expect(result.styleResults![0].eligibleCount).toBe(24);
   });
 });

@@ -807,3 +807,129 @@ describe('API-only present_choices staging', () => {
     expect(stagedLine.explanation).toContain('first quality');
   });
 });
+
+describe('discovery presentation modes', () => {
+  const styleRecord = (objectID: string, ringType: string, title: string): PresentationEvidence =>
+    baseRecord(objectID, 199.99, {
+      Catalog_RingType: ringType,
+      Catalog_TitleDescription: title,
+      Catalog_LongDescription: `${title} description`,
+    });
+  const styleLine = (objectID: string, slot: string) => ({
+    ...line(objectID, slot),
+    evidenceRef: `ref-${objectID}`,
+    contentHash: `hash-${objectID}`,
+  });
+  const styleEvidence = [
+    styleRecord('halo1', 'Halo', 'Halo Ring One'),
+    styleRecord('halo2', 'Halo', 'Halo Ring Two'),
+    styleRecord('sol1', 'Solitaire', 'Solitaire Ring One'),
+    styleRecord('sol2', 'Solitaire', 'Solitaire Ring Two'),
+    styleRecord('pav1', 'Pave', 'Pave Ring One'),
+    styleRecord('pav2', 'Pave', 'Pave Ring Two'),
+    styleRecord('halo3', 'Halo', 'Halo Ring Three'),
+    styleRecord('sol3', 'Solitaire', 'Solitaire Ring Three'),
+    styleRecord('pav3', 'Pave', 'Pave Ring Three'),
+  ];
+  const ringBasis = (value: string) => ({ attribute: 'Catalog_RingType' as const, value });
+  const gridBody = (thirdRow = false): PresentChoicesInput => ({
+    missionId: 'm1',
+    expectedStateRevision: 2,
+    expectedEvidenceBatchRevision: 7,
+    turnId: 'turn-2',
+    proposalId: 'p-grid',
+    body: {
+      kind: 'product_groups',
+      mode: 'three_style_grid',
+      groups: [
+        { basis: ringBasis('Halo'), items: [styleLine('halo1', 'ring'), styleLine('halo2', 'ring')] },
+        {
+          basis: ringBasis('Solitaire'),
+          items: [styleLine('sol1', 'ring'), styleLine('sol2', 'ring')],
+        },
+        {
+          basis: ringBasis('Pave'),
+          items: [
+            styleLine('pav1', 'ring'),
+            styleLine('pav2', 'ring'),
+            ...(thirdRow ? [styleLine('pav3', 'ring')] : []),
+          ],
+        },
+      ],
+      alternatives: null,
+    },
+  });
+
+  it('stages a complete three-style grid with two items per column', () => {
+    const result = presentChoices(gridBody(), context({ evidence: styleEvidence }));
+    expect(result.status).toBe('staged');
+    if (result.status === 'staged') {
+      expect(result.proposal.mode).toBe('three_style_grid');
+      expect(result.proposal.groups).toHaveLength(3);
+      expect(result.proposal.groups.every((group) => group.lines.length === 2)).toBe(true);
+    }
+  });
+
+  it('stages a grid with a third row when a column carries three eligible items', () => {
+    const result = presentChoices(gridBody(true), context({ evidence: styleEvidence }));
+    expect(result.status).toBe('staged');
+    if (result.status === 'staged')
+      expect(result.proposal.groups[2].lines).toHaveLength(3);
+  });
+
+  it('rejects an incomplete grid with a structured reason', () => {
+    const body = gridBody();
+    if (body.body.kind === 'product_groups' && 'groups' in body.body) body.body.groups.pop();
+    const result = presentChoices(body, context({ evidence: styleEvidence }));
+    expect(result.status).toBe('invalid_input');
+    expect(result.reasons).toEqual(['schema_invalid']);
+  });
+
+  it('rejects a grid column whose items do not carry the claimed style value', () => {
+    const wrong = styleRecord('wrong1', 'Halo', 'Wrong Ring One');
+    const body = gridBody();
+    if (body.body.kind === 'product_groups' && 'groups' in body.body)
+      body.body.groups[2].items = [styleLine('wrong1', 'ring'), styleLine('pav2', 'ring')];
+    const result = presentChoices(body, context({ evidence: [...styleEvidence, wrong] }));
+    expect(result.status).toBe('invalid_input');
+    expect(result.reasons).toContain('group_basis_mismatch');
+  });
+
+  it('rejects duplicate style columns', () => {
+    const body = gridBody();
+    if (body.body.kind === 'product_groups' && 'groups' in body.body)
+      body.body.groups[2] = {
+        basis: ringBasis('Halo'),
+        items: [styleLine('pav1', 'ring'), styleLine('pav2', 'ring')],
+      };
+    const result = presentChoices(body, context({ evidence: styleEvidence }));
+    expect(result.status).toBe('invalid_input');
+  });
+
+  it('rejects focused_choice without a verified narrow scope', () => {
+    const body: PresentChoicesInput = {
+      missionId: 'm1',
+      expectedStateRevision: 2,
+      expectedEvidenceBatchRevision: 7,
+      turnId: 'turn-2',
+      proposalId: 'p-focus',
+      body: {
+        kind: 'product_groups',
+        mode: 'focused_choice',
+        groups: [
+          { basis: ringBasis('Halo'), items: [styleLine('halo1', 'ring'), styleLine('halo2', 'ring')] },
+        ],
+        alternatives: null,
+      },
+    };
+    const result = presentChoices(body, context({ evidence: styleEvidence }));
+    expect(result.status).toBe('invalid_input');
+    expect(result.reasons).toEqual(['focused_scope_unverified']);
+    const verified = presentChoices(
+      body,
+      context({ evidence: styleEvidence, focusedScopeVerified: true }),
+    );
+    expect(verified.status).toBe('staged');
+    if (verified.status === 'staged') expect(verified.proposal.mode).toBe('focused_choice');
+  });
+});

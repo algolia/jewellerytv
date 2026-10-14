@@ -24,6 +24,7 @@ const fixtureVocabulary = {
     'Catalog_MaterialInformation.MaterialColor': ['White', 'Yellow', 'Blue'],
     'Catalog_MaterialInformation.MaterialPurity': ['Sterling', '10K', '14K', '18K', '24K', '950'],
     'Catalog_GemstoneInformation.GemstoneColorGroup': ['Blue', 'White'],
+    'Catalog_PearlInformationPrimary.PearlFullName': ['Freshwater', 'Akoya', 'Tahitian'],
     Catalog_WatchPrimaryDialPrimaryColor: ['Blue'],
     Catalog_WatchBandType: ['Bracelet'],
   } as Record<string, string[]>,
@@ -302,6 +303,64 @@ describe('API-only Concierge client tool runtime', () => {
         )
       ).status,
     ).toBe('invalid_input');
+  });
+  it('forwards style overview and style batch requests to the evidence route', async () => {
+    const calls: unknown[] = [];
+    const runtime = createConciergeToolRuntime({
+      fetchVocabulary,
+      storage: memoryStorage(),
+      initialMissionId: 'mission-1',
+      getCurrentShopperMessage: () => shopper,
+      fetchEvidence: async (body) => {
+        calls.push(body);
+        return {
+          status: 'ok',
+          source: body.input.source,
+          missionId: body.input.missionId,
+          revision: body.input.expectedRevision,
+          expectedRevision: body.input.expectedRevision,
+          turnId: body.input.turnId,
+          effectiveFilters: [],
+          unresolved: [],
+          records: [],
+        };
+      },
+    });
+    runtime.beginTurn('turn-1', shopper.id);
+    const overview = await runtime.retrieveSemantic(
+      {
+        source: 'prod_catalog',
+        query: 'bracelets for everyday wear',
+        count: 12,
+        target: null,
+        styleOverview: true,
+      },
+      'call-overview',
+    );
+    expect(overview.status).toBe('ok');
+    const batches = await runtime.retrieveSemantic(
+      {
+        source: 'prod_catalog',
+        query: 'bracelets for everyday wear',
+        count: 2,
+        target: null,
+        styleBatches: [{ attribute: 'Catalog_BraceletType', value: 'Tennis' }],
+      },
+      'call-batches',
+    );
+    expect(batches.status).toBe('ok');
+    expect(
+      (calls[0] as { input: Record<string, unknown> }).input,
+    ).toMatchObject({ styleOverview: true });
+    expect((calls[0] as { input: Record<string, unknown> }).input).not.toHaveProperty(
+      'styleBatches',
+    );
+    expect(
+      (calls[1] as { input: Record<string, unknown> }).input,
+    ).toMatchObject({ styleBatches: [{ attribute: 'Catalog_BraceletType', value: 'Tennis' }] });
+    expect((calls[1] as { input: Record<string, unknown> }).input).not.toHaveProperty(
+      'styleOverview',
+    );
   });
   it('advertises short turn-scoped aliases and resolves them to canonical evidence', async () => {
     const runtime = createConciergeToolRuntime({
@@ -1187,5 +1246,249 @@ describe('API-only Concierge client tool runtime', () => {
         ]),
       );
     }
+  });
+});
+
+describe('discovery grid runtime gating', () => {
+  const focusedBody = (mode: 'focused_choice' | 'three_style_grid') => ({
+    kind: 'product_groups' as const,
+    mode,
+    alternatives: null as null,
+    groups:
+      mode === 'focused_choice'
+        ? [
+            {
+              basis: { attribute: 'Catalog_ProductType' as const, value: 'Ring' },
+              items: [
+                {
+                  evidenceRef: evidence.evidenceRef,
+                  objectID: 'ring-1',
+                  contentHash: 'hash-1',
+                  quantity: 1,
+                  componentSlot: 'ring',
+                  explanation: 'The exact ring the shopper confirmed',
+                },
+              ],
+            },
+          ]
+        : [
+            {
+              basis: { attribute: 'Catalog_ProductType' as const, value: 'Ring' },
+              items: [
+                {
+                  evidenceRef: evidence.evidenceRef,
+                  objectID: 'ring-1',
+                  contentHash: 'hash-1',
+                  quantity: 1,
+                  componentSlot: 'ring',
+                  explanation: 'First style column',
+                },
+              ],
+            },
+          ],
+  });
+  const focusedOperation = {
+    action: 'add',
+    factIds: [],
+    sourceQuote: 'a ring',
+    fact: {
+      id: 'design-classic',
+      field: 'design',
+      value: { kind: 'text', text: 'classic solitaire design' },
+      scope: { kind: 'mission', key: null },
+      strength: 'requirement',
+      certainty: 'explicit',
+    },
+  };
+
+  it('stages focused_choice when the brief holds an explicit confirmed design focus', async () => {
+    const runtime = createConciergeToolRuntime({
+      fetchVocabulary,
+      storage: memoryStorage(),
+      initialMissionId: 'mission-1',
+      getCurrentShopperMessage: () => shopper,
+      fetchEvidence: async () => ({
+        status: 'ok' as const,
+        source: 'prod_catalog' as const,
+        missionId: 'mission-1',
+        revision: 1,
+        expectedRevision: 1,
+        turnId: 'turn-1',
+        effectiveFilters: [],
+        unresolved: [],
+        records: [evidence],
+      }),
+    });
+    await runtime.update({
+      ...stateInput,
+      operations: [...stateInput.operations, focusedOperation],
+    });
+    const retrieved = await runtime.retrieve(retrievalInput);
+    const chosen = await runtime.present({
+      missionId: 'mission-1',
+      expectedStateRevision: 1,
+      expectedEvidenceBatchRevision: retrieved.evidenceBatchRevision,
+      turnId: 'turn-1',
+      proposalId: 'proposal-focus',
+      body: focusedBody('focused_choice'),
+    });
+    expect(chosen.status).toBe('staged');
+    if ('proposal' in chosen && chosen.proposal)
+      expect(chosen.proposal.mode).toBe('focused_choice');
+  });
+
+  it('stages focused_choice when the shopper confirmed a narrow style through a typed pearl fact', async () => {
+    const runtime = createConciergeToolRuntime({
+      fetchVocabulary,
+      storage: memoryStorage(),
+      initialMissionId: 'mission-1',
+      getCurrentShopperMessage: () => shopper,
+      fetchEvidence: async () => ({
+        status: 'ok' as const,
+        source: 'prod_catalog' as const,
+        missionId: 'mission-1',
+        revision: 1,
+        expectedRevision: 1,
+        turnId: 'turn-1',
+        effectiveFilters: [],
+        unresolved: [],
+        records: [evidence],
+      }),
+    });
+    await runtime.update({
+      ...stateInput,
+      operations: [
+        ...stateInput.operations,
+        {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'Please show me a ring under $100',
+          fact: {
+            id: 'pearl-strands',
+            field: 'pearl',
+            value: {
+              kind: 'facet',
+              attribute: 'Catalog_PearlInformationPrimary.PearlFullName',
+              values: ['Freshwater'],
+              operator: 'any',
+            },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },
+      ],
+    });
+    const retrieved = await runtime.retrieve(retrievalInput);
+    const chosen = await runtime.present({
+      missionId: 'mission-1',
+      expectedStateRevision: 1,
+      expectedEvidenceBatchRevision: retrieved.evidenceBatchRevision,
+      turnId: 'turn-1',
+      proposalId: 'proposal-pearl-focus',
+      body: focusedBody('focused_choice'),
+    });
+    expect(chosen.status).toBe('staged');
+    if ('proposal' in chosen && chosen.proposal)
+      expect(chosen.proposal.mode).toBe('focused_choice');
+  });
+
+  it('rejects focused_choice when the brief has no confirmed narrow scope', async () => {
+    const runtime = createConciergeToolRuntime({
+      fetchVocabulary,
+      storage: memoryStorage(),
+      initialMissionId: 'mission-1',
+      getCurrentShopperMessage: () => shopper,
+      fetchEvidence: async () => ({
+        status: 'ok' as const,
+        source: 'prod_catalog' as const,
+        missionId: 'mission-1',
+        revision: 1,
+        expectedRevision: 1,
+        turnId: 'turn-1',
+        effectiveFilters: [],
+        unresolved: [],
+        records: [evidence],
+      }),
+    });
+    await runtime.update(stateInput);
+    const retrieved = await runtime.retrieve(retrievalInput);
+    const chosen = await runtime.present({
+      missionId: 'mission-1',
+      expectedStateRevision: 1,
+      expectedEvidenceBatchRevision: retrieved.evidenceBatchRevision,
+      turnId: 'turn-1',
+      proposalId: 'proposal-focus-2',
+      body: focusedBody('focused_choice'),
+    });
+    expect(chosen.status).toBe('invalid_input');
+    expect(chosen.reasons).toEqual(['focused_scope_unverified']);
+  });
+
+  it('marks the published selection stale when a presenting turn ends without a commit', async () => {
+    const runtime = createConciergeToolRuntime({
+      fetchVocabulary,
+      storage: memoryStorage(),
+      initialMissionId: 'mission-1',
+      getCurrentShopperMessage: () => shopper,
+      fetchEvidence: async () => ({
+        status: 'ok' as const,
+        source: 'prod_catalog' as const,
+        missionId: 'mission-1',
+        revision: 1,
+        expectedRevision: 1,
+        turnId: 'turn-1',
+        effectiveFilters: [],
+        unresolved: [],
+        records: [evidence],
+      }),
+    });
+    await runtime.update(stateInput);
+    const retrieved = await runtime.retrieve(retrievalInput);
+    await runtime.present({
+      missionId: 'mission-1',
+      expectedStateRevision: 1,
+      expectedEvidenceBatchRevision: retrieved.evidenceBatchRevision,
+      turnId: 'turn-1',
+      proposalId: 'proposal-1',
+      body: {
+        kind: 'product_groups',
+        alternatives: null,
+        groups: [
+          {
+            basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
+            items: [
+              {
+                evidenceRef: evidence.evidenceRef,
+                objectID: 'ring-1',
+                contentHash: 'hash-1',
+                quantity: 1,
+                componentSlot: 'ring',
+                explanation: 'A smaller setting',
+              },
+            ],
+          },
+        ],
+      },
+    });
+    runtime.finishTurn('turn-1', 'completed');
+    expect(runtime.getPublished()).not.toBeNull();
+    expect(runtime.isPublishedStale()).toBe(false);
+    // Next turn: presentation attempted but produced nothing stageable.
+    await runtime.retrieve({
+      ...retrievalInput,
+      turnId: 'turn-2',
+      expectedRevision: 1,
+    });
+    await runtime.present({
+      missionId: 'mission-1',
+      expectedStateRevision: 1,
+      expectedEvidenceBatchRevision: retrieved.evidenceBatchRevision,
+      turnId: 'turn-2',
+      proposalId: 'proposal-2',
+      body: focusedBody('three_style_grid'),
+    });
+    runtime.finishTurn('turn-2', 'completed');
+    expect(runtime.isPublishedStale()).toBe(true);
   });
 });

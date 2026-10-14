@@ -79,6 +79,24 @@ export type UnavailableRequirement = {
   availableValues: string[];
 };
 
+/** Read-only, brief-filtered style overview. Facet counts are candidate
+ * signals, never proof of eligibility: material, fit, condition, availability
+ * and other record-level checks still apply to the per-style searches. */
+export type StyleOverviewColumn = {
+  attribute: string;
+  values: Array<{ value: string; count: number }>;
+};
+
+/** One style-direction search outcome inside a batched discovery request. */
+export type StyleBatchResult = {
+  attribute: string;
+  value: string;
+  requestedCount: number;
+  eligibleCount: number;
+  rejected: Array<{ objectID: string; reason: string }>;
+  backfillUsed: boolean;
+};
+
 export type RetrieveEvidenceResult = {
   status: RetrievalStatus;
   source: EvidenceSource;
@@ -91,5 +109,9 @@ export type RetrieveEvidenceResult = {
   unresolved: Array<{ field: string; reason: string }>;
   /** Present when status is requirement_unavailable: shopper-facing disclosure data. */
   unavailableRequirements?: UnavailableRequirement[];
+  /** Present on styleOverview requests: candidate style values per attribute. */
+  styleOverview?: StyleOverviewColumn[];
+  /** Present on styleBatches requests: per-style eligibility outcome. */
+  styleResults?: StyleBatchResult[];
   error?: { code: string; message: string; upstreamStatus?: number };
 };

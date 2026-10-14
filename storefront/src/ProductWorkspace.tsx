@@ -15,15 +15,18 @@ import { markWorkspace, markWorkspaceImage, type WorkspaceTraceBinding } from '.
 import { checkBriefConflicts } from '../shared/briefConstraints';
 import { useCatalogVocabulary } from './concierge/useCatalogVocabulary';
 export type View = 'discover' | 'compare' | 'saved';
+type PresentationModeName = 'three_style_grid' | 'focused_choice';
 type Discovery = {
   title: string;
   why?: string;
+  mode?: PresentationModeName;
   items: { product: Product; why?: string; assessment?: 'compliant' | 'unknown' }[];
 };
 export type WorkspaceViewModel = {
   products: PinnedProduct[];
   selectionRecords: Product[];
   discoveries: Discovery[];
+  discoveriesStale?: boolean;
   discoveryUnavailable?: boolean;
   proposedLooks?: {
     title: string;
@@ -397,13 +400,16 @@ export function ProductWorkspace({
   }
   const seenDiscoveryIds = new Set<string>();
   const groupedDiscoveries = [...mergedDiscoveries.values()].slice(0, 3).flatMap((group) => {
+    // Grid mode may carry a meaningful third row; every other presentation keeps
+    // the accepted two-variant cap.
+    const itemCap = group.mode === 'three_style_grid' ? 3 : 2;
     const items = group.items
       .filter((item) => {
         if (seenDiscoveryIds.has(item.product.id)) return false;
         seenDiscoveryIds.add(item.product.id);
         return true;
       })
-      .slice(0, 2);
+      .slice(0, itemCap);
     return items.length ? [{ ...group, items }] : [];
   });
   const discoveredProductTypes = new Set(
@@ -492,6 +498,11 @@ export function ProductWorkspace({
             )
           ) : (
             <>
+              {s.discoveriesStale && (
+                <p className="pw-previous-note" role="status">
+                  Showing your previous choices.
+                </p>
+              )}
               {completeDiscoveryGrid ? (
                 <div className="pw-discovery-intro">
                   <h2 className="pw-discovery-title">
