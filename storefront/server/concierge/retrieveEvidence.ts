@@ -400,7 +400,8 @@ function compile(
       f.field === 'occasion' ||
       f.field === 'design' ||
       f.field === 'style' ||
-      f.field === 'item_reference'
+      f.field === 'item_reference' ||
+      f.field === 'selection'
     )
       continue;
     if (

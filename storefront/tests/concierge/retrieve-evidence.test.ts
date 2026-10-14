@@ -409,6 +409,39 @@ describe('retrieve_evidence', () => {
       { field: 'Pricing_ActivePrice', operator: 'lte', value: 500 },
     ]);
   });
+  it('keeps the explicit single-selection scope fact out of product filters', async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () =>
+        state([
+          {
+            field: 'selection',
+            scope: { kind: 'mission', key: null },
+            value: { kind: 'text', text: 'the shopper wants to see only strand necklaces' },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+          {
+            field: 'budget',
+            scope: { kind: 'mission', key: null },
+            value: {
+              kind: 'money',
+              cents: 50000,
+              currency: 'USD',
+              operator: 'lte',
+              basis: 'per-item',
+            },
+          },
+        ]),
+    });
+    const result = await retrieve(productInput({ target: null }));
+    expect(result.status).toBe('zero_hits');
+    expect(result.unresolved).toEqual([]);
+    expect(search.mock.calls[0][0].filters).toEqual([
+      { field: 'Pricing_ActivePrice', operator: 'lte', value: 500 },
+    ]);
+  });
   it('accepts canonical targeted types, rejects aliases, and gates broad OR types', async () => {
     const search = vi.fn().mockResolvedValue([]);
     const retrieve = createEvidenceRetriever({

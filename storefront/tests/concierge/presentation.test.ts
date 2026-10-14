@@ -70,7 +70,13 @@ const groupsInput: PresentChoicesInput = {
   proposalId: 'p1',
   body: {
     kind: 'product_groups',
-    groups: [{ basis: groupBasis(), items: [line('necklace')] }],
+    groups: [
+      { basis: groupBasis(), items: [line('necklace'), line('earrings')] },
+      {
+        basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
+        items: [line('ring')],
+      },
+    ],
     alternatives: null,
   },
 };
@@ -157,6 +163,7 @@ describe('API-only present_choices staging', () => {
         ...groupsInput,
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           alternatives: null,
           groups: [
             {
@@ -166,7 +173,7 @@ describe('API-only present_choices staging', () => {
           ],
         },
       },
-      context({ evidence: [watch] }),
+      context({ evidence: [watch], focusedScopeVerified: true }),
     );
     expect(result).toMatchObject({
       status: 'staged',
@@ -184,6 +191,7 @@ describe('API-only present_choices staging', () => {
         ...groupsInput,
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           alternatives: null,
           groups: [
             {
@@ -193,7 +201,7 @@ describe('API-only present_choices staging', () => {
           ],
         },
       },
-      context({ evidence: [watch] }),
+      context({ evidence: [watch], focusedScopeVerified: true }),
     );
     expect(unknown).toMatchObject({ status: 'invalid_input', reasons: ['group_basis_mismatch'] });
     const mismatch = presentChoices(
@@ -201,6 +209,7 @@ describe('API-only present_choices staging', () => {
         ...groupsInput,
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           alternatives: null,
           groups: [
             {
@@ -210,7 +219,7 @@ describe('API-only present_choices staging', () => {
           ],
         },
       },
-      context({ evidence: [watch] }),
+      context({ evidence: [watch], focusedScopeVerified: true }),
     );
     expect(mismatch).toMatchObject({ status: 'invalid_input', reasons: ['group_basis_mismatch'] });
     expect(mismatch).toMatchObject({
@@ -230,6 +239,7 @@ describe('API-only present_choices staging', () => {
         ...groupsInput,
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           alternatives: null,
           groups: [
             {
@@ -239,7 +249,7 @@ describe('API-only present_choices staging', () => {
           ],
         },
       },
-      context(),
+      context({ focusedScopeVerified: true }),
     );
     expect(result).toMatchObject({
       status: 'staged',
@@ -505,6 +515,7 @@ describe('API-only present_choices staging', () => {
       ...groupsInput,
       body: {
         kind: 'product_groups' as const,
+        mode: 'focused_choice' as const,
         groups: [
           { basis: groupBasis(), items: [line('necklace', 'ring'), line('earrings', 'ring')] },
         ],
@@ -516,6 +527,7 @@ describe('API-only present_choices staging', () => {
       context({
         evidence: [baseRecord('necklace', 317.89), baseRecord('earrings', 463.89)],
         bounds: [{ currency: 'USD', basis: 'total', operator: 'lte', cents: 50000 }],
+        focusedScopeVerified: true,
       }),
     );
     expect(result.status).toBe('staged');
@@ -527,6 +539,7 @@ describe('API-only present_choices staging', () => {
       context({
         evidence: [baseRecord('necklace', 317.89), baseRecord('earrings', 563.89)],
         bounds: [{ currency: 'USD', basis: 'total', operator: 'lte', cents: 50000 }],
+        focusedScopeVerified: true,
       }),
     );
     expect(over.status).toBe('staged');
@@ -562,6 +575,7 @@ describe('API-only present_choices staging', () => {
       ...groupsInput,
       body: {
         kind: 'product_groups' as const,
+        mode: 'focused_choice' as const,
         groups: [{ basis: groupBasis(), items: [selected] }],
         alternatives: null,
       },
@@ -570,7 +584,9 @@ describe('API-only present_choices staging', () => {
       _name === 'blog/product collision'
         ? [...evidence, { ...evidence[0], source: 'blog' as const, evidenceRef: 'blog-ref' }]
         : evidence;
-    expect(presentChoices(input, context({ evidence: collision })).status).toBe(status);
+    expect(
+      presentChoices(input, context({ evidence: collision, focusedScopeVerified: true })).status,
+    ).toBe(status);
   });
 
   it('rejects duplicate refs, IDs, invalid quantities and invalid roles without staging', () => {
@@ -636,6 +652,7 @@ describe('API-only present_choices staging', () => {
       ...groupsInput,
       body: {
         kind: 'product_groups' as const,
+        mode: 'focused_choice' as const,
         alternatives: null,
         groups: [{ basis: groupBasis(), items: [line('necklace'), line('earrings')] }],
       },
@@ -647,6 +664,7 @@ describe('API-only present_choices staging', () => {
           baseRecord('necklace', 142.99, sameDescription),
           baseRecord('earrings', 137.99, sameDescription),
         ],
+        focusedScopeVerified: true,
       }),
     );
     expect(result).toMatchObject({
@@ -674,8 +692,20 @@ describe('API-only present_choices staging', () => {
   ])('assesses v3 %s bounds', (_name, bound, expected) => {
     const price = _name === 'strict conflict' ? 190 : 189.99;
     const result = presentChoices(
-      groupsInput,
-      context({ evidence: [baseRecord('necklace', price)], bounds: [bound] }),
+      {
+        ...groupsInput,
+        body: {
+          kind: 'product_groups' as const,
+          mode: 'focused_choice' as const,
+          alternatives: null,
+          groups: [{ basis: groupBasis(), items: [line('necklace')] }],
+        },
+      },
+      context({
+        evidence: [baseRecord('necklace', price)],
+        bounds: [bound],
+        focusedScopeVerified: true,
+      }),
     );
     expect(result.status).toBe('staged');
     if (result.status !== 'staged') return;
@@ -734,19 +764,25 @@ describe('API-only present_choices staging', () => {
 
   it('rejects stale ledger records and unsafe quantity multiplication', () => {
     expect(
-      presentChoices(groupsInput, context({ evidence: [{ ...evidence[0], stateRevision: 1 }] }))
-        .status,
+      presentChoices(
+        groupsInput,
+        context({ evidence: evidence.map((entry, i) => (i === 0 ? { ...entry, stateRevision: 1 } : entry)) }),
+      ).status,
     ).toBe('invalid_evidence');
     const unsafe = presentChoices(
       {
         ...groupsInput,
         body: {
           kind: 'product_groups' as const,
+          mode: 'focused_choice' as const,
           alternatives: null,
           groups: [{ basis: groupBasis(), items: [{ ...line('necklace'), quantity: 20 }] }],
         },
       },
-      context({ evidence: [baseRecord('necklace', Number.MAX_SAFE_INTEGER / 100)] }),
+      context({
+        evidence: [baseRecord('necklace', Number.MAX_SAFE_INTEGER / 100)],
+        focusedScopeVerified: true,
+      }),
     );
     expect(unsafe.status).toBe('staged');
     if (unsafe.status !== 'staged') return;
@@ -785,6 +821,7 @@ describe('API-only present_choices staging', () => {
       ...groupsInput,
       body: {
         kind: 'product_groups' as const,
+        mode: 'focused_choice' as const,
         groups: [
           {
             basis: groupBasis(),
@@ -799,7 +836,7 @@ describe('API-only present_choices staging', () => {
         alternatives: null,
       },
     };
-    const result = presentChoices(blended, context());
+    const result = presentChoices(blended, context({ focusedScopeVerified: true }));
     expect(result.status).toBe('staged');
     if (result.status !== 'staged') return;
     const stagedLine = result.proposal.groups[0].lines[0];
@@ -975,11 +1012,12 @@ describe("audience-bearing evidence at the presentation boundary (Craig Task 02)
         proposalId: 'p-aud',
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           groups: [{ basis: styleBasis('Dress'), items: [watchLine('1ZLZDA')] }],
           alternatives: null,
         },
       },
-      context({ evidence }),
+      context({ evidence, focusedScopeVerified: true }),
     );
     expect(result.status).toBe('staged');
   });
@@ -1000,13 +1038,79 @@ describe("audience-bearing evidence at the presentation boundary (Craig Task 02)
         proposalId: 'p-aud2',
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           groups: [{ basis: styleBasis('Dress'), items: [watchLine('JRJ802A')] }],
           alternatives: null,
         },
       },
-      context({ evidence }),
+      context({ evidence, focusedScopeVerified: true }),
     );
     expect(result.status).toBe('invalid_input');
     expect(result.reasons).toContain('group_basis_mismatch');
+  });
+});
+
+describe('plain single-group presentations (sister P2 legacy escape)', () => {
+  const singlePlainInput: PresentChoicesInput = {
+    missionId: 'm1',
+    expectedStateRevision: 2,
+    expectedEvidenceBatchRevision: 7,
+    turnId: 'turn-2',
+    proposalId: 'p-single',
+    body: {
+      kind: 'product_groups',
+      groups: [{ basis: groupBasis(), items: [line('necklace'), line('bracelet')] }],
+      alternatives: null,
+    },
+  };
+  const twoGroupPlainInput: PresentChoicesInput = {
+    missionId: 'm1',
+    expectedStateRevision: 2,
+    expectedEvidenceBatchRevision: 7,
+    turnId: 'turn-2',
+    proposalId: 'p-compare',
+    body: {
+      kind: 'product_groups',
+      groups: [
+        { basis: groupBasis('Blue'), items: [line('necklace'), line('earrings')] },
+        {
+          basis: groupBasis('White'),
+          items: [line('ring'), line('bracelet')],
+        },
+      ],
+      alternatives: null,
+    },
+  };
+  const whiteEvidence = evidence.map((record) =>
+    ['ring', 'bracelet'].includes(record.objectID)
+      ? {
+          ...record,
+          record: { ...record.record, 'Catalog_GemstoneInformation.GemstoneColorGroup': 'White' },
+        }
+      : record,
+  );
+
+  it('rejects a one-group plain presentation with a structured reason', () => {
+    const result = presentChoices(singlePlainInput, context());
+    expect(result.status).toBe('invalid_input');
+    expect(result.reasons).toEqual(['single_group_plain_rejected']);
+  });
+  it('rejects a one-group plain presentation even when a narrow scope is verified', () => {
+    const result = presentChoices(singlePlainInput, context({ focusedScopeVerified: true }));
+    expect(result.status).toBe('invalid_input');
+    expect(result.reasons).toEqual(['single_group_plain_rejected']);
+  });
+  it('preserves the prior proposal on the rejection', () => {
+    const prior = presentChoices(twoGroupPlainInput, context({ evidence: whiteEvidence }));
+    expect(prior.status).toBe('staged');
+    if (prior.status !== 'staged') return;
+    const result = presentChoices(singlePlainInput, context({ priorProposal: prior.proposal }));
+    expect(result.status).toBe('invalid_input');
+    expect(result.proposal).toBe(prior.proposal);
+  });
+  it('still stages a two-group plain comparison without a mode', () => {
+    const result = presentChoices(twoGroupPlainInput, context({ evidence: whiteEvidence }));
+    expect(result.status).toBe('staged');
+    if (result.status === 'staged') expect(result.proposal.mode).toBeNull();
   });
 });

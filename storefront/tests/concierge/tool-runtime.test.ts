@@ -96,12 +96,12 @@ describe('API-only Concierge client tool runtime', () => {
       sessionStore,
       initialMissionId: 'mission-1',
       getCurrentShopperMessage: () => shopper,
-      fetchEvidence: async () => ({
+      fetchEvidence: async ({ input }) => ({
         status: 'ok',
         source: 'prod_catalog',
         missionId: 'mission-1',
-        revision: 1,
-        expectedRevision: 1,
+        revision: input.expectedRevision,
+        expectedRevision: input.expectedRevision,
         turnId: 'turn-1',
         effectiveFilters: [],
         unresolved: [],
@@ -129,33 +129,51 @@ describe('API-only Concierge client tool runtime', () => {
     });
     expect(seeded.ok).toBe(true);
     runtime.beginTurn('turn-1', shopper.id);
-    expect((await runtime.retrieve(retrievalInput)).status).toBe('ok');
-    expect(
-      (
-        await runtime.presentSemantic(
-          {
-            body: {
-              kind: 'product_groups',
-              groups: [
+    await runtime.update({
+      ...stateInput,
+      expectedRevision: 1,
+      operationId: 'operation-refresh-sel',
+      operations: [
+        {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'Please show me a ring',
+          fact: {
+            id: 'single-focus-refresh',
+            field: 'selection',
+            value: { kind: 'text', text: 'the shopper wants to see only this ring' },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },
+      ],
+    });
+    expect((await runtime.retrieve({ ...retrievalInput, expectedRevision: 2 })).status).toBe('ok');
+    const refreshResult = await runtime.presentSemantic(
+      {
+        body: {
+          kind: 'product_groups',
+          mode: 'focused_choice',
+          groups: [
+            {
+              basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
+              items: [
                 {
-                  basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
-                  items: [
-                    {
-                      evidenceRef: evidence.evidenceRef,
-                      quantity: 1,
-                      componentSlot: 'ring',
-                      explanation: 'Useful',
-                    },
-                  ],
+                  evidenceRef: evidence.evidenceRef,
+                  quantity: 1,
+                  componentSlot: 'ring',
+                  explanation: 'Useful',
                 },
               ],
-              alternatives: null,
             },
-          },
-          'tool-call-refresh',
-        )
-      ).status,
-    ).toBe('staged');
+          ],
+          alternatives: null,
+        },
+      },
+      'tool-call-refresh',
+    );
+    expect(refreshResult.status).toBe('staged');
     expect(await runtime.finishTurnAndPersist('turn-1', 'completed')).not.toBeNull();
     const persisted = sessionStore.getSnapshot();
     expect(persisted?.committedProposal?.groups[0].lines[0].objectID).toBe('ring-1');
@@ -180,7 +198,22 @@ describe('API-only Concierge client tool runtime', () => {
         records: [evidence],
       }),
     });
-    await runtime.update(stateInput);
+    await runtime.update({
+      ...stateInput,
+      operations: [...stateInput.operations,         {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'Please show me a ring',
+          fact: {
+            id: 'single-focus-decorate',
+            field: 'selection',
+            value: { kind: 'text', text: 'the shopper wants to see only this ring' },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },],
+    });
     runtime.beginTurn('turn-1', shopper.id);
     expect(runtime.hadPresentationAttempt()).toBe(false);
     const rr = await runtime.retrieve(retrievalInput);
@@ -189,6 +222,7 @@ describe('API-only Concierge client tool runtime', () => {
       {
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           groups: [
             {
               basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
@@ -219,6 +253,7 @@ describe('API-only Concierge client tool runtime', () => {
       {
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           groups: [
             {
               basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
@@ -380,7 +415,25 @@ describe('API-only Concierge client tool runtime', () => {
         records: [evidence],
       }),
     });
-    await runtime.update(stateInput);
+    await runtime.update({
+      ...stateInput,
+      operations: [
+        ...stateInput.operations,
+        {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'Please show me a ring',
+          fact: {
+            id: 'single-focus-alias',
+            field: 'selection',
+            value: { kind: 'text', text: 'the shopper wants to see only this ring' },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },
+      ],
+    });
     runtime.beginTurn('turn-1', shopper.id);
     const retrieved = await runtime.retrieveSemantic(
       {
@@ -401,6 +454,7 @@ describe('API-only Concierge client tool runtime', () => {
       {
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           groups: [
             {
               basis: { attribute: 'Catalog_ProductType', value: 'Necklace' },
@@ -422,6 +476,7 @@ describe('API-only Concierge client tool runtime', () => {
       {
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           groups: [
             {
               basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
@@ -702,7 +757,26 @@ describe('API-only Concierge client tool runtime', () => {
         };
       },
     });
-    expect((await runtime.update(stateInput)).status).toBe('applied');
+    const dbgUpdate = await runtime.update({
+      ...stateInput,
+      operations: [
+        ...stateInput.operations,
+        {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'Please show me a ring',
+          fact: {
+            id: 'single-focus-happy',
+            field: 'selection',
+            value: { kind: 'text', text: 'the shopper wants to see only solitaire rings' },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },
+      ],
+    });
+    expect(dbgUpdate.status).toBe('applied');
     const retrieved = await runtime.retrieve(retrievalInput);
     expect(retrieved.status).toBe('ok');
     expect(calls[0]).toMatchObject({
@@ -716,11 +790,12 @@ describe('API-only Concierge client tool runtime', () => {
       turnId: 'turn-1',
       proposalId: 'proposal-1',
       body: {
-        kind: 'product_groups',
-        alternatives: null,
+        kind: 'product_groups' as const,
+        mode: 'focused_choice' as const,
+        alternatives: null as null,
         groups: [
           {
-            basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
+            basis: { attribute: 'Catalog_ProductType' as const, value: 'Ring' },
             items: [
               {
                 evidenceRef: evidence.evidenceRef,
@@ -728,7 +803,7 @@ describe('API-only Concierge client tool runtime', () => {
                 contentHash: 'hash-1',
                 quantity: 1,
                 componentSlot: 'ring',
-                explanation: 'A smaller setting',
+                explanation: 'The exact ring the shopper confirmed',
               },
             ],
           },
@@ -760,7 +835,25 @@ describe('API-only Concierge client tool runtime', () => {
         records: [evidence],
       }),
     });
-    await runtime.update(stateInput);
+    await runtime.update({
+      ...stateInput,
+      operations: [
+        ...stateInput.operations,
+        {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'Please show me a ring',
+          fact: {
+            id: 'single-focus-commit',
+            field: 'selection',
+            value: { kind: 'text', text: 'the shopper wants to see only this ring' },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },
+      ],
+    });
     const retrieved = await runtime.retrieve(retrievalInput);
     await runtime.present({
       missionId: 'mission-1',
@@ -769,11 +862,12 @@ describe('API-only Concierge client tool runtime', () => {
       turnId: 'turn-1',
       proposalId: 'proposal-1',
       body: {
-        kind: 'product_groups',
-        alternatives: null,
+        kind: 'product_groups' as const,
+        mode: 'focused_choice' as const,
+        alternatives: null as null,
         groups: [
           {
-            basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
+            basis: { attribute: 'Catalog_ProductType' as const, value: 'Ring' },
             items: [
               {
                 evidenceRef: evidence.evidenceRef,
@@ -781,7 +875,7 @@ describe('API-only Concierge client tool runtime', () => {
                 contentHash: 'hash-1',
                 quantity: 1,
                 componentSlot: 'ring',
-                explanation: 'A smaller setting',
+                explanation: 'The exact ring the shopper confirmed',
               },
             ],
           },
@@ -813,7 +907,22 @@ describe('API-only Concierge client tool runtime', () => {
         records: [evidence],
       }),
     });
-    await runtime.update(stateInput);
+    await runtime.update({
+      ...stateInput,
+      operations: [...stateInput.operations,         {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'Please show me a ring',
+          fact: {
+            id: 'single-focus-cleared',
+            field: 'selection',
+            value: { kind: 'text', text: 'the shopper wants to see only this ring' },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },],
+    });
     runtime.beginTurn('turn-1', shopper.id);
     const retrieved = await runtime.retrieveSemantic(
       {
@@ -830,6 +939,7 @@ describe('API-only Concierge client tool runtime', () => {
       {
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           alternatives: null,
           groups: [
             {
@@ -902,6 +1012,7 @@ describe('API-only Concierge client tool runtime', () => {
       {
         body: {
           kind: 'product_groups',
+          mode: 'focused_choice',
           alternatives: null,
           groups: [
             {
@@ -1301,7 +1412,7 @@ describe('discovery grid runtime gating', () => {
     },
   };
 
-  it('stages focused_choice when the brief holds an explicit confirmed design focus', async () => {
+  it('rejects focused_choice when the brief only holds a typed design requirement', async () => {
     const runtime = createConciergeToolRuntime({
       fetchVocabulary,
       storage: memoryStorage(),
@@ -1332,12 +1443,117 @@ describe('discovery grid runtime gating', () => {
       proposalId: 'proposal-focus',
       body: focusedBody('focused_choice'),
     });
+    // A typed design/style requirement records taste, not the shopper's choice
+    // to see only that direction (sister P2: the necklace clue became a
+    // requirement and a one-column presentation followed).
+    expect(chosen.status).toBe('invalid_input');
+    expect(chosen.reasons).toEqual(['focused_scope_unverified']);
+  });
+
+  it('stages focused_choice when the brief records the shopper’s explicit single selection', async () => {
+    const runtime = createConciergeToolRuntime({
+      fetchVocabulary,
+      storage: memoryStorage(),
+      initialMissionId: 'mission-1',
+      getCurrentShopperMessage: () => shopper,
+      fetchEvidence: async () => ({
+        status: 'ok' as const,
+        source: 'prod_catalog' as const,
+        missionId: 'mission-1',
+        revision: 1,
+        expectedRevision: 1,
+        turnId: 'turn-1',
+        effectiveFilters: [],
+        unresolved: [],
+        records: [evidence],
+      }),
+    });
+    await runtime.update({
+      ...stateInput,
+      operations: [
+        ...stateInput.operations,
+        {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'Please show me a ring',
+          fact: {
+            id: 'single-focus',
+            field: 'selection',
+            value: { kind: 'text', text: 'the shopper wants to see only solitaire rings' },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },
+      ],
+    });
+    const retrieved = await runtime.retrieve(retrievalInput);
+    const chosen = await runtime.present({
+      missionId: 'mission-1',
+      expectedStateRevision: 1,
+      expectedEvidenceBatchRevision: retrieved.evidenceBatchRevision,
+      turnId: 'turn-1',
+      proposalId: 'proposal-selection-focus',
+      body: focusedBody('focused_choice'),
+    });
     expect(chosen.status).toBe('staged');
     if ('proposal' in chosen && chosen.proposal)
       expect(chosen.proposal.mode).toBe('focused_choice');
   });
 
-  it('stages focused_choice when the shopper confirmed a narrow style through a typed pearl fact', async () => {
+  it('rejects a one-group plain presentation instead of accepting the focused fallback', async () => {
+    const runtime = createConciergeToolRuntime({
+      fetchVocabulary,
+      storage: memoryStorage(),
+      initialMissionId: 'mission-1',
+      getCurrentShopperMessage: () => shopper,
+      fetchEvidence: async () => ({
+        status: 'ok' as const,
+        source: 'prod_catalog' as const,
+        missionId: 'mission-1',
+        revision: 1,
+        expectedRevision: 1,
+        turnId: 'turn-1',
+        effectiveFilters: [],
+        unresolved: [],
+        records: [evidence],
+      }),
+    });
+    await runtime.update(stateInput);
+    const retrieved = await runtime.retrieve(retrievalInput);
+    const plain = await runtime.present({
+      missionId: 'mission-1',
+      expectedStateRevision: 1,
+      expectedEvidenceBatchRevision: retrieved.evidenceBatchRevision,
+      turnId: 'turn-1',
+      proposalId: 'proposal-plain-1',
+      body: {
+        kind: 'product_groups',
+        alternatives: null,
+        groups: [
+          {
+            basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
+            items: [
+              {
+                evidenceRef: evidence.evidenceRef,
+                objectID: 'ring-1',
+                contentHash: 'hash-1',
+                quantity: 1,
+                componentSlot: 'ring',
+                explanation: 'The only direction the brief produced',
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(plain.status).toBe('invalid_input');
+    expect(plain.reasons).toEqual(['single_group_plain_rejected']);
+    runtime.finishTurn('turn-1', 'completed');
+    expect(runtime.getPublished()).toBeNull();
+  });
+
+  it('rejects focused_choice when the shopper only confirmed a typed pearl requirement', async () => {
     const runtime = createConciergeToolRuntime({
       fetchVocabulary,
       storage: memoryStorage(),
@@ -1388,9 +1604,8 @@ describe('discovery grid runtime gating', () => {
       proposalId: 'proposal-pearl-focus',
       body: focusedBody('focused_choice'),
     });
-    expect(chosen.status).toBe('staged');
-    if ('proposal' in chosen && chosen.proposal)
-      expect(chosen.proposal.mode).toBe('focused_choice');
+    expect(chosen.status).toBe('invalid_input');
+    expect(chosen.reasons).toEqual(['focused_scope_unverified']);
   });
 
   it('rejects focused_choice when the brief has no confirmed narrow scope', async () => {
@@ -1443,7 +1658,25 @@ describe('discovery grid runtime gating', () => {
         records: [evidence],
       }),
     });
-    await runtime.update(stateInput);
+    await runtime.update({
+      ...stateInput,
+      operations: [
+        ...stateInput.operations,
+        {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'Please show me a ring',
+          fact: {
+            id: 'single-focus-stale',
+            field: 'selection',
+            value: { kind: 'text', text: 'the shopper wants to see only this ring' },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },
+      ],
+    });
     const retrieved = await runtime.retrieve(retrievalInput);
     await runtime.present({
       missionId: 'mission-1',
@@ -1451,25 +1684,7 @@ describe('discovery grid runtime gating', () => {
       expectedEvidenceBatchRevision: retrieved.evidenceBatchRevision,
       turnId: 'turn-1',
       proposalId: 'proposal-1',
-      body: {
-        kind: 'product_groups',
-        alternatives: null,
-        groups: [
-          {
-            basis: { attribute: 'Catalog_ProductType', value: 'Ring' },
-            items: [
-              {
-                evidenceRef: evidence.evidenceRef,
-                objectID: 'ring-1',
-                contentHash: 'hash-1',
-                quantity: 1,
-                componentSlot: 'ring',
-                explanation: 'A smaller setting',
-              },
-            ],
-          },
-        ],
-      },
+      body: focusedBody('focused_choice'),
     });
     runtime.finishTurn('turn-1', 'completed');
     expect(runtime.getPublished()).not.toBeNull();

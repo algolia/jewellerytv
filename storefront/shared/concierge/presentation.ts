@@ -38,6 +38,17 @@ export function presentChoices(
       proposal: prior,
       reasons: ['focused_scope_unverified'],
     };
+  // Sister P2 escape: after a rejected focused attempt the agent re-sent the
+  // same single group without a mode and the legacy shape published it as the
+  // Discover selection. A one-group plain presentation is not open-ended
+  // discovery (that is the three-style grid) and not a verified narrow focus
+  // (that is focused_choice); comparisons keep two or three plain groups.
+  if (body.kind === 'product_groups' && !('mode' in body) && body.groups.length === 1)
+    return {
+      status: 'invalid_input',
+      proposal: prior,
+      reasons: ['single_group_plain_rejected'],
+    };
   if (
     input.missionId !== context.missionId ||
     input.expectedStateRevision !== context.stateRevision
