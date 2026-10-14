@@ -933,3 +933,80 @@ describe('discovery presentation modes', () => {
     if (verified.status === 'staged') expect(verified.proposal.mode).toBe('focused_choice');
   });
 });
+
+/* Craig-feedback Task 02 (men's product audience) presentation boundary:
+ * audience eligibility is enforced at retrieval (compiled Catalog_Gender
+ * filter plus per-record exclusion), so presentation needs no audience gate.
+ * This guard pins the boundary: evidence records that carry the projected
+ * audience attributes stage as ordinary watch-style groups, and a record
+ * whose own audience fields would contradict an accepted scope can only
+ * reach presentation if retrieval failed first. Green-by-design regression
+ * guard for that boundary, not a red-first case. */
+describe("audience-bearing evidence at the presentation boundary (Craig Task 02)", () => {
+  const watchRecord = (objectID: string, gender: string, consumers: string[], style: string) =>
+    baseRecord(objectID, 299.99, {
+      Catalog_ProductType: 'Wrist Watch',
+      Catalog_TitleDescription: `Watch ${objectID}`,
+      Catalog_LongDescription: `Watch ${objectID} description`,
+      Catalog_Gender: gender,
+      Catalog_TargetConsumer: consumers,
+      Catalog_WatchStyle: style,
+    });
+  const watchLine = (objectID: string) => ({
+    ...line(objectID, 'watch'),
+    evidenceRef: `ref-${objectID}`,
+    contentHash: `hash-${objectID}`,
+  });
+  const styleBasis = (value: string) => ({ attribute: 'Catalog_WatchStyle' as const, value });
+
+  it('stages audience-bearing watch records as an ordinary style group', () => {
+    // The verified live records from Craig's journey, with their exact
+    // audience fields as the catalogue carries them.
+    const evidence = [
+      watchRecord('1ZLZDA', 'Male', ['Men'], 'Dress'),
+      watchRecord('1ZPF6B', 'Unisex', ['Men', 'Women'], 'Dress'),
+    ];
+    const result = presentChoices(
+      {
+        missionId: 'm1',
+        expectedStateRevision: 2,
+        expectedEvidenceBatchRevision: 7,
+        turnId: 'turn-2',
+        proposalId: 'p-aud',
+        body: {
+          kind: 'product_groups',
+          groups: [{ basis: styleBasis('Dress'), items: [watchLine('1ZLZDA')] }],
+          alternatives: null,
+        },
+      },
+      context({ evidence }),
+    );
+    expect(result.status).toBe('staged');
+  });
+
+  it('rejects a style group whose record does not carry the claimed style value', () => {
+    // The group-basis check reads the record fields the projection now
+    // guarantees, including for audience-bearing records.
+    const evidence = [
+      watchRecord('JRJ802A', 'Female', ['Women'], 'Casual'),
+      watchRecord('1ZLZDA', 'Male', ['Men'], 'Dress'),
+    ];
+    const result = presentChoices(
+      {
+        missionId: 'm1',
+        expectedStateRevision: 2,
+        expectedEvidenceBatchRevision: 7,
+        turnId: 'turn-2',
+        proposalId: 'p-aud2',
+        body: {
+          kind: 'product_groups',
+          groups: [{ basis: styleBasis('Dress'), items: [watchLine('JRJ802A')] }],
+          alternatives: null,
+        },
+      },
+      context({ evidence }),
+    );
+    expect(result.status).toBe('invalid_input');
+    expect(result.reasons).toContain('group_basis_mismatch');
+  });
+});

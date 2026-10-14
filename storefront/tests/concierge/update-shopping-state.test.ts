@@ -55,6 +55,11 @@ const fixtureVocabulary = {
     'Catalog_NecklaceType': [
       'Chain', 'Pendant', 'Strand', 'Statement', 'Tennis', 'Beaded',
     ],
+    // Gender vocabulary mirrors the live prod_catalog facet scan of 2026-10-13
+    // (read-only probe, .checkpoint/runs/mens-watch-2026-10-13/): exactly
+    // Female, Male, Unisex on Catalog_Gender, whole index and wrist-watch
+    // scope alike.
+    'Catalog_Gender': ['Female', 'Male', 'Unisex'],
   } as Record<string, string[]>,
   builtAt: '2026-10-08T00:00:00.000Z',
   hasValue: (attribute: string, value: string) =>
@@ -1230,5 +1235,203 @@ describe('necklace_type facts (Craig Task 01)', () => {
       { id: message.id, text: 'classic strands' },
     );
     expect(result.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
+  });
+});
+
+/* Craig-feedback Task 02 (men's product audience), red-first. The verified
+ * failure: "I'm shopping for a men's watch under $1,000" staged JRJ802A,
+ * PPR7845 and IRE616 — every one Catalog_Gender Female, Catalog_TargetConsumer
+ * Women (captured exactly in
+ * .checkpoint/runs/craig-feedback-verification-2026-10-12/watch/). The
+ * accepted brief had no audience field at all, and PRODUCT_PROJECTION never
+ * retrieved the audience attributes. Target behavior: a dedicated
+ * product_audience field whose ONLY accepted encoding is a facet on the
+ * authoritative Catalog_Gender attribute with live-vocabulary values. The
+ * men's meaning (Male plus Unisex, never Female) is the agent's stated value
+ * choice; the writer validates the values against the live vocabulary and the
+ * compiler and record-level checks enforce the rest. "Men's" is product
+ * audience scope on the record, never a guess about the shopper. */
+const audienceMessage = { id: 'm-audience', text: "I'm shopping for a men's watch under $1,000." };
+const audienceFact = (
+  id: string,
+  values: string[],
+  overrides: Record<string, unknown> = {},
+) => ({
+  missionId: 'mission-1',
+  expectedRevision: 0,
+  operationId: id,
+  sourceMessageId: audienceMessage.id,
+  operations: [
+    {
+      action: 'add',
+      factIds: [],
+      sourceQuote: "men's watch",
+      fact: {
+        id,
+        field: 'product_audience',
+        value: { kind: 'facet', attribute: 'Catalog_Gender', values, operator: 'any' },
+        scope: { kind: 'mission', key: null },
+        strength: 'requirement',
+        certainty: 'explicit',
+        ...overrides,
+      },
+    },
+  ],
+});
+
+describe('product_audience facts (Craig Task 02)', () => {
+  it("accepts an explicit men's scope as exact live Catalog_Gender values", async () => {
+    const result = await updateShoppingState(
+      base(),
+      audienceFact('audience-1', ['Male', 'Unisex']),
+      audienceMessage,
+    );
+    expect(result.result.status).toBe('applied');
+    const brief = result.state.brief as { facts: Array<{ field: string; value: unknown }> };
+    const audience = brief.facts.find((f) => f.field === 'product_audience') as {
+      value: { kind: string; attribute: string; values: string[]; operator: string };
+    };
+    expect(audience.value).toMatchObject({
+      kind: 'facet',
+      attribute: 'Catalog_Gender',
+      values: ['Male', 'Unisex'],
+      operator: 'any',
+    });
+  });
+
+  it("accepts a women's scope through the same field", async () => {
+    const result = await updateShoppingState(
+      base(),
+      audienceFact('audience-2', ['Female', 'Unisex']),
+      audienceMessage,
+    );
+    expect(result.result.status).toBe('applied');
+  });
+
+  it('accepts a single-value audience scope', async () => {
+    const result = await updateShoppingState(
+      base(),
+      audienceFact('audience-3', ['Male']),
+      audienceMessage,
+    );
+    expect(result.result.status).toBe('applied');
+  });
+
+  it("refuses an audience expressed as free text: text can never be an eligibility gate", async () => {
+    const result = await updateShoppingState(
+      base(),
+      audienceFact('audience-4', ['Male'], { value: { kind: 'text', text: "men's" } }),
+      audienceMessage,
+    );
+    expect(result.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
+  });
+
+  it('refuses Catalog_TargetConsumer as the audience fact attribute', async () => {
+    // Catalog_TargetConsumer is the record-level cross-check field, not the
+    // accepted brief attribute: the writer keeps one authoritative encoding.
+    const result = await updateShoppingState(
+      base(),
+      audienceFact('audience-5', ['Men'], {
+        value: { kind: 'facet', attribute: 'Catalog_TargetConsumer', values: ['Men'], operator: 'any' },
+      }),
+      audienceMessage,
+    );
+    expect(result.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
+  });
+
+  it('rejects an audience value absent from the live vocabulary with the specific code', async () => {
+    // A plausible-but-wrong value ('Mens') must never silently match: the
+    // vocabulary is the index's, live, not a frozen guess list.
+    const result = await updateShoppingState(
+      base(),
+      audienceFact('audience-6', ['Mens']),
+      audienceMessage,
+    );
+    expect(result.result.failure?.code).toBe('VALUE_NOT_IN_LIVE_VOCABULARY');
+  });
+
+  it('rejects audience facets on any other catalogue attribute', async () => {
+    const result = await updateShoppingState(
+      base(),
+      audienceFact('audience-7', ['Male'], {
+        value: { kind: 'facet', attribute: 'Catalog_ProductType', values: ['Male'], operator: 'any' },
+      }),
+      audienceMessage,
+    );
+    expect(result.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
+  });
+
+  it('rejects audience operators other than any', async () => {
+    const result = await updateShoppingState(
+      base(),
+      audienceFact('audience-8', ['Male'], {
+        value: { kind: 'facet', attribute: 'Catalog_Gender', values: ['Male'], operator: 'none' },
+      }),
+      audienceMessage,
+    );
+    expect(result.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
+  });
+
+  it('refuses audience facts without a live vocabulary (fail closed)', async () => {
+    const result = await updateShoppingStateBase(
+      base(),
+      audienceFact('audience-9', ['Male', 'Unisex']),
+      audienceMessage,
+      undefined,
+    );
+    expect(result.result.status).toBe('invalid_input');
+    expect(result.result.failure?.code).toBe('VOCABULARY_UNAVAILABLE');
+  });
+
+  it('carries the accepted budget basis untouched beside the audience fact', async () => {
+    // Craig's captured input recorded basis 'total'. The writer preserves the
+    // accepted basis exactly; it never silently re-encodes a total-look budget
+    // or a per-item ceiling. What the bound means downstream is the compiler's
+    // contract, asserted in the retrieval tests.
+    const result = await updateShoppingState(
+      base(),
+      {
+        missionId: 'mission-1',
+        expectedRevision: 0,
+        operationId: 'audience-budget-1',
+        sourceMessageId: audienceMessage.id,
+        operations: [
+          {
+            action: 'add',
+            factIds: [],
+            sourceQuote: "men's watch",
+            fact: {
+              id: 'audience-budget',
+              field: 'product_audience',
+              value: { kind: 'facet', attribute: 'Catalog_Gender', values: ['Male', 'Unisex'], operator: 'any' },
+              scope: { kind: 'mission', key: null },
+              strength: 'requirement',
+              certainty: 'explicit',
+            },
+          },
+          {
+            action: 'add',
+            factIds: [],
+            sourceQuote: 'under $1,000',
+            fact: {
+              id: 'budget-total',
+              field: 'budget',
+              value: { kind: 'money', cents: 100000, currency: 'USD', operator: 'lte', basis: 'total' },
+              scope: { kind: 'mission', key: null },
+              strength: 'requirement',
+              certainty: 'explicit',
+            },
+          },
+        ],
+      },
+      audienceMessage,
+    );
+    expect(result.result.status).toBe('applied');
+    const brief = result.state.brief as { facts: Array<{ field: string; value: unknown }> };
+    const budget = brief.facts.find((f) => f.field === 'budget') as {
+      value: { basis: string; operator: string; cents: number };
+    };
+    expect(budget.value).toMatchObject({ basis: 'total', operator: 'lte', cents: 100000 });
+    expect(brief.facts.filter((f) => f.field === 'product_audience')).toHaveLength(1);
   });
 });

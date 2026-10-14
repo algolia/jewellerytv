@@ -14,6 +14,8 @@ import './product-workspace.css';
 import { markWorkspace, markWorkspaceImage, type WorkspaceTraceBinding } from './telemetry';
 import { checkBriefConflicts } from '../shared/briefConstraints';
 import { useCatalogVocabulary } from './concierge/useCatalogVocabulary';
+import { viewGuidance, type WorkspaceViewName } from './concierge/EntryGuidance';
+import './concierge/entry-guidance.css';
 export type View = 'discover' | 'compare' | 'saved';
 type PresentationModeName = 'three_style_grid' | 'focused_choice';
 type Discovery = {
@@ -444,6 +446,9 @@ export function ProductWorkspace({
           </button>
         ))}
       </nav>
+      <p className="pw-view-guidance" data-view={view}>
+        {viewGuidance(view as WorkspaceViewName)}
+      </p>
       {s.refreshing && (
         <p className="pw-status" role="status">
           Checking the latest catalogue details…

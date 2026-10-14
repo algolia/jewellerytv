@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
 import type { UIMessage } from 'instantsearch.js/es/lib/ai-lite';
+import {
+  ConnectedWelcome,
+  STARTER_QUESTIONS,
+  composerSendText,
+  shouldShowEntryGuidance,
+} from '../../src/concierge/EntryGuidance';
 import {
   canSubmitConnectedTurn,
   connectedProgressLabel,
@@ -191,5 +198,55 @@ describe('connected Concierge reset gate', () => {
       { isAbort: false, isError: true },
     );
     expect(notice).toBe('[System notice] Please refine the request.');
+  });
+});
+
+describe('connected entry guidance', () => {
+  it('renders every starter question as a keyboard-activatable button with its exact label', () => {
+    const html = renderToStaticMarkup(
+      <ConnectedWelcome showStarters startersDisabled={false} onAsk={() => {}} />,
+    );
+    expect(html).toContain('aria-label="Suggested first questions"');
+    for (const question of STARTER_QUESTIONS) {
+      expect(html).toContain(`>${question.label}</button>`);
+    }
+    expect(
+      html.match(/<button type="button" class="connected-starter-chip"/g),
+    ).toHaveLength(STARTER_QUESTIONS.length);
+  });
+
+  it('offers a small fixed set of catalogue-grounded starter labels without em dashes', () => {
+    expect(STARTER_QUESTIONS.length).toBeGreaterThanOrEqual(4);
+    expect(STARTER_QUESTIONS.length).toBeLessThanOrEqual(6);
+    const labels = new Set<string>();
+    for (const { label } of STARTER_QUESTIONS) {
+      expect(label.length).toBeGreaterThan(0);
+      expect(label).toBe(label.trim());
+      expect(label).not.toMatch(/[—–]/);
+      labels.add(label);
+    }
+    expect(labels.size).toBe(STARTER_QUESTIONS.length);
+  });
+
+  it('disables starter chips while a turn is pending, resetting, or the workspace is blocked', () => {
+    const html = renderToStaticMarkup(
+      <ConnectedWelcome showStarters startersDisabled onAsk={() => {}} />,
+    );
+    expect(html).toContain('disabled=""');
+  });
+
+  it('shows starter chips only while the transcript is empty and they return after a reset', () => {
+    expect(shouldShowEntryGuidance(0)).toBe(true);
+    expect(shouldShowEntryGuidance(3)).toBe(false);
+    const hidden = renderToStaticMarkup(
+      <ConnectedWelcome showStarters={false} startersDisabled={false} onAsk={() => {}} />,
+    );
+    expect(hidden).not.toContain('connected-starter-chip');
+  });
+
+  it('sends exactly the displayed starter text through the one composer send path', () => {
+    const chip = STARTER_QUESTIONS[0].label;
+    expect(composerSendText(chip, 'a half-typed draft in the input')).toBe(chip);
+    expect(composerSendText(undefined, '  typed by the shopper  ')).toBe('typed by the shopper');
   });
 });

@@ -19,9 +19,14 @@ import { ShoppingWorkspace } from '../ShoppingWorkspace';
 import { ConciergeWorkspaceLayout } from './ConciergeWorkspaceLayout';
 import { ResponsiveAnswerTable } from './ResponsiveAnswerTable';
 import { ConnectedShoppingBrief } from './ConnectedShoppingBrief';
+import {
+  ConnectedWelcome,
+  composerSendText,
+  shouldShowEntryGuidance,
+} from './EntryGuidance';
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
 import { createSdkClientTools } from './sdkTools';
-import { hasFailedTool, isCompletedAssistantTurn } from './turnCompletion';
+import { getFailedToolDetails, hasFailedTool, isCompletedAssistantTurn } from './turnCompletion';
 import type { RetrieveEvidenceResult } from '../../shared/concierge/retrieval/types.js';
 import type { ShopperMessage } from '../../shared/concierge/state/updateShoppingState.js';
 import { applyBriefOperationsV3, undoBriefV3 } from '../../shared/briefState.js';
@@ -356,7 +361,10 @@ export function parseVerifiedProductLink(
   return knownIds.has(id) && verifiedIds.has(id) ? id : null;
 }
 
-/** Fixed UI status, never presented as generated Concierge language. */
+/** Fixed UI status, never presented as generated Concierge language. A turn
+ * that finished cleanly but committed a failed tool part is not a transport
+ * failure: the request went through and a product step did not, so it gets
+ * its own honest notice instead of the transport copy. */
 export function getConnectedTurnSystemNotice(
   messages: readonly UIMessage[],
   finish: TurnOutcome,
@@ -367,8 +375,10 @@ export function getConnectedTurnSystemNotice(
   if (text.startsWith('[System notice]')) return text;
   if (finish?.isAbort)
     return '[System notice] This request was stopped before a complete response. Existing product choices remain.';
-  if (finish?.isError || hasFailedTool(messages) || hasTransportError)
+  if (finish?.isError || hasTransportError)
     return '[System notice] That message did not go through. Send it again and the conversation picks up right where it left off. Existing product choices remain.';
+  if (hasFailedTool(messages))
+    return '[System notice] A product step in this request failed or timed out, so the reply may be incomplete. Ask again and the conversation picks up right where it left off. Existing product choices remain.';
   return '[System notice] This request did not produce a complete response. Existing product choices remain.';
 }
 
@@ -703,9 +713,12 @@ export function ConnectedConcierge({
   }, []);
 
   const send = useCallback(
-    async (event?: FormEvent) => {
+    async (event?: FormEvent, explicitText?: string) => {
       event?.preventDefault();
-      const text = chat.input.trim();
+      // Starter chips pass their exact displayed label here; composer submits
+      // pass the draft input. One send path owns both, with the same gating
+      // and the same post-send input clearing as a typed submit.
+      const text = composerSendText(explicitText, chat.input);
       if (!canSubmitConnectedTurn(text, !!pending, resettingRef.current, blocked)) return;
       const sourceMessageId = newId('shopper');
       const turnId = newId('turn');
@@ -805,6 +818,7 @@ export function ConnectedConcierge({
                   isAbort: finish?.isAbort ?? false,
                   isError: finish?.isError ?? false,
                   failedTool: hasFailedTool(messages),
+                  failedToolDetails: getFailedToolDetails(messages),
                   messageCount: messages.length,
                 });
               recordTurnOutcome(turnId, chatRequestId.current, {
@@ -898,6 +912,14 @@ export function ConnectedConcierge({
     setRevealed(new Set());
     setSection('conversation');
   }, [chat, pending, runtime]);
+
+  /** Starter chips send their exact displayed label through the one send path. */
+  const handleStarterAsk = useCallback(
+    (label: string) => {
+      void send(undefined, label);
+    },
+    [send],
+  );
   const visibleMessages = visibleConnectedTranscript(chat.messages, resetting, hiddenPriorMessageIds);
   const pendingSourceIndex = pending
     ? visibleMessages.findIndex(
@@ -981,15 +1003,11 @@ export function ConnectedConcierge({
       messages={
         <>
           {!visibleMessages.length && (
-            <div className="connected-welcome">
-              <img
-                className="connected-welcome-logo"
-                src="/assets/jtv-logo-full.png"
-                alt="JTV — Jewelry Television"
-                width="365"
-                height="273"
-              />
-            </div>
+            <ConnectedWelcome
+              showStarters={shouldShowEntryGuidance(visibleMessages.length)}
+              startersDisabled={!!pending || resetting || !!blocked}
+              onAsk={handleStarterAsk}
+            />
           )}
           {visibleMessages.map((message, index) => (
             <ConversationMessage

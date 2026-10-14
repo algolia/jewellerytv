@@ -160,4 +160,32 @@ describe('blog evidence source boundaries', () => {
       expect.objectContaining({ field: 'blog' }),
     );
   });
+
+  it('relaxes word matching only for education sources and keeps product search strict AND', async () => {
+    const fetch = vi.fn(async () =>
+      new Response(JSON.stringify({ results: [{ hits: [] }] }), { status: 200 }),
+    );
+    const search = createAlgoliaEvidenceSearch({ appId: 'APP', searchOnlyApiKey: 'KEY', fetch });
+    const call = (source: 'blog' | 'help' | 'prod_catalog', query: string) =>
+      search({ source, query, count: 2, filters: [], signal: new AbortController().signal });
+
+    await call('blog', 'choosing chain necklace guide');
+    await call('help', 'ring sizing');
+    await call('prod_catalog', 'gold ring');
+
+    const calls = fetch.mock.calls as unknown as [string, RequestInit][];
+    const requestAt = (index: number) => JSON.parse(calls[index][1].body as string).requests[0];
+
+    expect(requestAt(0).indexName).toBe('blog');
+    expect(requestAt(1).indexName).toBe('help_content');
+    expect(requestAt(2).indexName).toBe('prod_catalog');
+
+    expect(new URLSearchParams(requestAt(0).params).get('removeWordsIfNoResults')).toBe(
+      'allOptional',
+    );
+    expect(new URLSearchParams(requestAt(1).params).get('removeWordsIfNoResults')).toBe(
+      'allOptional',
+    );
+    expect(new URLSearchParams(requestAt(2).params).get('removeWordsIfNoResults')).toBeNull();
+  });
 });
