@@ -283,8 +283,7 @@ function audienceStatus(
     if (filter.field !== PRODUCT_AUDIENCE_ATTRIBUTE) continue;
     if (filter.operator !== 'in' && filter.operator !== 'eq') continue;
     const accepted = filter.operator === 'in' ? filter.value : [String(filter.value)];
-    const gender =
-      typeof record.Catalog_Gender === 'string' ? [record.Catalog_Gender] : [];
+    const gender = typeof record.Catalog_Gender === 'string' ? [record.Catalog_Gender] : [];
     if (!gender.length) return 'unknown';
     if (!gender.some((value) => accepted.includes(value))) return 'conflict';
     const consumers = Array.isArray(record.Catalog_TargetConsumer)
@@ -561,6 +560,62 @@ function compile(
       });
       continue;
     }
+    // Earring backing type (backing-type lane, verified live 2026-10-14, red
+    // tests first): one OR group over the accepted Catalog_BackingType values,
+    // every one a live-verified value. The strength law: an explicit backing
+    // requirement compiles ONLY when the accepted product direction includes
+    // earrings (an Earrings item target, or a mission product_type fact that
+    // includes Earrings). Against a necklace, another product type, or an
+    // unstated direction the fact stays conversation context — no filter, no
+    // failure noise, never compiled against jewellery it does not describe.
+    // Without the live vocabulary the path stays closed (no frozen backing
+    // list), and a value the catalogue does not carry is disclosed through the
+    // requirement_unavailable path, never silently broadened.
+    if (f.field === 'earring_backing') {
+      const earringsDirected =
+        target?.productType === 'Earrings' ||
+        (!target && liveMissionTypes.includes('Earrings'));
+      if (!earringsDirected) continue;
+      if (
+        f.value.kind !== 'facet' ||
+        f.value.attribute !== SUPPORTED_FACET_ATTRIBUTES.earring_backing ||
+        f.value.operator !== 'any' ||
+        f.value.values.length === 0
+      ) {
+        unresolved.push({
+          field: f.field,
+          reason: 'Earring backing is not an exact supported catalogue encoding',
+        });
+        continue;
+      }
+      if (!vocabulary) {
+        unresolved.push({
+          field: f.field,
+          reason: 'Earring backing needs the live catalogue vocabulary',
+        });
+        continue;
+      }
+      const missing = f.value.values.filter(
+        (value) => !vocabulary.hasValue(SUPPORTED_FACET_ATTRIBUTES.earring_backing, value),
+      );
+      if (missing.length) {
+        unavailable.push({
+          field: f.field,
+          attribute: SUPPORTED_FACET_ATTRIBUTES.earring_backing,
+          requested: missing,
+          availableValues: vocabulary.availableValues(
+            SUPPORTED_FACET_ATTRIBUTES.earring_backing,
+          ),
+        });
+        continue;
+      }
+      filters.push({
+        field: SUPPORTED_FACET_ATTRIBUTES.earring_backing,
+        operator: 'in',
+        value: [...f.value.values],
+      });
+      continue;
+    }
     if (f.value.kind === 'material_alternatives') {
       material.push({ alternatives: f.value.alternatives, factId: f.id });
       continue;
@@ -705,10 +760,7 @@ function compile(
           availableValues: vocabulary.availableValues(attribute),
         });
       else filters.push({ field: f.value.attribute, operator: 'eq', value: f.value.values[0] });
-    } else if (
-      f.value.operator === 'any' &&
-      (f.field === 'pearl' || f.field === 'gemstone')
-    ) {
+    } else if (f.value.operator === 'any' && (f.field === 'pearl' || f.field === 'gemstone')) {
       // Multi-value pearl and gemstone requirements ride the full live
       // vocabulary as one OR group (pearl: Craig-feedback Task 01; gemstone
       // parity from the 2026-10-13 ground-truth audit F5). Every value the
@@ -879,24 +931,40 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
         },
         compiled.unavailable,
       );
-    if (compiled.unresolved.length)
-      return makeResult(
-        input,
-        state.revision,
-        'unsupported_constraint',
-        compiled.filters,
-        compiled.unresolved,
-        [],
-        {
-          code: 'UNSUPPORTED_CONSTRAINT',
-          message: 'One or more accepted constraints could not be compiled safely',
-        },
-      );
+    if (compiled.unresolved.length) {
+      // Classify, not veto (Arijit directive, 2026-10-14; sister-fix diagnosis
+      // .checkpoint/runs/sister-fix-retrieval-2026-10-14): one accepted fact
+      // the compiler cannot turn into a safe filter must never zero a search
+      // that has a compilable basis. When at least one filter compiled, or the
+      // assistant supplied a query, or an exact-ID lookup was requested, or a
+      // post-search verification requirement (material, fit) compiled, the
+      // search proceeds on the compilable subset and the un-compilable facts
+      // ride out as structured unresolved entries for the agent to disclose.
+      // unsupported_constraint is reserved for a brief where nothing at all is
+      // searchable. The requirement_unavailable path above is unchanged.
+      const hasSearchBasis =
+        compiled.filters.length > 0 ||
+        input.query.trim().length > 0 ||
+        Boolean(input.exactObjectIDs?.length) ||
+        compiled.material.length > 0 ||
+        compiled.fit.length > 0;
+      if (!hasSearchBasis)
+        return makeResult(
+          input,
+          state.revision,
+          'unsupported_constraint',
+          compiled.filters,
+          compiled.unresolved,
+          [],
+          {
+            code: 'UNSUPPORTED_CONSTRAINT',
+            message: 'One or more accepted constraints could not be compiled safely',
+          },
+        );
+    }
     const wantOverview = input.source === 'prod_catalog' && input.styleOverview === true;
     const styleBatches =
-      input.source === 'prod_catalog' && input.styleBatches?.length
-        ? input.styleBatches
-        : null;
+      input.source === 'prod_catalog' && input.styleBatches?.length ? input.styleBatches : null;
     if (wantOverview || styleBatches) {
       const controller = new AbortController();
       const parentAbort = () => controller.abort();
@@ -952,18 +1020,10 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
         // the shopper instead of reading an error as an empty catalogue.
         if (wantOverview) {
           if (!options.facetSearch)
-            return makeResult(
-              input,
-              state.revision,
-              'upstream_failure',
-              compiled.filters,
-              [],
-              [],
-              {
-                code: 'FACET_SEARCH_UNAVAILABLE',
-                message: 'Style overview is not available in this deployment',
-              },
-            );
+            return makeResult(input, state.revision, 'upstream_failure', compiled.filters, [], [], {
+              code: 'FACET_SEARCH_UNAVAILABLE',
+              message: 'Style overview is not available in this deployment',
+            });
           const attributes =
             vocabularySnapshot && Object.keys(vocabularySnapshot.values).length
               ? CATALOGUE_GROUP_BASIS_ATTRIBUTES.filter((attribute) =>
@@ -1014,7 +1074,7 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
             state.revision,
             'ok',
             compiled.filters,
-            [],
+            compiled.unresolved,
             [],
             undefined,
             undefined,
@@ -1053,10 +1113,7 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           // G2 hardening (ground-truth audit 2026-10-13): a style value the live
           // catalogue does not carry can never match; refuse it with the valid
           // options instead of burning a search that reads as an empty style.
-          if (
-            vocabularySnapshot &&
-            !vocabularySnapshot.hasValue(batch.attribute, batch.value)
-          ) {
+          if (vocabularySnapshot && !vocabularySnapshot.hasValue(batch.attribute, batch.value)) {
             styleUnavailable.push({
               field: 'style_batches',
               attribute: batch.attribute,
@@ -1084,8 +1141,7 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
             for (const raw of rawHits) {
               if (eligibleCount >= input.count) return;
               const record = projection(input.source, raw);
-              const objectID =
-                typeof record.objectID === 'string' ? record.objectID : undefined;
+              const objectID = typeof record.objectID === 'string' ? record.objectID : undefined;
               if (!objectID) {
                 rejected.push({ objectID: '', reason: 'missing_object_id' });
                 continue;
@@ -1236,7 +1292,7 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           state.revision,
           records.length ? 'ok' : 'zero_hits',
           compiled.filters,
-          [],
+          compiled.unresolved,
           records.slice(0, 36),
           undefined,
           styleUnavailable.length ? styleUnavailable : undefined,
@@ -1335,14 +1391,16 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           if (audienceCheck === 'unknown') {
             audienceIssues.push({
               field: 'audience',
-              reason: 'Audience evidence missing: Catalog_Gender is absent or unreadable on this record',
+              reason:
+                'Audience evidence missing: Catalog_Gender is absent or unreadable on this record',
             });
             return [];
           }
           if (audienceCheck === 'conflict') {
             audienceIssues.push({
               field: 'audience',
-              reason: 'Audience conflict: this record does not satisfy the accepted product audience scope',
+              reason:
+                'Audience conflict: this record does not satisfy the accepted product audience scope',
             });
             return [];
           }
@@ -1442,6 +1500,7 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
         !returned.length
       )
         return makeResult(input, state.revision, 'incomplete_evidence', compiled.filters, [
+          ...compiled.unresolved,
           ...incomplete,
           ...materialUnknown,
           ...audienceIssues,
@@ -1453,11 +1512,21 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
         state.revision,
         returned.length
           ? 'ok'
-          : materialUnknown.length || audienceIssues.length || watchUnknown.length || fitUnknown.length
+          : materialUnknown.length ||
+              audienceIssues.length ||
+              watchUnknown.length ||
+              fitUnknown.length
             ? 'incomplete_evidence'
             : 'zero_hits',
         compiled.filters,
-        [...incomplete, ...materialUnknown, ...audienceIssues, ...watchUnknown, ...fitUnknown],
+        [
+          ...compiled.unresolved,
+          ...incomplete,
+          ...materialUnknown,
+          ...audienceIssues,
+          ...watchUnknown,
+          ...fitUnknown,
+        ],
         returned,
       );
     } catch (error) {
@@ -1550,7 +1619,9 @@ export function createAlgoliaFacetSearch(options: {
         'x-algolia-application-id': options.appId,
         'x-algolia-api-key': options.searchOnlyApiKey,
       },
-      body: JSON.stringify({ requests: [{ indexName: INDEXES[source], params: params.toString() }] }),
+      body: JSON.stringify({
+        requests: [{ indexName: INDEXES[source], params: params.toString() }],
+      }),
       signal,
       redirect: 'error',
     });

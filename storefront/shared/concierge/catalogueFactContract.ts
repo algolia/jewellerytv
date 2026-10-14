@@ -5,6 +5,14 @@ export const SUPPORTED_FACET_ATTRIBUTES = {
   watch_band_type: 'Catalog_WatchBandType',
   necklace_type: 'Catalog_NecklaceType',
   product_audience: 'Catalog_Gender',
+  /** Earring fastening type (backing-type lane, verified live 2026-10-14,
+   * read-only probe in .checkpoint/runs/backing-type-2026-10-14/): the index's
+   * dedicated fastening facet carries twenty live values (Clip-On, Fish Hook,
+   * Leverback, Push Back, Screw Back, Omega, ...). Accepted values always come
+   * from the live vocabulary, never from a frozen copy, and the compiler
+   * applies the filter only when the accepted product direction includes
+   * earrings, never against necklaces or other product types. */
+  earring_backing: 'Catalog_BackingType',
 } as const;
 export const SUPPORTED_GEMSTONE_FACET_ATTRIBUTES = [
   SUPPORTED_FACET_ATTRIBUTES.gemstone,
