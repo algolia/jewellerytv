@@ -290,8 +290,18 @@ describe('installed SDK client-tool callback registration', () => {
         {
           basis: { attribute: 'Catalog_BraceletType', value: 'Dainty' },
           items: [
-            { evidenceRef: 'prod_catalog/b1/hash', quantity: 1, componentSlot: 'bracelet', explanation: 'pearl option' },
-            { evidenceRef: 'prod_catalog/b2/hash', quantity: 1, componentSlot: 'bracelet', explanation: 'wheat chain' },
+            {
+              evidenceRef: 'prod_catalog/b1/hash',
+              quantity: 1,
+              componentSlot: 'bracelet',
+              explanation: 'pearl option',
+            },
+            {
+              evidenceRef: 'prod_catalog/b2/hash',
+              quantity: 1,
+              componentSlot: 'bracelet',
+              explanation: 'wheat chain',
+            },
           ],
           alternatives: null,
           explanation: 'I narrowed the birthday directions to in-stock bracelets.',
@@ -305,7 +315,11 @@ describe('installed SDK client-tool callback registration', () => {
         body: expect.objectContaining({
           kind: 'product_groups',
           mode: 'focused_choice',
-          groups: [expect.objectContaining({ basis: { attribute: 'Catalog_BraceletType', value: 'Dainty' } })],
+          groups: [
+            expect.objectContaining({
+              basis: { attribute: 'Catalog_BraceletType', value: 'Dainty' },
+            }),
+          ],
         }),
       }),
       'call-1',
@@ -416,6 +430,73 @@ describe('installed SDK client-tool callback registration', () => {
       'call-1',
       expect.any(AbortSignal),
       6,
+    );
+  });
+
+  it('treats null styleBatches as omitted when the tool requests a style overview', async () => {
+    const retrieveSemantic = vi.fn(async () => ({ status: 'ok', records: [] }));
+    const tools = createSdkClientTools({
+      updateSemantic: vi.fn(async () => ({ status: 'applied' })),
+      retrieveSemantic,
+      presentSemantic: vi.fn(async () => ({ status: 'staged' })),
+      getActiveTurnToken: vi.fn(() => 8),
+      notePresentationAttempt: vi.fn(() => true),
+    } as unknown as Runtime);
+    const submitted = call(tools.retrieve_evidence.onToolCall!, {
+      source: 'prod_catalog',
+      query: 'simple everyday watch',
+      count: 8,
+      target: null,
+      exactObjectIDs: null,
+      styleOverview: true,
+      styleBatches: null,
+    });
+    await submitted.run();
+    expect(retrieveSemantic).toHaveBeenCalledWith(
+      {
+        source: 'prod_catalog',
+        query: 'simple everyday watch',
+        count: 8,
+        exactObjectIDs: null,
+        target: null,
+        styleOverview: true,
+      },
+      'call-1',
+      expect.any(AbortSignal),
+      8,
+    );
+  });
+
+  it('accepts material values returned by the live style overview as style batches', async () => {
+    const retrieveSemantic = vi.fn(async () => ({ status: 'ok', records: [] }));
+    const tools = createSdkClientTools({
+      updateSemantic: vi.fn(async () => ({ status: 'applied' })),
+      retrieveSemantic,
+      presentSemantic: vi.fn(async () => ({ status: 'staged' })),
+      getActiveTurnToken: vi.fn(() => 9),
+      notePresentationAttempt: vi.fn(() => true),
+    } as unknown as Runtime);
+    const submitted = call(tools.retrieve_evidence.onToolCall!, {
+      source: 'prod_catalog',
+      query: 'steel bracelet',
+      count: 6,
+      target: null,
+      exactObjectIDs: null,
+      styleBatches: [{ attribute: 'Catalog_JewelryMaterialNavigationName', value: 'Steel' }],
+    });
+    await submitted.run();
+    expect(retrieveSemantic).toHaveBeenCalledWith(
+      {
+        source: 'prod_catalog',
+        query: 'steel bracelet',
+        count: 6,
+        exactObjectIDs: null,
+        target: null,
+        styleBatches: [{ attribute: 'Catalog_JewelryMaterialNavigationName', value: 'Steel' }],
+      },
+      'call-1',
+      expect.any(AbortSignal),
+      9,
     );
   });
 });

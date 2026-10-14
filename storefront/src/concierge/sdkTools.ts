@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import type { UserClientSideTools } from 'instantsearch-ui-components';
 import type { createConciergeToolRuntime } from './toolRuntime.js';
-import { catalogueGroupBasisSchema, CATALOGUE_GROUP_BASIS_ATTRIBUTES } from '../../shared/concierge/presentation-contract.js';
+import {
+  catalogueGroupBasisSchema,
+  CATALOGUE_GROUP_BASIS_ATTRIBUTES,
+} from '../../shared/concierge/presentation-contract.js';
 
 type Runtime = ReturnType<typeof createConciergeToolRuntime>;
 const updateShape = z.object({ operations: z.array(z.unknown()).min(1).max(12) }).strict();
@@ -37,9 +40,13 @@ const retrieveShape = z
       )
       .min(1)
       .max(3)
+      .nullable()
       .optional(),
   })
   .strict();
+type NormalizedRetrieveInput = Omit<z.infer<typeof retrieveShape>, 'styleBatches'> & {
+  styleBatches?: Exclude<z.infer<typeof retrieveShape>['styleBatches'], null>;
+};
 const lineShape = z
   .object({
     evidenceRef: z.string().min(1),
@@ -185,19 +192,17 @@ function normalizeRetrieve(input: unknown) {
           const productType = value.productType ?? value.key;
           return { kind: 'item' as const, itemKey, productType };
         })();
+  // Agent Studio occasionally emits null for this optional field. Accept it at
+  // the callback boundary, then omit it before the strict retrieval contract.
   return retrieveShape.parse({
     source: source.source,
     query: source.query,
     count: source.count,
     exactObjectIDs: source.exactObjectIDs ?? null,
     target: targetValue,
-    ...(source.styleOverview === undefined
-      ? {}
-      : { styleOverview: Boolean(source.styleOverview) }),
-    ...(source.styleBatches === undefined
-      ? {}
-      : { styleBatches: source.styleBatches }),
-  });
+    ...(source.styleOverview === undefined ? {} : { styleOverview: Boolean(source.styleOverview) }),
+    ...(source.styleBatches == null ? {} : { styleBatches: source.styleBatches }),
+  }) as NormalizedRetrieveInput;
 }
 function normalizePresent(input: unknown) {
   const source = input && typeof input === 'object' ? (input as Record<string, unknown>) : {};
@@ -284,7 +289,12 @@ function normalizePresent(input: unknown) {
 
 function presentationInputFailure(error: unknown) {
   if (import.meta.env.DEV)
-    console.warn('JTV present_choices input rejected', error instanceof z.ZodError ? JSON.stringify(error.issues.slice(0, 6)) : String(error).slice(0, 200));
+    console.warn(
+      'JTV present_choices input rejected',
+      error instanceof z.ZodError
+        ? JSON.stringify(error.issues.slice(0, 6))
+        : String(error).slice(0, 200),
+    );
   const expected = [
     'body.kind=product_groups with mode three_style_grid (exactly three distinct style columns, two or three items each) or mode focused_choice (one confirmed narrow column), and alternatives=null',
     'body.kind=complete_looks with groups=null and non-empty alternatives',
