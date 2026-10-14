@@ -14,8 +14,6 @@ import './product-workspace.css';
 import { markWorkspace, markWorkspaceImage, type WorkspaceTraceBinding } from './telemetry';
 import { checkBriefConflicts } from '../shared/briefConstraints';
 import { useCatalogVocabulary } from './concierge/useCatalogVocabulary';
-import { viewGuidance, type WorkspaceViewName } from './concierge/EntryGuidance';
-import './concierge/entry-guidance.css';
 export type View = 'discover' | 'compare' | 'saved';
 type PresentationModeName = 'three_style_grid' | 'focused_choice';
 type Discovery = {
@@ -144,6 +142,31 @@ function Price({ product }: { product: Product }) {
     </strong>
   );
 }
+
+/**
+ * One scannable spec line for Discover tiles: fit sizes with their catalogue
+ * unit labels ("18 Inch", "Size 6") plus metal color and purity so a chain
+ * length is never misread as a karat. Values come verbatim from the record;
+ * nothing here repeats the title or invents a claim.
+ */
+function compactSpecs(p: Product): string | null {
+  const parts: string[] = [];
+  const sizeLabels = p.sizes.map((size) => size.label);
+  const numeric = sizeLabels.filter((label) => /^\d+(\.\d+)?$/.test(label));
+  if (numeric.length > 1) {
+    parts.push(`Sizes ${numeric[0]}-${numeric[numeric.length - 1]}`);
+  } else if (sizeLabels.length === 1) {
+    parts.push(sizeLabels[0]);
+  } else if (sizeLabels.length > 1) {
+    parts.push(sizeLabels.slice(0, 2).join(', '));
+  }
+  for (const label of ['Material color', 'Material purity'] as const) {
+    const value = p.attributes.find((attribute) => attribute.label === label)?.value;
+    if (value) parts.push(value);
+  }
+  return parts.length ? parts.join(' • ') : null;
+}
+
 export function ProductWorkspace({
   onAsk,
   onStart,
@@ -327,6 +350,7 @@ export function ProductWorkspace({
           : p.inStock === false
             ? 'Out of stock'
             : 'Stock unavailable';
+      const specs = compactSpecs(p);
       return (
         <article className="pw-product pw-product--discover" key={p.id} data-product-id={p.id}>
           <button
@@ -351,6 +375,7 @@ export function ProductWorkspace({
                   {stockLabel}
                 </span>
               </span>
+              {specs && <span className="pw-product-specs">{specs}</span>}
             </span>
           </button>
           {actions(p)}
@@ -446,9 +471,6 @@ export function ProductWorkspace({
           </button>
         ))}
       </nav>
-      <p className="pw-view-guidance" data-view={view}>
-        {viewGuidance(view as WorkspaceViewName)}
-      </p>
       {s.refreshing && (
         <p className="pw-status" role="status">
           Checking the latest catalogue details…
