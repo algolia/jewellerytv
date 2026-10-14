@@ -3,10 +3,15 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { UIMessage } from 'instantsearch.js/es/lib/ai-lite';
 import {
   ConnectedWelcome,
-  STARTER_QUESTIONS,
   composerSendText,
   shouldShowEntryGuidance,
 } from '../../src/concierge/EntryGuidance';
+import {
+  STARTER_QUESTION_POOL,
+  selectStarterSet,
+  type StarterTheme,
+  type StarterVoice,
+} from '../../src/concierge/starterQuestions';
 import {
   canSubmitConnectedTurn,
   connectedProgressLabel,
@@ -35,8 +40,10 @@ describe('connected Concierge progress', () => {
     expect(
       connectedProgressLabel(
         'streaming',
-        [...withPart({ type: 'tool-retrieve_evidence', state: 'input-available' }),
-          { id: 'shopper-2', role: 'user', parts: [{ type: 'text', text: 'Now show rings' }] }] as UIMessage[],
+        [
+          ...withPart({ type: 'tool-retrieve_evidence', state: 'input-available' }),
+          { id: 'shopper-2', role: 'user', parts: [{ type: 'text', text: 'Now show rings' }] },
+        ] as UIMessage[],
         'shopper-2',
       ),
     ).toBe('Concierge is working');
@@ -81,14 +88,17 @@ describe('connected Concierge progress', () => {
     expect(
       connectedProgressLabel(
         'streaming',
-        [user, {
-          id: 'assistant-1',
-          role: 'assistant',
-          parts: [
-            { type: 'tool-update_shopping_state', state: 'output-available' },
-            { type: 'tool-retrieve_evidence', state: 'input-available' },
-          ],
-        }] as UIMessage[],
+        [
+          user,
+          {
+            id: 'assistant-1',
+            role: 'assistant',
+            parts: [
+              { type: 'tool-update_shopping_state', state: 'output-available' },
+              { type: 'tool-retrieve_evidence', state: 'input-available' },
+            ],
+          },
+        ] as UIMessage[],
         'shopper-1',
       ),
     ).toBe('Checking JTV information');
@@ -97,11 +107,21 @@ describe('connected Concierge progress', () => {
 
 describe('connected Concierge reset gate', () => {
   it('does not reveal prior mission messages while the SDK clears a new conversation', () => {
-    const oldUser = { id: 'shopper-old', role: 'user', parts: [{ type: 'text', text: 'Old question' }] };
-    const oldAssistant = {
-      id: 'assistant-old', role: 'assistant', parts: [{ type: 'text', text: 'Old answer' }],
+    const oldUser = {
+      id: 'shopper-old',
+      role: 'user',
+      parts: [{ type: 'text', text: 'Old question' }],
     };
-    const newUser = { id: 'shopper-new', role: 'user', parts: [{ type: 'text', text: 'New question' }] };
+    const oldAssistant = {
+      id: 'assistant-old',
+      role: 'assistant',
+      parts: [{ type: 'text', text: 'Old answer' }],
+    };
+    const newUser = {
+      id: 'shopper-new',
+      role: 'user',
+      parts: [{ type: 'text', text: 'New question' }],
+    };
     const messages = [oldUser, oldAssistant, newUser] as UIMessage[];
     const oldIds = new Set(['shopper-old', 'assistant-old']);
     expect(visibleConnectedTranscript(messages, true, oldIds)).toEqual([]);
@@ -202,35 +222,113 @@ describe('connected Concierge reset gate', () => {
 });
 
 describe('connected entry guidance', () => {
-  it('renders every starter question as a keyboard-activatable button with its exact label', () => {
+  // Deterministic linear-congruential rng so selector behavior is reproducible.
+  const seededRng = (seed: number) => () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+  const THEMES: StarterTheme[] = [
+    'discovery',
+    'style',
+    'brand',
+    'occasion',
+    'value',
+    'service',
+    'new',
+    'personalization',
+    'preference',
+    'care',
+  ];
+  const VOICES: StarterVoice[] = ['show', 'question', 'tell'];
+
+  it('renders five distinct starter chips from the analytics-backed pool', () => {
+    const set = selectStarterSet(STARTER_QUESTION_POOL, [], seededRng(2));
     const html = renderToStaticMarkup(
-      <ConnectedWelcome showStarters startersDisabled={false} onAsk={() => {}} />,
+      <ConnectedWelcome showStarters startersDisabled={false} starters={set} onAsk={() => {}} />,
     );
     expect(html).toContain('aria-label="Suggested first questions"');
-    for (const question of STARTER_QUESTIONS) {
-      expect(html).toContain(`>${question.label}</button>`);
+    const labels = [...html.matchAll(/class="connected-starter-chip"[^>]*>([^<]*)<\/button>/g)].map(
+      (match) => match[1].replace(/&#x27;/g, "'"),
+    );
+    expect(labels).toEqual(set.map((question) => question.label));
+    expect(new Set(labels).size).toBe(5);
+    const poolLabels = new Set(STARTER_QUESTION_POOL.map((question) => question.label));
+    for (const label of labels) {
+      expect(poolLabels.has(label)).toBe(true);
     }
-    expect(
-      html.match(/<button type="button" class="connected-starter-chip"/g),
-    ).toHaveLength(STARTER_QUESTIONS.length);
   });
 
-  it('offers a small fixed set of catalogue-grounded starter labels without em dashes', () => {
-    expect(STARTER_QUESTIONS.length).toBeGreaterThanOrEqual(4);
-    expect(STARTER_QUESTIONS.length).toBeLessThanOrEqual(6);
+  it('grounds the pool in analytics themes and sources without em dashes', () => {
+    expect(STARTER_QUESTION_POOL.length).toBeGreaterThanOrEqual(20);
     const labels = new Set<string>();
-    for (const { label } of STARTER_QUESTIONS) {
-      expect(label.length).toBeGreaterThan(0);
-      expect(label).toBe(label.trim());
-      expect(label).not.toMatch(/[—–]/);
-      labels.add(label);
+    for (const question of STARTER_QUESTION_POOL) {
+      expect(question.label.length).toBeGreaterThan(0);
+      expect(question.label).toBe(question.label.trim());
+      expect(question.label).not.toMatch(/[—–]/);
+      expect(THEMES).toContain(question.theme);
+      expect(VOICES).toContain(question.voice);
+      expect(['prod_catalog', 'help_content']).toContain(question.source);
+      labels.add(question.label);
     }
-    expect(labels.size).toBe(STARTER_QUESTIONS.length);
+    expect(labels.size).toBe(STARTER_QUESTION_POOL.length);
+  });
+
+  it('selects five distinct labels and never repeats the previous welcome set', () => {
+    for (const seed of [1, 7, 42]) {
+      const rng = seededRng(seed);
+      const first = selectStarterSet(STARTER_QUESTION_POOL, [], rng);
+      expect(first).toHaveLength(5);
+      expect(new Set(first.map((question) => question.label)).size).toBe(5);
+      const second = selectStarterSet(
+        STARTER_QUESTION_POOL,
+        first.map((question) => question.label),
+        rng,
+      );
+      for (const question of second) {
+        expect(first.some((picked) => picked.label === question.label)).toBe(false);
+      }
+    }
+  });
+
+  it('keeps each welcome set varied across themes and sentence voices', () => {
+    for (const seed of [1, 3, 7, 42]) {
+      const set = selectStarterSet(STARTER_QUESTION_POOL, [], seededRng(seed));
+      const perTheme = new Map<StarterTheme, number>();
+      const perVoice = new Map<StarterVoice, number>();
+      for (const question of set) {
+        perTheme.set(question.theme, (perTheme.get(question.theme) ?? 0) + 1);
+        perVoice.set(question.voice, (perVoice.get(question.voice) ?? 0) + 1);
+      }
+      for (const count of [...perTheme.values(), ...perVoice.values()]) {
+        expect(count).toBeLessThanOrEqual(2);
+      }
+      expect(perTheme.size).toBeGreaterThanOrEqual(3);
+      expect(perVoice.size).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('is deterministic for a given rng and fills the set under heavy exclusion', () => {
+    const first = selectStarterSet(STARTER_QUESTION_POOL, [], seededRng(9));
+    const again = selectStarterSet(STARTER_QUESTION_POOL, [], seededRng(9));
+    expect(again.map((question) => question.label)).toEqual(
+      first.map((question) => question.label),
+    );
+    const narrow = selectStarterSet(
+      STARTER_QUESTION_POOL,
+      STARTER_QUESTION_POOL.slice(0, 20).map((question) => question.label),
+      seededRng(5),
+    );
+    expect(narrow).toHaveLength(5);
   });
 
   it('disables starter chips while a turn is pending, resetting, or the workspace is blocked', () => {
     const html = renderToStaticMarkup(
-      <ConnectedWelcome showStarters startersDisabled onAsk={() => {}} />,
+      <ConnectedWelcome
+        showStarters
+        startersDisabled
+        starters={selectStarterSet(STARTER_QUESTION_POOL, [], seededRng(2))}
+        onAsk={() => {}}
+      />,
     );
     expect(html).toContain('disabled=""');
   });
@@ -239,13 +337,18 @@ describe('connected entry guidance', () => {
     expect(shouldShowEntryGuidance(0)).toBe(true);
     expect(shouldShowEntryGuidance(3)).toBe(false);
     const hidden = renderToStaticMarkup(
-      <ConnectedWelcome showStarters={false} startersDisabled={false} onAsk={() => {}} />,
+      <ConnectedWelcome
+        showStarters={false}
+        startersDisabled={false}
+        starters={selectStarterSet(STARTER_QUESTION_POOL, [], seededRng(2))}
+        onAsk={() => {}}
+      />,
     );
     expect(hidden).not.toContain('connected-starter-chip');
   });
 
   it('sends exactly the displayed starter text through the one composer send path', () => {
-    const chip = STARTER_QUESTIONS[0].label;
+    const chip = STARTER_QUESTION_POOL[0].label;
     expect(composerSendText(chip, 'a half-typed draft in the input')).toBe(chip);
     expect(composerSendText(undefined, '  typed by the shopper  ')).toBe('typed by the shopper');
   });

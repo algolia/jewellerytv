@@ -2,13 +2,14 @@
    Uses the shared palette tokens from src/styles.css. */
 
 .connected-starters {
-  max-width: 480px;
-  margin: 18px auto 0;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
 }
 
 .connected-starters-title {
-  margin: 0 0 10px;
-  font-size: 14px;
+  margin: 0 0 22px;
+  font-size: 15px;
   line-height: 1.4;
   color: var(--muted);
 }
@@ -17,27 +18,47 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
+  align-content: center;
+  gap: 30px 16px;
   margin: 0;
-  padding: 0;
+  padding: 0 8px;
   list-style: none;
 }
 
+/* Irregular rhythm: alternate chips sit lower so the cloud reads organic, not
+   grid-stamped. Row gap absorbs the offset so nothing overlaps. */
+.connected-starters-list li:nth-child(even) {
+  transform: translateY(10px);
+}
+
 .connected-starter-chip {
-  padding: 8px 14px;
-  border: 1px solid var(--line);
+  padding: 13px 22px;
+  border: 1px solid #d3dce1;
   border-radius: 999px;
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f9fb 100%);
   color: var(--text);
-  font-size: 13px;
+  font-size: 14.5px;
   line-height: 1.3;
   text-align: center;
   cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    0 1px 2px rgba(23, 62, 75, 0.09),
+    0 4px 9px rgba(23, 62, 75, 0.08);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
 }
 
 .connected-starter-chip:hover:not(:disabled) {
   border-color: var(--blue);
   color: var(--blue);
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    0 2px 4px rgba(23, 62, 75, 0.1),
+    0 8px 16px rgba(0, 118, 169, 0.14);
+  transform: translateY(-1px);
 }
 
 .connected-starter-chip:disabled {
@@ -67,6 +88,11 @@
   .connected-starters-list {
     flex-direction: column;
     align-items: stretch;
+    gap: 14px;
+  }
+
+  .connected-starters-list li:nth-child(even) {
+    transform: none;
   }
 
   .connected-starters-list li {

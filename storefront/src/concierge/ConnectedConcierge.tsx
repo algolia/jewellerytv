@@ -12,18 +12,19 @@ import {
   type UIEvent,
 } from 'react';
 import { useChat } from 'react-instantsearch';
-import type { ChatOnErrorCallback, ChatOnFinishCallback, UIMessage } from 'instantsearch.js/es/lib/ai-lite';
+import type {
+  ChatOnErrorCallback,
+  ChatOnFinishCallback,
+  UIMessage,
+} from 'instantsearch.js/es/lib/ai-lite';
 import Markdown from 'markdown-to-jsx';
 import { X } from 'lucide-react';
 import { ShoppingWorkspace } from '../ShoppingWorkspace';
 import { ConciergeWorkspaceLayout } from './ConciergeWorkspaceLayout';
 import { ResponsiveAnswerTable } from './ResponsiveAnswerTable';
 import { ConnectedShoppingBrief } from './ConnectedShoppingBrief';
-import {
-  ConnectedWelcome,
-  composerSendText,
-  shouldShowEntryGuidance,
-} from './EntryGuidance';
+import { ConnectedWelcome, composerSendText, shouldShowEntryGuidance } from './EntryGuidance';
+import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from './starterQuestions';
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
 import { createSdkClientTools } from './sdkTools';
 import { getFailedToolDetails, hasFailedTool, isCompletedAssistantTurn } from './turnCompletion';
@@ -211,7 +212,8 @@ export function reconcileRestoredReveal(
   // Legacy keys only matter while the transcript may still be empty because
   // hydration has not landed: settling on an empty transcript would delete
   // them before their ids could ever be migrated.
-  const waitingForHydration = messages.length === 0 && legacyCompletionReceiptKeys(storage).length > 0;
+  const waitingForHydration =
+    messages.length === 0 && legacyCompletionReceiptKeys(storage).length > 0;
   const allArrived =
     !waitingForHydration &&
     [...completedIds].every((id) => messages.some((message) => message.id === id));
@@ -248,10 +250,7 @@ export function readCompletedAssistantMessageIds(storage: Storage) {
   }
 }
 
-export function recordCompletedAssistantMessage(
-  storage: Storage,
-  assistantMessageId: string,
-) {
+export function recordCompletedAssistantMessage(storage: Storage, assistantMessageId: string) {
   const ids = readCompletedAssistantMessageIds(storage);
   ids.add(assistantMessageId);
   try {
@@ -300,7 +299,9 @@ export function legacyCompletionReceiptKeys(storage: Storage): string[] {
 export function migrateLegacyCompletionReceipts(storage: Storage, messages: readonly UIMessage[]) {
   const legacyIds = legacyCompletionReceiptKeys(storage).flatMap((key) => {
     try {
-      const parsed = JSON.parse(storage.getItem(key) ?? 'null') as Partial<CompletionReceipt> | null;
+      const parsed = JSON.parse(
+        storage.getItem(key) ?? 'null',
+      ) as Partial<CompletionReceipt> | null;
       return parsed?.version === 1 && Array.isArray(parsed.assistantMessageIds)
         ? parsed.assistantMessageIds.filter((id): id is string => typeof id === 'string')
         : [];
@@ -483,11 +484,15 @@ export function ConnectedConcierge({
   const [pending, setPending] = useState<PendingTurn | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [resetting, setResetting] = useState(false);
+  // Starter set for the current conversation: varied across scenarios and
+  // sentence voices, re-selected on each new conversation so consecutive
+  // welcome views differ. UI label rotation only; no shopper data, no tracking.
+  const [starterSet, setStarterSet] = useState<readonly StarterQuestion[]>(() =>
+    selectStarterSet(STARTER_QUESTION_POOL),
+  );
   const [error, setError] = useState('');
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
-  const [hiddenPriorMessageIds, setHiddenPriorMessageIds] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [hiddenPriorMessageIds, setHiddenPriorMessageIds] = useState<Set<string>>(() => new Set());
   const [systemNotices, setSystemNotices] = useState<string[]>([]);
   const [section, setSection] = useState<'conversation' | 'products'>('conversation');
   const [focusProductId, setFocusProductId] = useState<string | null>(null);
@@ -835,7 +840,11 @@ export function ConnectedConcierge({
               });
               runtime.finishTurn(
                 turnId,
-                finish?.isAbort ? 'aborted' : finish?.isError || transportError ? 'error' : 'exhausted',
+                finish?.isAbort
+                  ? 'aborted'
+                  : finish?.isError || transportError
+                    ? 'error'
+                    : 'exhausted',
               );
               runtime.endTurn(turnId);
               onSystemNotice(getConnectedTurnSystemNotice(messages, finish, transportError));
@@ -859,7 +868,8 @@ export function ConnectedConcierge({
             });
             runtime.finishTurn(turnId, 'error');
             runtime.endTurn(turnId);
-            const failedMessages = (finishRef.current as TurnFinish | null)?.messages ?? chat.messages;
+            const failedMessages =
+              (finishRef.current as TurnFinish | null)?.messages ?? chat.messages;
             onSystemNotice(
               getConnectedTurnSystemNotice(failedMessages, { isAbort: false, isError: true }),
             );
@@ -911,6 +921,12 @@ export function ConnectedConcierge({
     setSystemNotices([]);
     setRevealed(new Set());
     setSection('conversation');
+    setStarterSet((current) =>
+      selectStarterSet(
+        STARTER_QUESTION_POOL,
+        current.map((question) => question.label),
+      ),
+    );
   }, [chat, pending, runtime]);
 
   /** Starter chips send their exact displayed label through the one send path. */
@@ -920,7 +936,11 @@ export function ConnectedConcierge({
     },
     [send],
   );
-  const visibleMessages = visibleConnectedTranscript(chat.messages, resetting, hiddenPriorMessageIds);
+  const visibleMessages = visibleConnectedTranscript(
+    chat.messages,
+    resetting,
+    hiddenPriorMessageIds,
+  );
   const pendingSourceIndex = pending
     ? visibleMessages.findIndex(
         (message) => message.role === 'user' && message.id === pending.sourceMessageId,
@@ -1006,6 +1026,7 @@ export function ConnectedConcierge({
             <ConnectedWelcome
               showStarters={shouldShowEntryGuidance(visibleMessages.length)}
               startersDisabled={!!pending || resetting || !!blocked}
+              starters={starterSet}
               onAsk={handleStarterAsk}
             />
           )}
