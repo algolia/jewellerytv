@@ -224,7 +224,11 @@ describe('retrieve_evidence', () => {
     await retrieve(productInput({ target: null }));
     expect(search.mock.calls[0][0].filters).toEqual([
       { field: 'Catalog_ProductType', operator: 'eq', value: 'Ring' },
-      { field: 'Catalog_GemstoneInformationPrimary.GemstoneName', operator: 'eq', value: 'Diamond' },
+      {
+        field: 'Catalog_GemstoneInformationPrimary.GemstoneName',
+        operator: 'eq',
+        value: 'Diamond',
+      },
     ]);
   });
   it('keeps blue watch dials and metal bracelet requirements on watch attributes', async () => {
@@ -886,8 +890,12 @@ describe('retrieve_evidence', () => {
       ).status,
     ).toBe('incomplete_evidence');
   });
-  it('returns unresolved material and around constraints without searching', async () => {
-    const search = vi.fn();
+  it('searches the compiled target type and discloses unresolved material and around constraints', async () => {
+    const search = vi
+      .fn()
+      .mockResolvedValue([
+        { objectID: 'r1', Catalog_ProductType: 'Ring', Pricing_ActivePrice: 99 },
+      ]);
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () =>
@@ -917,9 +925,27 @@ describe('retrieve_evidence', () => {
         ]),
     });
     const response = await retrieve(productInput());
-    expect(response.status).toBe('unsupported_constraint');
-    expect(response.unresolved.length).toBe(2);
-    expect(search).not.toHaveBeenCalled();
+    // Classify, not veto: the target filter compiles, so the search proceeds
+    // and the two un-compilable facts ride out as structured disclosures.
+    expect(response.status).toBe('ok');
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(search.mock.calls[0][0].filters).toEqual([
+      { field: 'Catalog_ProductType', operator: 'eq', value: 'Ring' },
+    ]);
+    expect(response.unresolved).toEqual([
+      {
+        field: 'material',
+        reason:
+          'Material/component correlation is not safely established by independent top-level facets',
+      },
+      {
+        field: 'budget',
+        reason: 'Only exact USD numeric bounds are supported',
+      },
+    ]);
+    expect(response.effectiveFilters.some((filter) => filter.field === 'Catalog_Material')).toBe(
+      false,
+    );
   });
   it('distinguishes stale revision before and after search', async () => {
     expect(
@@ -1094,6 +1120,8 @@ describe('retrieve_evidence', () => {
   it('never compiles an exclusion-field material fact with a non-none operator as an inclusion', async () => {
     // Independent review finding (d): the writer rejects exclusion+any, but the
     // compiler must reject it independently instead of compiling exclude:false.
+    // Classify, not veto: the rejection is a structured unresolved entry and
+    // the search proceeds on the compiled target filter without the exclusion.
     const badFact = {
       field: 'exclusion',
       scope: { kind: 'mission', key: null },
@@ -1109,12 +1137,19 @@ describe('retrieve_evidence', () => {
       currentState: async () => state([ring, badFact]),
     });
     const response = await retrieve(productInput());
-    expect(response.status).toBe('unsupported_constraint');
+    expect(response.status).toBe('zero_hits');
     expect(
       (response as { unresolved?: Array<{ reason: string }> }).unresolved?.some((entry) =>
         entry.reason.includes('Exclusion facts on material attributes require operator none'),
       ),
     ).toBe(true);
+    // The safety property: the exclusion never compiles as an inclusion (or
+    // any filter) on the material attribute.
+    expect(
+      response.effectiveFilters.some(
+        (filter) => filter.field === 'Catalog_MaterialInformation.MaterialColor',
+      ),
+    ).toBe(false);
   });
   it('compiles an exclusion-field material colour exclusion and excludes matching records', async () => {
     const exclusionFact = {
@@ -1252,7 +1287,7 @@ describe('retrieve_evidence', () => {
       expect(response.records.map((record) => record.objectID)).toEqual(['exact']);
       expect(search).toHaveBeenCalledOnce();
 
-      const untypedSearch = vi.fn();
+      const untypedSearch = vi.fn().mockResolvedValue([]);
       const untyped = createEvidenceRetriever({
         search: untypedSearch,
         currentState: async () =>
@@ -1262,7 +1297,9 @@ describe('retrieve_evidence', () => {
           ]),
       });
       const rejected = await untyped(productInput({ target: null }));
-      expect(rejected.status).toBe('unsupported_constraint');
+      // Classify, not veto: the text material fact is disclosed as unresolved
+      // while the compiled necklace type filter still carries the search.
+      expect(rejected.status).toBe('zero_hits');
       expect(rejected.unresolved).toEqual([
         {
           field: 'material',
@@ -1270,7 +1307,12 @@ describe('retrieve_evidence', () => {
             'Material/component correlation is not safely established by independent top-level facets',
         },
       ]);
-      expect(untypedSearch).not.toHaveBeenCalled();
+      expect(untypedSearch).toHaveBeenCalledTimes(1);
+      expect(untypedSearch.mock.calls[0][0].filters).toContainEqual({
+        field: 'Catalog_ProductType',
+        operator: 'eq',
+        value: 'Necklace',
+      });
     },
   );
 
@@ -1298,7 +1340,12 @@ describe('retrieve_evidence', () => {
   const itemProductType = (productType: string) => ({
     field: 'product_type',
     scope: { kind: 'item', key: 'VG320P' },
-    value: { kind: 'facet', attribute: 'Catalog_ProductType', values: [productType], operator: 'any' },
+    value: {
+      kind: 'facet',
+      attribute: 'Catalog_ProductType',
+      values: [productType],
+      operator: 'any',
+    },
   });
   const vg320pRecord = {
     objectID: 'VG320P',
@@ -1321,18 +1368,14 @@ describe('retrieve_evidence', () => {
 
   it('fails closed when the record lacks the size field or carries a different size', async () => {
     const missing = createEvidenceRetriever({
-      search: async () => [
-        { objectID: 'VG320P', Catalog_ProductType: 'Necklace' },
-      ],
+      search: async () => [{ objectID: 'VG320P', Catalog_ProductType: 'Necklace' }],
       currentState: async () => state([itemProductType('Necklace'), fitFact()]),
     });
     const missingResponse = await missing(productInput({ target: vg320pTarget }));
     expect(missingResponse.status).toBe('incomplete_evidence');
 
     const wrongSize = createEvidenceRetriever({
-      search: async () => [
-        { ...vg320pRecord, Inventory_AvailableSkuSizeNames: ['20 Inch'] },
-      ],
+      search: async () => [{ ...vg320pRecord, Inventory_AvailableSkuSizeNames: ['20 Inch'] }],
       currentState: async () => state([itemProductType('Necklace'), fitFact()]),
     });
     const wrongResponse = await wrongSize(productInput({ target: vg320pTarget }));
@@ -1360,7 +1403,7 @@ describe('retrieve_evidence', () => {
     expect(search).not.toHaveBeenCalled();
   });
 
-  it('keeps a non-necklace fit unresolved with an honest reason and no search', async () => {
+  it('discloses a non-necklace fit mapping as unresolved and still searches the target type', async () => {
     const search = vi.fn().mockResolvedValue([vg320pRecord]);
     const retrieve = createEvidenceRetriever({
       search,
@@ -1371,16 +1414,18 @@ describe('retrieve_evidence', () => {
     );
     // Bracelet target is accepted only because the brief carries an item-scoped
     // product_type fact for it; the fit mapping is still not configured for it.
-    expect(response.status).toBe('unsupported_constraint');
+    // Classify, not veto: the target filter compiles, so the search proceeds
+    // and the unmapped fit rides out as an unresolved disclosure.
+    expect(response.status).toBe('ok');
+    expect(search).toHaveBeenCalledTimes(1);
     expect(
       (response as { unresolved?: Array<{ reason: string }> }).unresolved?.some((entry) =>
         entry.reason.toLowerCase().includes('bracelet'),
       ),
     ).toBe(true);
-    expect(search).not.toHaveBeenCalled();
   });
 
-  it('keeps ring and unknown fit units out of scope with an honest reason and no search', async () => {
+  it('discloses ring and unknown fit units as unresolved and still searches the necklace target', async () => {
     for (const unit of ['ring_us', 'ring_uk', 'unknown'] as const) {
       const search = vi.fn().mockResolvedValue([vg320pRecord]);
       const retrieve = createEvidenceRetriever({
@@ -1388,15 +1433,14 @@ describe('retrieve_evidence', () => {
         currentState: async () => state([itemProductType('Necklace'), fitFact({ value: 7, unit })]),
       });
       const response = await retrieve(productInput({ target: vg320pTarget }));
-      expect(response.status, `unit ${unit}`).toBe('unsupported_constraint');
+      expect(response.status, `unit ${unit}`).toBe('ok');
       expect(
-        (
-          response as { unresolved?: Array<{ reason: string }> }).unresolved?.some((entry) =>
+        (response as { unresolved?: Array<{ reason: string }> }).unresolved?.some((entry) =>
           entry.reason.toLowerCase().includes(unit === 'unknown' ? 'unknown' : unit),
         ),
         `unit ${unit} reason`,
       ).toBe(true);
-      expect(search, `unit ${unit} must not search`).not.toHaveBeenCalled();
+      expect(search, `unit ${unit} searches the target type`).toHaveBeenCalledTimes(1);
     }
   });
 
@@ -1427,13 +1471,15 @@ describe('retrieve_evidence', () => {
     // as a filter.
     const cm = createEvidenceRetriever({
       search: vi.fn().mockResolvedValue([vg320pRecord]),
-      currentState: async () => state([itemProductType('Necklace'), fitFact({ value: 55.88, unit: 'cm' })]),
+      currentState: async () =>
+        state([itemProductType('Necklace'), fitFact({ value: 55.88, unit: 'cm' })]),
     });
     expect((await cm(productInput({ target: vg320pTarget }))).status).toBe('ok');
 
     const mm = createEvidenceRetriever({
       search: vi.fn().mockResolvedValue([vg320pRecord]),
-      currentState: async () => state([itemProductType('Necklace'), fitFact({ value: 558.8, unit: 'mm' })]),
+      currentState: async () =>
+        state([itemProductType('Necklace'), fitFact({ value: 558.8, unit: 'mm' })]),
     });
     expect((await mm(productInput({ target: vg320pTarget }))).status).toBe('ok');
   });
@@ -1496,7 +1542,7 @@ describe('retrieve_evidence', () => {
 describe('retrieve_evidence with live catalog vocabulary', () => {
   const liveVocabulary = {
     values: {
-      'Catalog_ProductType': ['Bracelet', 'Earrings', 'Necklace', 'Ring'],
+      Catalog_ProductType: ['Bracelet', 'Earrings', 'Necklace', 'Ring'],
       'Catalog_GemstoneInformation.GemstoneColorGroup': ['Blue', 'White'],
       'Catalog_BandMaterialInformation.WatchBandMaterialName': ['Stainless Steel', 'Titanium'],
     } as Record<string, string[]>,
@@ -1619,7 +1665,9 @@ describe('retrieve_evidence with live catalog vocabulary', () => {
       vocabulary,
     });
     const result = await retrieve(
-      productInput({ target: { kind: 'item', itemKey: 'Wrist Watch', productType: 'Wrist Watch' } }),
+      productInput({
+        target: { kind: 'item', itemKey: 'Wrist Watch', productType: 'Wrist Watch' },
+      }),
     );
     expect(result.effectiveFilters).toContainEqual({
       field: 'Catalog_BandMaterialInformation.WatchBandMaterialName',
@@ -1645,10 +1693,10 @@ describe('retrieve_evidence with live catalog vocabulary', () => {
 describe('ring size and platinum retrieval (live vocabulary era)', () => {
   const sizedVocabulary = {
     values: {
-      'Catalog_ProductType': ['Ring', 'Necklace', 'Earrings', 'Bracelet', 'Pendant', 'Wrist Watch'],
+      Catalog_ProductType: ['Ring', 'Necklace', 'Earrings', 'Bracelet', 'Pendant', 'Wrist Watch'],
       'Catalog_MaterialInformation.MaterialType': ['Gold', 'Silver', 'Platinum'],
       'Catalog_MaterialInformation.MaterialPurity': ['Sterling', '14K', '18K', '950'],
-      'Inventory_AvailableSkuSizeNames': ['Size 6', 'Size 6.5', 'Size 7', 'Size 8', '16 Inch'],
+      Inventory_AvailableSkuSizeNames: ['Size 6', 'Size 6.5', 'Size 7', 'Size 8', '16 Inch'],
     } as Record<string, string[]>,
     builtAt: '2026-10-08T00:00:00.000Z',
     hasValue: (attribute: string, value: string) =>
@@ -1678,7 +1726,12 @@ describe('ring size and platinum retrieval (live vocabulary era)', () => {
         fact('type', {
           field: 'product_type',
           scope: { kind: 'mission', key: null },
-          value: { kind: 'facet', attribute: 'Catalog_ProductType', values: ['Ring'], operator: 'any' },
+          value: {
+            kind: 'facet',
+            attribute: 'Catalog_ProductType',
+            values: ['Ring'],
+            operator: 'any',
+          },
         }),
         ...extra.map((body, index) => fact(`extra-${index}`, body)),
       ],
@@ -1824,12 +1877,23 @@ describe('discovery style overview and batched style search', () => {
     });
     expect(columns.get('Catalog_RingType')).toEqual({
       attribute: 'Catalog_RingType',
-      values: [{ value: 'Halo', count: 7 }, { value: 'Solitaire', count: 4 }],
+      values: [
+        { value: 'Halo', count: 7 },
+        { value: 'Solitaire', count: 4 },
+      ],
     });
-    expect(result.styleOverview!.every((column) => CATALOGUE_GROUP_BASIS_ATTRIBUTES.includes(column.attribute as (typeof CATALOGUE_GROUP_BASIS_ATTRIBUTES)[number]))).toBe(true);
+    expect(
+      result.styleOverview!.every((column) =>
+        CATALOGUE_GROUP_BASIS_ATTRIBUTES.includes(
+          column.attribute as (typeof CATALOGUE_GROUP_BASIS_ATTRIBUTES)[number],
+        ),
+      ),
+    ).toBe(true);
     expect(result.records).toEqual([]);
     const request = facetSearch.mock.calls[0][0];
-    expect(request.filters).toEqual([{ field: 'Catalog_ProductType', operator: 'eq', value: 'Ring' }]);
+    expect(request.filters).toEqual([
+      { field: 'Catalog_ProductType', operator: 'eq', value: 'Ring' },
+    ]);
   });
 
   it('fails honestly when the facet search is unavailable', async () => {
@@ -1844,7 +1908,10 @@ describe('discovery style overview and batched style search', () => {
 
   it('keeps styleOverview and styleBatches mutually exclusive', async () => {
     const search = vi.fn().mockResolvedValue([]);
-    const retrieve = createEvidenceRetriever({ search, currentState: async () => state([broadRing]) });
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([broadRing]),
+    });
     const result = await retrieve(
       productInput({
         target: null,
@@ -1856,11 +1923,17 @@ describe('discovery style overview and batched style search', () => {
     expect(search).not.toHaveBeenCalled();
   });
 
-  it('passes the assistant\'s query to each batched style search; the stockroom is not overruled', async () => {
+  it("passes the assistant's query to each batched style search; the stockroom is not overruled", async () => {
     const queries: string[] = [];
     const search = vi.fn(async ({ query }: { query: string }) => {
       queries.push(query);
-      return [productHit({ objectID: `R${queries.length}`, Catalog_TitleDescription: `Style Ring ${queries.length}`, Catalog_RingType: 'Halo' })];
+      return [
+        productHit({
+          objectID: `R${queries.length}`,
+          Catalog_TitleDescription: `Style Ring ${queries.length}`,
+          Catalog_RingType: 'Halo',
+        }),
+      ];
     });
     const retrieve = createEvidenceRetriever({
       search,
@@ -1881,13 +1954,19 @@ describe('discovery style overview and batched style search', () => {
     expect(queries.filter((q) => q === 'yellow gold').length).toBe(2);
   });
 
-  it('falls back to the broad query when the assistant\'s phrasing matches nothing', async () => {
+  it("falls back to the broad query when the assistant's phrasing matches nothing", async () => {
     const queries: string[] = [];
     const search = vi.fn(async ({ query }: { query: string }) => {
       queries.push(query);
       // The conversational sentence matches nothing; the broad retry matches.
       return query === ''
-        ? [productHit({ objectID: `R${queries.length}`, Catalog_TitleDescription: `Style Ring ${queries.length}`, Catalog_RingType: 'Halo' })]
+        ? [
+            productHit({
+              objectID: `R${queries.length}`,
+              Catalog_TitleDescription: `Style Ring ${queries.length}`,
+              Catalog_RingType: 'Halo',
+            }),
+          ]
         : [];
     });
     const retrieve = createEvidenceRetriever({
@@ -1909,26 +1988,51 @@ describe('discovery style overview and batched style search', () => {
   });
 
   it('searches each chosen style separately, filters eligibility, and reports per-style outcomes', async () => {
-    const search = vi.fn(async ({ filters }: { filters: readonly { field: string; value?: unknown }[] }) => {
-      const style = filters.find((f) => f.field === 'Catalog_RingType');
-      if (style?.value === 'Halo')
+    const search = vi.fn(
+      async ({ filters }: { filters: readonly { field: string; value?: unknown }[] }) => {
+        const style = filters.find((f) => f.field === 'Catalog_RingType');
+        if (style?.value === 'Halo')
+          return [
+            productHit({
+              objectID: 'H0',
+              Catalog_TitleDescription: 'Halo Ring Zero',
+              Catalog_RingType: 'Halo',
+              Inventory_InStock: false,
+            }),
+            productHit({
+              objectID: 'H1',
+              Catalog_TitleDescription: 'Halo Ring One',
+              Catalog_RingType: 'Halo',
+            }),
+            productHit({
+              objectID: 'H2',
+              Catalog_TitleDescription: 'Halo Ring Two',
+              Catalog_RingType: 'Halo',
+            }),
+          ];
+        if (style?.value === 'Solitaire')
+          return [
+            productHit({
+              objectID: 'S1',
+              Catalog_TitleDescription: 'Solitaire Ring One',
+              Catalog_RingType: 'Solitaire',
+            }),
+            productHit({
+              objectID: 'S2',
+              Catalog_TitleDescription: 'Solitaire Ring Two',
+              Catalog_RingType: 'Solitaire',
+              Catalog_Condition: 'Pre-Owned',
+            }),
+          ];
         return [
-          productHit({ objectID: 'H0', Catalog_TitleDescription: 'Halo Ring Zero', Catalog_RingType: 'Halo', Inventory_InStock: false }),
-          productHit({ objectID: 'H1', Catalog_TitleDescription: 'Halo Ring One', Catalog_RingType: 'Halo' }),
-          productHit({ objectID: 'H2', Catalog_TitleDescription: 'Halo Ring Two', Catalog_RingType: 'Halo' }),
-        ];
-      if (style?.value === 'Solitaire')
-        return [
-          productHit({ objectID: 'S1', Catalog_TitleDescription: 'Solitaire Ring One', Catalog_RingType: 'Solitaire' }),
           productHit({
-            objectID: 'S2',
-            Catalog_TitleDescription: 'Solitaire Ring Two',
-            Catalog_RingType: 'Solitaire',
-            Catalog_Condition: 'Pre-Owned',
+            objectID: 'P1',
+            Catalog_TitleDescription: 'Eternity Ring One',
+            Catalog_RingType: 'Eternity',
           }),
         ];
-      return [productHit({ objectID: 'P1', Catalog_TitleDescription: 'Eternity Ring One', Catalog_RingType: 'Eternity' })];
-    });
+      },
+    );
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () => state([broadRing]),
@@ -1947,9 +2051,7 @@ describe('discovery style overview and batched style search', () => {
     expect(result.status).toBe('ok');
     const byValue = new Map(result.styleResults!.map((r) => [r.value, r]));
     expect(byValue.get('Halo')).toMatchObject({ eligibleCount: 2, backfillUsed: false });
-    expect(byValue.get('Halo')!.rejected).toEqual([
-      { objectID: 'H0', reason: 'out_of_stock' },
-    ]);
+    expect(byValue.get('Halo')!.rejected).toEqual([{ objectID: 'H0', reason: 'out_of_stock' }]);
     expect(byValue.get('Solitaire')).toMatchObject({ eligibleCount: 1 });
     expect(byValue.get('Solitaire')!.rejected).toEqual([
       { objectID: 'S2', reason: 'pre_owned_not_requested' },
@@ -1962,18 +2064,36 @@ describe('discovery style overview and batched style search', () => {
   });
 
   it('removes duplicate products and near-identical variants across style columns', async () => {
-    const search = vi.fn(async ({ filters }: { filters: readonly { field: string; value?: unknown }[] }) => {
-      const style = filters.find((f) => f.field === 'Catalog_RingType');
-      if (style?.value === 'Halo')
+    const search = vi.fn(
+      async ({ filters }: { filters: readonly { field: string; value?: unknown }[] }) => {
+        const style = filters.find((f) => f.field === 'Catalog_RingType');
+        if (style?.value === 'Halo')
+          return [
+            productHit({
+              objectID: 'H1',
+              Catalog_TitleDescription: 'Halo Ring One',
+              Catalog_RingType: 'Halo',
+            }),
+            productHit({
+              objectID: 'H1b',
+              Catalog_TitleDescription: 'Halo Ring Two',
+              Catalog_RingType: 'Halo',
+            }),
+          ];
         return [
-          productHit({ objectID: 'H1', Catalog_TitleDescription: 'Halo Ring One', Catalog_RingType: 'Halo' }),
-          productHit({ objectID: 'H1b', Catalog_TitleDescription: 'Halo Ring Two', Catalog_RingType: 'Halo' }),
+          productHit({
+            objectID: 'H1',
+            Catalog_TitleDescription: 'Halo Ring One',
+            Catalog_RingType: 'Pavé',
+          }),
+          productHit({
+            objectID: 'H1c',
+            Catalog_TitleDescription: 'Halo Ring One',
+            Catalog_RingType: 'Pavé',
+          }),
         ];
-      return [
-        productHit({ objectID: 'H1', Catalog_TitleDescription: 'Halo Ring One', Catalog_RingType: 'Pavé' }),
-        productHit({ objectID: 'H1c', Catalog_TitleDescription: 'Halo Ring One', Catalog_RingType: 'Pavé' }),
-      ];
-    });
+      },
+    );
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () => state([broadRing]),
@@ -2009,8 +2129,16 @@ describe('discovery style overview and batched style search', () => {
       value: { kind: 'text', text: 'Pre-Owned pieces are welcome' },
     };
     const search = vi.fn().mockResolvedValue([
-      productHit({ objectID: 'P1', Catalog_TitleDescription: 'Pre-Owned Ring One', Catalog_Condition: 'Pre-Owned' }),
-      productHit({ objectID: 'P2', Catalog_TitleDescription: 'Pre-Owned Ring Two', Catalog_Condition: 'Pre-Owned' }),
+      productHit({
+        objectID: 'P1',
+        Catalog_TitleDescription: 'Pre-Owned Ring One',
+        Catalog_Condition: 'Pre-Owned',
+      }),
+      productHit({
+        objectID: 'P2',
+        Catalog_TitleDescription: 'Pre-Owned Ring Two',
+        Catalog_Condition: 'Pre-Owned',
+      }),
     ]);
     const retrieve = createEvidenceRetriever({
       search,
@@ -2045,8 +2173,8 @@ describe('ground-truth audit fixes (2026-10-13)', () => {
   });
   const auditVocabulary = {
     values: {
-      'Catalog_ProductType': ['Ring'],
-      'Catalog_RingType': ['Halo', 'Solitaire', 'Tennis'],
+      Catalog_ProductType: ['Ring'],
+      Catalog_RingType: ['Halo', 'Solitaire', 'Tennis'],
       'Catalog_GemstoneInformationPrimary.GemstoneName': ['Diamond', 'Moissanite'],
     } as Record<string, string[]>,
     builtAt: '2026-10-13T00:00:00.000Z',
@@ -2057,10 +2185,12 @@ describe('ground-truth audit fixes (2026-10-13)', () => {
   };
 
   it('F5: compiles multi-value gemstone requirements as one live-vocabulary OR group', async () => {
-    const search = vi.fn().mockResolvedValue([
-      productHit({ objectID: 'D1', Catalog_TitleDescription: 'Diamond Ring' }),
-      productHit({ objectID: 'M1', Catalog_TitleDescription: 'Moissanite Ring' }),
-    ]);
+    const search = vi
+      .fn()
+      .mockResolvedValue([
+        productHit({ objectID: 'D1', Catalog_TitleDescription: 'Diamond Ring' }),
+        productHit({ objectID: 'M1', Catalog_TitleDescription: 'Moissanite Ring' }),
+      ]);
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () =>
@@ -2144,10 +2274,12 @@ describe('ground-truth audit fixes (2026-10-13)', () => {
   });
 
   it('G2: still accepts styleBatches values the live vocabulary carries', async () => {
-    const search = vi.fn().mockResolvedValue([
-      productHit({ objectID: 'H1', Catalog_TitleDescription: 'Halo Ring One' }),
-      productHit({ objectID: 'H2', Catalog_TitleDescription: 'Halo Ring Two' }),
-    ]);
+    const search = vi
+      .fn()
+      .mockResolvedValue([
+        productHit({ objectID: 'H1', Catalog_TitleDescription: 'Halo Ring One' }),
+        productHit({ objectID: 'H2', Catalog_TitleDescription: 'Halo Ring Two' }),
+      ]);
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () => state([broadRing]),
@@ -2174,7 +2306,11 @@ describe('ground-truth audit fixes (2026-10-13)', () => {
       vocabulary: { get: async () => auditVocabulary, invalidate: () => {} },
     });
     const result = await retrieve(
-      productInput({ target: null, count: 24, styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }] }),
+      productInput({
+        target: null,
+        count: 24,
+        styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }],
+      }),
     );
     expect(result.status).toBe('ok');
     expect(result.styleResults![0].eligibleCount).toBe(24);
@@ -2195,9 +2331,9 @@ describe('ground-truth audit fixes (2026-10-13)', () => {
  * and every Unisex one targets both sides (e.g. 1ZPF6B: Men, Women). */
 describe("men's product audience (Craig Task 02)", () => {
   const audienceVocabularyValues = {
-    'Catalog_ProductType': ['Ring', 'Necklace', 'Wrist Watch'],
-    'Catalog_Gender': ['Female', 'Male', 'Unisex'],
-    'Catalog_WatchStyle': ['Casual', 'Dress', 'Fashion', 'Sport'],
+    Catalog_ProductType: ['Ring', 'Necklace', 'Wrist Watch'],
+    Catalog_Gender: ['Female', 'Male', 'Unisex'],
+    Catalog_WatchStyle: ['Casual', 'Dress', 'Fashion', 'Sport'],
   } as Record<string, string[]>;
   const audienceVocabulary = {
     values: audienceVocabularyValues,
@@ -2211,7 +2347,12 @@ describe("men's product audience (Craig Task 02)", () => {
   const watchType = {
     field: 'product_type',
     scope: { kind: 'mission', key: null },
-    value: { kind: 'facet', attribute: 'Catalog_ProductType', values: ['Wrist Watch'], operator: 'any' },
+    value: {
+      kind: 'facet',
+      attribute: 'Catalog_ProductType',
+      values: ['Wrist Watch'],
+      operator: 'any',
+    },
   };
   const audienceFact = (values: string[]) => ({
     field: 'product_audience',
@@ -2255,10 +2396,12 @@ describe("men's product audience (Craig Task 02)", () => {
     // 'total' must not reinterpret the bound: each record's own price is still
     // filtered at 1000, so a 1,200-dollar watch can never ride a multi-item
     // look through the shortlist.
-    const search = vi.fn().mockResolvedValue([
-      watchRecord('CHEAP1', { Pricing_ActivePrice: 99.99, Catalog_Gender: 'Male' }),
-      watchRecord('TOOBIG', { Pricing_ActivePrice: 1200, Catalog_Gender: 'Male' }),
-    ]);
+    const search = vi
+      .fn()
+      .mockResolvedValue([
+        watchRecord('CHEAP1', { Pricing_ActivePrice: 99.99, Catalog_Gender: 'Male' }),
+        watchRecord('TOOBIG', { Pricing_ActivePrice: 1200, Catalog_Gender: 'Male' }),
+      ]);
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () => state([watchType, audienceFact(['Male', 'Unisex']), budgetTotal]),
@@ -2294,15 +2437,30 @@ describe("men's product audience (Craig Task 02)", () => {
     expect(search).not.toHaveBeenCalled();
   });
 
-  it('stays unresolved without a live vocabulary: no frozen gender list', async () => {
+  it('keeps no frozen gender list and searches the watch type when the audience fact cannot compile', async () => {
+    // Classify, not veto: without the live vocabulary the audience fact cannot
+    // compile, but the watch type filter still carries the search and the
+    // audience rides out as a structured disclosure. No gender filter is ever
+    // compiled from a frozen list.
     const search = vi.fn().mockResolvedValue([]);
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
     });
     const result = await retrieve(productInput({ target: null }));
-    expect(result.status).toBe('unsupported_constraint');
-    expect(search).not.toHaveBeenCalled();
+    expect(result.status).toBe('zero_hits');
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(search.mock.calls[0][0].filters).toContainEqual({
+      field: 'Catalog_ProductType',
+      operator: 'eq',
+      value: 'Wrist Watch',
+    });
+    expect(result.unresolved).toEqual([
+      {
+        field: 'product_audience',
+        reason: 'Audience scope needs the live catalogue vocabulary',
+      },
+    ]);
   });
 
   it('rejects a returned Female record by its exact record gender in a batched style search', async () => {
@@ -2344,10 +2502,12 @@ describe("men's product audience (Craig Task 02)", () => {
   });
 
   it('rejects a record without any gender instead of inventing a match', async () => {
-    const search = vi.fn().mockResolvedValue([
-      watchRecord('NOGENDER', { Catalog_Gender: undefined }),
-      watchRecord('1ZLZDA', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Men'] }),
-    ]);
+    const search = vi
+      .fn()
+      .mockResolvedValue([
+        watchRecord('NOGENDER', { Catalog_Gender: undefined }),
+        watchRecord('1ZLZDA', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Men'] }),
+      ]);
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
@@ -2371,10 +2531,12 @@ describe("men's product audience (Craig Task 02)", () => {
     // Catalog_TargetConsumer cross-check: a record labelled Male that targets
     // only Women contradicts the accepted men's scope; the second field is the
     // defense against a mislabelled first one.
-    const search = vi.fn().mockResolvedValue([
-      watchRecord('MISLABELED', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Women'] }),
-      watchRecord('1ZLZDA', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Men'] }),
-    ]);
+    const search = vi
+      .fn()
+      .mockResolvedValue([
+        watchRecord('MISLABELED', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Women'] }),
+        watchRecord('1ZLZDA', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Men'] }),
+      ]);
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
@@ -2435,9 +2597,11 @@ describe("men's product audience (Craig Task 02)", () => {
   });
 
   it('reports incomplete evidence when every returned record conflicts with the audience', async () => {
-    const search = vi.fn().mockResolvedValue([
-      watchRecord('JRJ802A', { Catalog_Gender: 'Female', Catalog_TargetConsumer: ['Women'] }),
-    ]);
+    const search = vi
+      .fn()
+      .mockResolvedValue([
+        watchRecord('JRJ802A', { Catalog_Gender: 'Female', Catalog_TargetConsumer: ['Women'] }),
+      ]);
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
@@ -2486,9 +2650,11 @@ describe("men's product audience (Craig Task 02)", () => {
   it('does not let a fresh mission inherit a previous men restriction', async () => {
     // Neutral watch request, no audience fact: no Catalog_Gender filter is
     // compiled and a Female record is eligible.
-    const search = vi.fn().mockResolvedValue([
-      watchRecord('JRJ802A', { Catalog_Gender: 'Female', Catalog_TargetConsumer: ['Women'] }),
-    ]);
+    const search = vi
+      .fn()
+      .mockResolvedValue([
+        watchRecord('JRJ802A', { Catalog_Gender: 'Female', Catalog_TargetConsumer: ['Women'] }),
+      ]);
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () => state([watchType]),
@@ -2541,5 +2707,173 @@ describe("men's product audience (Craig Task 02)", () => {
     });
     expect(capturedUrls.join(' ')).toContain('Catalog_Gender');
     expect(capturedUrls.join(' ')).toContain('Catalog_TargetConsumer');
+  });
+});
+
+/* Compiler classification (Arijit directive "Classify, not skip", 2026-10-14;
+ * diagnosis .checkpoint/runs/sister-fix-retrieval-2026-10-14/DIAGNOSIS.md).
+ * The failing class: one accepted fact the compiler can never turn into a safe
+ * filter (a text wearability requirement, exactly as the P4 correction wrote
+ * it) returned unsupported_constraint with zero records for every later
+ * prod_catalog search. The contract: un-compilable facts ride out as the
+ * structured unresolved array and the search proceeds on the compilable subset
+ * whenever at least one filter compiled, the assistant supplied a query, or an
+ * exact-ID lookup was requested. unsupported_constraint is reserved for a
+ * brief where nothing at all is searchable. requirement_unavailable stays a
+ * separate path and is unchanged. */
+describe('compiler classification: unresolved facts no longer veto a searchable brief', () => {
+  const wearabilityRequirement = {
+    field: 'wearability',
+    scope: { kind: 'mission', key: null },
+    value: { kind: 'text', text: 'ears not pierced; clip-on earrings hurt' },
+  };
+  const ringRecord = {
+    objectID: 'R1',
+    Catalog_ProductType: 'Ring',
+    Pricing_ActivePrice: 99,
+  };
+
+  it('searches the compilable subset when one filter compiles beside an un-compilable requirement fact', async () => {
+    const search = vi.fn().mockResolvedValue([ringRecord]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([ring, wearabilityRequirement]),
+    });
+    const result = await retrieve(productInput());
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(result.status, JSON.stringify(result.error)).toBe('ok');
+    expect(result.records.map((record) => record.objectID)).toEqual(['R1']);
+    expect(result.unresolved).toEqual([
+      {
+        field: 'wearability',
+        reason: 'Constraint is not in the approved exact catalogue vocabulary',
+      },
+    ]);
+    expect(result.effectiveFilters).toEqual([
+      { field: 'Catalog_ProductType', operator: 'eq', value: 'Ring' },
+    ]);
+  });
+
+  it('carries a recipient-scoped un-compilable requirement beside a compilable search instead of vetoing it', async () => {
+    const search = vi.fn().mockResolvedValue([ringRecord]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () =>
+        state([ring, { ...wearabilityRequirement, scope: { kind: 'recipient', key: 'sister' } }]),
+    });
+    const result = await retrieve(productInput());
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(result.status).toBe('ok');
+    expect(result.unresolved).toEqual([
+      {
+        field: 'wearability',
+        reason: 'Recipient or component scope is not provably bound to this item target',
+      },
+    ]);
+  });
+
+  it('proceeds on the assistant query when nothing compiles into a filter', async () => {
+    const search = vi.fn().mockResolvedValue([ringRecord]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([wearabilityRequirement]),
+    });
+    const result = await retrieve(
+      productInput({ target: null, query: 'necklaces for sensitive ears' }),
+    );
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(search.mock.calls[0][0]).toMatchObject({
+      query: 'necklaces for sensitive ears',
+      filters: [],
+    });
+    expect(result.status).toBe('ok');
+    expect(result.records.map((record) => record.objectID)).toEqual(['R1']);
+    expect(result.unresolved).toEqual([
+      {
+        field: 'wearability',
+        reason: 'Constraint is not in the approved exact catalogue vocabulary',
+      },
+    ]);
+  });
+
+  it('keeps unsupported_constraint when only un-compilable facts exist and there is no query', async () => {
+    const search = vi.fn().mockResolvedValue([ringRecord]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([wearabilityRequirement]),
+    });
+    const result = await retrieve(productInput({ target: null }));
+    expect(result.status).toBe('unsupported_constraint');
+    expect(result.error).toMatchObject({ code: 'UNSUPPORTED_CONSTRAINT' });
+    expect(result.unresolved).toEqual([
+      {
+        field: 'wearability',
+        reason: 'Constraint is not in the approved exact catalogue vocabulary',
+      },
+    ]);
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it('proceeds with an exact-ID lookup beside an un-compilable requirement fact', async () => {
+    const search = vi.fn().mockResolvedValue([ringRecord]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([wearabilityRequirement]),
+    });
+    const result = await retrieve(productInput({ target: null, exactObjectIDs: ['R1'] }));
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(result.status).toBe('ok');
+    expect(result.records.map((record) => record.objectID)).toEqual(['R1']);
+    expect(result.unresolved).toEqual([
+      {
+        field: 'wearability',
+        reason: 'Constraint is not in the approved exact catalogue vocabulary',
+      },
+    ]);
+  });
+
+  it('leaves a clean brief unchanged: no unresolved entries ride an ok result', async () => {
+    const search = vi.fn().mockResolvedValue([ringRecord]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([ring]),
+    });
+    const result = await retrieve(productInput());
+    expect(result.status).toBe('ok');
+    expect(result.unresolved).toEqual([]);
+    expect(result.records.map((record) => record.objectID)).toEqual(['R1']);
+  });
+
+  it('attaches unresolved entries to batched style results instead of vetoing the grid', async () => {
+    const search = vi.fn().mockResolvedValue([
+      {
+        objectID: 'R1',
+        Catalog_ProductType: 'Ring',
+        Catalog_TitleDescription: 'Halo Ring',
+        Catalog_LongDescription: 'A ring for the disclosure grid.',
+        Catalog_Condition: 'First Quality',
+        Inventory_InStock: true,
+        Pricing_ActivePrice: 299.99,
+      },
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([ring, wearabilityRequirement]),
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        styleBatches: [{ attribute: 'Catalog_RingType', value: 'Halo' }],
+      }),
+    );
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(result.status).toBe('ok');
+    expect(result.styleResults?.[0]).toMatchObject({ value: 'Halo', eligibleCount: 1 });
+    expect(result.unresolved).toEqual([
+      {
+        field: 'wearability',
+        reason: 'Constraint is not in the approved exact catalogue vocabulary',
+      },
+    ]);
   });
 });

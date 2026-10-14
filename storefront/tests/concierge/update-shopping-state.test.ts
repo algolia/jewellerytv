@@ -25,41 +25,54 @@ const message = {
 // mirroring the /api/catalog-vocabulary payload the client uses in production.
 const fixtureVocabulary = {
   values: {
-    'Catalog_ProductType': [
-      'Ring', 'Earrings', 'Necklace', 'Bracelet', 'Pendant', 'Wrist Watch',
-    ],
+    Catalog_ProductType: ['Ring', 'Earrings', 'Necklace', 'Bracelet', 'Pendant', 'Wrist Watch'],
     'Catalog_MaterialInformation.MaterialType': ['Gold', 'Silver', 'Platinum'],
     'Catalog_MaterialInformation.MaterialColor': [
-      'White', 'Yellow', 'Blue', 'Rose', 'Two-tone', 'Tri-color',
+      'White',
+      'Yellow',
+      'Blue',
+      'Rose',
+      'Two-tone',
+      'Tri-color',
     ],
-    'Catalog_MaterialInformation.MaterialPurity': [
-      'Sterling', '10K', '14K', '18K', '24K', '950',
-    ],
+    'Catalog_MaterialInformation.MaterialPurity': ['Sterling', '10K', '14K', '18K', '24K', '950'],
     'Catalog_GemstoneInformation.GemstoneColorGroup': ['Blue', 'White', 'Red'],
     'Catalog_GemstoneInformationPrimary.GemstoneName': ['Diamond', 'Ruby'],
-    'Catalog_WatchPrimaryDialPrimaryColor': ['Blue'],
-    'Catalog_WatchBandType': ['Bracelet'],
+    Catalog_WatchPrimaryDialPrimaryColor: ['Blue'],
+    Catalog_WatchBandType: ['Bracelet'],
     // Pearl vocabulary mirrors the live prod_catalog facet scan of 2026-10-12
     // (read-only probe, .checkpoint/runs/craig-task01-pearl-2026-10-12/): ten
     // distinct PearlFullName values on both pearl attributes.
     'Catalog_PearlInformationPrimary.PearlFullName': [
-      'Akoya Pearl', 'Baroque Pearl', 'Blister Pearl', 'Freshwater Pearl',
-      'Genusis Pearls', 'Kasumiga Pearl', 'Mabe Pearl', 'Saltwater Pearl',
-      'South Sea Pearl', 'Tahitian Pearl',
+      'Akoya Pearl',
+      'Baroque Pearl',
+      'Blister Pearl',
+      'Freshwater Pearl',
+      'Genusis Pearls',
+      'Kasumiga Pearl',
+      'Mabe Pearl',
+      'Saltwater Pearl',
+      'South Sea Pearl',
+      'Tahitian Pearl',
     ],
     'Catalog_PearlInformation.PearlFullName': [
-      'Akoya Pearl', 'Baroque Pearl', 'Blister Pearl', 'Freshwater Pearl',
-      'Genusis Pearls', 'Kasumiga Pearl', 'Mabe Pearl', 'Saltwater Pearl',
-      'South Sea Pearl', 'Tahitian Pearl',
+      'Akoya Pearl',
+      'Baroque Pearl',
+      'Blister Pearl',
+      'Freshwater Pearl',
+      'Genusis Pearls',
+      'Kasumiga Pearl',
+      'Mabe Pearl',
+      'Saltwater Pearl',
+      'South Sea Pearl',
+      'Tahitian Pearl',
     ],
-    'Catalog_NecklaceType': [
-      'Chain', 'Pendant', 'Strand', 'Statement', 'Tennis', 'Beaded',
-    ],
+    Catalog_NecklaceType: ['Chain', 'Pendant', 'Strand', 'Statement', 'Tennis', 'Beaded'],
     // Gender vocabulary mirrors the live prod_catalog facet scan of 2026-10-13
     // (read-only probe, .checkpoint/runs/mens-watch-2026-10-13/): exactly
     // Female, Male, Unisex on Catalog_Gender, whole index and wrist-watch
     // scope alike.
-    'Catalog_Gender': ['Female', 'Male', 'Unisex'],
+    Catalog_Gender: ['Female', 'Male', 'Unisex'],
   } as Record<string, string[]>,
   builtAt: '2026-10-08T00:00:00.000Z',
   hasValue: (attribute: string, value: string) =>
@@ -977,7 +990,11 @@ describe('update_shopping_state with live vocabulary', () => {
   it('accepts platinum — a value the frozen enum rejected but the index carries', async () => {
     const result = await updateShoppingState(
       base(),
-      materialAdd('plat-1', [{ type: 'Platinum', color: null, purity: '950', plating: null }], 'platinum'),
+      materialAdd(
+        'plat-1',
+        [{ type: 'Platinum', color: null, purity: '950', plating: null }],
+        'platinum',
+      ),
       { id: 'probe', text: 'platinum' },
     );
     expect(result.result.status).toBe('applied');
@@ -986,7 +1003,11 @@ describe('update_shopping_state with live vocabulary', () => {
   it('rejects a value absent from the live vocabulary with the specific code', async () => {
     const result = await updateShoppingState(
       base(),
-      materialAdd('bogus-1', [{ type: 'Unobtanium', color: null, purity: null, plating: null }], 'unobtanium'),
+      materialAdd(
+        'bogus-1',
+        [{ type: 'Unobtanium', color: null, purity: null, plating: null }],
+        'unobtanium',
+      ),
       { id: 'probe', text: 'unobtanium' },
     );
     expect(result.result.status).toBe('invalid_input');
@@ -996,7 +1017,11 @@ describe('update_shopping_state with live vocabulary', () => {
   it('refuses vocabulary-dependent facts when no vocabulary is supplied (fail closed)', async () => {
     const result = await updateShoppingStateBase(
       base(),
-      materialAdd('novocab-1', [{ type: 'Gold', color: null, purity: null, plating: null }], 'gold'),
+      materialAdd(
+        'novocab-1',
+        [{ type: 'Gold', color: null, purity: null, plating: null }],
+        'gold',
+      ),
       { id: 'probe', text: 'gold' },
       undefined,
     );
@@ -1167,7 +1192,13 @@ describe('pearl evidence facts (Craig Task 01)', () => {
             fact: {
               id: 'budget-1',
               field: 'budget',
-              value: { kind: 'money', cents: 100000, currency: 'USD', operator: 'lt', basis: 'per_item' },
+              value: {
+                kind: 'money',
+                cents: 100000,
+                currency: 'USD',
+                operator: 'lt',
+                basis: 'per_item',
+              },
               scope: { kind: 'mission', key: null },
               strength: 'requirement',
               certainty: 'explicit',
@@ -1189,20 +1220,18 @@ describe('pearl evidence facts (Craig Task 01)', () => {
 
 describe('necklace_type facts (Craig Task 01)', () => {
   it('accepts the classic-strand correction as a necklace_type facet', async () => {
-    const result = await updateShoppingState(
-      base(),
-      necklaceTypeFact('strand-1', ['Strand']),
-      { id: message.id, text: 'classic strands' },
-    );
+    const result = await updateShoppingState(base(), necklaceTypeFact('strand-1', ['Strand']), {
+      id: message.id,
+      text: 'classic strands',
+    });
     expect(result.result.status).toBe('applied');
   });
 
   it('rejects a necklace_type value absent from the live vocabulary', async () => {
-    const result = await updateShoppingState(
-      base(),
-      necklaceTypeFact('strand-2', ['Rosary']),
-      { id: message.id, text: 'classic strands' },
-    );
+    const result = await updateShoppingState(base(), necklaceTypeFact('strand-2', ['Rosary']), {
+      id: message.id,
+      text: 'classic strands',
+    });
     expect(result.result.failure?.code).toBe('VALUE_NOT_IN_LIVE_VOCABULARY');
   });
 
@@ -1252,11 +1281,7 @@ describe('necklace_type facts (Craig Task 01)', () => {
  * compiler and record-level checks enforce the rest. "Men's" is product
  * audience scope on the record, never a guess about the shopper. */
 const audienceMessage = { id: 'm-audience', text: "I'm shopping for a men's watch under $1,000." };
-const audienceFact = (
-  id: string,
-  values: string[],
-  overrides: Record<string, unknown> = {},
-) => ({
+const audienceFact = (id: string, values: string[], overrides: Record<string, unknown> = {}) => ({
   missionId: 'mission-1',
   expectedRevision: 0,
   operationId: id,
@@ -1317,7 +1342,7 @@ describe('product_audience facts (Craig Task 02)', () => {
     expect(result.result.status).toBe('applied');
   });
 
-  it("refuses an audience expressed as free text: text can never be an eligibility gate", async () => {
+  it('refuses an audience expressed as free text: text can never be an eligibility gate', async () => {
     const result = await updateShoppingState(
       base(),
       audienceFact('audience-4', ['Male'], { value: { kind: 'text', text: "men's" } }),
@@ -1332,7 +1357,12 @@ describe('product_audience facts (Craig Task 02)', () => {
     const result = await updateShoppingState(
       base(),
       audienceFact('audience-5', ['Men'], {
-        value: { kind: 'facet', attribute: 'Catalog_TargetConsumer', values: ['Men'], operator: 'any' },
+        value: {
+          kind: 'facet',
+          attribute: 'Catalog_TargetConsumer',
+          values: ['Men'],
+          operator: 'any',
+        },
       }),
       audienceMessage,
     );
@@ -1354,7 +1384,12 @@ describe('product_audience facts (Craig Task 02)', () => {
     const result = await updateShoppingState(
       base(),
       audienceFact('audience-7', ['Male'], {
-        value: { kind: 'facet', attribute: 'Catalog_ProductType', values: ['Male'], operator: 'any' },
+        value: {
+          kind: 'facet',
+          attribute: 'Catalog_ProductType',
+          values: ['Male'],
+          operator: 'any',
+        },
       }),
       audienceMessage,
     );
@@ -1403,7 +1438,12 @@ describe('product_audience facts (Craig Task 02)', () => {
             fact: {
               id: 'audience-budget',
               field: 'product_audience',
-              value: { kind: 'facet', attribute: 'Catalog_Gender', values: ['Male', 'Unisex'], operator: 'any' },
+              value: {
+                kind: 'facet',
+                attribute: 'Catalog_Gender',
+                values: ['Male', 'Unisex'],
+                operator: 'any',
+              },
               scope: { kind: 'mission', key: null },
               strength: 'requirement',
               certainty: 'explicit',
@@ -1416,7 +1456,13 @@ describe('product_audience facts (Craig Task 02)', () => {
             fact: {
               id: 'budget-total',
               field: 'budget',
-              value: { kind: 'money', cents: 100000, currency: 'USD', operator: 'lte', basis: 'total' },
+              value: {
+                kind: 'money',
+                cents: 100000,
+                currency: 'USD',
+                operator: 'lte',
+                basis: 'total',
+              },
               scope: { kind: 'mission', key: null },
               strength: 'requirement',
               certainty: 'explicit',
@@ -1433,5 +1479,344 @@ describe('product_audience facts (Craig Task 02)', () => {
     };
     expect(budget.value).toMatchObject({ basis: 'total', operator: 'lte', cents: 100000 });
     expect(brief.facts.filter((f) => f.field === 'product_audience')).toHaveLength(1);
+  });
+});
+
+/* WRITER-GATE lane 2026-10-14 (sister-fix-retrieval), red-first. Proven failure
+ * (.checkpoint/runs/sister-fix-retrieval-2026-10-14/DIAGNOSIS.md): the P4
+ * unpierced-ears correction was written as an active requirement+explicit
+ * wearability TEXT fact. compile() has no branch for that encoding, so every
+ * later prod_catalog search returned unsupported_constraint with zero records
+ * until the fact was retracted. Target behavior: the writer refuses the whole
+ * class up front with a structured, agent-actionable code naming the supported
+ * alternatives, while preference strength, context strength and tentative
+ * certainty stay accepted (the compiler skips them by design). */
+const gateMessage = {
+  id: 'm-gate',
+  text: 'her ears are not pierced and clip-ons hurt',
+};
+const gateInput = (operationId: string, fact: Record<string, unknown>) => ({
+  missionId: 'mission-1',
+  expectedRevision: 0,
+  operationId,
+  sourceMessageId: gateMessage.id,
+  operations: [
+    {
+      action: 'add',
+      factIds: [],
+      sourceQuote: gateMessage.text,
+      fact,
+    },
+  ],
+});
+const gateFact = (overrides: Record<string, unknown> = {}) => ({
+  id: 'gate-fact',
+  field: 'wearability',
+  value: { kind: 'text', text: 'ears not pierced; clip-on earrings hurt' },
+  scope: { kind: 'mission', key: null },
+  strength: 'requirement',
+  certainty: 'explicit',
+  ...overrides,
+});
+const gateValue = (value: Record<string, unknown>, overrides: Record<string, unknown> = {}) =>
+  gateFact({ value, ...overrides });
+
+describe('requirement encoding classification gate (sister-fix 2026-10-14)', () => {
+  it('refuses an explicit wearability requirement as text with a structured, actionable code', async () => {
+    const original = base();
+    const result = await updateShoppingState(
+      original,
+      gateInput('gate-1', gateFact()),
+      gateMessage,
+    );
+    expect(result.result.status).toBe('invalid_input');
+    expect(result.result.failure?.code).toBe('UNSUPPORTED_REQUIREMENT_ENCODING');
+    expect(result.result.failure?.message).toContain('wearability');
+    expect(result.result.failure?.message).toContain('preference');
+    expect(result.result.failure?.message).toContain('tentative');
+    // Structured outcome, never an uncaught error: the original state object is
+    // returned untouched so the agent can re-encode and retry.
+    expect(result.state).toBe(original);
+    expect(result.state.brief.revision).toBe(0);
+  });
+
+  it('accepts the same wearability meaning as preference strength', async () => {
+    const result = await updateShoppingState(
+      base(),
+      gateInput('gate-2', gateFact({ strength: 'preference' })),
+      gateMessage,
+    );
+    expect(result.result.status).toBe('applied');
+  });
+
+  it('accepts the same wearability meaning as a tentative requirement', async () => {
+    const result = await updateShoppingState(
+      base(),
+      gateInput('gate-3', gateFact({ certainty: 'tentative' })),
+      gateMessage,
+    );
+    expect(result.result.status).toBe('applied');
+  });
+
+  it('refuses explicit text requirements on fields the compiler can never resolve', async () => {
+    for (const field of ['condition', 'budget', 'fit', 'material']) {
+      const result = await updateShoppingState(
+        base(),
+        gateInput(`gate-text-${field}`, gateFact({ id: `gate-${field}`, field })),
+        gateMessage,
+      );
+      expect(result.result.failure?.code, field).toBe('UNSUPPORTED_REQUIREMENT_ENCODING');
+    }
+  });
+
+  it('refuses explicit measurement and product_ref requirements on un-compilable fields', async () => {
+    const measurement = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-measurement',
+        gateValue(
+          { kind: 'measurement', value: 7, unit: 'mm', component: null },
+          { id: 'gate-measurement', field: 'material' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(measurement.result.failure?.code).toBe('UNSUPPORTED_REQUIREMENT_ENCODING');
+    const productRef = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-ref',
+        gateValue(
+          {
+            kind: 'product_ref',
+            objectID: 'p1',
+            sourceIndex: 'prod_catalog',
+            relationship: 'saved',
+          },
+          { id: 'gate-ref', field: 'selection' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(productRef.result.failure?.code).toBe('UNSUPPORTED_REQUIREMENT_ENCODING');
+  });
+
+  it('still accepts supported facet, exact USD money and context-field requirements', async () => {
+    const facet = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-facet-ok',
+        gateValue(
+          {
+            kind: 'facet',
+            attribute: 'Catalog_GemstoneInformation.GemstoneColorGroup',
+            values: ['Blue'],
+            operator: 'any',
+          },
+          { id: 'gate-facet-ok', field: 'gemstone' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(facet.result.status).toBe('applied');
+    const money = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-money-ok',
+        gateValue(
+          { kind: 'money', cents: 20000, currency: 'USD', operator: 'lte', basis: 'total' },
+          { id: 'gate-money-ok', field: 'budget' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(money.result.status).toBe('applied');
+    // design is a compiler-skipped context field: its text requirement never
+    // reaches a compile branch, so the gate must not refuse it.
+    const design = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-design-ok',
+        gateValue(
+          { kind: 'text', text: 'layered chains' },
+          { id: 'gate-design-ok', field: 'design' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(design.result.status).toBe('applied');
+  });
+
+  it('refuses explicit money requirements the compiler cannot use and accepts the defused encodings', async () => {
+    const around = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-around',
+        gateValue(
+          { kind: 'money', cents: 20000, currency: 'USD', operator: 'around', basis: 'total' },
+          { id: 'gate-around', field: 'budget' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(around.result.failure?.code).toBe('UNSUPPORTED_REQUIREMENT_ENCODING');
+    const foreign = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-gbp',
+        gateValue(
+          { kind: 'money', cents: 15000, currency: 'GBP', operator: 'lte', basis: 'total' },
+          { id: 'gate-gbp', field: 'budget' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(foreign.result.failure?.code).toBe('UNSUPPORTED_REQUIREMENT_ENCODING');
+    const preference = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-around-pref',
+        gateValue(
+          { kind: 'money', cents: 20000, currency: 'USD', operator: 'around', basis: 'total' },
+          { id: 'gate-around-pref', field: 'budget', strength: 'preference' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(preference.result.status).toBe('applied');
+  });
+
+  it('refuses a multi-value necklace_type facet requirement: the OR tail is pearl and gemstone only', async () => {
+    const multi = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-strand-multi',
+        gateValue(
+          {
+            kind: 'facet',
+            attribute: 'Catalog_NecklaceType',
+            values: ['Strand', 'Chain'],
+            operator: 'any',
+          },
+          { id: 'gate-strand-multi', field: 'necklace_type' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(multi.result.failure?.code).toBe('UNSUPPORTED_REQUIREMENT_ENCODING');
+    const single = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-strand-single',
+        gateValue(
+          { kind: 'facet', attribute: 'Catalog_NecklaceType', values: ['Strand'], operator: 'any' },
+          { id: 'gate-strand-single', field: 'necklace_type' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(single.result.status).toBe('applied');
+  });
+
+  it('refuses fit measurements outside the size mapping and accepts the supported units', async () => {
+    for (const unit of ['ring_uk', 'unknown']) {
+      const result = await updateShoppingState(
+        base(),
+        gateInput(
+          `gate-fit-${unit}`,
+          gateValue(
+            { kind: 'measurement', value: 7, unit, component: null },
+            { id: `gate-fit-${unit}`, field: 'fit' },
+          ),
+        ),
+        gateMessage,
+      );
+      expect(result.result.failure?.code, unit).toBe('UNSUPPORTED_REQUIREMENT_ENCODING');
+    }
+    const ring = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-fit-ring',
+        gateValue(
+          { kind: 'measurement', value: 7, unit: 'ring_us', component: null },
+          { id: 'gate-fit-ring', field: 'fit' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(ring.result.status).toBe('applied');
+  });
+
+  it('refuses multi-value watch facets and gemstone all-operator requirements', async () => {
+    const multiDial = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-dial-multi',
+        gateValue(
+          {
+            kind: 'facet',
+            attribute: 'Catalog_WatchPrimaryDialPrimaryColor',
+            values: ['Blue', 'White'],
+            operator: 'any',
+          },
+          { id: 'gate-dial-multi', field: 'watch_dial_color' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(multiDial.result.failure?.code).toBe('UNSUPPORTED_REQUIREMENT_ENCODING');
+    const allGem = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-gem-all',
+        gateValue(
+          {
+            kind: 'facet',
+            attribute: 'Catalog_GemstoneInformation.GemstoneColorGroup',
+            values: ['Blue', 'White'],
+            operator: 'all',
+          },
+          { id: 'gate-gem-all', field: 'gemstone' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(allGem.result.failure?.code).toBe('UNSUPPORTED_REQUIREMENT_ENCODING');
+    // Controls: single-value watch facets and gemstone none-operator exclusions
+    // compile today and must keep compiling.
+    const singleDial = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-dial-single',
+        gateValue(
+          {
+            kind: 'facet',
+            attribute: 'Catalog_WatchPrimaryDialPrimaryColor',
+            values: ['Blue'],
+            operator: 'any',
+          },
+          { id: 'gate-dial-single', field: 'watch_dial_color' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(singleDial.result.status).toBe('applied');
+    const noneGem = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-gem-none',
+        gateValue(
+          {
+            kind: 'facet',
+            attribute: 'Catalog_GemstoneInformation.GemstoneColorGroup',
+            values: ['Blue'],
+            operator: 'none',
+          },
+          { id: 'gate-gem-none', field: 'gemstone' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(noneGem.result.status).toBe('applied');
   });
 });

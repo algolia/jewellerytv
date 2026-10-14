@@ -172,6 +172,10 @@ const v3Field = z.enum([
   'gemstone',
   'pearl',
   'necklace_type',
+  // Earring fastening type (backing-type lane, verified live 2026-10-14): the
+  // accepted requirement encoding is a facet on Catalog_BackingType with live
+  // vocabulary values; a backing meaning with no live value stays text context.
+  'earring_backing',
   // Explicit product-audience scope on the product record itself (Craig Task
   // 02): what the catalogue markets the piece to, e.g. a men's watch. Never a
   // guess about the shopper; the authoritative attribute is Catalog_Gender.
