@@ -424,19 +424,32 @@ function compile(
         fact.value.kind === 'text' &&
         (fact.scope.kind === 'mission' || fact.scope.kind === 'recipient'),
     );
-    const genders = recipients.map((fact) =>
-      fact.value.kind === 'text' ? genderFromRecipientRelation(fact.value.text) : null,
-    );
+    const genders = recipients.map((fact) => {
+      const textGender =
+        fact.value.kind === 'text' ? genderFromRecipientRelation(fact.value.text) : null;
+      const recipientGender =
+        fact.scope.kind === 'recipient' && fact.scope.key
+          ? genderFromRecipientRelation(fact.scope.key)
+          : null;
+      return recipientGender && textGender && recipientGender !== textGender
+        ? 'conflict'
+        : (recipientGender ?? textGender);
+    });
     if (genders.some((gender) => gender !== null)) {
       const distinct = new Set(genders);
-      if (distinct.size !== 1 || distinct.has(null))
+      if (distinct.size !== 1 || distinct.has(null) || distinct.has('conflict'))
         unresolved.push({
           field: 'product_audience',
           reason: 'Multiple recipient relationships do not establish one product audience',
         });
       else {
         const gender = genders[0];
-        if (!vocabulary || !vocabulary.isFilterable(PRODUCT_AUDIENCE_ATTRIBUTE))
+        if (gender !== 'Male' && gender !== 'Female')
+          unresolved.push({
+            field: 'product_audience',
+            reason: 'Recipient relationships do not establish one product audience',
+          });
+        else if (!vocabulary || !vocabulary.isFilterable(PRODUCT_AUDIENCE_ATTRIBUTE))
           unresolved.push({
             field: 'product_audience',
             reason: 'Recipient audience needs a live filterable catalogue gender vocabulary',

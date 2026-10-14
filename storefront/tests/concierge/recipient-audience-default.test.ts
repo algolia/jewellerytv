@@ -112,6 +112,40 @@ describe('recipient relationship audience default across jewellery', () => {
     );
   });
 
+  it('uses the accepted recipient key when its description also mentions the shopper', async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const dad = recipient('Gift for dad; mom is helping shop', {
+      scope: { kind: 'recipient', key: 'dad' },
+    });
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([productType('Wrist Watch'), dad]),
+      vocabulary,
+    });
+    const result = await retrieve(request);
+    expect(result.effectiveFilters).toContainEqual({
+      field: 'Catalog_Gender',
+      operator: 'in',
+      value: ['Male', 'Unisex'],
+    });
+  });
+
+  it('fails closed when the recipient key contradicts the exact recipient value', async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const dad = recipient('Mom', { scope: { kind: 'recipient', key: 'dad' } });
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([productType('Wrist Watch'), dad]),
+      vocabulary,
+    });
+    const result = await retrieve(request);
+    expect(result.status).toBe('unsupported_constraint');
+    expect(result.unresolved).toContainEqual(
+      expect.objectContaining({ field: 'product_audience' }),
+    );
+    expect(search).not.toHaveBeenCalled();
+  });
+
   it('uses an explicit audience fact instead of inferring from the relationship', async () => {
     const retrieve = createEvidenceRetriever({
       search: vi.fn().mockResolvedValue([]),
