@@ -715,11 +715,14 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
       )
       .map((fact) => (fact.value.kind === 'product_ref' ? fact.value.objectID : ''))
       .filter(Boolean);
-    // Focused Choice gate: the shopper's exact item or an explicit, confirmed
-    // narrow style/design focus in the accepted brief. Typed catalogue-style
-    // facts (pearl, necklace type, bracelet type) count when the shopper
-    // confirmed them as requirements: "she prefers classic pearl strands" is
-    // exactly the confirmed narrow focus this gate exists to recognize.
+    // Focused Choice gate: the shopper's accepted exact item, or the shopper's
+    // own explicit single-selection fact in the accepted brief. Typed
+    // catalogue-style facts (design, style, pearl, necklace type) record taste
+    // and discovery scope; they do not prove the shopper chose to see only
+    // that direction. The sister P2 run turned the borrowed-necklace clue into
+    // a product_type requirement and then presented one strand column; a
+    // requirement the shopper never framed as an exclusive focus must not
+    // unlock this mode.
     const focusedScopeVerified =
       acceptedAnchorIds.length > 0 ||
       brief.facts.some(
@@ -727,11 +730,8 @@ export function createConciergeToolRuntime(options: RuntimeOptions) {
           fact.status === 'active' &&
           fact.strength === 'requirement' &&
           fact.certainty === 'explicit' &&
-          (fact.field === 'style' ||
-            fact.field === 'design' ||
-            fact.field === 'pearl' ||
-            fact.field === 'necklace_type') &&
-          (fact.scope.kind === 'mission' || fact.scope.kind === 'item'),
+          fact.field === 'selection' &&
+          fact.scope.kind === 'mission',
       );
     const result = presentChoices(parsed.data, {
       missionId: session.missionId as string,

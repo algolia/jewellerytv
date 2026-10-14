@@ -1593,7 +1593,7 @@ describe('requirement encoding classification gate (sister-fix 2026-10-14)', () 
             sourceIndex: 'prod_catalog',
             relationship: 'saved',
           },
-          { id: 'gate-ref', field: 'selection' },
+          { id: 'gate-ref', field: 'wearability' },
         ),
       ),
       gateMessage,
@@ -1645,6 +1645,21 @@ describe('requirement encoding classification gate (sister-fix 2026-10-14)', () 
       gateMessage,
     );
     expect(design.result.status).toBe('applied');
+    // selection is the explicit single-focus carrier for the presentation
+    // contract. Like design, it is compiler-skipped context, never a search
+    // filter, so the writer accepts its text requirement.
+    const selection = await updateShoppingState(
+      base(),
+      gateInput(
+        'gate-selection-ok',
+        gateValue(
+          { kind: 'text', text: 'the shopper wants to see only solitaire rings' },
+          { id: 'gate-selection-ok', field: 'selection' },
+        ),
+      ),
+      gateMessage,
+    );
+    expect(selection.result.status).toBe('applied');
   });
 
   it('refuses explicit money requirements the compiler cannot use and accepts the defused encodings', async () => {
