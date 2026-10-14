@@ -110,6 +110,7 @@ const inputFact = z
       'gemstone',
       'pearl',
       'necklace_type',
+      'product_audience',
       'watch_dial_color',
       'watch_band_type',
       'watch_band_material',
@@ -253,6 +254,17 @@ function toBriefFact(
     throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
   if (f.field === 'necklace_type' && f.value.kind !== 'facet')
     throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
+  // Product-audience requirements accept only the typed facet encoding on the
+  // authoritative Catalog_Gender attribute (Craig Task 02, verified live
+  // 2026-10-13: Catalog_Gender is a filterable facet carrying exactly Female,
+  // Male, Unisex). A text audience fact ("men's") is exactly the encoding
+  // that cannot be compiled into an eligibility gate, so the writer refuses
+  // it up front; Catalog_TargetConsumer stays a record-level cross-check and
+  // is never an accepted brief attribute. The accepted VALUE SET (e.g. Male
+  // plus Unisex for an explicit men's scope) is the agent's stated choice;
+  // each value must exist in the live vocabulary below.
+  if (f.field === 'product_audience' && f.value.kind !== 'facet')
+    throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
   if (f.field === 'exclusion' && f.value.kind === 'text' && f.strength === 'requirement')
     throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
   if (f.field !== 'material' && f.value.kind === 'material_alternatives')
@@ -279,7 +291,9 @@ function toBriefFact(
             ? SUPPORTED_PEARL_FACET_ATTRIBUTES.find((attribute) => attribute === facet.attribute)
             : f.field === 'necklace_type'
               ? SUPPORTED_FACET_ATTRIBUTES.necklace_type
-              : f.field === 'watch_dial_color'
+              : f.field === 'product_audience'
+                ? SUPPORTED_FACET_ATTRIBUTES.product_audience
+                : f.field === 'watch_dial_color'
             ? SUPPORTED_FACET_ATTRIBUTES.watch_dial_color
             : f.field === 'watch_band_type'
               ? SUPPORTED_FACET_ATTRIBUTES.watch_band_type
@@ -299,13 +313,17 @@ function toBriefFact(
         f.field !== 'gemstone' &&
         f.field !== 'pearl' &&
         f.field !== 'necklace_type' &&
+        f.field !== 'product_audience' &&
         f.field !== 'product_type' &&
         f.field !== 'exclusion') ||
       (f.field === 'watch_dial_color' && facet.operator !== 'any') ||
       (f.field === 'watch_band_type' && facet.operator !== 'any') ||
       // Pearl and necklace-type requirements are always positive selections;
       // a none-operator pearl exclusion is a different product conversation.
-      ((f.field === 'pearl' || f.field === 'necklace_type') && facet.operator !== 'any')
+      // The same holds for audience scope: excluding a gender is not a
+      // product conversation this contract supports.
+      ((f.field === 'pearl' || f.field === 'necklace_type' || f.field === 'product_audience') &&
+        facet.operator !== 'any')
     )
       throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
     if (
@@ -337,6 +355,7 @@ function toBriefFact(
         f.field === 'gemstone' ||
         f.field === 'pearl' ||
         f.field === 'necklace_type' ||
+        f.field === 'product_audience' ||
         f.field === 'watch_dial_color' ||
         f.field === 'watch_band_type'
       )

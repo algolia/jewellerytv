@@ -4,6 +4,7 @@ import {
   createAlgoliaEvidenceSearch,
   createEvidenceRetriever,
 } from '../../server/concierge/retrieveEvidence.js';
+import { createContentEvidenceSearch } from '../../server/concierge/contentEvidenceSearch.js';
 
 const state = (): BriefStateV3 =>
   briefStateV3Schema.parse({
@@ -156,5 +157,102 @@ describe('help evidence source boundaries', () => {
     expect(result.status).toBe('invalid_input');
     expect(result.source).toBe('help');
     expect(search).not.toHaveBeenCalled();
+  });
+});
+
+// Craig Task 05 regressions: the two connected-battery misses
+// (.checkpoint/runs/help-integration-battery-2026-10-12-batch2/q16 and q25).
+// Both questions took the correct help source path but the verbatim multi-word
+// query matched nothing under default AND semantics while the record existed.
+describe('help query relaxation (Craig Task 05 regressions)', () => {
+  const relaxedRetriever = (hits: unknown[]) => {
+    const requests: URLSearchParams[] = [];
+    const fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { requests: [{ params: string }] };
+      requests.push(new URLSearchParams(body.requests[0].params));
+      return new Response(
+        JSON.stringify({ results: [{ hits: requests.length === 1 ? [] : hits }] }),
+        { status: 200 },
+      );
+    });
+    const search = createContentEvidenceSearch({
+      appId: 'APP',
+      searchOnlyApiKey: 'KEY',
+      fetch,
+      inner: createAlgoliaEvidenceSearch({ appId: 'APP', searchOnlyApiKey: 'KEY', fetch }),
+    });
+    return { retrieve: createEvidenceRetriever({ search, currentState: async () => state() }), requests };
+  };
+
+  it('finds the existing auctions record for the q16 battery miss', async () => {
+    const { retrieve, requests } = relaxedRetriever([
+      {
+        ...helpHit,
+        objectID: 'help_auctions__types-of-auctions',
+        document_id: 'help_auctions',
+        title: 'Types of Auctions on JTV Auctions',
+        heading_path: ['Auctions', 'Types of Auctions'],
+        content:
+          'JTV Auctions has several different types of auctions, including English/Open Auctions and Reserve Auctions.',
+        canonical_url: 'https://www.jtv.com/help/types-of-auctions-on-jtv-auctions',
+        topic: 'auctions',
+        content_hash: 'auctions-hash-1',
+      },
+    ]);
+
+    const result = await retrieve({
+      ...helpInput,
+      query: 'JTV Auctions types of auctions auction formats',
+    });
+
+    expect(result.status).toBe('ok');
+    expect(result.records).toHaveLength(1);
+    expect(result.records[0]).toMatchObject({
+      source: 'help',
+      objectID: 'help_auctions__types-of-auctions',
+      record: { title: 'Types of Auctions on JTV Auctions' },
+    });
+    expect(result.records[0].evidenceRef).toMatch(/^help\/help_auctions__types-of-auctions\//);
+    expect(requests[1].get('removeWordsIfNoResults')).toBe('lastWords');
+  });
+
+  it('finds the existing live viewer record for the q25 battery miss', async () => {
+    const { retrieve } = relaxedRetriever([
+      {
+        ...helpHit,
+        objectID: 'help_live__viewer',
+        document_id: 'help_live',
+        title: 'JTV Live Viewer Help',
+        heading_path: ['JTV Live Viewer Help', 'How Do I Use the Live Viewer?'],
+        content:
+          'To view live programming, select the Watch us Live link to open the live viewer window.',
+        canonical_url: 'https://www.jtv.com/help/jtv-live-viewer-help',
+        topic: 'live viewer',
+        content_hash: 'live-hash-1',
+      },
+    ]);
+
+    const result = await retrieve({
+      ...helpInput,
+      query: 'watch JTV live streaming television channel',
+    });
+
+    expect(result.status).toBe('ok');
+    expect(result.records).toHaveLength(1);
+    expect(result.records[0]).toMatchObject({
+      source: 'help',
+      objectID: 'help_live__viewer',
+      record: { title: 'JTV Live Viewer Help' },
+    });
+  });
+
+  it('keeps a genuine no-result honest instead of inventing relaxed matches', async () => {
+    const { retrieve, requests } = relaxedRetriever([]);
+
+    const result = await retrieve({ ...helpInput, query: 'flurble wompity zanzibar coconut' });
+
+    expect(result.status).toBe('zero_hits');
+    expect(result.records).toEqual([]);
+    expect(requests).toHaveLength(2);
   });
 });

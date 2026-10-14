@@ -2180,3 +2180,366 @@ describe('ground-truth audit fixes (2026-10-13)', () => {
     expect(result.styleResults![0].eligibleCount).toBe(24);
   });
 });
+
+/* Craig-feedback Task 02 (men's product audience), red-first. The verified
+ * failure: the men's-watch journey staged JRJ802A, PPR7845 and IRE616, all
+ * Catalog_Gender Female / Catalog_TargetConsumer Women, because the accepted
+ * brief cannot carry an audience requirement at all and the projection never
+ * retrieved the audience attributes. The audience fields were verified live,
+ * read-only, 2026-10-13 (.checkpoint/runs/mens-watch-2026-10-13/
+ * gender-audience-catalog-readback.json): Catalog_Gender is a filterable facet
+ * carrying exactly Female, Male, Unisex (wrist watches: Female 1192, Male
+ * 1758, Unisex 81); Catalog_TargetConsumer is the record-level cross-check
+ * field carrying Men, Women, Boys, Girls. Every Male wrist watch targets a
+ * male audience (Men 1747 / Boys 11), every Female one targets Women only,
+ * and every Unisex one targets both sides (e.g. 1ZPF6B: Men, Women). */
+describe("men's product audience (Craig Task 02)", () => {
+  const audienceVocabularyValues = {
+    'Catalog_ProductType': ['Ring', 'Necklace', 'Wrist Watch'],
+    'Catalog_Gender': ['Female', 'Male', 'Unisex'],
+    'Catalog_WatchStyle': ['Casual', 'Dress', 'Fashion', 'Sport'],
+  } as Record<string, string[]>;
+  const audienceVocabulary = {
+    values: audienceVocabularyValues,
+    builtAt: '2026-10-13T00:00:00.000Z',
+    hasValue: (attribute: string, value: string) =>
+      (audienceVocabularyValues[attribute] ?? []).includes(value),
+    availableValues: (attribute: string) => audienceVocabularyValues[attribute] ?? [],
+    isFilterable: (attribute: string) => attribute in audienceVocabularyValues,
+  };
+  const vocabulary = { get: async () => audienceVocabulary, invalidate: () => {} };
+  const watchType = {
+    field: 'product_type',
+    scope: { kind: 'mission', key: null },
+    value: { kind: 'facet', attribute: 'Catalog_ProductType', values: ['Wrist Watch'], operator: 'any' },
+  };
+  const audienceFact = (values: string[]) => ({
+    field: 'product_audience',
+    scope: { kind: 'mission', key: null },
+    value: { kind: 'facet', attribute: 'Catalog_Gender', values, operator: 'any' },
+  });
+  // Craig's captured budget: basis 'total' exactly as the SSE recorded it.
+  const budgetTotal = {
+    field: 'budget',
+    scope: { kind: 'mission', key: null },
+    value: { kind: 'money', cents: 100000, currency: 'USD', operator: 'lte', basis: 'total' },
+  };
+  const watchRecord = (objectID: string, patch: Record<string, unknown> = {}) => ({
+    objectID,
+    Catalog_ProductType: 'Wrist Watch',
+    Catalog_TitleDescription: `Watch ${objectID}`,
+    Catalog_LongDescription: 'A wrist watch for the audience eligibility gate.',
+    Catalog_Condition: 'First Quality',
+    Inventory_InStock: true,
+    Pricing_ActivePrice: 299.99,
+    ...patch,
+  });
+
+  it("compiles the accepted men's audience into one exact Catalog_Gender OR-group", async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex']), budgetTotal]),
+      vocabulary,
+    });
+    const result = await retrieve(productInput({ target: null }));
+    expect(result.effectiveFilters).toEqual([
+      { field: 'Catalog_ProductType', operator: 'eq', value: 'Wrist Watch' },
+      { field: 'Catalog_Gender', operator: 'in', value: ['Male', 'Unisex'] },
+      { field: 'Pricing_ActivePrice', operator: 'lte', value: 1000 },
+    ]);
+  });
+
+  it('keeps a total-basis budget a per-record ceiling, never a look-total relaxation', async () => {
+    // "men's watch under $1,000" is a single-item ceiling. The accepted basis
+    // 'total' must not reinterpret the bound: each record's own price is still
+    // filtered at 1000, so a 1,200-dollar watch can never ride a multi-item
+    // look through the shortlist.
+    const search = vi.fn().mockResolvedValue([
+      watchRecord('CHEAP1', { Pricing_ActivePrice: 99.99, Catalog_Gender: 'Male' }),
+      watchRecord('TOOBIG', { Pricing_ActivePrice: 1200, Catalog_Gender: 'Male' }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex']), budgetTotal]),
+      vocabulary,
+    });
+    const result = await retrieve(productInput({ target: null, count: 5 }));
+    expect(result.effectiveFilters).toContainEqual({
+      field: 'Pricing_ActivePrice',
+      operator: 'lte',
+      value: 1000,
+    });
+    // The mock ignores filters, so the per-record ceiling below is what keeps
+    // TOOBIG out of a budget filter test: it is enforced by the compiled
+    // filter contract asserted above. CHEAP1 is eligible audience-wise.
+    expect(result.effectiveFilters).toHaveLength(3);
+  });
+
+  it('discloses an audience value the live catalogue does not carry instead of matching', async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Mens'])]),
+      vocabulary,
+    });
+    const result = await retrieve(productInput({ target: null }));
+    expect(result.status).toBe('requirement_unavailable');
+    expect(result.unavailableRequirements?.[0]).toMatchObject({
+      field: 'product_audience',
+      attribute: 'Catalog_Gender',
+      requested: ['Mens'],
+    });
+    expect(result.unavailableRequirements?.[0]?.availableValues).toContain('Male');
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it('stays unresolved without a live vocabulary: no frozen gender list', async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
+    });
+    const result = await retrieve(productInput({ target: null }));
+    expect(result.status).toBe('unsupported_constraint');
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it('rejects a returned Female record by its exact record gender in a batched style search', async () => {
+    // Defense in depth: even if a search mishap returned a Female record, the
+    // per-record exclusion refuses it. This is Craig's exact failure shape:
+    // the grid showed JRJ802A (Female, Women-only) for a men's request.
+    const search = vi.fn().mockResolvedValue([
+      watchRecord('JRJ802A', {
+        Catalog_Gender: 'Female',
+        Catalog_TargetConsumer: ['Women'],
+        Catalog_WatchStyle: 'Dress',
+        Pricing_ActivePrice: 149.99,
+      }),
+      watchRecord('1ZLZDA', {
+        Catalog_Gender: 'Male',
+        Catalog_TargetConsumer: ['Men'],
+        Catalog_WatchStyle: 'Dress',
+        Pricing_ActivePrice: 298.99,
+      }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
+      vocabulary,
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        count: 3,
+        styleBatches: [{ attribute: 'Catalog_WatchStyle', value: 'Dress' }],
+      }),
+    );
+    expect(result.status).toBe('ok');
+    expect(result.records.map((r) => r.objectID)).toEqual(['1ZLZDA']);
+    expect(result.styleResults![0].rejected).toContainEqual({
+      objectID: 'JRJ802A',
+      reason: 'audience_conflict',
+    });
+  });
+
+  it('rejects a record without any gender instead of inventing a match', async () => {
+    const search = vi.fn().mockResolvedValue([
+      watchRecord('NOGENDER', { Catalog_Gender: undefined }),
+      watchRecord('1ZLZDA', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Men'] }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
+      vocabulary,
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        count: 3,
+        styleBatches: [{ attribute: 'Catalog_WatchStyle', value: 'Dress' }],
+      }),
+    );
+    expect(result.records.map((r) => r.objectID)).toEqual(['1ZLZDA']);
+    expect(result.styleResults![0].rejected).toContainEqual({
+      objectID: 'NOGENDER',
+      reason: 'audience_unknown',
+    });
+  });
+
+  it('rejects a male-gender record whose own targeting names no male audience', async () => {
+    // Catalog_TargetConsumer cross-check: a record labelled Male that targets
+    // only Women contradicts the accepted men's scope; the second field is the
+    // defense against a mislabelled first one.
+    const search = vi.fn().mockResolvedValue([
+      watchRecord('MISLABELED', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Women'] }),
+      watchRecord('1ZLZDA', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Men'] }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
+      vocabulary,
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        count: 3,
+        styleBatches: [{ attribute: 'Catalog_WatchStyle', value: 'Dress' }],
+      }),
+    );
+    expect(result.records.map((r) => r.objectID)).toEqual(['1ZLZDA']);
+    expect(result.styleResults![0].rejected).toContainEqual({
+      objectID: 'MISLABELED',
+      reason: 'audience_conflict',
+    });
+  });
+
+  it("accepts a unisex record marketed to both audiences for an explicit men's scope", async () => {
+    // Verified live: 1ZPF6B is Catalog_Gender Unisex, Catalog_TargetConsumer
+    // [Men, Women], first quality, in stock, 442.99. Unisex may satisfy an
+    // explicit men's request; a Female/Women-only record may not.
+    const search = vi.fn().mockResolvedValue([
+      watchRecord('1ZPF6B', {
+        Catalog_Gender: 'Unisex',
+        Catalog_TargetConsumer: ['Men', 'Women'],
+        Pricing_ActivePrice: 442.99,
+      }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
+      vocabulary,
+    });
+    const result = await retrieve(productInput({ target: null, count: 3 }));
+    expect(result.status).toBe('ok');
+    expect(result.records.map((r) => r.objectID)).toEqual(['1ZPF6B']);
+  });
+
+  it('applies the same exclusion in the plain search flow', async () => {
+    const search = vi.fn().mockResolvedValue([
+      watchRecord('IRE616', {
+        Catalog_Gender: 'Female',
+        Catalog_TargetConsumer: ['Women'],
+        Pricing_ActivePrice: 37.5,
+      }),
+      watchRecord('1ZLZDA', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Men'] }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
+      vocabulary,
+    });
+    const result = await retrieve(productInput({ target: null, count: 3 }));
+    expect(result.status).toBe('ok');
+    expect(result.records.map((r) => r.objectID)).toEqual(['1ZLZDA']);
+  });
+
+  it('reports incomplete evidence when every returned record conflicts with the audience', async () => {
+    const search = vi.fn().mockResolvedValue([
+      watchRecord('JRJ802A', { Catalog_Gender: 'Female', Catalog_TargetConsumer: ['Women'] }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
+      vocabulary,
+    });
+    const result = await retrieve(productInput({ target: null, count: 3 }));
+    expect(result.status).toBe('incomplete_evidence');
+    expect(result.unresolved[0]?.reason).toContain('audience');
+  });
+
+  it('carries condition and stock rules beside the audience scope', async () => {
+    // PPR7845 in Craig's grid was both Female AND Pre-Owned: two independent
+    // exclusions. A male Pre-Owned piece is refused for condition when the
+    // brief did not accept pre-owned; an out-of-stock piece for stock.
+    const search = vi.fn().mockResolvedValue([
+      watchRecord('PPR7845', {
+        Catalog_Gender: 'Male',
+        Catalog_TargetConsumer: ['Men'],
+        Catalog_Condition: 'Pre-Owned',
+      }),
+      watchRecord('SOLDOUT', {
+        Catalog_Gender: 'Male',
+        Catalog_TargetConsumer: ['Men'],
+        Inventory_InStock: false,
+      }),
+      watchRecord('1ZLZDA', { Catalog_Gender: 'Male', Catalog_TargetConsumer: ['Men'] }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
+      vocabulary,
+    });
+    const result = await retrieve(
+      productInput({
+        target: null,
+        count: 5,
+        styleBatches: [{ attribute: 'Catalog_WatchStyle', value: 'Dress' }],
+      }),
+    );
+    expect(result.records.map((r) => r.objectID)).toEqual(['1ZLZDA']);
+    const rejected = result.styleResults![0].rejected;
+    expect(rejected).toContainEqual({ objectID: 'PPR7845', reason: 'pre_owned_not_requested' });
+    expect(rejected).toContainEqual({ objectID: 'SOLDOUT', reason: 'out_of_stock' });
+  });
+
+  it('does not let a fresh mission inherit a previous men restriction', async () => {
+    // Neutral watch request, no audience fact: no Catalog_Gender filter is
+    // compiled and a Female record is eligible.
+    const search = vi.fn().mockResolvedValue([
+      watchRecord('JRJ802A', { Catalog_Gender: 'Female', Catalog_TargetConsumer: ['Women'] }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType]),
+      vocabulary,
+    });
+    const result = await retrieve(productInput({ target: null, count: 3 }));
+    expect(result.status).toBe('ok');
+    expect(result.records.map((r) => r.objectID)).toEqual(['JRJ802A']);
+    expect(result.effectiveFilters.every((f) => f.field !== 'Catalog_Gender')).toBe(true);
+  });
+
+  it('projects Catalog_Gender and Catalog_TargetConsumer onto returned records', async () => {
+    // The projection previously discarded both audience attributes, so no
+    // downstream identity check or card display could ground them. Query-level
+    // attributesToRetrieve only; no index setting is touched.
+    const search = vi.fn().mockResolvedValue([
+      watchRecord('1ZPF6B', {
+        Catalog_Gender: 'Unisex',
+        Catalog_TargetConsumer: ['Men', 'Women'],
+        Pricing_ActivePrice: 442.99,
+      }),
+    ]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
+      vocabulary,
+    });
+    const response = await retrieve(productInput({ target: null }));
+    expect(response.status).toBe('ok');
+    const record = (response.records[0] as { record: Record<string, unknown> }).record;
+    expect(record.Catalog_Gender).toBe('Unisex');
+    expect(record.Catalog_TargetConsumer).toEqual(['Men', 'Women']);
+    // The projection must reach the outgoing query too.
+    const capturedUrls: string[] = [];
+    const adapter = createAlgoliaEvidenceSearch({
+      appId: 'TESTAPPID',
+      searchOnlyApiKey: 'search-only-key',
+      fetch: (async (input: RequestInfo | URL) => {
+        capturedUrls.push(String(input));
+        return new Response(JSON.stringify({ hits: [] }), { status: 200 });
+      }) as unknown as typeof fetch,
+    });
+    await adapter({
+      source: 'prod_catalog',
+      query: '',
+      count: 1,
+      exactObjectIDs: ['1ZPF6B'],
+      filters: [],
+      signal: new AbortController().signal,
+    });
+    expect(capturedUrls.join(' ')).toContain('Catalog_Gender');
+    expect(capturedUrls.join(' ')).toContain('Catalog_TargetConsumer');
+  });
+});

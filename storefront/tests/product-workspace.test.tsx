@@ -14,6 +14,7 @@ import type { BriefFactInput } from '../shared/briefSchema';
 const mock = vi.hoisted(() => ({ state: {} as any }));
 vi.mock('../src/ShoppingProvider', () => ({ useShopping: () => mock.state }));
 import { ProductWorkspace } from '../src/ProductWorkspace';
+import { VIEW_GUIDANCE } from '../src/concierge/EntryGuidance';
 const pieces = [
   normalizeProduct({
     objectID: 'a',
@@ -151,6 +152,42 @@ it('shows foreign-budget uncertainty without turning an inclusive USD boundary i
   expect(html).not.toContain('Above your saved limit');
   expect(html).not.toContain('remains before other charges');
 });
+it('keeps the Discover, Compare and Save tab labels in the accepted order', () => {
+  mock.state = state('discover');
+  const html = renderToStaticMarkup(<ProductWorkspace />);
+  const nav = html.match(/<nav class="pw-views"[^>]*>[\s\S]*?<\/nav>/)?.[0] ?? '';
+  expect(nav).toContain('>Discover</button>');
+  expect(nav).toContain('>Compare</button>');
+  expect(nav).toContain('>Save</button>');
+});
+
+it('explains the actual role of the active tab in one guidance line under the tab list', () => {
+  const views = ['discover', 'compare', 'saved'] as const;
+  for (const view of views) {
+    mock.state = state(view);
+    const html = renderToStaticMarkup(<ProductWorkspace />);
+    const guidance = html.match(
+      /<p class="pw-view-guidance" data-view="[a-z]+">([^<]*)<\/p>/,
+    )?.[1];
+    expect(guidance).toBe(VIEW_GUIDANCE[view]);
+    expect(guidance).not.toMatch(/[—–]/);
+    expect(html.indexOf('class="pw-view-guidance"')).toBeGreaterThan(
+      html.indexOf('class="pw-views"'),
+    );
+  }
+});
+
+it('renders tab guidance in normal flow before cards, never covering them', () => {
+  mock.state = {
+    ...state('discover'),
+    discoveries: [{ title: 'Options', items: [{ product: pieces[0] }] }],
+  };
+  const html = renderToStaticMarkup(<ProductWorkspace />);
+  expect(html.indexOf('class="pw-view-guidance"')).toBeLessThan(
+    html.indexOf('class="pw-discovery-groups"'),
+  );
+});
+
 it('warns about a saved record conflicting with the only verified tentative budget', () => {
   const initial = createBriefState('tentative-only');
   const brief = applyBriefOperations(initial, {
