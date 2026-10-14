@@ -57,6 +57,76 @@ export const AUDIENCE_CONSUMER_CHECK: Record<string, readonly string[]> = {
   Male: ['Men', 'Boys'],
   Female: ['Women', 'Girls'],
 };
+/** Deterministic audience default from an already accepted recipient fact.
+ * This never reads a raw shopper message or decides who the recipient is. The
+ * Concierge supplies a concise recipient value; code maps only an exact known
+ * relation, then the live Catalog_Gender vocabulary and record checks decide
+ * what may be shown. An explicit product_audience fact takes precedence. */
+const RECIPIENT_RELATION_GENDER: Readonly<Record<string, 'Male' | 'Female'>> = {
+  dad: 'Male',
+  father: 'Male',
+  grandfather: 'Male',
+  grandpa: 'Male',
+  granddad: 'Male',
+  papa: 'Male',
+  stepdad: 'Male',
+  stepfather: 'Male',
+  'father-in-law': 'Male',
+  godfather: 'Male',
+  son: 'Male',
+  stepson: 'Male',
+  godson: 'Male',
+  'son-in-law': 'Male',
+  grandson: 'Male',
+  brother: 'Male',
+  stepbrother: 'Male',
+  'brother-in-law': 'Male',
+  uncle: 'Male',
+  nephew: 'Male',
+  husband: 'Male',
+  boyfriend: 'Male',
+  man: 'Male',
+  men: 'Male',
+  male: 'Male',
+  mom: 'Female',
+  mum: 'Female',
+  mother: 'Female',
+  grandmother: 'Female',
+  grandma: 'Female',
+  mama: 'Female',
+  auntie: 'Female',
+  aunty: 'Female',
+  stepmom: 'Female',
+  stepmother: 'Female',
+  'mother-in-law': 'Female',
+  godmother: 'Female',
+  daughter: 'Female',
+  stepdaughter: 'Female',
+  goddaughter: 'Female',
+  'daughter-in-law': 'Female',
+  granddaughter: 'Female',
+  sister: 'Female',
+  stepsister: 'Female',
+  'sister-in-law': 'Female',
+  aunt: 'Female',
+  niece: 'Female',
+  wife: 'Female',
+  girlfriend: 'Female',
+  woman: 'Female',
+  women: 'Female',
+  female: 'Female',
+};
+
+export function genderFromRecipientRelation(text: string): 'Male' | 'Female' | null {
+  const relation = text
+    .trim()
+    .toLowerCase()
+    .replace(/[’]/g, "'")
+    .replace(/^(?:(?:for|to|my|our|your|his|her|their|the|a|an)\s+)+/, '')
+    .replace(/[.!?]+$/, '')
+    .replace(/'s$/, '');
+  return RECIPIENT_RELATION_GENDER[relation] ?? null;
+}
 /** LEGACY fallback, used only when no live vocabulary reaches the compiler.
  * Delete alongside the no-vocabulary compiler path. */
 export const METAL_WATCH_BAND_MATERIALS = [

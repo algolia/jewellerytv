@@ -20,6 +20,7 @@ import type { UnavailableRequirement } from '../../shared/concierge/retrieval/ty
 import { makeResult } from './retrievalResult.js';
 import {
   AUDIENCE_CONSUMER_CHECK,
+  genderFromRecipientRelation,
   METAL_WATCH_BAND_MATERIALS,
   PRODUCT_AUDIENCE_ATTRIBUTE,
   SUPPORTED_FACET_ATTRIBUTES,
@@ -394,6 +395,71 @@ function compile(
     if (liveMissionTypes.length === 1)
       filters.push({ field: 'Catalog_ProductType', operator: 'eq', value: liveMissionTypes[0] });
   }
+  // An accepted recipient relation is enough to enforce a product-audience
+  // default across every jewellery category. Read only the structured brief,
+  // never the raw shopper message. An explicit product_audience fact wins.
+  const explicitAudienceFacts = state.facts.filter(
+    (fact) =>
+      fact.status === 'active' &&
+      fact.field === 'product_audience' &&
+      fact.certainty === 'explicit' &&
+      (fact.scope.kind === 'mission' ||
+        (fact.scope.kind === 'item' && fact.scope.key === target?.itemKey)),
+  );
+  const hasExplicitAudience = explicitAudienceFacts.length > 0;
+  if (
+    explicitAudienceFacts.length > 1 ||
+    explicitAudienceFacts.some((fact) => fact.strength !== 'requirement')
+  )
+    unresolved.push({
+      field: 'product_audience',
+      reason: 'Audience facts conflict or do not establish one required product audience',
+    });
+  if (!hasExplicitAudience) {
+    const recipients = state.facts.filter(
+      (fact) =>
+        fact.status === 'active' &&
+        fact.field === 'recipient' &&
+        fact.certainty === 'explicit' &&
+        fact.value.kind === 'text' &&
+        (fact.scope.kind === 'mission' || fact.scope.kind === 'recipient'),
+    );
+    const genders = recipients.map((fact) =>
+      fact.value.kind === 'text' ? genderFromRecipientRelation(fact.value.text) : null,
+    );
+    if (genders.some((gender) => gender !== null)) {
+      const distinct = new Set(genders);
+      if (distinct.size !== 1 || distinct.has(null))
+        unresolved.push({
+          field: 'product_audience',
+          reason: 'Multiple recipient relationships do not establish one product audience',
+        });
+      else {
+        const gender = genders[0];
+        if (!vocabulary || !vocabulary.isFilterable(PRODUCT_AUDIENCE_ATTRIBUTE))
+          unresolved.push({
+            field: 'product_audience',
+            reason: 'Recipient audience needs a live filterable catalogue gender vocabulary',
+          });
+        else if (gender && !vocabulary.hasValue(PRODUCT_AUDIENCE_ATTRIBUTE, gender))
+          unavailable.push({
+            field: 'product_audience',
+            attribute: PRODUCT_AUDIENCE_ATTRIBUTE,
+            requested: [gender],
+            availableValues: vocabulary.availableValues(PRODUCT_AUDIENCE_ATTRIBUTE),
+          });
+        else if (gender)
+          filters.push({
+            field: PRODUCT_AUDIENCE_ATTRIBUTE,
+            operator: 'in',
+            value: [
+              gender,
+              ...(vocabulary.hasValue(PRODUCT_AUDIENCE_ATTRIBUTE, 'Unisex') ? ['Unisex'] : []),
+            ],
+          });
+      }
+    }
+  }
   for (const f of state.facts) {
     if (
       f.field === 'recipient' ||
@@ -574,8 +640,7 @@ function compile(
     // requirement_unavailable path, never silently broadened.
     if (f.field === 'earring_backing') {
       const earringsDirected =
-        target?.productType === 'Earrings' ||
-        (!target && liveMissionTypes.includes('Earrings'));
+        target?.productType === 'Earrings' || (!target && liveMissionTypes.includes('Earrings'));
       if (!earringsDirected) continue;
       if (
         f.value.kind !== 'facet' ||
@@ -604,9 +669,7 @@ function compile(
           field: f.field,
           attribute: SUPPORTED_FACET_ATTRIBUTES.earring_backing,
           requested: missing,
-          availableValues: vocabulary.availableValues(
-            SUPPORTED_FACET_ATTRIBUTES.earring_backing,
-          ),
+          availableValues: vocabulary.availableValues(SUPPORTED_FACET_ATTRIBUTES.earring_backing),
         });
         continue;
       }
@@ -931,6 +994,21 @@ export function createEvidenceRetriever(options: EvidenceRetrieverOptions) {
           message: 'One or more stated requirements are not available in the catalogue',
         },
         compiled.unavailable,
+      );
+    if (compiled.unresolved.some((item) => item.field === 'product_audience'))
+      // Unlike an optional descriptive preference, a missing audience filter
+      // can expose the exact opposite-gender card the shopper excluded.
+      return makeResult(
+        input,
+        state.revision,
+        'unsupported_constraint',
+        compiled.filters,
+        compiled.unresolved,
+        [],
+        {
+          code: 'AUDIENCE_CONSTRAINT_UNAVAILABLE',
+          message: 'The requested product audience could not be verified for this search',
+        },
       );
     if (compiled.unresolved.length) {
       // Classify, not veto (Arijit directive, 2026-10-14; sister-fix diagnosis

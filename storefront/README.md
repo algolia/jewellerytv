@@ -19,7 +19,13 @@ The application half of the [three-style Discovery repair plan](docs/DISCOVERY-R
 
 The published `Concierge - Development` now serves the public Vercel snapshot as well as the connected local path. Its tool names are `update_shopping_state`, `retrieve_evidence` and `present_choices`. The older Concierge and Interpreter have been removed after configuration backups and explicit confirmation. No product-index setting or record change is part of this application.
 
-The application validates `Catalog_BraceletType` as a possible product-group basis, and treats an explicit men's or women's product request as audience scope: accepted audience facts compile to the authoritative catalogue gender facet, and records whose audience conflicts with the accepted scope are excluded per record. The published Agent Studio tool schema is administered separately and must be read back before claiming that the live agent can emit this newly allowed basis.
+The application validates `Catalog_BraceletType` as a possible product-group basis. An accepted recipient
+relation such as Dad, sister or nephew also supplies a deterministic audience default across product
+types. The retrieval compiler applies the authoritative `Catalog_Gender` facet, allows matching gender
+and unisex records, and excludes contrary-gender records. An explicit audience requirement takes
+precedence; conflicting or unavailable audience constraints fail closed. Direct gender requests still
+depend on the published Agent Studio schema exposing `product_audience`, which is administered
+separately.
 
 ## Local run
 

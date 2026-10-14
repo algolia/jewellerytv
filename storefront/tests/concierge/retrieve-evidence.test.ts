@@ -2470,24 +2470,18 @@ describe("men's product audience (Craig Task 02)", () => {
     expect(search).not.toHaveBeenCalled();
   });
 
-  it('keeps no frozen gender list and searches the watch type when the audience fact cannot compile', async () => {
-    // Classify, not veto: without the live vocabulary the audience fact cannot
-    // compile, but the watch type filter still carries the search and the
-    // audience rides out as a structured disclosure. No gender filter is ever
-    // compiled from a frozen list.
+  it('keeps no frozen gender list and fails closed when the audience fact cannot compile', async () => {
+    // A watch-only search could return Female records while the men-only
+    // audience fact is unresolved. Preserve the structured reason and stop.
     const search = vi.fn().mockResolvedValue([]);
     const retrieve = createEvidenceRetriever({
       search,
       currentState: async () => state([watchType, audienceFact(['Male', 'Unisex'])]),
     });
     const result = await retrieve(productInput({ target: null }));
-    expect(result.status).toBe('zero_hits');
-    expect(search).toHaveBeenCalledTimes(1);
-    expect(search.mock.calls[0][0].filters).toContainEqual({
-      field: 'Catalog_ProductType',
-      operator: 'eq',
-      value: 'Wrist Watch',
-    });
+    expect(result.status).toBe('unsupported_constraint');
+    expect(search).not.toHaveBeenCalled();
+    expect(result.error?.code).toBe('AUDIENCE_CONSTRAINT_UNAVAILABLE');
     expect(result.unresolved).toEqual([
       {
         field: 'product_audience',
