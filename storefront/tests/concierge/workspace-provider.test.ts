@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { createBriefStateV3 } from '../../shared/briefState';
 type RefreshRequest = {
   missionId: string;
@@ -8,6 +10,7 @@ type RefreshRequest = {
 };
 import { createConciergeWorkspaceSession } from '../../src/concierge/ConciergeWorkspaceProvider';
 import { V3_SESSION_KEY, type StorageLike } from '../../src/concierge/sessionPersistence';
+import { ProductWorkspace } from '../../src/ProductWorkspace';
 
 class MemoryStorage implements StorageLike {
   values = new Map<string, string>();
@@ -72,6 +75,60 @@ function session(binding: 'evidence_bound' | 'legacy_unbound' = 'evidence_bound'
 }
 
 describe('v3 workspace session adapter', () => {
+  it('labels a persisted Discover proposal as previous after the accepted brief changes', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      V3_SESSION_KEY,
+      JSON.stringify({
+        ...session(),
+        brief: { ...createBriefStateV3('mission-provider'), revision: 1 },
+        activeView: 'discover',
+        committedProposal: {
+          missionId: 'mission-provider',
+          stateRevision: 0,
+          evidenceBatchRevision: 0,
+          turnId: 'old-turn',
+          proposalId: 'old-proposal',
+          kind: 'product_groups',
+          mode: null,
+          groups: [
+            {
+              title: 'Earring style: Hoop',
+              itemSubtotalCents: null,
+              lines: [
+                {
+                  evidenceRef: 'ref-1',
+                  objectID: 'saved-1',
+                  contentHash: 'hash-1',
+                  quantity: 1,
+                  componentSlot: 'earrings',
+                  explanation: 'Previously supported choice',
+                  unitPriceCents: 12500,
+                  lineSubtotalCents: 12500,
+                },
+              ],
+            },
+          ],
+          combinedItemSubtotalCents: null,
+          assessment: { perItem: 'accepted', total: 'accepted', reasons: [] },
+        },
+      }),
+    );
+    const adapter = createConciergeWorkspaceSession({
+      storage,
+      initialMissionId: 'unused',
+      getCurrentShopperMessage: () => null,
+      fetchEvidence: async () => {
+        throw new Error('unused');
+      },
+    });
+    expect(adapter.getModel().discoveries).toHaveLength(1);
+    expect(adapter.getModel().discoveriesStale).toBe(true);
+    expect(
+      renderToStaticMarkup(createElement(ProductWorkspace, { model: adapter.getModel() })),
+    ).toContain('Showing your previous choices.');
+  });
+
   it('rehydrates Saved-only Compare from the canonical store', () => {
     const storage = new MemoryStorage();
     storage.setItem(V3_SESSION_KEY, JSON.stringify(session()));
