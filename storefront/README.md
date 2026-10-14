@@ -10,7 +10,7 @@ The application half of the [three-style Discovery repair plan](docs/DISCOVERY-R
 
 | Area | What it owns |
 | --- | --- |
-| `src/concierge/ConnectedConcierge.tsx`, `EntryGuidance.tsx`, `ResponsiveAnswerTable.tsx`, `ConciergeWorkspaceLayout.tsx` and `ConciergeWorkspaceProvider.tsx` | Installed Chat SDK, provisional text streaming, responsive educational tables, session binding, a movable/resizable desktop window with maximize/restore, full-screen mobile layout and the two-column workspace. New clears the visible prior conversation when starting a mission. The empty conversation state shows fixed starter-question pills; a pill sends exactly its displayed text through the one existing composer path. |
+| `src/concierge/ConnectedConcierge.tsx`, `EntryGuidance.tsx`, `ResponsiveAnswerTable.tsx`, `ConciergeWorkspaceLayout.tsx` and `ConciergeWorkspaceProvider.tsx` | Installed Chat SDK, provisional text streaming, responsive educational tables, session binding, a movable/resizable desktop window with maximize/restore, full-screen mobile layout and the two-column workspace. New clears the visible prior conversation when starting a mission. The empty conversation shows five varied prompts from an analytics-grounded pool; a new chat selects a different set, and each pill sends exactly its displayed text through the existing composer path. |
 | `src/concierge/sdkTools.ts` and `toolRuntime.ts` | Three declared client callbacks, version checks, evidence ledger and staged product choices. No generated shopper language. |
 | `src/concierge/sessionPersistence.ts` and `shared/concierge/` | v3 shopping state, lossless migration/backup, scoped facts, exact identities and deterministic selection validation. |
 | `server/api.ts` and `server/concierge/` | Bounded API proxy with per-attempt upstream deadlines and an honest mid-stream error path, fixed read-only `prod_catalog`, `blog` and `help` retrieval with one query-level relaxation retry when a verbatim multi-word blog or Help query returns zero hits, exact object lookup, live-vocabulary-validated fact compilation including explicit product-audience scope, and source-bound evidence. |
@@ -20,6 +20,8 @@ The application half of the [three-style Discovery repair plan](docs/DISCOVERY-R
 The published `Concierge - Development` now serves the public Vercel snapshot as well as the connected local path. Its tool names are `update_shopping_state`, `retrieve_evidence` and `present_choices`. The older Concierge and Interpreter have been removed after configuration backups and explicit confirmation. No product-index setting or record change is part of this application.
 
 The application validates `Catalog_BraceletType` as a possible product-group basis, and treats an explicit men's or women's product request as audience scope: accepted audience facts compile to the authoritative catalogue gender facet, and records whose audience conflicts with the accepted scope are excluded per record. The published Agent Studio tool schema is administered separately and must be read back before claiming that the live agent can emit this newly allowed basis.
+
+The empty-chat prompt pool contains concise labels derived from observed Algolia search themes. It rotates without adding analytics collection or another conversation path. See the [prompt provenance and analytics limits](docs/STARTER-QUESTION-PROVENANCE.md).
 
 ## Local run
 

@@ -1,30 +1,29 @@
+import { useEffect, useState } from 'react';
 import './entry-guidance.css';
+import {
+  STARTER_QUESTION_POOL,
+  readStarterHistory,
+  selectStarterSet,
+  writeStarterHistory,
+  type StarterQuestion,
+} from './starterQuestions';
 
 /**
  * Entry guidance: fixed UI starter controls for the empty conversation state and
  * the product workspace tab roles. These are transparent fixed UI labels, not
  * agent replies and not a second conversation path. A starter click sends its
  * exact displayed text through the one existing Concierge composer send path,
- * so the agent still owns every generated response.
+ * so the agent still owns every generated response. The label pool is grounded
+ * in aggregate search-demand analytics rather than inventory counts. See
+ * storefront/docs/STARTER-QUESTION-PROVENANCE.md.
  */
 
-export type StarterQuestion = { label: string };
+export type { StarterQuestion } from './starterQuestions';
 
 /**
- * A small fixed set of starter labels, each grounded in real catalogue
- * inventory (read-only counts from the live index, 2026-10-13:
- * freshwater pearl necklaces 3874, gold hoop earrings 3627, women's gifts
- * under $50 10888, engagement rings under $1,000 1259, tanzanite rings 643).
- * No label promises a capability the catalogue lacks, and no label names a
- * product audience the Concierge cannot yet filter reliably.
+ * Per-tab label history keeps new welcome sets varied after a reload as well
+ * as after New. It contains only fixed UI labels, not shopper data.
  */
-export const STARTER_QUESTIONS: readonly StarterQuestion[] = [
-  { label: 'Show me freshwater pearl necklaces' },
-  { label: 'Show me gold hoop earrings' },
-  { label: 'I need a gift for my mom under $50' },
-  { label: 'Show me engagement rings under $1,000' },
-  { label: 'Show me tanzanite rings' },
-];
 
 /**
  * The composer send path resolves an explicit starter label over any draft
@@ -60,7 +59,12 @@ export function viewGuidance(view: WorkspaceViewName) {
   return VIEW_GUIDANCE[view];
 }
 
-/** The welcome state: JTV logo plus, in the empty state, the starter controls. */
+/**
+ * The welcome state: JTV logo plus, in the empty state, the starter controls.
+ * Each welcome mount picks a varied set of five from the analytics-backed
+ * pool, different from the previously shown set; the picked set stays stable
+ * while this view stays open.
+ */
 export function ConnectedWelcome({
   showStarters,
   startersDisabled,
@@ -70,6 +74,12 @@ export function ConnectedWelcome({
   startersDisabled: boolean;
   onAsk: (label: string) => void;
 }) {
+  const [starters] = useState<readonly StarterQuestion[]>(() =>
+    selectStarterSet(STARTER_QUESTION_POOL, readStarterHistory()),
+  );
+  useEffect(() => {
+    writeStarterHistory([...readStarterHistory(), ...starters.map((question) => question.label)]);
+  }, [starters]);
   return (
     <div className="connected-welcome">
       <img
@@ -83,7 +93,7 @@ export function ConnectedWelcome({
         <div className="connected-starters" role="group" aria-label="Suggested first questions">
           <p className="connected-starters-title">Not sure where to start? Try one of these.</p>
           <ul className="connected-starters-list">
-            {STARTER_QUESTIONS.map((question) => (
+            {starters.map((question) => (
               <li key={question.label}>
                 <button
                   type="button"
