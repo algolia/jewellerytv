@@ -212,3 +212,15 @@ it('warns about a saved record conflicting with the only verified tentative budg
   expect(html).toContain('Price conflicts with under $50.00');
   expect(html).toContain('Check against your brief');
 });
+
+it('opens product details from the Discover card: title and image sit inside one detail button', () => {
+  mock.state = {
+    ...state('discover'),
+    discoveries: [{ title: 'Options', items: [{ product: pieces[0] }] }],
+  };
+  const html = renderToStaticMarkup(<ProductWorkspace />);
+  const main = html.match(/<button[^>]*class="pw-product-main"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '';
+  expect(main).toContain('pw-product-title');
+  expect(main).toContain('View details for');
+  expect(html).not.toContain('pw-view-guidance');
+});
