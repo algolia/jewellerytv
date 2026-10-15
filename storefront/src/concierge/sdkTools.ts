@@ -191,12 +191,10 @@ function normalizeRetrieve(input: unknown) {
     count: source.count,
     exactObjectIDs: source.exactObjectIDs ?? null,
     target: targetValue,
-    ...(source.styleOverview === undefined
-      ? {}
-      : { styleOverview: Boolean(source.styleOverview) }),
-    ...(source.styleBatches === undefined
-      ? {}
-      : { styleBatches: source.styleBatches }),
+    // The published schema lets the agent send null for the optional discovery
+    // fields, so null means "not given", exactly like a missing key.
+    ...(source.styleOverview == null ? {} : { styleOverview: Boolean(source.styleOverview) }),
+    ...(source.styleBatches == null ? {} : { styleBatches: source.styleBatches }),
   });
 }
 function normalizePresent(input: unknown) {
@@ -206,7 +204,7 @@ function normalizePresent(input: unknown) {
   // forms, so this layer accepts them and drops the flourish instead of rejecting
   // the whole call: a fatal SDK-level rejection kills the turn with no structured
   // feedback, while a normalized payload keeps validation recoverable.
-  const flattened = source.body === undefined && source.kind !== undefined;
+  const flattened = source.body == null && source.kind !== undefined;
   const allowedRoot = new Set([
     'body',
     'missionId',
@@ -282,6 +280,30 @@ function normalizePresent(input: unknown) {
   return presentShape.parse({ body: normalized });
 }
 
+/**
+ * Malformed retrieve or update input gets the same value-free, structured answer
+ * present_choices already gives: field paths and codes only, so the agent can fix the
+ * call instead of concluding the catalogue is down. Runtime exceptions stay opaque.
+ */
+function semanticInputFailure(tool: 'state' | 'retrieval', error: unknown) {
+  if (error instanceof z.ZodError) {
+    return {
+      status: 'invalid_input',
+      reasons: [`semantic_${tool}_invalid`],
+      paths: error.issues.slice(0, 8).map((issue) => ({
+        path: issue.path.join('.') || 'input',
+        code: issue.code,
+      })),
+    };
+  }
+  const reason = error instanceof Error ? error.message : `semantic_${tool}_invalid`;
+  return {
+    status: 'invalid_input',
+    reasons: [reason.slice(0, 80)],
+    paths: [{ path: 'input', code: 'invalid' }],
+  };
+}
+
 function presentationInputFailure(error: unknown) {
   if (import.meta.env.DEV)
     console.warn('JTV present_choices input rejected', error instanceof z.ZodError ? JSON.stringify(error.issues.slice(0, 6)) : String(error).slice(0, 200));
@@ -335,9 +357,16 @@ export function createSdkClientTools(
       retryOnError: false,
       async onToolCall({ input, signal, addToolResult, toolCallId }) {
         const token = runtime.getActiveTurnToken();
+        let normalized;
+        try {
+          normalized = normalizeUpdate(input);
+        } catch (error) {
+          if (!signal.aborted) await addToolResult({ output: semanticInputFailure('state', error) });
+          return;
+        }
         try {
           const output = await enqueue(() =>
-            runtime.updateSemantic(normalizeUpdate(input), toolCallId, signal, token ?? undefined),
+            runtime.updateSemantic(normalized, toolCallId, signal, token ?? undefined),
           );
           if (!signal.aborted) await addToolResult({ output });
         } catch {
@@ -353,14 +382,17 @@ export function createSdkClientTools(
       retryOnError: false,
       async onToolCall({ input, signal, addToolResult, toolCallId }) {
         const token = runtime.getActiveTurnToken();
+        let normalized;
+        try {
+          normalized = normalizeRetrieve(input);
+        } catch (error) {
+          if (!signal.aborted)
+            await addToolResult({ output: semanticInputFailure('retrieval', error) });
+          return;
+        }
         try {
           const output = await enqueue(() =>
-            runtime.retrieveSemantic(
-              normalizeRetrieve(input),
-              toolCallId,
-              signal,
-              token ?? undefined,
-            ),
+            runtime.retrieveSemantic(normalized, toolCallId, signal, token ?? undefined),
           );
           if (!signal.aborted) await addToolResult({ output });
         } catch {
