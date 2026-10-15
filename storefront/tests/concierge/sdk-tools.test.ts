@@ -66,7 +66,9 @@ describe('installed SDK client-tool callback registration', () => {
     const aborted = call(tools.update_shopping_state.onToolCall!, {}, controller.signal);
     await aborted.run();
     expect(aborted.addToolResult).not.toHaveBeenCalled();
-    const failed = call(tools.update_shopping_state.onToolCall!, {});
+    const failed = call(tools.update_shopping_state.onToolCall!, {
+      operations: [{ action: 'retract', factIds: ['f1'] }],
+    });
     await failed.run();
     expect(failed.addToolResult).toHaveBeenCalledWith({
       output: { status: 'tool_failure', code: 'STATE_CALLBACK_FAILED' },
