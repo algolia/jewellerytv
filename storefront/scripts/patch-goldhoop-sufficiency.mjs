@@ -124,8 +124,10 @@ console.log(
 if (before.id !== agentId || before.status !== 'published') {
   throw new Error('Agent identity or status changed; no write attempted');
 }
-if (!bytesEqual(before[field], rollbackValue)) {
-  throw new Error(`Live ${field} differ from the recorded rollback bytes; no write attempted`);
+// Applying expects live == rollback bytes; rolling back expects live == candidate bytes.
+const expectedLive = rollback ? candidateValue : rollbackValue;
+if (!bytesEqual(before[field], expectedLive)) {
+  throw new Error(`Live ${field} differ from the expected ${rollback ? 'candidate' : 'rollback'} bytes; no write attempted`);
 }
 if (!execute) process.exit(0);
 if (!editKey) throw new Error('Missing editSettings credential; no write attempted');
