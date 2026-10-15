@@ -19,10 +19,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '../..');
-const packageDir = resolve(
-  root,
-  'docs/config/concierge-development/candidates/gold-hoop-typed-color-v2-2026-10-14',
-);
+const packageFlag = process.argv.indexOf('--package');
+const packageDir = packageFlag < 0
+  ? resolve(root, 'docs/config/concierge-development/candidates/gold-hoop-typed-color-v2-2026-10-14')
+  : resolve(root, process.argv[packageFlag + 1]);
 const agentId = '0bdf59fe-e598-4db7-b139-2b93d5255bb4';
 
 const fieldFlag = process.argv.indexOf('--field');
