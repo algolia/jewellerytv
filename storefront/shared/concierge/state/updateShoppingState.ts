@@ -293,7 +293,7 @@ const TEXT_REQUIREMENT_EXACT_ENCODING: Partial<Record<string, string>> = {
 const MEASUREMENT_REQUIREMENT_EXACT_ENCODING: Partial<Record<string, string>> = {
   material: 'the material_alternatives encoding with live catalogue values',
   exclusion:
-    'a none-operator facet on Catalog_ProductType, Catalog_Motif or Catalog_MaterialInformation.MaterialColor',
+    'a none-operator facet on Catalog_ProductType, Catalog_Motif, Catalog_MaterialInformation.MaterialColor or Catalog_GemstoneInformation.GemstoneColorGroup',
 };
 const REQUIREMENT_FALLBACK_ALTERNATIVES =
   'record the meaning with strength preference or strength context, or with certainty tentative';
@@ -482,7 +482,10 @@ function toBriefFact(
                           : f.field === 'exclusion' &&
                               facet.attribute === MATERIAL_COLOR_EXCLUSION_ATTRIBUTE
                             ? MATERIAL_COLOR_EXCLUSION_ATTRIBUTE
-                            : undefined;
+                            : f.field === 'exclusion' &&
+                                facet.attribute === SUPPORTED_FACET_ATTRIBUTES.gemstone
+                              ? SUPPORTED_FACET_ATTRIBUTES.gemstone
+                              : undefined;
     if (!expected || facet.attribute !== expected)
       throw new Error(`UNSUPPORTED_FACT_ENCODING:${f.id}:${f.field}`);
     if (
@@ -532,6 +535,12 @@ function toBriefFact(
       } else if (facet.attribute === MATERIAL_COLOR_EXCLUSION_ATTRIBUTE) {
         facet.values.forEach((value) =>
           requireLiveValue(MATERIAL_COLOR_EXCLUSION_ATTRIBUTE, value),
+        );
+      } else if (facet.attribute === SUPPORTED_FACET_ATTRIBUTES.gemstone) {
+        // The compiler turns this into a plain not-this-value filter on the
+        // filterable gemstone colour facet; values must exist in the live index.
+        facet.values.forEach((value) =>
+          requireLiveValue(SUPPORTED_FACET_ATTRIBUTES.gemstone, value),
         );
       }
     }
