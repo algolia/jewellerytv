@@ -190,6 +190,26 @@ describe('failures tell the agent what was wrong without exposing internals', ()
     expect(result?.output.status).not.toBe('tool_failure');
   });
 
+  it('accepts a body wrapper together with a top-level explanation, as the published schema allows', async () => {
+    // Logged 2026-10-16: the agent sent {body:{...}, explanation:'...'} and the app answered
+    // semantic_presentation_unknown_field, which surfaced as a visible system notice.
+    const { runtime, tools } = setup();
+    const group = (value: string) => ({
+      basis: { attribute: 'Catalog_EarringType', value },
+      items: [item, { ...item, evidenceRef: 'ev_a_2' }],
+    });
+    const result = await invoke(tools, 'present_choices', {
+      body: {
+        kind: 'product_groups',
+        mode: 'three_style_grid',
+        groups: [group('Drop'), group('Stud'), group('Hoop')],
+      },
+      explanation: 'Three clip-on directions.',
+    });
+    expect(result?.output.status).not.toBe('invalid_input');
+    expect(runtime.presentSemantic).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps runtime exceptions opaque: a code only, never the thrown message', async () => {
     const boom = vi.fn(async () => {
       throw new Error('secret-internal-detail');
