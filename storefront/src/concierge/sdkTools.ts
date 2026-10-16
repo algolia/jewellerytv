@@ -212,7 +212,9 @@ function normalizePresent(input: unknown) {
     'expectedEvidenceBatchRevision',
     'turnId',
     'proposalId',
-    ...(flattened ? (['kind', 'mode', 'groups', 'alternatives', 'explanation'] as const) : []),
+    // The published schema lists explanation beside body as well as in the flattened form.
+    'explanation',
+    ...(flattened ? (['kind', 'mode', 'groups', 'alternatives'] as const) : []),
   ]);
   if (Object.keys(source).some((key) => !allowedRoot.has(key)))
     throw new Error('semantic_presentation_unknown_field');
