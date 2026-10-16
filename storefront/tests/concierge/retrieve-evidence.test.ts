@@ -518,6 +518,41 @@ describe('retrieve_evidence', () => {
       value: 'Necklace',
     });
   });
+  it('compiles a gemstone-colour exclusion into not-this-value filters beside the product type', async () => {
+    const search = vi.fn().mockResolvedValue([]);
+    const retrieve = createEvidenceRetriever({
+      search,
+      currentState: async () =>
+        state([
+          {
+            field: 'product_type',
+            scope: { kind: 'mission', key: null },
+            value: {
+              kind: 'facet',
+              attribute: 'Catalog_ProductType',
+              values: ['Earrings'],
+              operator: 'any',
+            },
+          },
+          {
+            field: 'exclusion',
+            scope: { kind: 'mission', key: null },
+            value: {
+              kind: 'facet',
+              attribute: 'Catalog_GemstoneInformation.GemstoneColorGroup',
+              values: ['Blue', 'Red'],
+              operator: 'none',
+            },
+          },
+        ]),
+    });
+    expect((await retrieve(productInput({ target: null }))).status).toBe('zero_hits');
+    expect(search.mock.calls[0][0].filters).toEqual([
+      { field: 'Catalog_ProductType', operator: 'eq', value: 'Earrings' },
+      { field: 'Catalog_GemstoneInformation.GemstoneColorGroup', operator: 'neq', value: 'Blue' },
+      { field: 'Catalog_GemstoneInformation.GemstoneColorGroup', operator: 'neq', value: 'Red' },
+    ]);
+  });
   it('binds distinct item identities and keeps scoped filters isolated', async () => {
     const search = vi.fn().mockResolvedValue([]);
     const retrieve = createEvidenceRetriever({

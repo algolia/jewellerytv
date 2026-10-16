@@ -838,6 +838,49 @@ describe('update_shopping_state domain callback', () => {
     });
     expect(wrongOperator.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
   });
+  it('accepts a gemstone-colour exclusion facet, validates values against the live vocabulary and requires operator none', async () => {
+    const make = (id: string, values: string[], operator: 'none' | 'any' = 'none') => ({
+      missionId: 'mission-1',
+      expectedRevision: 0,
+      operationId: id,
+      sourceMessageId: message.id,
+      operations: [
+        {
+          action: 'add',
+          factIds: [],
+          sourceQuote: 'exclude colour',
+          fact: {
+            id,
+            field: 'exclusion',
+            value: {
+              kind: 'facet',
+              attribute: 'Catalog_GemstoneInformation.GemstoneColorGroup',
+              values,
+              operator,
+            },
+            scope: { kind: 'mission', key: null },
+            strength: 'requirement',
+            certainty: 'explicit',
+          },
+        },
+      ],
+    });
+    const applied = await updateShoppingState(base(), make('no-blue-red', ['Blue', 'Red']), {
+      id: message.id,
+      text: 'exclude colour',
+    });
+    expect(applied.result.status).toBe('applied');
+    const unknown = await updateShoppingState(base(), make('no-chartreuse', ['Chartreuse']), {
+      id: message.id,
+      text: 'exclude colour',
+    });
+    expect(unknown.result.failure?.code).toBe('VALUE_NOT_IN_LIVE_VOCABULARY');
+    const wrongOperator = await updateShoppingState(base(), make('blue-any', ['Blue'], 'any'), {
+      id: message.id,
+      text: 'exclude colour',
+    });
+    expect(wrongOperator.result.failure?.code).toBe('UNSUPPORTED_FACT_ENCODING');
+  });
   it('accepts an empty structural operation list but returns a retryable no-op failure', async () => {
     const empty = {
       missionId: 'mission-1',
