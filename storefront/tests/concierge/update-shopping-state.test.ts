@@ -103,6 +103,21 @@ const add = (operationId = 'op-1') => ({
   ],
 });
 
+describe('an add operation needs no factIds', () => {
+  // Logged 2026-10-16: Agent Studio rejected the agent's call ("'factIds' is a required property")
+  // in 4 of 51 test conversations. An add has no existing facts to name, so the field must be optional.
+  it('applies an add that omits factIds, treating it as an empty list', async () => {
+    const input = add();
+    const { factIds: _omitted, ...operation } = input.operations[0];
+    const { result } = await updateShoppingState(
+      base(),
+      { ...input, operations: [operation] },
+      message,
+    );
+    expect(result.status).toBe('applied');
+  });
+});
+
 /* Item-scope collision scenarios: same exact key can hold multiple facts; distinct keys
  * stay independent; differently cased live keys reject atomically across existing state,
  * tentative state and one operation batch; superseded keys do not reserve identity. */

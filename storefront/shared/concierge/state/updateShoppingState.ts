@@ -143,7 +143,8 @@ const inputFact = z
 const inputOperation = z
   .object({
     action: z.enum(['add', 'replace', 'retract']),
-    factIds: z.array(factId).max(24),
+    // An add names no existing facts; the published sheet marks this optional, so absent means [].
+    factIds: z.array(factId).max(24).default([]),
     fact: inputFact.nullable(),
     sourceQuote: z.string().min(1).max(2000),
   })
