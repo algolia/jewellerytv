@@ -1,5 +1,7 @@
 import { normalizeProduct, type Product } from '../catalog';
 import type { WorkspaceViewModel } from '../ProductWorkspace';
+import type { WorkspaceGroup } from '../workspaceResults';
+import { extractNativePresentation } from './nativeResults';
 import { createSessionStore } from './sessionStore.js';
 import { createConciergeToolRuntime } from './toolRuntime';
 import type { StorageLike } from './sessionPersistence.js';
@@ -27,7 +29,8 @@ function entry(raw: SourceBoundProduct): ProductEntry | null {
 export type ConciergeWorkspaceSession = {
   store: Store;
   runtime: Runtime;
-  getModel: () => WorkspaceViewModel;
+  getModel: (nativeGroups?: WorkspaceGroup[]) => WorkspaceViewModel;
+  stageNativePresentation: (messages: readonly unknown[]) => Promise<WorkspaceGroup[] | null>;
 };
 
 export function createConciergeWorkspaceSession(options: {
@@ -36,6 +39,7 @@ export function createConciergeWorkspaceSession(options: {
   getCurrentShopperMessage: () => ShopperMessage | null;
   fetchEvidence: (body: unknown, signal?: AbortSignal) => Promise<RetrieveEvidenceResult>;
   fetchExactProducts?: (body: unknown, signal?: AbortSignal) => Promise<RetrieveEvidenceResult>;
+  fetchProductRecord?: (id: string) => Promise<unknown>;
   fetchVocabulary?: () => Promise<
     import('../../shared/concierge/vocabularyContract.js').CatalogVocabulary
   >;
@@ -60,7 +64,47 @@ export function createConciergeWorkspaceSession(options: {
       return (await response.json()) as RetrieveEvidenceResult;
     });
   const refresh = createExactProductRefresh(store, fetchExactProducts);
-  function getModel(): WorkspaceViewModel {
+  const fetchProductRecord =
+    options.fetchProductRecord ??
+    (async (id: string) => {
+      const response = await fetch(`/api/products/${encodeURIComponent(id)}`);
+      if (!response.ok) throw new Error('Product details could not be loaded.');
+      return await response.json();
+    });
+  /* F1 native adapter: cards from the agent's own grouped tool call. The agent
+   * decides the groups and the products; this only reads the objectIDs off the
+   * stream, hydrates full records through the existing read-only exact-product
+   * path, and hands the workspace columns the same shape present_choices used.
+   * No conversation logic, no agent speech, no new model calls. */
+  async function stageNativePresentation(
+    messages: readonly unknown[],
+  ): Promise<WorkspaceGroup[] | null> {
+    const presentation = extractNativePresentation(messages as never);
+    if (!presentation) return null;
+    const records = new Map(presentation.records);
+    const needed: string[] = [];
+    for (const group of presentation.groups)
+      for (const objectID of group.objectIDs) if (!records.has(objectID)) needed.push(objectID);
+    // Same per-presentation ceiling as the exact-product refresh path.
+    for (const objectID of [...new Set(needed)].slice(0, 12)) {
+      try {
+        const record = await fetchProductRecord(objectID);
+        if (record && typeof record === 'object' && !Array.isArray(record))
+          records.set(objectID, record as Record<string, unknown>);
+      } catch {
+        // A record that will not hydrate is skipped; the column shows what loaded.
+      }
+    }
+    const groups = presentation.groups.flatMap((group) => {
+      const items = group.objectIDs.flatMap((objectID) => {
+        const product = normalize(records.get(objectID));
+        return product ? [{ product, why: group.why, assessment: 'unknown' as const }] : [];
+      });
+      return items.length ? [{ title: group.title, items }] : [];
+    });
+    return groups.length ? groups : null;
+  }
+  function getModel(nativeGroups?: WorkspaceGroup[]): WorkspaceViewModel {
     const session = store.getSnapshot();
     if (!session) {
       const disabled = () => undefined;
@@ -144,7 +188,10 @@ export function createConciergeWorkspaceSession(options: {
     const model: WorkspaceViewModel = {
       products: state.products.flatMap(entry).filter((item): item is ProductEntry => item !== null),
       selectionRecords: [...selectedProducts.values()],
-      discoveries: groups,
+      /* F1: native grouped results render in the same columns when the turn
+       * carried no committed proposal (the native agent has no client tools).
+       * A client-tool proposal still wins when one exists. */
+      discoveries: groups.length ? groups : (nativeGroups ?? []),
       discoveriesStale:
         groups.length > 0 &&
         (runtime.isPublishedStale() || proposal?.stateRevision !== state.brief.revision),
@@ -186,5 +233,5 @@ export function createConciergeWorkspaceSession(options: {
     };
     return model;
   }
-  return { store, runtime, getModel };
+  return { store, runtime, getModel, stageNativePresentation };
 }
