@@ -1,127 +1,13 @@
 import { z } from 'zod';
-import { CATALOGUE_GROUP_BASIS_ATTRIBUTES } from '../presentation-contract.js';
-const boundedId = z.string().trim().min(1).max(150);
+
+/* F3 native cleanup: the retrieve_evidence input schema (styleBatches, the
+ * source discriminated union and its refinements) served the removed client
+ * tool and its server route — the native agent formulates its own searches.
+ * What survives is the exact objectID identity the UI's price/stock refresh
+ * still validates (exactProductRefreshRoute). */
 export const exactObjectId = z
   .string()
   .regex(
     /^[A-Za-z0-9][A-Za-z0-9._:-]{0,149}$/,
     'Exact objectID must be a safe catalogue identifier',
   );
-/** Kept as a UI/typing convenience list only. Wire validation is a plain safe
- * string; the live-vocabulary check for target product types happens in the
- * compiler (retrieveEvidence), which knows today's catalogue values. */
-export const SUPPORTED_PRODUCT_TYPES = [
-  'Ring',
-  'Earrings',
-  'Necklace',
-  'Bracelet',
-  'Pendant',
-  'Wrist Watch',
-] as const;
-const common = {
-  query: z.string().max(300),
-  count: z.number().int().min(1).max(24),
-  exactObjectIDs: z.array(exactObjectId).min(1).max(3).nullable().default(null),
-  missionId: boundedId,
-  expectedRevision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
-  turnId: boundedId,
-  target: z.union([
-    z
-      .object({
-        kind: z.literal('item'),
-        itemKey: boundedId,
-        productType: boundedId,
-      })
-      .strict(),
-    z.null(),
-  ]),
-};
-const product = z.object({ ...common, source: z.literal('prod_catalog') }).strict();
-const blog = z.object({ ...common, source: z.literal('blog') }).strict();
-const help = z.object({ ...common, source: z.literal('help') }).strict();
-const styleBatch = z
-  .object({
-    attribute: z.enum(CATALOGUE_GROUP_BASIS_ATTRIBUTES),
-    value: z.string().trim().min(1).max(160),
-  })
-  .strict();
-export const productEvidenceSchema = product.extend({
-  styleOverview: z.boolean().optional(),
-  styleBatches: z.array(styleBatch).min(1).max(3).optional(),
-});
-export const retrieveEvidenceInputSchema = z
-  .discriminatedUnion('source', [productEvidenceSchema, blog, help])
-  .superRefine((input, ctx) => {
-    if (input.source === 'prod_catalog') {
-      if (input.styleOverview && input.styleBatches)
-        ctx.addIssue({
-          code: 'custom',
-          path: ['styleBatches'],
-          message: 'styleOverview and styleBatches are mutually exclusive',
-        });
-      if (input.styleOverview) {
-        if (input.exactObjectIDs !== null)
-          ctx.addIssue({
-            code: 'custom',
-            path: ['styleOverview'],
-            message: 'Style overview requires exactObjectIDs null',
-          });
-        if (input.target !== null)
-          ctx.addIssue({
-            code: 'custom',
-            path: ['styleOverview'],
-            message: 'Style overview is brief-scoped and requires target null',
-          });
-      }
-      if (input.styleBatches) {
-        if (input.exactObjectIDs !== null)
-          ctx.addIssue({
-            code: 'custom',
-            path: ['styleBatches'],
-            message: 'Style batch search requires exactObjectIDs null',
-          });
-        if (input.target !== null)
-          ctx.addIssue({
-            code: 'custom',
-            path: ['styleBatches'],
-            message: 'Style batch search is brief-scoped and requires target null',
-          });
-        const seen = new Set(
-          input.styleBatches.map((batch) => `${batch.attribute}\u0000${batch.value}`),
-        );
-        if (seen.size !== input.styleBatches.length)
-          ctx.addIssue({
-            code: 'custom',
-            path: ['styleBatches'],
-            message: 'Style batches must name distinct style directions',
-          });
-      }
-    }
-    if (input.source === 'blog' && input.exactObjectIDs !== null)
-      ctx.addIssue({
-        code: 'custom',
-        path: ['exactObjectIDs'],
-        message: 'Blog evidence requires exactObjectIDs null',
-      });
-    if (input.source === 'blog' && input.target !== null)
-      ctx.addIssue({
-        code: 'custom',
-        path: ['target'],
-        message: 'Blog evidence requires target null',
-      });
-    if (input.source === 'help' && input.exactObjectIDs !== null)
-      ctx.addIssue({
-        code: 'custom',
-        path: ['exactObjectIDs'],
-        message: 'Help evidence requires exactObjectIDs null',
-      });
-    if (input.source === 'help' && input.target !== null)
-      ctx.addIssue({
-        code: 'custom',
-        path: ['target'],
-        message: 'Help evidence requires target null',
-      });
-  });
-
-export type RetrieveEvidenceInput = z.infer<typeof retrieveEvidenceInputSchema>;
-export type StyleBatchInput = z.infer<typeof styleBatch>;

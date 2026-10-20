@@ -1,4 +1,4 @@
-import { INDEXES } from './retrieveEvidence.js';
+import { INDEXES } from './evidencePrimitives.js';
 import type { CatalogVocabulary, CatalogVocabularyCache } from '../../shared/concierge/vocabularyContract.js';
 
 export const CATALOG_VOCABULARY_TTL_MS = 12 * 60 * 60 * 1000;

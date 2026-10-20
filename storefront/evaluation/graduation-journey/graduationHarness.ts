@@ -4,7 +4,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { repeatedExactTextAfterTool } from '../fathers-day-journey/assistantTextIntegrity';
-import { hashEvidenceRecord } from '../../server/concierge/retrieveEvidence';
+import { hashEvidenceRecord } from '../../server/concierge/evidencePrimitives';
 
 export type Status = 'pass' | 'fail' | 'unknown' | 'not-run';
 export type Assertion = { beat: string; id: string; status: Status; detail: string };
