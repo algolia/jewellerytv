@@ -63,13 +63,10 @@ const monitored = [
 ];
 const sourceFiles = [
   'storefront/src/concierge/ConnectedConcierge.tsx',
-  'storefront/src/concierge/sdkTools.ts',
   'storefront/src/concierge/toolRuntime.ts',
   'storefront/src/concierge/ConciergeWorkspaceProvider.tsx',
   'storefront/src/ProductWorkspace.tsx',
   'storefront/server/api.ts',
-  'storefront/server/concierge/retrieveEvidence.ts',
-  'storefront/shared/concierge/state/updateShoppingState.ts',
 ] as const;
 
 function sourceHashes(root: string) {
