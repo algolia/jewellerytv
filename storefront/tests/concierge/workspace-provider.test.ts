@@ -117,10 +117,6 @@ describe('v3 workspace session adapter', () => {
     const adapter = createConciergeWorkspaceSession({
       storage,
       initialMissionId: 'unused',
-      getCurrentShopperMessage: () => null,
-      fetchEvidence: async () => {
-        throw new Error('unused');
-      },
     });
     expect(adapter.getModel().discoveries).toHaveLength(1);
     expect(adapter.getModel().discoveriesStale).toBe(true);
@@ -135,10 +131,6 @@ describe('v3 workspace session adapter', () => {
     const adapter = createConciergeWorkspaceSession({
       storage,
       initialMissionId: 'unused',
-      getCurrentShopperMessage: () => null,
-      fetchEvidence: async () => {
-        throw new Error('unused');
-      },
     });
     const model = adapter.getModel();
     expect(model.activeView).toBe('compare');
@@ -184,10 +176,6 @@ describe('v3 workspace session adapter', () => {
     const adapter = createConciergeWorkspaceSession({
       storage,
       initialMissionId: 'unused',
-      getCurrentShopperMessage: () => null,
-      fetchEvidence: async () => {
-        throw new Error('unused');
-      },
     });
     expect(adapter.getModel().discoveries).toEqual([]);
     expect(adapter.getModel().discoveryUnavailable).toBe(true);
@@ -200,10 +188,6 @@ describe('v3 workspace session adapter', () => {
     const adapter = createConciergeWorkspaceSession({
       storage,
       initialMissionId: 'unused',
-      getCurrentShopperMessage: () => null,
-      fetchEvidence: async () => {
-        throw new Error('unused');
-      },
     });
     const model = adapter.getModel();
     expect(model.assessment?.(model.products[0].product)).toBe('Needs verification');
@@ -275,10 +259,6 @@ describe('v3 workspace session adapter', () => {
     const adapter = createConciergeWorkspaceSession({
       storage,
       initialMissionId: 'unused',
-      getCurrentShopperMessage: () => null,
-      fetchEvidence: async () => {
-        throw new Error('unused');
-      },
       fetchExactProducts,
     });
     await adapter.getModel().refreshProducts(['saved-1']);
@@ -308,10 +288,6 @@ describe('v3 workspace session adapter', () => {
     const adapter = createConciergeWorkspaceSession({
       storage,
       initialMissionId: 'unused',
-      getCurrentShopperMessage: () => null,
-      fetchEvidence: async () => {
-        throw new Error('unused');
-      },
       fetchExactProducts: async (body: unknown) => ({
         status: 'ok',
         source: 'prod_catalog',
@@ -348,10 +324,6 @@ describe('v3 workspace session adapter', () => {
     const adapter = createConciergeWorkspaceSession({
       storage,
       initialMissionId: 'unused',
-      getCurrentShopperMessage: () => null,
-      fetchEvidence: async () => {
-        throw new Error('unused');
-      },
       fetchExactProducts: (body: unknown) =>
         new Promise((resolve) => {
           const input = body as RefreshRequest;
