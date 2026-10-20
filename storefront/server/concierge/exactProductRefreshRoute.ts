@@ -6,7 +6,7 @@ import {
   evidenceRef,
   hashEvidenceRecord,
   projection,
-} from './retrieveEvidence.js';
+} from './evidencePrimitives.js';
 
 const requestSchema = z
   .object({
