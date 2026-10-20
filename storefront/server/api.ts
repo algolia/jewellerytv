@@ -3,7 +3,6 @@ import { Readable } from 'node:stream';
 import { once } from 'node:events';
 import { z } from 'zod';
 import { RequestTelemetry, productionTelemetryLogger, type TelemetryLogger } from './telemetry.js';
-import { runEvidenceRoute } from './concierge/evidenceRoute.js';
 import { runExactProductRefreshRoute } from './concierge/exactProductRefreshRoute.js';
 import {
   createCatalogVocabulary,
@@ -244,17 +243,6 @@ export function createApiHandler(options: ApiOptions) {
             detail: error instanceof Error ? error.message : String(error),
           });
         }
-        return;
-      }
-      if (req.method === 'POST' && url.pathname === '/api/agent-evidence') {
-        const result = await runEvidenceRoute(await body(req), {
-          appId: options.appId,
-          searchOnlyApiKey: options.apiKey,
-          fetch: upstream,
-          signal: abort.signal,
-          vocabulary,
-        });
-        reply(res, 200, result);
         return;
       }
       if (req.method === 'POST' && url.pathname === '/api/agent-product-refresh') {
