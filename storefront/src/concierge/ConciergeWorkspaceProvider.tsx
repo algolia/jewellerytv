@@ -6,7 +6,6 @@ import { createSessionStore } from './sessionStore.js';
 import { createConciergeToolRuntime } from './toolRuntime';
 import type { StorageLike } from './sessionPersistence.js';
 import type { RetrieveEvidenceResult } from '../../shared/concierge/retrieval/types.js';
-import type { ShopperMessage } from '../../shared/concierge/state/updateShoppingState.js';
 import type { SourceBoundProduct } from '../../shared/concierge/sessionContract.js';
 import { createExactProductRefresh } from './exactProductRefresh.js';
 
@@ -36,21 +35,13 @@ export type ConciergeWorkspaceSession = {
 export function createConciergeWorkspaceSession(options: {
   storage: StorageLike;
   initialMissionId: string;
-  getCurrentShopperMessage: () => ShopperMessage | null;
-  fetchEvidence: (body: unknown, signal?: AbortSignal) => Promise<RetrieveEvidenceResult>;
   fetchExactProducts?: (body: unknown, signal?: AbortSignal) => Promise<RetrieveEvidenceResult>;
   fetchProductRecord?: (id: string) => Promise<unknown>;
-  fetchVocabulary?: () => Promise<
-    import('../../shared/concierge/vocabularyContract.js').CatalogVocabulary
-  >;
 }): ConciergeWorkspaceSession {
   const store = createSessionStore(options.storage, options.initialMissionId);
   const runtime = createConciergeToolRuntime({
-    ...options,
-    sessionStore: store,
-    fetchEvidence: options.fetchEvidence as Parameters<
-      typeof createConciergeToolRuntime
-    >[0]['fetchEvidence'],
+    storage: options.storage,
+    initialMissionId: options.initialMissionId,
   });
   const fetchExactProducts =
     options.fetchExactProducts ??
@@ -193,8 +184,7 @@ export function createConciergeWorkspaceSession(options: {
        * A client-tool proposal still wins when one exists. */
       discoveries: groups.length ? groups : (nativeGroups ?? []),
       discoveriesStale:
-        groups.length > 0 &&
-        (runtime.isPublishedStale() || proposal?.stateRevision !== state.brief.revision),
+        groups.length > 0 && proposal?.stateRevision !== state.brief.revision,
       discoveryUnavailable:
         proposal?.kind === 'product_groups' &&
         (proposal.assessment.perItem !== 'accepted' ||

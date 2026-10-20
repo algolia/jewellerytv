@@ -28,10 +28,7 @@ import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from '.
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
 import { stripTrailingNote } from './nativeResults';
 import type { WorkspaceGroup } from '../workspaceResults';
-import { createSdkClientTools } from './sdkTools';
 import { getFailedToolDetails, hasFailedTool, isCompletedAssistantTurn } from './turnCompletion';
-import type { RetrieveEvidenceResult } from '../../shared/concierge/retrieval/types.js';
-import type { ShopperMessage } from '../../shared/concierge/state/updateShoppingState.js';
 import { applyBriefOperationsV3, undoBriefV3 } from '../../shared/briefState.js';
 import { buildTurnContext } from './turnContext.js';
 import { canonicalBlogUrlsFromMessages, verifiedBlogHref } from './verifiedBlogLinks.js';
@@ -486,7 +483,6 @@ export function ConnectedConcierge({
   onClose: () => void;
   open?: boolean;
 }) {
-  const shopperMessage = useRef<ShopperMessage | null>(null);
   const latestTurn = useRef<{ turnId: string; sourceMessageId: string }>({
     turnId: '',
     sourceMessageId: '',
@@ -533,32 +529,6 @@ export function ConnectedConcierge({
       createConciergeWorkspaceSession({
         storage: safeStorage(),
         initialMissionId: newId('mission'),
-        getCurrentShopperMessage: () => shopperMessage.current,
-        fetchEvidence: async (body, signal): Promise<RetrieveEvidenceResult> => {
-          const response = await fetch('/api/agent-evidence', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(body),
-            signal,
-          });
-          if (!response.ok) throw new Error('Evidence retrieval failed.');
-          return (await response.json()) as RetrieveEvidenceResult;
-        },
-        fetchVocabulary: async () => {
-          const response = await fetch('/api/catalog-vocabulary');
-          if (!response.ok) throw new Error('Catalogue vocabulary unavailable.');
-          const payload = (await response.json()) as {
-            builtAt: string;
-            values: Record<string, string[]>;
-          };
-          return {
-            values: payload.values,
-            builtAt: payload.builtAt,
-            hasValue: (attribute, value) => (payload.values[attribute] ?? []).includes(value),
-            availableValues: (attribute) => payload.values[attribute] ?? [],
-            isFilterable: (attribute) => attribute in payload.values,
-          };
-        },
       }),
     [],
   );
@@ -662,8 +632,6 @@ export function ConnectedConcierge({
       runtime.invalidateTurn();
     }
   }, [brief, runtime, session]);
-  const tools = useMemo(() => createSdkClientTools(runtime), [runtime]);
-
   const chatContext = useCallback(() => {
     const currentSession = session.store.getSnapshot();
     const base = context?.() ?? {};
@@ -705,7 +673,6 @@ export function ConnectedConcierge({
       headers: { 'x-jtv-request-id': chatRequestId.current },
     },
     context: chatContext,
-    tools,
     onFinish,
     onError: onChatError,
     requiresSearch: false,
@@ -746,10 +713,9 @@ export function ConnectedConcierge({
       const turnId = newId('turn');
       const startManualEditEpoch = manualEditEpoch.current;
       latestTurn.current = { turnId, sourceMessageId };
-      shopperMessage.current = { id: sourceMessageId, text };
       finishRef.current = null;
       chatErrorRef.current = null;
-      runtime.beginTurn(turnId, sourceMessageId);
+      runtime.beginTurn(turnId);
       setError('');
       setSystemNotices([]);
       followTranscriptRef.current = true;
@@ -806,21 +772,6 @@ export function ConnectedConcierge({
               manualEditEpoch.current === startManualEditEpoch &&
               isCompletedAssistantTurn(messages, 'ready');
             if (completed) {
-              const committed = await runtime.finishTurnAndPersist(turnId, 'completed');
-              const presentationAttempted = runtime.hadPresentationAttempt();
-              if (presentationAttempted && !committed) {
-                recordTurnOutcome(turnId, chatRequestId.current, {
-                  finishFired: !!finish,
-                  isAbort: false,
-                  isError: false,
-                  decision: 'validated-miss',
-                });
-                runtime.endTurn(turnId);
-                onSystemNotice(
-                  '[System notice] This request did not produce a validated product selection. Existing product choices remain.',
-                );
-                return;
-              }
               recordTurnOutcome(turnId, chatRequestId.current, {
                 finishFired: !!finish,
                 isAbort: false,
@@ -865,14 +816,6 @@ export function ConnectedConcierge({
                       ? 'transport-error'
                       : 'incomplete-notice',
               });
-              runtime.finishTurn(
-                turnId,
-                finish?.isAbort
-                  ? 'aborted'
-                  : finish?.isError || transportError
-                    ? 'error'
-                    : 'exhausted',
-              );
               runtime.endTurn(turnId);
               onSystemNotice(getConnectedTurnSystemNotice(messages, finish, transportError));
             }
@@ -893,7 +836,6 @@ export function ConnectedConcierge({
               isError: true,
               decision: 'transport-error',
             });
-            runtime.finishTurn(turnId, 'error');
             runtime.endTurn(turnId);
             const failedMessages =
               (finishRef.current as TurnFinish | null)?.messages ?? chat.messages;
@@ -941,7 +883,6 @@ export function ConnectedConcierge({
     setHiddenPriorMessageIds((previous) => new Set([...previous, ...priorMessageIds]));
     setNativeGroups(null);
     finishRef.current = null;
-    shopperMessage.current = null;
     latestTurn.current = { turnId: '', sourceMessageId: '' };
     setPending(null);
     setResetting(false);
