@@ -27,12 +27,9 @@ const outDir = path.join(
 );
 const runtimeFiles = [
   'storefront/src/concierge/ConnectedConcierge.tsx',
-  'storefront/src/concierge/sdkTools.ts',
   'storefront/src/concierge/toolRuntime.ts',
   'storefront/src/concierge/ConciergeWorkspaceProvider.tsx',
   'storefront/server/api.ts',
-  'storefront/server/concierge/retrieveEvidence.ts',
-  'storefront/shared/concierge/state/updateShoppingState.ts',
 ] as const;
 
 type Case = { id: string; kind: 'story' | 'exception'; prompt: string };
