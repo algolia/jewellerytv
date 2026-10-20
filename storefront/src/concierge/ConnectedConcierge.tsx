@@ -26,6 +26,8 @@ import { ConnectedShoppingBrief } from './ConnectedShoppingBrief';
 import { ConnectedWelcome, composerSendText, shouldShowEntryGuidance } from './EntryGuidance';
 import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from './starterQuestions';
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
+import { stripTrailingNote } from './nativeResults';
+import type { WorkspaceGroup } from '../workspaceResults';
 import { createSdkClientTools } from './sdkTools';
 import { getFailedToolDetails, hasFailedTool, isCompletedAssistantTurn } from './turnCompletion';
 import type { RetrieveEvidenceResult } from '../../shared/concierge/retrieval/types.js';
@@ -162,6 +164,17 @@ function displayTextParts(message: UIMessage) {
     }
   }
   if (current.trim()) segments.push(current);
+  /* F1: the agent's trailing NOTE line is bookkeeping, never shopper copy.
+   * Only the display drops it; the conversation state above keeps the raw
+   * text. Echoing the note back stays behind NOTE_ECHO_ENABLED (default OFF)
+   * while Arijit decides whether the NOTE stays. */
+  if (segments.length) {
+    const stripped = stripTrailingNote(segments[segments.length - 1]);
+    if (stripped.note !== null) {
+      if (stripped.display.trim()) segments[segments.length - 1] = stripped.display;
+      else segments.pop();
+    }
+  }
   return segments;
 }
 
@@ -554,7 +567,11 @@ export function ConnectedConcierge({
     session.store.getSnapshot,
     session.store.getSnapshot,
   );
-  const model = session.getModel();
+  /* F1: cards staged from the native agent's own grouped tool calls. Held in
+   * component state (not the persisted session contract) because they carry no
+   * evidence ledger; a mission reset clears them with the conversation. */
+  const [nativeGroups, setNativeGroups] = useState<WorkspaceGroup[] | null>(null);
+  const model = session.getModel(nativeGroups ?? undefined);
   const runtime = session.runtime;
   const brief = snapshot?.brief;
   const verifiedProductIds = useMemo(
@@ -816,6 +833,16 @@ export function ConnectedConcierge({
                 recordCompletedAssistantMessage(safeStorage(), assistant.id);
                 setRevealed((previous) => new Set(previous).add(assistant.id));
               }
+              /* F1: render the native grouped call's products. Only a fully
+               * completed turn stages cards; an interrupted or noticed turn
+               * leaves the previous display standing. */
+              try {
+                const staged = await session.stageNativePresentation(messages);
+                if (staged) setNativeGroups(staged);
+              } catch (error) {
+                if (import.meta.env.DEV)
+                  console.warn('JTV native presentation not staged', error);
+              }
             } else {
               if (import.meta.env.DEV)
                 console.warn('JTV Concierge turn incomplete', {
@@ -880,7 +907,7 @@ export function ConnectedConcierge({
         setPending(null);
       }
     },
-    [blocked, chat, onSystemNotice, pending, runtime],
+    [blocked, chat, onSystemNotice, pending, runtime, session],
   );
 
   const startNewConversation = useCallback(async () => {
@@ -912,6 +939,7 @@ export function ConnectedConcierge({
     }
     clearCompletedAssistantMessages(safeStorage());
     setHiddenPriorMessageIds((previous) => new Set([...previous, ...priorMessageIds]));
+    setNativeGroups(null);
     finishRef.current = null;
     shopperMessage.current = null;
     latestTurn.current = { turnId: '', sourceMessageId: '' };
