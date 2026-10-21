@@ -27,6 +27,7 @@ import { ConnectedWelcome, composerSendText, shouldShowEntryGuidance } from './E
 import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from './starterQuestions';
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
 import { stripTrailingNote } from './nativeResults';
+import { buildClientTools } from './clientTools';
 import type { WorkspaceGroup } from '../workspaceResults';
 import { getFailedToolDetails, hasFailedTool, isCompletedAssistantTurn, turnHasUsableResult } from './turnCompletion';
 import { applyBriefOperationsV3, undoBriefV3 } from '../../shared/briefState.js';
@@ -666,6 +667,18 @@ export function ConnectedConcierge({
   }, []);
   /** Correlates this page's chat requests with the server's request log. Metadata only. */
   const chatRequestId = useRef(crypto.randomUUID());
+  /* Lane 1: the four deterministic client tools execute in this browser over
+   * the read-only exact-product proxy; the agent's tool sheet declares them
+   * and their descriptions, this only binds the executors. */
+  const clientTools = useMemo(
+    () =>
+      buildClientTools(async (objectID) => {
+        const response = await fetch(`/api/products/${encodeURIComponent(objectID)}`);
+        if (!response.ok) throw new Error('Product record could not be loaded.');
+        return await response.json();
+      }),
+    [],
+  );
   const chat = useChat<UIMessage>({
     ...chatPersistenceOptions,
     transport: {
@@ -673,6 +686,7 @@ export function ConnectedConcierge({
       headers: { 'x-jtv-request-id': chatRequestId.current },
     },
     context: chatContext,
+    tools: clientTools,
     onFinish,
     onError: onChatError,
     requiresSearch: false,
