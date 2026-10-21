@@ -66,7 +66,14 @@ export function createConciergeWorkspaceSession(options: {
    * decides the groups and the products; this only reads the objectIDs off the
    * stream, hydrates full records through the existing read-only exact-product
    * path, and hands the workspace columns the same shape present_choices used.
-   * No conversation logic, no agent speech, no new model calls. */
+   * No conversation logic, no agent speech, no new model calls.
+   *
+   * H1: a shown native card must be Saveable and Comparable. The staged,
+   * identity-verified records enter the session store as `legacy_unbound` —
+   * the same slot the old client-tool flow filled with `evidence_bound`
+   * records. The identity guarantee is the verified hydrated record: a record
+   * is only used when its own objectID equals the objectID the agent named
+   * and the card hydration requested. */
   async function stageNativePresentation(
     messages: readonly unknown[],
   ): Promise<WorkspaceGroup[] | null> {
@@ -86,14 +93,49 @@ export function createConciergeWorkspaceSession(options: {
         // A record that will not hydrate is skipped; the column shows what loaded.
       }
     }
+    // Identity check: a record represents the named product only when its own
+    // objectID matches what the agent named and what was requested.
+    const verified = new Map<string, Record<string, unknown>>();
+    for (const group of presentation.groups)
+      for (const objectID of group.objectIDs) {
+        const record = records.get(objectID);
+        if (record && record.objectID === objectID) verified.set(objectID, record);
+      }
     const groups = presentation.groups.flatMap((group) => {
       const items = group.objectIDs.flatMap((objectID) => {
-        const product = normalize(records.get(objectID));
+        const product = normalize(verified.get(objectID));
         return product ? [{ product, why: group.why, assessment: 'unknown' as const }] : [];
       });
       return items.length ? [{ title: group.title, items }] : [];
     });
-    return groups.length ? groups : null;
+    if (!groups.length) return null;
+    // Register the verified records so Save and Compare can reference them
+    // (the session contract requires referenced ids to be stored records).
+    const session = store.getSnapshot();
+    if (session) {
+      const additions = [...verified.entries()]
+        .filter(([objectID]) => !session.selectionRecords.some((r) => r.objectID === objectID))
+        .map(([objectID, raw]) => ({
+          sourceIndex: 'prod_catalog' as const,
+          objectID,
+          contentHash: null,
+          evidenceRef: null,
+          binding: 'legacy_unbound' as const,
+          raw,
+          quantity: 1,
+          observedAt: new Date().toISOString(),
+        }));
+      if (additions.length) {
+        await store.transact({
+          expectedRevision: session.brief.revision,
+          apply: (current) => ({
+            ...current,
+            selectionRecords: [...current.selectionRecords, ...additions].slice(-12),
+          }),
+        });
+      }
+    }
+    return groups;
   }
   function getModel(nativeGroups?: WorkspaceGroup[]): WorkspaceViewModel {
     const session = store.getSnapshot();
@@ -207,8 +249,11 @@ export function createConciergeWorkspaceSession(options: {
         if ((state?.products.length ?? 0) >= 12) return;
         const product = normalize(raw);
         if (!product || state.products.some((item) => item.objectID === product.id)) return;
+        // H1: a native card's record is identity-verified at hydration (its
+        // own objectID matched the requested id), so a staged legacy_unbound
+        // record is Saveable just like an evidence-bound one.
         const existing = state.selectionRecords.find((item) => item.objectID === product.id);
-        if (!existing || existing.binding !== 'evidence_bound') return;
+        if (!existing) return;
         transact((current) => ({ ...current, products: [...current.products, existing] }));
       },
       remove: (id) =>
