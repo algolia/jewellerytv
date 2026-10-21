@@ -158,4 +158,60 @@ describe('chat upstream turn deadlines', () => {
     expect(text).toContain('[DONE]');
     expect(text).not.toContain('"type":"error"');
   }, 20_000);
+
+  /**
+   * 15-second stream cut (F2, 2026-10-20): the headers deadline must bound
+   * ONLY the wait for response headers. It used to be composed as an
+   * AbortSignal.timeout that governed the whole fetch, so any turn streaming
+   * longer than the headers bound was aborted mid-body and the catch wrote
+   * "Agent response interrupted". The Rebuild Tester measured healthy direct
+   * turns of 15.4-21.4s dying this way. Test scale: headers at 100ms, chunks
+   * dripping past a 500ms headers bound.
+   */
+  it('keeps streaming past the headers deadline once headers have arrived', async () => {
+    const encoder = new TextEncoder();
+    const upstream = vi.fn(
+      async (_input: string | URL | Request, init?: RequestInit) =>
+        // Honor init.signal like real fetch (undici): aborting the signal
+        // errors the body, which is exactly how the old full-fetch deadline
+        // cut long streams off.
+        new Response(
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              init?.signal?.addEventListener('abort', () =>
+                controller.error(new Error('signal aborted')),
+              );
+              controller.enqueue(encoder.encode('data: {"type":"start"}\n\n'));
+              // Drip a chunk every 200ms for 1.2s: five chunks land AFTER the
+              // 500ms headers deadline has fired under the old signal.
+              for (let index = 1; index <= 6; index++) {
+                setTimeout(() => {
+                  try {
+                    controller.enqueue(
+                      encoder.encode(`data: {"type":"text-delta","delta":"${index}"}\n\n`),
+                    );
+                    if (index === 6) {
+                      controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                      controller.close();
+                    }
+                  } catch {
+                    /* closed */
+                  }
+                }, 100 + index * 200);
+              }
+            },
+          }),
+          { headers: { 'content-type': 'text/event-stream' } },
+        ),
+    );
+    const url = await setup({ upstreamHeadersTimeoutMs: 500, upstream });
+    const response = await post(url);
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    expect(text).toContain('"type":"start"');
+    expect(text).toContain('"delta":"6"');
+    expect(text).toContain('[DONE]');
+    expect(text).not.toContain('"type":"error"');
+    expect(upstream).toHaveBeenCalledTimes(1);
+  }, 20_000);
 });
