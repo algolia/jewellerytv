@@ -39,6 +39,7 @@ export type NativePresentation = {
 };
 
 const GROUPED_TOOL = 'tool-algolia_grouped_results';
+const ARRANGE_TOOL = 'tool-arrange_groups';
 const SEARCH_TOOL_PREFIX = 'tool-algolia_search_index';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -92,12 +93,43 @@ function readGroupedInput(input: unknown): { intro: string; groups: NativeGroup[
   return { intro, groups };
 }
 
+/** Reads the arranged-groups tool output (Lane 1: the app renders tiles from
+ * arrange_groups, whose output already dropped ineligible pieces). Returns
+ * null for anything but a successful structured output; a later call
+ * supersedes an earlier one on the same turn. */
+function readArrangedOutput(output: unknown): NativeGroup[] | null {
+  if (!isRecord(output) || output.status !== 'ok') return null;
+  const rawGroups = output.groups;
+  if (!Array.isArray(rawGroups)) return null;
+  const groups: NativeGroup[] = [];
+  for (const rawGroup of rawGroups) {
+    if (!isRecord(rawGroup)) return null;
+    const title = rawGroup.title;
+    if (typeof title !== 'string' || !title.trim()) return null;
+    if (!Array.isArray(rawGroup.items)) return null;
+    const objectIDs: string[] = [];
+    for (const item of rawGroup.items) {
+      if (!isRecord(item)) return null;
+      const objectID = item.objectID;
+      if (typeof objectID !== 'string' || !objectID) return null;
+      objectIDs.push(objectID);
+    }
+    if (objectIDs.length) groups.push({ title, objectIDs });
+  }
+  return groups;
+}
+
 /**
  * Reads the native tool parts off the latest assistant turn. Returns null when
  * the turn presented no grouped results (held turns, service answers). A
  * grouped part whose input is unusable yields null — the app never invents a
  * grid from partial data. A later grouped call supersedes an earlier one on
  * the same turn; search records accumulate across the turn's calls.
+ *
+ * Lane 1: an arrange_groups output wins when present — its groups are already
+ * eligibility-checked by the deterministic tool, so tiles can only contain
+ * pieces the tools approved. The grouped-tool input path stays as the
+ * fallback for turns arranged before the tool sheet changes.
  */
 export function extractNativePresentation(
   messages: readonly Message[],
@@ -106,6 +138,7 @@ export function extractNativePresentation(
   if (!assistant?.parts) return null;
   const records = new Map<string, Record<string, unknown>>();
   let grouped: { intro: string; groups: NativeGroup[] } | null = null;
+  let arranged: NativeGroup[] | null = null;
   for (const part of assistant.parts as Part[]) {
     if (typeof part.type !== 'string') continue;
     if (part.type.startsWith(SEARCH_TOOL_PREFIX) && isRecord(part.output)) {
@@ -123,7 +156,12 @@ export function extractNativePresentation(
       const parsed = readGroupedInput(part.input);
       if (parsed) grouped = parsed;
     }
+    if (part.type === ARRANGE_TOOL) {
+      const parsed = readArrangedOutput(part.output);
+      if (parsed) arranged = parsed;
+    }
   }
+  if (arranged) return { intro: '', groups: arranged, records };
   if (!grouped) return null;
   return { intro: grouped.intro, groups: grouped.groups, records };
 }
