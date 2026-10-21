@@ -31,7 +31,7 @@ function model(activeView: WorkspaceViewModel['activeView'] = 'discover'): Works
     toggleCompare: vi.fn(),
     pin: vi.fn(),
     remove: vi.fn(),
-    refreshProducts: vi.fn(async () => undefined),
+    refreshProducts: vi.fn(async () => ({ refreshed: [], missing: [] })),
     refreshing: false,
     refreshError: '',
     assessment: (_item, status) => (status === 'unknown' ? <p>Needs verification</p> : null),
