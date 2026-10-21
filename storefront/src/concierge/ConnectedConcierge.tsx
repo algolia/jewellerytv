@@ -28,7 +28,7 @@ import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from '.
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
 import { stripTrailingNote } from './nativeResults';
 import type { WorkspaceGroup } from '../workspaceResults';
-import { getFailedToolDetails, hasFailedTool, isCompletedAssistantTurn } from './turnCompletion';
+import { getFailedToolDetails, hasFailedTool, isCompletedAssistantTurn, turnHasUsableResult } from './turnCompletion';
 import { applyBriefOperationsV3, undoBriefV3 } from '../../shared/briefState.js';
 import { buildTurnContext } from './turnContext.js';
 import { canonicalBlogUrlsFromMessages, verifiedBlogHref } from './verifiedBlogLinks.js';
@@ -388,7 +388,7 @@ export function getConnectedTurnSystemNotice(
     return '[System notice] This request was stopped before a complete response. Existing product choices remain.';
   if (finish?.isError || hasTransportError)
     return '[System notice] That message did not go through. Send it again and the conversation picks up right where it left off. Existing product choices remain.';
-  if (hasFailedTool(messages))
+  if (hasFailedTool(messages) && !turnHasUsableResult(messages))
     return '[System notice] A product step in this request failed or timed out, so the reply may be incomplete. Ask again and the conversation picks up right where it left off. Existing product choices remain.';
   return '[System notice] This request did not produce a complete response. Existing product choices remain.';
 }
@@ -768,7 +768,7 @@ export function ConnectedConcierge({
               !!finish &&
               !finish.isAbort &&
               !finish.isError &&
-              !hasFailedTool(messages) &&
+              !(hasFailedTool(messages) && !turnHasUsableResult(messages)) &&
               manualEditEpoch.current === startManualEditEpoch &&
               isCompletedAssistantTurn(messages, 'ready');
             if (completed) {
@@ -810,7 +810,7 @@ export function ConnectedConcierge({
                 isError: finish?.isError ?? false,
                 decision: finish?.isAbort
                   ? 'aborted-notice'
-                  : finish?.isError || hasFailedTool(messages)
+                  : finish?.isError || (hasFailedTool(messages) && !turnHasUsableResult(messages))
                     ? 'failed-notice'
                     : transportError
                       ? 'transport-error'

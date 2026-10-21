@@ -68,3 +68,35 @@ export function getFailedToolDetails(messages: readonly Message[]): FailedToolDe
 export function hasFailedTool(messages: readonly Message[]): boolean {
   return getFailedToolDetails(messages).length > 0;
 }
+
+/**
+ * A turn the model recovered from a mid-turn tool failure: despite an
+ * output-error part, it went on to produce a successful tool output and a
+ * final answer. The SDK finishes such a turn normally (exact24 temp4 q10,
+ * q23 and q24 captured this shape on 2026-10-21: one tool part failed, the
+ * retry landed, the answer text arrived), and the shopper should see that
+ * turn. Only a turn with no usable result keeps the failure notice. The
+ * failed part itself is still reported by getFailedToolDetails for the
+ * diagnostic log; this reader only decides whether the turn is shown.
+ */
+export function turnHasUsableResult(messages: readonly Message[]): boolean {
+  const assistant = latestAssistant(messages);
+  if (!assistant?.parts?.length) return false;
+  const parts = assistant.parts as Part[];
+  let hasSuccessfulToolOutput = false;
+  let lastToolIndex = -1;
+  for (let index = 0; index < parts.length; index++) {
+    const part = parts[index];
+    if (typeof part.type !== 'string' || !part.type.startsWith('tool-')) continue;
+    if (part.state === 'output-available') hasSuccessfulToolOutput = true;
+    if (part.state === 'output-available' || part.state === 'output-error') lastToolIndex = index;
+  }
+  if (!hasSuccessfulToolOutput) return false;
+  const finalText = parts
+    .slice(lastToolIndex + 1)
+    .filter((part) => part.type === 'text' && part.state === 'done')
+    .map((part) => (typeof part.text === 'string' ? part.text : ''))
+    .join('')
+    .trim();
+  return !!finalText && !finalText.startsWith('[System notice]');
+}
