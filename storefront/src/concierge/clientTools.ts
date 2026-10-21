@@ -1,5 +1,6 @@
-/* Lane 1: registration of the four deterministic client tools with the Chat
- * SDK (TOOLS-DESIGN-V1.md, Lane 1 brief step 4).
+/* Lane 1: registration of the deterministic client tools with the Chat
+ * SDK (TOOLS-DESIGN-V1.md, Lane 1 brief step 4; the two check tools were
+ * removed per Arijit's D2 decision, 2026-10-21).
  *
  * The tool declarations the model sees live in the Agent Studio tool sheet
  * (candidates/p4-native-2026-10-20/tools-candidate-*.json), never here. This
@@ -9,8 +10,6 @@
  * supplies the timeout wrapper and the abort signal. */
 
 import { createCatalogRecordFetcher, type CatalogRecordFetcher } from './tools/catalogRecord';
-import { createCheckPrice } from './tools/checkPrice';
-import { createCheckStock } from './tools/checkStock';
 import { createRefreshProducts } from './tools/refreshProducts';
 import { createArrangeGroups } from './tools/arrangeGroups';
 
@@ -28,15 +27,15 @@ export type ClientToolExecutor = {
   timeout?: number | false;
 };
 
-/** Tool names as declared in the tool sheet; snake_case like production's. */
-export const CLIENT_TOOL_NAMES = ['check_price', 'check_stock', 'refresh_products', 'arrange_groups'] as const;
+/** Tool names as declared in the tool sheet; snake_case like production's.
+ * The check tools were removed (Arijit's D2 decision): arrange_groups already
+ * re-validates every piece, and refresh_products covers single-piece facts. */
+export const CLIENT_TOOL_NAMES = ['refresh_products', 'arrange_groups'] as const;
 
 export function buildClientTools(
   fetchRawRecord: (objectID: string) => Promise<unknown>,
 ): Record<string, ClientToolExecutor> {
   const getRecords: CatalogRecordFetcher = createCatalogRecordFetcher(fetchRawRecord);
-  const checkPrice = createCheckPrice(getRecords);
-  const checkStock = createCheckStock(getRecords);
   const refreshProducts = createRefreshProducts(getRecords);
   const arrangeGroups = createArrangeGroups(getRecords);
   const executorFor =
@@ -62,8 +61,6 @@ export function buildClientTools(
     algolia_search_index: {
       matchesToolName: (toolName: string) => toolName.startsWith('algolia_search_index'),
     },
-    check_price: { onToolCall: executorFor(checkPrice), timeout: 20000 },
-    check_stock: { onToolCall: executorFor(checkStock), timeout: 20000 },
     refresh_products: { onToolCall: executorFor(refreshProducts), timeout: 20000 },
     arrange_groups: { onToolCall: executorFor(arrangeGroups), timeout: 20000 },
   };

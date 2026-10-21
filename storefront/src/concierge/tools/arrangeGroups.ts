@@ -21,6 +21,10 @@ export type ArrangeGroupsInput = {
   maxPerGroup?: number;
   ceiling?: number;
   floor?: number;
+  /** "Up to $1,000" wording: keep a piece priced exactly at the ceiling. */
+  ceilingInclusive?: boolean;
+  /** "At least $X" wording: keep a piece priced exactly at the floor. */
+  floorInclusive?: boolean;
 };
 
 export type ArrangeDropReason =
@@ -33,7 +37,12 @@ export type ArrangeDropReason =
 
 export type ArrangeDrop = { objectID: string; reason: ArrangeDropReason; group: string };
 
-export type ArrangedGroup = { title: string; items: { objectID: string; link: string }[] };
+export type ArrangedGroup = {
+  title: string;
+  /** Name and price ride along so the model reads a direction's price range
+   * and never computes one. */
+  items: { objectID: string; name: string; price: number; link: string }[];
+};
 
 export type GroupShortfall = { group: string; missing: number };
 
@@ -67,6 +76,8 @@ export function createArrangeGroups(getRecords: CatalogRecordFetcher): ArrangeGr
     maxPerGroup = 2,
     ceiling,
     floor,
+    ceilingInclusive = false,
+    floorInclusive = false,
   }) => {
     if (!Array.isArray(groups) || groups.length === 0) return invalid('groups must be a non-empty array');
     if (groups.length > maxGroups) return invalid(`${groups.length} groups exceeds the maximum of ${maxGroups}`);
@@ -86,7 +97,7 @@ export function createArrangeGroups(getRecords: CatalogRecordFetcher): ArrangeGr
     const shortfall: GroupShortfall[] = [];
     const arranged: ArrangedGroup[] = [];
     for (const group of groups) {
-      const items: { objectID: string; link: string }[] = [];
+      const items: { objectID: string; name: string; price: number; link: string }[] = [];
       for (const objectID of group.objectIDs) {
         if (placed.has(objectID)) {
           dropped.push({ objectID, reason: 'duplicate', group: group.title });
@@ -106,15 +117,15 @@ export function createArrangeGroups(getRecords: CatalogRecordFetcher): ArrangeGr
           dropped.push({ objectID, reason: 'unpriced', group: group.title });
           continue;
         }
-        if (ceiling !== undefined && record.price >= ceiling) {
+        if (ceiling !== undefined && (record.price > ceiling || (!ceilingInclusive && record.price === ceiling))) {
           dropped.push({ objectID, reason: 'over_ceiling', group: group.title });
           continue;
         }
-        if (floor !== undefined && record.price <= floor) {
+        if (floor !== undefined && (record.price < floor || (!floorInclusive && record.price === floor))) {
           dropped.push({ objectID, reason: 'under_floor', group: group.title });
           continue;
         }
-        items.push({ objectID, link: record.link });
+        items.push({ objectID, name: record.name, price: record.price, link: record.link });
       }
       const missing = minPerGroup - items.length;
       if (missing > 0) shortfall.push({ group: group.title, missing });

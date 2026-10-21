@@ -1,8 +1,8 @@
 /* Lane 1 deterministic tools, shared record reader (TOOLS-DESIGN-V1.md).
  *
  * One read-only lookup turns a raw prod_catalog record into the small view the
- * four deterministic tools consume. Tools 2, 3 and 4 are thin views of this
- * one record, so there is no repeated fetch or repeated parsing. The fetcher
+ * deterministic tools consume. Each tool is a thin view of this one record, so
+ * there is no repeated fetch or repeated parsing. The fetcher
  * is injected: in the app it is the existing read-only exact-product proxy
  * (/api/products/:id, search-only key stays server-side); in tests it is a
  * plain fixture map. No state, no shopper-facing text. */

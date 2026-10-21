@@ -6,7 +6,7 @@ flowchart LR
   Agent -->|native tool| Search[algolia_search_index]
   Search --> Indexes[(Indexes configured on the agent: prod_catalog, blog, help_content)]
   Indexes --> Agent
-  Agent -->|client tools| Tools[check_price, check_stock, refresh_products, arrange_groups]
+  Agent -->|client tools| Tools[refresh_products, arrange_groups]
   Tools --> Executors[Application executors over read-only product lookups]
   Executors -->|structured results| Agent
   Executors --> Tiles[Workspace tiles, one column per group]

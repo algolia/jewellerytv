@@ -49,19 +49,11 @@ export function buildTurnContext(
       ]),
     saved: session.products.map(({ objectID, quantity }) => [objectID, quantity]),
     compareIds: session.compareIds,
-    currentGroups:
-      session.activeView === 'discover'
-        ? (session.committedProposal?.groups ?? []).map((group) => [
-            group.title,
-            group.lines.map(({ objectID }) => objectID),
-          ])
-        : [],
   };
   const pieces = chunksOf(JSON.stringify(shoppingState));
   const result: Record<string, string> = {
     ...base,
     missionId: session.missionId,
-    briefRevision: String(session.brief.revision),
     turnId: turn.turnId,
     sourceMessageId: turn.sourceMessageId,
     shoppingStateChunks: String(pieces.length),
