@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { toCatalogRecord, createCatalogRecordFetcher } from '../../../src/concierge/tools/catalogRecord';
-import { createCheckPrice } from '../../../src/concierge/tools/checkPrice';
-import { createCheckStock } from '../../../src/concierge/tools/checkStock';
 import { createRefreshProducts } from '../../../src/concierge/tools/refreshProducts';
 import { createArrangeGroups } from '../../../src/concierge/tools/arrangeGroups';
 
@@ -49,8 +47,6 @@ function makeFetcher(table: Record<string, RawRecord> = CAPTURED) {
   return createCatalogRecordFetcher(async (objectID) => table[objectID] ?? null);
 }
 
-const price = () => createCheckPrice(makeFetcher());
-const stock = () => createCheckStock(makeFetcher());
 const refresh = () => createRefreshProducts(makeFetcher());
 const arrange = () => createArrangeGroups(makeFetcher());
 
@@ -71,118 +67,6 @@ describe('catalogRecord', () => {
     const fetcher = createCatalogRecordFetcher(async () => CAPTURED.WPD990);
     const records = await fetcher(['NOPE404']);
     expect(records.has('NOPE404')).toBe(false);
-  });
-});
-
-describe('checkPrice', () => {
-  it('prices in-bounds under a ceiling (WPD990, ceiling 1000)', async () => {
-    const out = await price()({ objectIDs: ['WPD990'], ceiling: 1000 });
-    expect(out).toEqual({
-      status: 'ok',
-      results: [{ objectID: 'WPD990', outcome: 'ok', price: 109.0, withinBounds: true }],
-      duplicates: [],
-    });
-  });
-
-  it('marks far-over-ceiling out of bounds (1164GA, ceiling 1000)', async () => {
-    const out = await price()({ objectIDs: ['1164GA'], ceiling: 1000 });
-    expect(out.status).toBe('ok');
-    expect(out.status === 'ok' && out.results[0]).toEqual({
-      objectID: '1164GA',
-      outcome: 'ok',
-      price: 1902.18,
-      withinBounds: false,
-    });
-  });
-
-  it('marks in-stock-over-ceiling out of bounds; stock is not this tool (1DP94A)', async () => {
-    const out = await price()({ objectIDs: ['1DP94A'], ceiling: 1000 });
-    expect(out.status === 'ok' && out.results[0]).toMatchObject({ withinBounds: false });
-  });
-
-  it('excludes the exact bound (synthetic FIX1000 at a $1,000 ceiling)', async () => {
-    const out = await price()({ objectIDs: ['FIX1000'], ceiling: 1000 });
-    expect(out.status === 'ok' && out.results[0]).toMatchObject({ price: 1000.0, withinBounds: false });
-  });
-
-  it('keeps just-under-the-bound in bounds (WPD157, ceiling 100)', async () => {
-    const out = await price()({ objectIDs: ['WPD157'], ceiling: 100 });
-    expect(out.status === 'ok' && out.results[0]).toMatchObject({ price: 81.2, withinBounds: true });
-  });
-
-  it('applies a floor and a ceiling together (WPD972 in 100-300)', async () => {
-    const out = await price()({ objectIDs: ['WPD972'], floor: 100, ceiling: 300 });
-    expect(out.status === 'ok' && out.results[0]).toMatchObject({ withinBounds: true });
-  });
-
-  it('marks under-floor out of bounds (WPD157, floor 100)', async () => {
-    const out = await price()({ objectIDs: ['WPD157'], floor: 100 });
-    expect(out.status === 'ok' && out.results[0]).toMatchObject({ withinBounds: false });
-  });
-
-  it('prices an out-of-stock record; no stock field in the output (WPG593)', async () => {
-    const out = await price()({ objectIDs: ['WPG593'], ceiling: 1000 });
-    expect(out.status === 'ok' && out.results[0]).toEqual({
-      objectID: 'WPG593',
-      outcome: 'ok',
-      price: 559.99,
-      withinBounds: true,
-    });
-  });
-
-  it('reports a missing ID as not_found (NOPE404)', async () => {
-    const out = await price()({ objectIDs: ['NOPE404'] });
-    expect(out.status === 'ok' && out.results[0]).toEqual({ objectID: 'NOPE404', outcome: 'not_found' });
-  });
-
-  it('returns duplicate input IDs once each, noted (WPD990 x2)', async () => {
-    const out = await price()({ objectIDs: ['WPD990', 'WPD990'] });
-    expect(out.status === 'ok' && out.duplicates).toEqual(['WPD990']);
-    expect(out.status === 'ok' && out.results).toHaveLength(1);
-  });
-
-  it('returns invalid_input for empty input', async () => {
-    const out = await price()({ objectIDs: [] });
-    expect(out.status).toBe('invalid_input');
-  });
-});
-
-describe('checkStock', () => {
-  it('reads in stock (WPD824)', async () => {
-    const out = await stock()({ objectIDs: ['WPD824'] });
-    expect(out.status === 'ok' && out.results[0]).toEqual({ objectID: 'WPD824', outcome: 'ok', inStock: true });
-  });
-
-  it('reads out of stock, the temp4 q02 excluded piece (WPG593)', async () => {
-    const out = await stock()({ objectIDs: ['WPG593'] });
-    expect(out.status === 'ok' && out.results[0]).toEqual({ objectID: 'WPG593', outcome: 'ok', inStock: false });
-  });
-
-  it('reads the second out-of-stock record (WPG776)', async () => {
-    const out = await stock()({ objectIDs: ['WPG776'] });
-    expect(out.status === 'ok' && out.results[0]).toEqual({ objectID: 'WPG776', outcome: 'ok', inStock: false });
-  });
-
-  it('keeps input order on a mixed read (WPD824, WPG593, WPD964)', async () => {
-    const out = await stock()({ objectIDs: ['WPD824', 'WPG593', 'WPD964'] });
-    expect(
-      out.status === 'ok' && out.results.map((r) => (r.outcome === 'ok' ? r.inStock : 'not_found')),
-    ).toEqual([true, false, true]);
-  });
-
-  it('reports a missing ID (NOPE404)', async () => {
-    const out = await stock()({ objectIDs: ['NOPE404'] });
-    expect(out.status === 'ok' && out.results[0]).toEqual({ objectID: 'NOPE404', outcome: 'not_found' });
-  });
-
-  it('deduplicates input (WPG593 x2)', async () => {
-    const out = await stock()({ objectIDs: ['WPG593', 'WPG593'] });
-    expect(out.status === 'ok' && out.duplicates).toEqual(['WPG593']);
-    expect(out.status === 'ok' && out.results).toHaveLength(1);
-  });
-
-  it('returns invalid_input for empty input', async () => {
-    expect((await stock()({ objectIDs: [] })).status).toBe('invalid_input');
   });
 });
 
@@ -359,5 +243,88 @@ describe('arrangeGroups', () => {
       out.status === 'ok' ? out.groups.flatMap((g) => g.items.map((i) => i.objectID)) : [];
     expect(displayed).not.toContain('WPG593');
     expect(displayed).toEqual(['WPD990', 'WPD824', 'WPD972', 'WPD964', 'WPD157']);
+  });
+
+  it('keeps the default strict ceiling: a piece priced exactly at the bound is dropped (FIX1000)', async () => {
+    const out = await arrange()({
+      ceiling: 1000,
+      groups: [
+        { title: 'A', objectIDs: ['FIX1000', 'WPD990'] },
+        { title: 'B', objectIDs: ['WPD824', 'WPD964'] },
+        { title: 'C', objectIDs: ['WPD972', 'WPD157'] },
+      ],
+    });
+    expect(out.status === 'ok' && out.dropped).toEqual([
+      { objectID: 'FIX1000', reason: 'over_ceiling', group: 'A' },
+    ]);
+  });
+
+  it('ceilingInclusive keeps a piece priced exactly at the ceiling ("up to $1,000", FIX1000)', async () => {
+    const out = await arrange()({
+      ceiling: 1000,
+      ceilingInclusive: true,
+      groups: [
+        { title: 'Up to $1,000', objectIDs: ['FIX1000', 'WPD990'] },
+        { title: 'B', objectIDs: ['WPD824', 'WPD964'] },
+        { title: 'C', objectIDs: ['WPD972', 'WPD157'] },
+      ],
+    });
+    expect(out.status).toBe('ok');
+    expect(out.status === 'ok' && out.dropped).toEqual([]);
+    expect(out.status === 'ok' && out.groups[0].items[0]).toEqual({
+      objectID: 'FIX1000',
+      name: 'Fixture FIX1000',
+      price: 1000.0,
+      link: '/product/FIX1000',
+    });
+  });
+
+  it('keeps the default strict floor: a piece priced exactly at the bound is dropped (WPD157 at 81.2)', async () => {
+    const out = await arrange()({
+      floor: 81.2,
+      groups: [
+        { title: 'A', objectIDs: ['WPD157', 'WPD990'] },
+        { title: 'B', objectIDs: ['WPD824', 'WPD964'] },
+        { title: 'C', objectIDs: ['WPD972', 'FIX1000'] },
+      ],
+    });
+    expect(out.status === 'ok' && out.dropped).toEqual([
+      { objectID: 'WPD157', reason: 'under_floor', group: 'A' },
+    ]);
+  });
+
+  it('floorInclusive keeps a piece priced exactly at the floor ("at least $81.20", WPD157)', async () => {
+    const out = await arrange()({
+      floor: 81.2,
+      floorInclusive: true,
+      groups: [
+        { title: 'A', objectIDs: ['WPD157', 'WPD990'] },
+        { title: 'B', objectIDs: ['WPD824', 'WPD964'] },
+        { title: 'C', objectIDs: ['WPD972', 'FIX1000'] },
+      ],
+    });
+    expect(out.status).toBe('ok');
+    expect(out.status === 'ok' && out.dropped).toEqual([]);
+    expect(out.status === 'ok' && out.groups[0].items[0]).toMatchObject({ objectID: 'WPD157', price: 81.2 });
+  });
+
+  it('carries name and price on every returned item so the model never computes a range (D3)', async () => {
+    const out = await arrange()({
+      groups: [
+        { title: 'A', objectIDs: ['WPD990', 'WPD824'] },
+        { title: 'B', objectIDs: ['WPD972', 'WPD964'] },
+        { title: 'C', objectIDs: ['WPD157', 'WPD824'] },
+      ],
+    });
+    expect(out.status).toBe('ok');
+    const items = out.status === 'ok' ? out.groups.flatMap((g) => g.items) : [];
+    expect(items).toHaveLength(5);
+    for (const item of items) {
+      expect(typeof item.name, item.objectID).toBe('string');
+      expect(item.name.length, item.objectID).toBeGreaterThan(0);
+      expect(typeof item.price, item.objectID).toBe('number');
+      expect(Number.isFinite(item.price), item.objectID).toBe(true);
+    }
+    expect(items[0]).toEqual({ objectID: 'WPD990', name: 'Fixture WPD990', price: 109.0, link: '/product/WPD990' });
   });
 });

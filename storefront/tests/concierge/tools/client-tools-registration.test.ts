@@ -15,8 +15,8 @@ import { buildClientTools } from '../../../src/concierge/clientTools';
  *
  * So the registration must CLAIM the native search tool names (so findTool
  * resolves them) while carrying NO onToolCall (the connector then leaves the
- * server-owned streamed output untouched). The four deterministic tools keep
- * their executors.
+ * server-owned streamed output untouched). The deterministic tools keep
+ * their executors; the check tools were removed (D2, 2026-10-21).
  */
 
 const tools = buildClientTools(async () => {
@@ -36,11 +36,17 @@ describe('client tools registration claims the native search tool', () => {
     expect(findTool('algolia_search_index', tools as never)).toBeDefined();
   });
 
-  it('still binds the four deterministic tools with executors', () => {
-    for (const name of ['check_price', 'check_stock', 'refresh_products', 'arrange_groups']) {
+  it('still binds the remaining deterministic tools with executors', () => {
+    for (const name of ['refresh_products', 'arrange_groups']) {
       const tool = findTool(name, tools as never) as { onToolCall?: unknown } | undefined;
       expect(tool, name).toBeDefined();
       expect(typeof tool?.onToolCall, name).toBe('function');
+    }
+  });
+
+  it('no longer registers the removed check tools (D2)', () => {
+    for (const name of ['check_price', 'check_stock']) {
+      expect(findTool(name, tools as never), name).toBeUndefined();
     }
   });
 });

@@ -102,7 +102,7 @@ function decoded(context: Record<string, string>) {
 }
 
 describe('latest-turn shopping context', () => {
-  it('retains accepted facts, saved selections and current group identities', () => {
+  it('retains accepted facts and saved selections, and no longer echoes retired fields', () => {
     const context = buildTurnContext(
       session(['blue dial', 'metal bracelet', 'restrained size', 'under $300', 'watch']),
       { page: 'home' },
@@ -114,13 +114,16 @@ describe('latest-turn shopping context', () => {
     expect(state.facts[0].slice(3)).toEqual([['m', null], 'p', 'e', 'a']);
     expect(state.saved).toEqual([['saved-1', 2]]);
     expect(state.compareIds).toEqual(['saved-1']);
-    expect(state.currentGroups).toEqual([['Most restrained', ['watch-1']]]);
+    // Retired with the old tools (D6, 2026-10-21): the metadata no longer
+    // echoes committedProposal groups or the brief revision, even when a
+    // restored pre-native session still carries a committed proposal.
+    expect('currentGroups' in state).toBe(false);
     expect(context).toMatchObject({
       page: 'home',
       missionId: 'mission',
-      briefRevision: '1',
       turnId: 'turn-2',
     });
+    expect('briefRevision' in context).toBe(false);
     expect(Object.values(context).every((value) => encoder.encode(value).length <= 1024)).toBe(
       true,
     );
@@ -157,7 +160,7 @@ describe('latest-turn shopping context', () => {
     expect(state.saved).toHaveLength(6);
     expect(state.compareIds).toEqual(['saved-0', 'saved-1']);
     expect(state.activeView).toBe('compare');
-    expect(state.currentGroups).toEqual([]);
+    expect('currentGroups' in state).toBe(false);
     expect(encoder.encode(JSON.stringify(context)).length).toBeLessThanOrEqual(4096);
   });
   it('does not reject a valid multi-turn brief solely for exceeding 4 KB total', () => {
