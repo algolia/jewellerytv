@@ -15,7 +15,10 @@ import { createRefreshProducts } from './tools/refreshProducts';
 import { createArrangeGroups } from './tools/arrangeGroups';
 
 export type ClientToolExecutor = {
-  onToolCall: (params: {
+  /** Claims tool names this entry can answer; an entry without onToolCall is
+   * a pure claim: the connector leaves the tool result to its owner. */
+  matchesToolName?: (toolName: string) => boolean;
+  onToolCall?: (params: {
     toolCallId: string;
     toolName: string;
     input: unknown;
@@ -50,6 +53,15 @@ export function buildClientTools(
       }
     };
   return {
+    /* The native search tool's result is streamed by Agent Studio itself; the
+     * connector must not answer it client-side. Claiming the name WITHOUT an
+     * executor makes findTool resolve it so the connector's "No tool
+     * implemented for <name>" fallback never fires — that fallback replaced
+     * the real streamed search output in the follow-up history and the model
+     * searched again from scratch (DIAG-6, measured 2026-10-21). */
+    algolia_search_index: {
+      matchesToolName: (toolName: string) => toolName.startsWith('algolia_search_index'),
+    },
     check_price: { onToolCall: executorFor(checkPrice), timeout: 20000 },
     check_stock: { onToolCall: executorFor(checkStock), timeout: 20000 },
     refresh_products: { onToolCall: executorFor(refreshProducts), timeout: 20000 },
