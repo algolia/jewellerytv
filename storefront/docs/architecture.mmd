@@ -3,21 +3,12 @@ flowchart LR
   UI --> SDK[InstantSearch Chat SDK]
   SDK --> ChatAPI[Application /api/chat proxy]
   ChatAPI --> Agent[One Agent Studio Concierge]
-  UI --> State[Per-tab shopping state]
-  State --> Context[Bounded latest-turn context]
-  Context --> Agent
-  Agent -->|SDK tool call| Update[update_shopping_state callback]
-  Update --> State
-  Agent -->|SDK tool call| Retrieve[retrieve_evidence callback]
-  Retrieve --> API[Read-only application API]
-  API --> Product[(prod_catalog)]
-  API --> Blog[(blog)]
-  API --> Help[(help_content)]
-  API --> Retrieve
-  Retrieve --> Agent
-  Agent -->|SDK tool call| Present[present_choices callback]
-  Present --> Assess[Identity, constraint and subtotal checks]
-  Assess -->|completed turn only| UI
+  Agent -->|native tool| Search[algolia_search_index]
+  Search --> Indexes[(Indexes configured on the agent: prod_catalog, blog, help_content)]
+  Indexes --> Agent
+  Agent -->|native tool| Grouped[algolia_grouped_results]
+  Grouped --> Cards[Workspace cards, one column per group]
+  Cards --> UI
   UI --> Refresh[Exact-ID refresh API]
-  Refresh --> Product
-  Refresh --> State
+  Refresh --> Product[(prod_catalog, read-only)]
+  UI --> State[Per-tab session state]
