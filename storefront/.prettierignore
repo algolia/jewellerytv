@@ -8,3 +8,6 @@ evaluation/**
 **/evidence/**
 node_modules/**
 dist/**
+
+# Raw Agent Studio conversation fixtures (brief A2): saved API responses, not hand-formatted JSON.
+tests/fixtures/conversation-reader/**
