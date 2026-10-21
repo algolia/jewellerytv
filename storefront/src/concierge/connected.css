@@ -199,6 +199,13 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
+/* One turn arrives as several text parts (one per step). A single-paragraph
+ * part renders without a wrapping <p>, so consecutive parts would run
+ * together with no blank line between short paragraphs; give the wrapper the
+ * same paragraph-equivalent spacing. */
+.connected-assistant-text-part {
+  margin: 0 0 0.7em;
+}
 .connected-provisional {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
