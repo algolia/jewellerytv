@@ -686,6 +686,9 @@ export function ConnectedConcierge({
       headers: { 'x-jtv-request-id': chatRequestId.current },
     },
     context: chatContext,
+    onData: (dataPart: { type?: string }) => {
+      if (dataPart?.type === 'data-guardrail-violation') guardrailWithholdRef.current = true;
+    },
     tools: clientTools,
     onFinish,
     onError: onChatError,
@@ -715,6 +718,13 @@ export function ConnectedConcierge({
     setSystemNotices((previous) => (previous.includes(text) ? previous : [...previous, text]));
   }, []);
 
+  /* DIAG-11: set when the stream carries a data-guardrail-violation for the
+   * current turn. The SDK replaces the latest assistant message with the fixed
+   * notice text; the flag lets the notice path stage tiles from an earlier
+   * assistant message of the same turn when it holds a successful
+   * arrange_groups output. No text is authored or reworded here. */
+  const guardrailWithholdRef = useRef(false);
+
   const send = useCallback(
     async (event?: FormEvent, explicitText?: string) => {
       event?.preventDefault();
@@ -729,6 +739,7 @@ export function ConnectedConcierge({
       latestTurn.current = { turnId, sourceMessageId };
       finishRef.current = null;
       chatErrorRef.current = null;
+      guardrailWithholdRef.current = false;
       runtime.beginTurn(turnId);
       setError('');
       setSystemNotices([]);
@@ -832,6 +843,20 @@ export function ConnectedConcierge({
               });
               runtime.endTurn(turnId);
               onSystemNotice(getConnectedTurnSystemNotice(messages, finish, transportError));
+              /* DIAG-11: the guardrail withheld the text, but an earlier
+               * assistant message of this turn may hold a successful
+               * arrange_groups output — tool-verified tiles ready to render.
+               * Stage them and keep the existing fixed notice where the
+               * withheld text would be; no wording changes, no model calls. */
+              if (guardrailWithholdRef.current) {
+                try {
+                  const staged = await session.stageNativePresentation(messages);
+                  if (staged) setNativeGroups(staged);
+                } catch (error) {
+                  if (import.meta.env.DEV)
+                    console.warn('JTV native presentation not staged on withhold', error);
+                }
+              }
             }
             return;
           } catch (cause) {

@@ -48,21 +48,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /** Latest assistant message after the last user message, mirroring
  * turnCompletion.ts's selection so both readers see the same turn. */
-function latestAssistant(messages: readonly Message[]) {
-  let lastUser = -1;
-  for (let index = messages.length - 1; index >= 0; index--) {
-    if (messages[index].role === 'user') {
-      lastUser = index;
-      break;
-    }
-  }
-  if (lastUser < 0) return undefined;
-  return [...messages]
-    .slice(lastUser + 1)
-    .reverse()
-    .find((message) => message.role === 'assistant');
-}
-
 function readGroupedInput(input: unknown): { intro: string; groups: NativeGroup[] } | null {
   if (!isRecord(input)) return null;
   const rawGroups = input.groups;
@@ -130,40 +115,64 @@ function readArrangedOutput(output: unknown): NativeGroup[] | null {
  * eligibility-checked by the deterministic tool, so tiles can only contain
  * pieces the tools approved. The grouped-tool input path stays as the
  * fallback for turns arranged before the tool sheet changes.
+ *
+ * DIAG-11: the scan covers EVERY assistant message after the last shopper
+ * message, newest first, instead of only the latest one. When the output
+ * guardrail withholds an answer, the SDK replaces the LATEST assistant
+ * message with the fixed notice, while an earlier message of the same turn
+ * still holds a successful arrange_groups output — tool-verified, ready to
+ * render. Reading only the latest message discarded exactly that output.
  */
 export function extractNativePresentation(
   messages: readonly Message[],
 ): NativePresentation | null {
-  const assistant = latestAssistant(messages);
-  if (!assistant?.parts) return null;
+  let lastUser = -1;
+  for (let index = messages.length - 1; index >= 0; index--) {
+    if (messages[index].role === 'user') {
+      lastUser = index;
+      break;
+    }
+  }
+  if (lastUser < 0) return null;
+  const assistants = [...messages]
+    .slice(lastUser + 1)
+    .filter((message) => message.role === 'assistant');
   const records = new Map<string, Record<string, unknown>>();
-  let grouped: { intro: string; groups: NativeGroup[] } | null = null;
-  let arranged: NativeGroup[] | null = null;
-  for (const part of assistant.parts as Part[]) {
-    if (typeof part.type !== 'string') continue;
-    if (part.type.startsWith(SEARCH_TOOL_PREFIX) && isRecord(part.output)) {
-      const hits = (part.output as Record<string, unknown>).hits;
-      if (Array.isArray(hits)) {
-        for (const hit of hits) {
-          if (isRecord(hit) && typeof hit.objectID === 'string' && hit.objectID) {
-            if (!records.has(hit.objectID)) records.set(hit.objectID, hit);
+  for (const assistant of assistants) {
+    if (!assistant?.parts) continue;
+    for (const part of assistant.parts as Part[]) {
+      if (typeof part.type !== 'string') continue;
+      if (part.type.startsWith(SEARCH_TOOL_PREFIX) && isRecord(part.output)) {
+        const hits = (part.output as Record<string, unknown>).hits;
+        if (Array.isArray(hits)) {
+          for (const hit of hits) {
+            if (isRecord(hit) && typeof hit.objectID === 'string' && hit.objectID) {
+              if (!records.has(hit.objectID)) records.set(hit.objectID, hit);
+            }
           }
         }
       }
-      continue;
-    }
-    if (part.type === GROUPED_TOOL) {
-      const parsed = readGroupedInput(part.input);
-      if (parsed) grouped = parsed;
-    }
-    if (part.type === ARRANGE_TOOL) {
-      const parsed = readArrangedOutput(part.output);
-      if (parsed) arranged = parsed;
     }
   }
-  if (arranged) return { intro: '', groups: arranged, records };
-  if (!grouped) return null;
-  return { intro: grouped.intro, groups: grouped.groups, records };
+  for (const assistant of [...assistants].reverse()) {
+    if (!assistant?.parts) continue;
+    let grouped: { intro: string; groups: NativeGroup[] } | null = null;
+    let arranged: NativeGroup[] | null = null;
+    for (const part of assistant.parts as Part[]) {
+      if (typeof part.type !== 'string') continue;
+      if (part.type === GROUPED_TOOL) {
+        const parsed = readGroupedInput(part.input);
+        if (parsed) grouped = parsed;
+      }
+      if (part.type === ARRANGE_TOOL) {
+        const parsed = readArrangedOutput(part.output);
+        if (parsed) arranged = parsed;
+      }
+    }
+    if (arranged) return { intro: '', groups: arranged, records };
+    if (grouped) return { intro: grouped.intro, groups: grouped.groups, records };
+  }
+  return null;
 }
 
 /**
