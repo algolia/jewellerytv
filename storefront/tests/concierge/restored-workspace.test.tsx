@@ -34,7 +34,7 @@ function workspace(view: WorkspaceViewModel['activeView'] = 'discover'): Workspa
     toggleCompare: vi.fn(),
     pin: vi.fn(),
     remove: vi.fn(),
-    refreshProducts: vi.fn(async () => undefined),
+    refreshProducts: vi.fn(async () => ({ refreshed: [], missing: [] })),
     refreshing: false,
     refreshError: '',
   };

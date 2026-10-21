@@ -14,6 +14,7 @@ import './product-workspace.css';
 import { markWorkspace, markWorkspaceImage, type WorkspaceTraceBinding } from './telemetry';
 import { checkBriefConflicts } from '../shared/briefConstraints';
 import { useCatalogVocabulary } from './concierge/useCatalogVocabulary';
+import type { ProductRefreshOutcome } from './concierge/exactProductRefresh';
 export type View = 'discover' | 'compare' | 'saved';
 type PresentationModeName = 'three_style_grid' | 'focused_choice';
 type Discovery = {
@@ -41,7 +42,7 @@ export type WorkspaceViewModel = {
   toggleCompare: (id: string) => void;
   pin: (raw: unknown) => void;
   remove: (id: string) => void;
-  refreshProducts: (ids: string[]) => Promise<void>;
+  refreshProducts: (ids: string[]) => Promise<ProductRefreshOutcome>;
   refreshing: boolean;
   refreshError: string;
   assessment?: (product: Product, retrievalStatus?: 'compliant' | 'unknown') => ReactNode;
@@ -72,6 +73,22 @@ function PlainText({ text }: { text: string }) {
     </>
   );
 }
+/** H2: what happens after an image fails to load. A transient failure must
+ * not be cached as a permanent "Image unavailable": the component falls back
+ * to the record's next image, retries the last one once, and only then shows
+ * the honest label. Exported pure so the fallback order is testable without
+ * a DOM. */
+export const IMAGE_RETRY_LIMIT = 1;
+export function nextImageCursor(
+  imageCount: number,
+  cursor: { index: number; attempt: number },
+): { index: number; attempt: number; failed: boolean } {
+  if (cursor.index < imageCount - 1)
+    return { index: cursor.index + 1, attempt: 0, failed: false };
+  if (cursor.attempt < IMAGE_RETRY_LIMIT)
+    return { ...cursor, attempt: cursor.attempt + 1, failed: false };
+  return { ...cursor, failed: true };
+}
 function ProductImage({
   product,
   binding,
@@ -81,28 +98,33 @@ function ProductImage({
   binding?: WorkspaceTraceBinding;
   decorative?: boolean;
 }) {
-  const [failed, setFailed] = useState(false);
+  const images = product.images;
+  const [cursor, setCursor] = useState({ index: 0, attempt: 0, failed: false });
   const img = useRef<HTMLImageElement>(null);
-  const source = product.images[0];
+  const imagesKey = images.join('\n');
+  const source = images[cursor.index];
   const report = (outcome: 'loaded' | 'failed') => {
     if (binding) markWorkspaceImage(binding, `${product.id}:${source}`, outcome);
   };
   useEffect(() => {
-    setFailed(false);
+    setCursor({ index: 0, attempt: 0, failed: false });
+  }, [product.id, imagesKey]);
+  useEffect(() => {
     if (img.current?.complete && source) report(img.current.naturalWidth > 0 ? 'loaded' : 'failed');
-  }, [source, binding?.requestId]);
+  }, [source, cursor.attempt, binding?.requestId]);
   return (
     <div className="pw-image">
-      {source && !failed ? (
+      {source && !cursor.failed ? (
         <img
+          key={`${cursor.index}:${cursor.attempt}`}
           ref={img}
           src={source}
           alt={decorative ? '' : product.title}
           loading="lazy"
           onLoad={() => report('loaded')}
           onError={() => {
-            setFailed(true);
             report('failed');
+            setCursor((current) => nextImageCursor(images.length, current));
           }}
         />
       ) : (
@@ -226,8 +248,11 @@ export function ProductWorkspace({
   const discoveries = s.discoveries ?? [];
   const view = s.activeView ?? 'discover';
   const byId = new Map<string, Product>();
-  s.selectionRecords.forEach((p) => byId.set(p.id, p));
+  /* Store records are set after the discovery copies so a refreshed record
+   * (H2: price/stock from the exact read) wins over the copy staged with the
+   * presentation; saved products still resolve last. */
   discoveries.forEach((g) => g.items.forEach((i) => byId.set(i.product.id, i.product)));
+  s.selectionRecords.forEach((p) => byId.set(p.id, p));
   s.products.forEach((p) => byId.set(p.product.id, p.product));
   const activePreview = previewId && byId.has(previewId) ? previewId : null;
   const selectedIds = s.compareIds;
@@ -555,7 +580,7 @@ export function ProductWorkspace({
                       {heading ? <h3>{heading}</h3> : null}
                       <div className="pw-group-items">
                         {group.items.map(({ product }) =>
-                          tile(product, undefined, undefined, undefined, true),
+                          tile(byId.get(product.id) ?? product, undefined, undefined, undefined, true),
                         )}
                       </div>
                     </div>

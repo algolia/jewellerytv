@@ -52,7 +52,7 @@ function model(): WorkspaceViewModel {
     toggleCompare: vi.fn(),
     pin: vi.fn(),
     remove: vi.fn(),
-    refreshProducts: vi.fn(async () => undefined),
+    refreshProducts: vi.fn(async () => ({ refreshed: [], missing: [] })),
     refreshing: false,
     refreshError: '',
   };
@@ -218,7 +218,7 @@ describe('discovery grid modes and previous-choice label', () => {
       toggleCompare: vi.fn(),
       pin: vi.fn(),
       remove: vi.fn(),
-      refreshProducts: vi.fn(async () => undefined),
+      refreshProducts: vi.fn(async () => ({ refreshed: [], missing: [] })),
       refreshing: false,
       refreshError: '',
     };
