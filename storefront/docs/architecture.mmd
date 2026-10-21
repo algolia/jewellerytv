@@ -6,9 +6,11 @@ flowchart LR
   Agent -->|native tool| Search[algolia_search_index]
   Search --> Indexes[(Indexes configured on the agent: prod_catalog, blog, help_content)]
   Indexes --> Agent
-  Agent -->|native tool| Grouped[algolia_grouped_results]
-  Grouped --> Cards[Workspace cards, one column per group]
-  Cards --> UI
+  Agent -->|client tools| Tools[check_price, check_stock, refresh_products, arrange_groups]
+  Tools --> Executors[Application executors over read-only product lookups]
+  Executors -->|structured results| Agent
+  Executors --> Tiles[Workspace tiles, one column per group]
+  Tiles --> UI
   UI --> Refresh[Exact-ID refresh API]
   Refresh --> Product[(prod_catalog, read-only)]
   UI --> State[Per-tab session state]

@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="560" viewBox="0 0 1180 560" font-family="Helvetica, Arial, sans-serif">
-  <title>JTV Concierge workflow, native-first (agent-2)</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="620" viewBox="0 0 1240 620" font-family="Helvetica, Arial, sans-serif">
+  <title>JTV Concierge workflow, native search plus four deterministic tools (agent-2)</title>
   <defs>
     <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#33415c"/>
     </marker>
   </defs>
-  <rect width="1180" height="560" fill="#ffffff"/>
+  <rect width="1240" height="620" fill="#ffffff"/>
 
   <!-- Row 1: shopper to agent -->
   <polyline points="210,92 250,92" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
@@ -13,12 +13,9 @@
   <polyline points="670,92 710,92" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
   <polyline points="900,92 940,92" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
 
-  <!-- Agent to native tools (right column) -->
+  <!-- Agent to the native search tool -->
   <polyline points="1035,124 1035,200" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
   <text x="1062" y="166" font-size="12" fill="#33415c" text-anchor="middle">calls</text>
-  <!-- Routed down the right margin so the edge clears both tool boxes -->
-  <polyline points="1130,92 1155,92 1155,372 1130,372" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text transform="rotate(-90 1168 232)" x="1168" y="232" font-size="12" fill="#33415c" text-anchor="middle">shows results</text>
 
   <!-- Search tool to indexes, and the indexes' results back to the agent -->
   <polyline points="940,232 860,232" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
@@ -26,12 +23,25 @@
   <polyline points="765,200 765,150 965,150 965,124" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
   <text x="865" y="142" font-size="12" fill="#33415c" text-anchor="middle">returns matches</text>
 
-  <!-- Grouped results to workspace cards, cards back to the workspace -->
-  <polyline points="940,372 900,372" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <polyline points="710,372 395,372 395,124" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="555" y="364" font-size="12" fill="#33415c" text-anchor="middle">cards render here</text>
+  <!-- Agent to the four client tools, down the right margin -->
+  <polyline points="1130,92 1155,92 1155,372 1130,372" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text transform="rotate(-90 1168 232)" x="1168" y="232" font-size="12" fill="#33415c" text-anchor="middle">client tools</text>
 
-  <!-- Workspace down-links: refresh and state, routed clear of other edges -->
+  <!-- Client tools run in the application -->
+  <polyline points="1035,404 1035,480" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text x="1062" y="446" font-size="12" fill="#33415c" text-anchor="middle">runs in the app</text>
+
+  <!-- Structured results back to the agent, far right margin -->
+  <polyline points="1130,512 1195,512 1195,92 1130,92" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text transform="rotate(-90 1208 300)" x="1208" y="300" font-size="12" fill="#33415c" text-anchor="middle">structured results</text>
+
+  <!-- Executors stage the tiles; tiles render in the workspace -->
+  <polyline points="940,512 900,512" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text x="920" y="502" font-size="12" fill="#33415c" text-anchor="middle">tiles</text>
+  <polyline points="710,512 415,512 415,124" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text x="555" y="504" font-size="12" fill="#33415c" text-anchor="middle">cards render here</text>
+
+  <!-- Workspace down-links: refresh and state -->
   <polyline points="380,124 380,440" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
   <text x="297" y="330" font-size="12" fill="#33415c" text-anchor="middle">exact price and stock</text>
   <polyline points="345,124 345,170 115,170 115,200" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
@@ -68,12 +78,17 @@
   <text x="765" y="247" text-anchor="middle" font-size="12" fill="#3d4a66">prod_catalog, blog, help_content</text>
 
   <rect x="940" y="340" width="190" height="64" rx="10" fill="#e9f7ef" stroke="#1e7a4a" stroke-width="1.6"/>
-  <text x="1035" y="367" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">algolia_grouped_results</text>
-  <text x="1035" y="387" text-anchor="middle" font-size="12" fill="#3d4a66">native tool</text>
+  <text x="1035" y="362" text-anchor="middle" font-size="13" font-weight="700" fill="#14213d">check_price, check_stock,</text>
+  <text x="1035" y="380" text-anchor="middle" font-size="13" font-weight="700" fill="#14213d">refresh_products,</text>
+  <text x="1035" y="398" text-anchor="middle" font-size="13" font-weight="700" fill="#14213d">arrange_groups</text>
 
-  <rect x="710" y="340" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
-  <text x="805" y="367" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Workspace cards</text>
-  <text x="805" y="387" text-anchor="middle" font-size="12" fill="#3d4a66">one column per group</text>
+  <rect x="940" y="480" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="1035" y="505" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Application executors</text>
+  <text x="1035" y="525" text-anchor="middle" font-size="12" fill="#3d4a66">read-only product lookups</text>
+
+  <rect x="710" y="480" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="805" y="505" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Workspace tiles</text>
+  <text x="805" y="525" text-anchor="middle" font-size="12" fill="#3d4a66">one column per group</text>
 
   <rect x="250" y="440" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
   <text x="345" y="467" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Exact-ID refresh API</text>
@@ -87,5 +102,5 @@
   <text x="115" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Per-tab session state</text>
   <text x="115" y="247" text-anchor="middle" font-size="12" fill="#3d4a66">sessionPersistence.ts</text>
 
-  <text x="20" y="536" font-size="12" fill="#5b6678">Blue: application. Green: Agent Studio. Amber: Algolia indexes (read-only to this project). The agent decides what to search, say and show; the application renders and refreshes.</text>
+  <text x="20" y="596" font-size="12" fill="#5b6678">Blue: application. Green: Agent Studio. Amber: Algolia indexes (read-only to this project). The agent decides what to search, say and show; the deterministic tools verify price, stock, group size and refresh; the application renders.</text>
 </svg>
