@@ -1,56 +1,91 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title description">
-  <title id="title">JTV Concierge workflow</title>
-  <desc id="description">A shopper uses the two-column workspace. The app streams through its API to one Agent Studio Concierge. The agent calls browser tools to update tab state, retrieve read-only catalogue, blog and Help evidence, and validate product choices before the UI displays completed cards.</desc>
-  <!-- Static GitHub rendering of architecture.mmd. Update both when the workflow changes. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="560" viewBox="0 0 1180 560" font-family="Helvetica, Arial, sans-serif">
+  <title>JTV Concierge workflow, native-first (agent-2)</title>
   <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
-      <path d="M1 1 L9 5 L1 9" fill="none" stroke="#0067F7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#33415c"/>
     </marker>
   </defs>
-  <rect width="1200" height="680" rx="24" fill="#fff"/>
-  <text x="40" y="56" fill="#000033" font-family="Arial, sans-serif" font-size="28" font-weight="700">JTV Concierge workflow</text>
-  <text x="40" y="87" fill="#42526b" font-family="Arial, sans-serif" font-size="17">One conversational agent. Three validated browser tools. Read-only product, blog and Help evidence.</text>
+  <rect width="1180" height="560" fill="#ffffff"/>
 
-  <g fill="#f5f5f7" stroke="#0067F7" stroke-width="2">
-    <rect x="40" y="130" width="200" height="92" rx="12"/>
-    <rect x="290" y="130" width="200" height="92" rx="12"/>
-    <rect x="540" y="130" width="200" height="92" rx="12"/>
-    <rect x="790" y="130" width="370" height="92" rx="12"/>
-    <rect x="790" y="288" width="370" height="76" rx="12"/>
-    <rect x="40" y="452" width="330" height="82" rx="12"/>
-    <rect x="435" y="452" width="330" height="82" rx="12"/>
-    <rect x="830" y="452" width="330" height="82" rx="12"/>
-    <rect x="40" y="584" width="330" height="60" rx="12"/>
-    <rect x="435" y="584" width="330" height="60" rx="12"/>
-    <rect x="830" y="584" width="330" height="60" rx="12"/>
-  </g>
+  <!-- Row 1: shopper to agent -->
+  <polyline points="210,92 250,92" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <polyline points="440,92 480,92" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <polyline points="670,92 710,92" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <polyline points="900,92 940,92" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
 
-  <g fill="none" stroke="#0067F7" stroke-width="3" marker-end="url(#arrow)">
-    <path d="M241 176 H282"/>
-    <path d="M491 176 H532"/>
-    <path d="M741 176 H782"/>
-    <path d="M975 223 V280"/>
-    <path d="M975 365 V405 H205 V444"/>
-    <path d="M975 365 V405 H600 V444"/>
-    <path d="M975 365 V444"/>
-    <path d="M205 535 V576"/>
-    <path d="M600 535 V576"/>
-    <path d="M995 535 V576"/>
-  </g>
+  <!-- Agent to native tools (right column) -->
+  <polyline points="1035,124 1035,200" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text x="1062" y="166" font-size="12" fill="#33415c" text-anchor="middle">calls</text>
+  <!-- Routed down the right margin so the edge clears both tool boxes -->
+  <polyline points="1130,92 1155,92 1155,372 1130,372" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text transform="rotate(-90 1168 232)" x="1168" y="232" font-size="12" fill="#33415c" text-anchor="middle">shows results</text>
 
-  <g fill="#000033" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="middle">
-    <text x="140" y="182">Shopper</text>
-    <text x="390" y="169"><tspan x="390">Two-column UI</tspan><tspan x="390" dy="26">InstantSearch SDK</tspan></text>
-    <text x="640" y="169"><tspan x="640">Application</tspan><tspan x="640" dy="26">chat API</tspan></text>
-    <text x="975" y="169"><tspan x="975">Agent Studio</tspan><tspan x="975" dy="26">Concierge</tspan></text>
-    <text x="975" y="335">Browser callbacks</text>
-    <text x="205" y="488">update_shopping_state</text>
-    <text x="600" y="488">retrieve_evidence</text>
-    <text x="995" y="488">present_choices</text>
-  </g>
-  <g fill="#34415e" font-family="Arial, sans-serif" font-size="17" text-anchor="middle">
-    <text x="205" y="622">Tab state + bounded context</text>
-    <text x="600" y="609"><tspan x="600">Read-only retrieval API</tspan><tspan x="600" dy="21">prod_catalog + blog + help_content</tspan></text>
-    <text x="995" y="609"><tspan x="995">Identity, constraints, cents</tspan><tspan x="995" dy="21">Completed cards to UI</tspan></text>
-  </g>
+  <!-- Search tool to indexes, and the indexes' results back to the agent -->
+  <polyline points="940,232 860,232" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text x="900" y="222" font-size="12" fill="#33415c" text-anchor="middle">queries</text>
+  <polyline points="765,200 765,150 965,150 965,124" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text x="865" y="142" font-size="12" fill="#33415c" text-anchor="middle">returns matches</text>
+
+  <!-- Grouped results to workspace cards, cards back to the workspace -->
+  <polyline points="940,372 900,372" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <polyline points="710,372 395,372 395,124" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text x="555" y="364" font-size="12" fill="#33415c" text-anchor="middle">cards render here</text>
+
+  <!-- Workspace down-links: refresh and state, routed clear of other edges -->
+  <polyline points="380,124 380,440" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text x="297" y="330" font-size="12" fill="#33415c" text-anchor="middle">exact price and stock</text>
+  <polyline points="345,124 345,170 115,170 115,200" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <text x="230" y="162" font-size="12" fill="#33415c" text-anchor="middle">keeps state</text>
+
+  <!-- Refresh to the read-only product index -->
+  <polyline points="250,472 210,472" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+
+  <!-- Boxes -->
+  <rect x="20" y="60" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="115" y="98" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Shopper</text>
+
+  <rect x="250" y="60" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="345" y="87" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Two-column workspace</text>
+  <text x="345" y="107" text-anchor="middle" font-size="12" fill="#3d4a66">Discover, Compare, Save</text>
+
+  <rect x="480" y="60" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="575" y="98" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">InstantSearch Chat SDK</text>
+
+  <rect x="710" y="60" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="805" y="87" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">/api/chat proxy</text>
+  <text x="805" y="107" text-anchor="middle" font-size="12" fill="#3d4a66">server/api.ts</text>
+
+  <rect x="940" y="60" width="190" height="64" rx="10" fill="#e9f7ef" stroke="#1e7a4a" stroke-width="1.6"/>
+  <text x="1035" y="87" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Agent Studio Concierge</text>
+  <text x="1035" y="107" text-anchor="middle" font-size="12" fill="#3d4a66">one published agent</text>
+
+  <rect x="940" y="200" width="190" height="64" rx="10" fill="#e9f7ef" stroke="#1e7a4a" stroke-width="1.6"/>
+  <text x="1035" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">algolia_search_index</text>
+  <text x="1035" y="247" text-anchor="middle" font-size="12" fill="#3d4a66">native tool</text>
+
+  <rect x="670" y="200" width="190" height="64" rx="10" fill="#fff6e5" stroke="#a66a00" stroke-width="1.6"/>
+  <text x="765" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Indexes on the agent</text>
+  <text x="765" y="247" text-anchor="middle" font-size="12" fill="#3d4a66">prod_catalog, blog, help_content</text>
+
+  <rect x="940" y="340" width="190" height="64" rx="10" fill="#e9f7ef" stroke="#1e7a4a" stroke-width="1.6"/>
+  <text x="1035" y="367" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">algolia_grouped_results</text>
+  <text x="1035" y="387" text-anchor="middle" font-size="12" fill="#3d4a66">native tool</text>
+
+  <rect x="710" y="340" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="805" y="367" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Workspace cards</text>
+  <text x="805" y="387" text-anchor="middle" font-size="12" fill="#3d4a66">one column per group</text>
+
+  <rect x="250" y="440" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="345" y="467" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Exact-ID refresh API</text>
+  <text x="345" y="487" text-anchor="middle" font-size="12" fill="#3d4a66">server/concierge</text>
+
+  <rect x="20" y="440" width="190" height="64" rx="10" fill="#fff6e5" stroke="#a66a00" stroke-width="1.6"/>
+  <text x="115" y="467" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">prod_catalog</text>
+  <text x="115" y="487" text-anchor="middle" font-size="12" fill="#3d4a66">read-only</text>
+
+  <rect x="20" y="200" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="115" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Per-tab session state</text>
+  <text x="115" y="247" text-anchor="middle" font-size="12" fill="#3d4a66">sessionPersistence.ts</text>
+
+  <text x="20" y="536" font-size="12" fill="#5b6678">Blue: application. Green: Agent Studio. Amber: Algolia indexes (read-only to this project). The agent decides what to search, say and show; the application renders and refreshes.</text>
 </svg>
