@@ -26,7 +26,7 @@ import { ConnectedShoppingBrief } from './ConnectedShoppingBrief';
 import { ConnectedWelcome, composerSendText, shouldShowEntryGuidance } from './EntryGuidance';
 import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from './starterQuestions';
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
-import { stripTrailingNote } from './nativeResults';
+import { extractNativePresentation, stripTrailingNote } from './nativeResults';
 import { buildClientTools } from './clientTools';
 import type { WorkspaceGroup } from '../workspaceResults';
 import { getFailedToolDetails, hasFailedTool, isCompletedAssistantTurn, turnHasUsableResult } from './turnCompletion';
@@ -686,9 +686,6 @@ export function ConnectedConcierge({
       headers: { 'x-jtv-request-id': chatRequestId.current },
     },
     context: chatContext,
-    onData: (dataPart: { type?: string }) => {
-      if (dataPart?.type === 'data-guardrail-violation') guardrailWithholdRef.current = true;
-    },
     tools: clientTools,
     onFinish,
     onError: onChatError,
@@ -713,17 +710,23 @@ export function ConnectedConcierge({
     // mission-id swap should re-run the reconciliation even though the body
     // no longer reads the id (the receipt is session-scoped).
   }, [chat.messages, chatPersistenceOptions.id]);
+  /* DIAG-11: the SDK answers a data-guardrail-violation by replacing the
+   * whole accumulated turn message with the fixed notice text, destroying the
+   * successful arrange_groups output that arrived earlier in the same turn
+   * (measured: the persisted transcript after a withheld turn holds one
+   * assistant message with only the notice). Snapshot the latest turn that
+   * still carries one, so the notice path can stage those tool-verified
+   * tiles. No text is authored or reworded here. */
+  const arrangeSnapshotRef = useRef<readonly UIMessage[] | null>(null);
+  useEffect(() => {
+    if (!chat.messages.length) return;
+    if (extractNativePresentation(chat.messages)) arrangeSnapshotRef.current = chat.messages;
+  }, [chat.messages]);
+
 
   const onSystemNotice = useCallback((text: string) => {
     setSystemNotices((previous) => (previous.includes(text) ? previous : [...previous, text]));
   }, []);
-
-  /* DIAG-11: set when the stream carries a data-guardrail-violation for the
-   * current turn. The SDK replaces the latest assistant message with the fixed
-   * notice text; the flag lets the notice path stage tiles from an earlier
-   * assistant message of the same turn when it holds a successful
-   * arrange_groups output. No text is authored or reworded here. */
-  const guardrailWithholdRef = useRef(false);
 
   const send = useCallback(
     async (event?: FormEvent, explicitText?: string) => {
@@ -739,7 +742,6 @@ export function ConnectedConcierge({
       latestTurn.current = { turnId, sourceMessageId };
       finishRef.current = null;
       chatErrorRef.current = null;
-      guardrailWithholdRef.current = false;
       runtime.beginTurn(turnId);
       setError('');
       setSystemNotices([]);
@@ -843,14 +845,23 @@ export function ConnectedConcierge({
               });
               runtime.endTurn(turnId);
               onSystemNotice(getConnectedTurnSystemNotice(messages, finish, transportError));
-              /* DIAG-11: the guardrail withheld the text, but an earlier
-               * assistant message of this turn may hold a successful
-               * arrange_groups output — tool-verified tiles ready to render.
-               * Stage them and keep the existing fixed notice where the
-               * withheld text would be; no wording changes, no model calls. */
-              if (guardrailWithholdRef.current) {
+              /* DIAG-11: the SDK answers a data-guardrail-violation by writing
+               * the fixed notice INTO the latest assistant message (its
+               * onToolCall/data branch never reaches onData). When that
+               * happened, an earlier assistant message of the same turn may
+               * still hold a successful arrange_groups output — tool-verified
+               * tiles ready to render. Stage them and keep the existing fixed
+               * notice where the withheld text would be; no wording changes,
+               * no model calls. Detection is the message shape itself: a
+               * message whose whole text is the fixed notice. */
+              const withholdAssistant = latestAssistant(messages);
+              if (
+                withholdAssistant &&
+                messageText(withholdAssistant).startsWith('[System notice]') &&
+                arrangeSnapshotRef.current
+              ) {
                 try {
-                  const staged = await session.stageNativePresentation(messages);
+                  const staged = await session.stageNativePresentation(arrangeSnapshotRef.current);
                   if (staged) setNativeGroups(staged);
                 } catch (error) {
                   if (import.meta.env.DEV)
