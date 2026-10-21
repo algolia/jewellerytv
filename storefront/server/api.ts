@@ -174,12 +174,13 @@ export function createApiHandler(options: ApiOptions) {
   const origins = new Set([...allowedOrigins, ...[...cloudHosts].map((host) => `https://${host}`)]);
   // Agent completions answer headers fast when healthy; silence past these
   // bounds is a failure the shopper must see, not wait on. The headers bound
-  // applies per attempt (the pre-headers retry gets its own window); the
-  // stall bound guards silence between stream chunks after headers arrived.
+  // applies per attempt (the pre-headers retry gets its own window) and is
+  // CLEARED the moment headers resolve — it bounds only the wait for headers,
+  // never the body: an AbortSignal.timeout composed for the whole fetch used
+  // to cut every stream longer than the bound (F2, 2026-10-20). The stall
+  // bound guards silence between stream chunks after headers arrived.
   const upstreamHeadersTimeoutMs = options.upstreamHeadersTimeoutMs ?? 15_000;
   const upstreamStallTimeoutMs = options.upstreamStallTimeoutMs ?? 30_000;
-  const deadlineSignal = (signal: AbortSignal, ms: number) =>
-    ms > 0 ? AbortSignal.any([signal, AbortSignal.timeout(ms)]) : signal;
   return async (req: IncomingMessage, res: ServerResponse) => {
     const telemetry = new RequestTelemetry(req.headers['x-jtv-request-id']);
     const abort = new AbortController();
@@ -302,8 +303,41 @@ export function createApiHandler(options: ApiOptions) {
       // failure is always logged so transient network errors stop being silent.
       const upstreamUrl = `https://${options.appId}.algolia.net${path}`;
       upstreamTarget = path;
-      const callUpstream = () =>
-        upstream(upstreamUrl, {
+      // Per-attempt headers deadline implemented as a timer over its own
+      // controller, composed with (never replacing) the request abort. A
+      // deadline breach stays retryable because the retry gate below reads
+      // abort.signal, not this composed signal. The timer is CLEARED as soon
+      // as headers resolve, so it never governs the body.
+      let clearHeadersDeadline: (() => void) | null = null;
+      const callUpstream = () => {
+        clearHeadersDeadline?.();
+        let headersTimer: NodeJS.Timeout | undefined;
+        if (upstreamHeadersTimeoutMs > 0) {
+          const headersDeadline = new AbortController();
+          headersTimer = setTimeout(
+            () => headersDeadline.abort(new Error('headers deadline')),
+            upstreamHeadersTimeoutMs,
+          );
+          headersTimer.unref();
+          clearHeadersDeadline = () => {
+            if (!headersTimer) return;
+            clearTimeout(headersTimer);
+            headersTimer = undefined;
+            clearHeadersDeadline = null;
+          };
+          return upstream(upstreamUrl, {
+            method,
+            headers: {
+              'content-type': 'application/json',
+              'x-algolia-application-id': options.appId,
+              'x-algolia-api-key': options.apiKey,
+            },
+            body: payload === undefined ? undefined : JSON.stringify(payload),
+            signal: AbortSignal.any([abort.signal, headersDeadline.signal]),
+            redirect: 'error',
+          });
+        }
+        return upstream(upstreamUrl, {
           method,
           headers: {
             'content-type': 'application/json',
@@ -311,23 +345,26 @@ export function createApiHandler(options: ApiOptions) {
             'x-algolia-api-key': options.apiKey,
           },
           body: payload === undefined ? undefined : JSON.stringify(payload),
-          // Per-attempt headers deadline, composed with (never replacing) the
-          // request abort: a deadline breach here stays retryable because the
-          // retry gate below reads abort.signal, not this composed signal.
-          signal: deadlineSignal(abort.signal, upstreamHeadersTimeoutMs),
+          signal: abort.signal,
           redirect: 'error',
         });
+      };
       const response = await telemetry.measure('upstream_headers', async () => {
         try {
-          return await callUpstream();
+          const result = await callUpstream();
+          clearHeadersDeadline?.();
+          return result;
         } catch (error) {
+          clearHeadersDeadline?.();
           if (!stream || abort.signal.aborted) throw error;
           console.error('jtv_upstream_retry', {
             path: upstreamTarget,
             requestId: telemetry.requestId,
             error: describeUpstreamError(error),
           });
-          return await callUpstream();
+          const retried = await callUpstream();
+          clearHeadersDeadline?.();
+          return retried;
         }
       });
       if (!response.ok) {
