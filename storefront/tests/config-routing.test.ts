@@ -22,7 +22,7 @@ it('does not substitute the development identity in production', () => {
   expect(config.productionAgentId).toBeUndefined();
 });
 
-it('rejects malformed identities while allowing the same published agent in both environments', () => {
+it('rejects a malformed identity', () => {
   expect(() =>
     assertAgentIdentityBoundary({
       developmentAgentId: 'invalid id',
@@ -30,11 +30,31 @@ it('rejects malformed identities while allowing the same published agent in both
       environment: 'development',
     }),
   ).toThrow('valid Agent Studio identity');
+});
+
+it('refuses to start when development and production name the same agent', () => {
   expect(() =>
     assertAgentIdentityBoundary({
       developmentAgentId: 'same-agent',
       productionAgentId: 'same-agent',
       environment: 'development',
+    }),
+  ).toThrow('two different agents');
+});
+
+it('accepts two different agents, and accepts a hosted site that sets only the production identity', () => {
+  expect(() =>
+    assertAgentIdentityBoundary({
+      developmentAgentId: 'dev-agent',
+      productionAgentId: 'live-agent',
+      environment: 'development',
+    }),
+  ).not.toThrow();
+  expect(() =>
+    assertAgentIdentityBoundary({
+      developmentAgentId: undefined,
+      productionAgentId: 'live-agent',
+      environment: 'production',
     }),
   ).not.toThrow();
 });
