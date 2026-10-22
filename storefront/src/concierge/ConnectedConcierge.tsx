@@ -77,8 +77,9 @@ export function connectedProgressLabel(
       return 'Continuing your request';
     if (part.state !== 'input-streaming' && part.state !== 'input-available') continue;
     if (part.type === 'tool-update_shopping_state') return 'Updating preferences';
-    if (part.type === 'tool-retrieve_evidence') return 'Checking JTV information';
-    if (part.type === 'tool-present_choices') return 'Preparing product choices';
+    if (part.type.startsWith('tool-algolia_search_index')) return 'Checking JTV information';
+    if (part.type === 'tool-refresh_products' || part.type === 'tool-arrange_groups')
+      return 'Preparing product choices';
     return 'Working with JTV information';
   }
   return 'Concierge is working';

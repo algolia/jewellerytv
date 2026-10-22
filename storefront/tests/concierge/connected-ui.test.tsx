@@ -33,7 +33,7 @@ describe('connected Concierge progress', () => {
     expect(
       connectedProgressLabel(
         'streaming',
-        withPart({ type: 'tool-retrieve_evidence', state: 'input-available' }),
+        withPart({ type: 'tool-algolia_search_index_help_content', state: 'input-available' }),
         'another-shopper',
       ),
     ).toBe('Concierge is working');
@@ -41,7 +41,7 @@ describe('connected Concierge progress', () => {
       connectedProgressLabel(
         'streaming',
         [
-          ...withPart({ type: 'tool-retrieve_evidence', state: 'input-available' }),
+          ...withPart({ type: 'tool-algolia_search_index_help_content', state: 'input-available' }),
           { id: 'shopper-2', role: 'user', parts: [{ type: 'text', text: 'Now show rings' }] },
         ] as UIMessage[],
         'shopper-2',
@@ -60,14 +60,14 @@ describe('connected Concierge progress', () => {
     expect(
       connectedProgressLabel(
         'streaming',
-        withPart({ type: 'tool-retrieve_evidence', state: 'input-available' }),
+        withPart({ type: 'tool-algolia_search_index_help_content', state: 'input-available' }),
         'shopper-1',
       ),
     ).toBe('Checking JTV information');
     expect(
       connectedProgressLabel(
         'streaming',
-        withPart({ type: 'tool-present_choices', state: 'input-available' }),
+        withPart({ type: 'tool-arrange_groups', state: 'input-available' }),
         'shopper-1',
       ),
     ).toBe('Preparing product choices');
@@ -81,7 +81,7 @@ describe('connected Concierge progress', () => {
     expect(
       connectedProgressLabel(
         'streaming',
-        withPart({ type: 'tool-retrieve_evidence', state: 'output-available' }),
+        withPart({ type: 'tool-algolia_search_index_help_content', state: 'output-available' }),
         'shopper-1',
       ),
     ).toBe('Continuing your request');
@@ -95,7 +95,7 @@ describe('connected Concierge progress', () => {
             role: 'assistant',
             parts: [
               { type: 'tool-update_shopping_state', state: 'output-available' },
-              { type: 'tool-retrieve_evidence', state: 'input-available' },
+              { type: 'tool-algolia_search_index_help_content', state: 'input-available' },
             ],
           },
         ] as UIMessage[],
@@ -159,7 +159,7 @@ describe('connected Concierge reset gate', () => {
           role: 'assistant',
           parts: [
             {
-              type: 'tool-retrieve_evidence',
+              type: 'tool-algolia_search_index_help_content',
               toolCallId: 'call-1',
               state: 'output-error',
               input: {},

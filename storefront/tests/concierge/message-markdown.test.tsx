@@ -8,25 +8,29 @@ function assistant(text: string): UIMessage {
   return { id: 'answer', role: 'assistant', parts: [{ type: 'text', text }] };
 }
 
-function sourcedBlogAnswer(text: string, canonicalUrl: string): UIMessage {
+/** A streamed native search part as Agent Studio emits it: part type
+ * `tool-algolia_search_index_<index>` with raw hits (nativeResults.ts shapes). */
+function sourcedSearchAnswer(
+  text: string,
+  canonicalUrl: string,
+  index: 'blog' | 'help_content' | 'prod_catalog' = 'blog',
+): UIMessage {
   return {
     id: 'answer',
     role: 'assistant',
     parts: [
       {
-        type: 'tool-retrieve_evidence',
-        toolCallId: 'blog-call',
+        type: `tool-algolia_search_index_${index}`,
+        toolCallId: 'search-call',
         state: 'output-available',
-        input: {},
+        input: { query: 'watching JTV live' },
         output: {
-          status: 'ok',
-          source: 'blog',
-          records: [
+          hits: [
             {
-              source: 'blog',
               objectID: 'sapphire-guide',
-              contentHash: 'verified-content-hash',
-              record: { canonical_url: canonicalUrl },
+              title: 'Watching JTV live',
+              canonical_url: canonicalUrl,
+              content_hash: 'verified-content-hash',
             },
           ],
         },
@@ -58,9 +62,9 @@ describe('connected conversation rendering', () => {
     expect(html).toContain('connected-provisional');
     expect(renderToStaticMarkup(<ConversationMessage message={message} revealed={false} />)).toBe('');
   });
-  it('renders assistant emphasis, lists and a retrieved canonical blog link', () => {
+  it('renders assistant emphasis, lists and a streamed canonical blog link', () => {
     const url = 'https://www.jtv.com/blog/sapphire-guide';
-    const message = sourcedBlogAnswer(
+    const message = sourcedSearchAnswer(
       `**Two choices**\n\n- A simple chain\n- A bolder chain\n\n[Read JTV’s sapphire guide](${url})`,
       url,
     );
@@ -77,8 +81,72 @@ describe('connected conversation rendering', () => {
     expect(html).toContain('rel="noopener noreferrer"');
     expect(html).not.toContain('**Two choices**');
   });
+  it('renders a streamed help_content link the same way', () => {
+    const url = 'https://www.jtv.com/on-tv/live-streaming';
+    const message = sourcedSearchAnswer(
+      `[Watch us Live](${url}) shows our live programming.`,
+      url,
+      'help_content',
+    );
+    const html = renderToStaticMarkup(
+      <ConversationMessage
+        message={message}
+        revealed
+        verifiedBlogUrls={canonicalBlogUrlsFromMessages([message])}
+      />,
+    );
+    expect(html).toContain(`href="${url}"`);
+  });
+  it('authorizes a link the retrieved record carries inside its content', () => {
+    // Live pattern 2026-10-22: the help article body links the Channel Finder;
+    // the model quotes that link verbatim while canonical_url names the article.
+    const message: UIMessage = {
+      id: 'answer',
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool-algolia_search_index_help_content',
+          toolCallId: 'search-call',
+          state: 'output-available',
+          input: { query: 'channel finder' },
+          output: {
+            hits: [
+              {
+                objectID: 'help_broadcast_programming',
+                title: 'Broadcast Programming FAQs',
+                canonical_url: 'https://www.jtv.com/help/broadcast-programming',
+                content_hash: 'verified-content-hash',
+                content:
+                  'Please select the [Channel Finder](https://www.jtv.com/show/channel-finder) link from the navigation bar.',
+              },
+            ],
+          },
+        },
+        { type: 'text', text: '[Channel Finder](https://www.jtv.com/show/channel-finder) shows local channels.' },
+      ] as UIMessage['parts'],
+    };
+    const html = renderToStaticMarkup(
+      <ConversationMessage
+        message={message}
+        revealed
+        verifiedBlogUrls={canonicalBlogUrlsFromMessages([message])}
+      />,
+    );
+    expect(html).toContain('href="https://www.jtv.com/show/channel-finder"');
+    expect(html).toContain('Channel Finder');
+  });
+  it('does not authorize links from product searches or partial tool parts', () => {
+    const url = 'https://www.jtv.com/blog/sapphire-guide';
+    expect(
+      canonicalBlogUrlsFromMessages([sourcedSearchAnswer('text', url, 'prod_catalog')]).size,
+    ).toBe(0);
+    const partial = sourcedSearchAnswer('text', url);
+    const part = partial.parts[0] as { state?: string };
+    part.state = 'streaming';
+    expect(canonicalBlogUrlsFromMessages([partial]).size).toBe(0);
+  });
   it('keeps an unverified or non-JTV blog destination as plain text', () => {
-    const message = sourcedBlogAnswer(
+    const message = sourcedSearchAnswer(
       '[Read JTV’s sapphire guide](https://example.com/sapphire-guide)',
       'https://www.jtv.com/blog/sapphire-guide',
     );
@@ -92,7 +160,7 @@ describe('connected conversation rendering', () => {
     expect(html).toContain('Read JTV’s sapphire guide');
     expect(html).not.toContain('href="https://example.com/sapphire-guide"');
     expect(
-      canonicalBlogUrlsFromMessages([sourcedBlogAnswer('Read more', 'http://www.jtv.com/guide')])
+      canonicalBlogUrlsFromMessages([sourcedSearchAnswer('Read more', 'http://www.jtv.com/guide')])
         .size,
     ).toBe(0);
   });
