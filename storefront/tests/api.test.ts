@@ -72,6 +72,18 @@ describe('protected local API', () => {
     expect((await request('/api/search')).status).toBe(404);
     expect(upstream).not.toHaveBeenCalled();
   });
+  it('accepts localhost origins on any local port', async () => {
+    // The vite dev proxy forwards the browser's Origin header, so a demo served
+    // on a port other than 5173 must still reach the local API.
+    const { request, upstream } = await setup();
+    const response = await request(
+      '/api/search',
+      { requests: [{ indexName: 'prod_catalog', params: { query: 'rings' } }] },
+      { origin: 'http://localhost:5295', 'sec-fetch-site': 'same-origin' },
+    );
+    expect(response.status).toBe(200);
+    expect(upstream).toHaveBeenCalled();
+  });
   it('uses exact escaped object identity and masks upstream failures', async () => {
     const { request, upstream } = await setup();
     upstream.mockResolvedValueOnce(new Response('private upstream detail', { status: 403 }));
