@@ -4,6 +4,7 @@ import { once } from 'node:events';
 import { z } from 'zod';
 import { RequestTelemetry, productionTelemetryLogger, type TelemetryLogger } from './telemetry.js';
 import { runExactProductRefreshRoute } from './concierge/exactProductRefreshRoute.js';
+import { createToolSheetCheck } from './concierge/toolSheetCheck.js';
 import {
   createCatalogVocabulary,
   type CatalogVocabularyCache,
@@ -121,6 +122,12 @@ export type ApiOptions = {
    */
   upstreamHeadersTimeoutMs?: number;
   upstreamStallTimeoutMs?: number;
+  /**
+   * Compare the concierge agent's declared tools with the tools this app
+   * answers. A mismatch turns every chat turn into a labelled 503 system
+   * error instead of an agent that appears to fail. Off unless requested.
+   */
+  toolSheetGuard?: boolean;
 };
 const allowedOrigins = new Set(['http://localhost:5173', 'http://127.0.0.1:5173']);
 function reply(res: ServerResponse, status: number, data: unknown) {
@@ -168,6 +175,17 @@ export function createApiHandler(options: ApiOptions) {
     typeof value === 'string' && /^[A-Za-z0-9-]{1,100}$/.test(value);
   const conciergeId =
     environment === 'production' ? options.productionAgentId : options.developmentAgentId;
+  const toolSheet =
+    options.toolSheetGuard && validIdentity(conciergeId)
+      ? createToolSheetCheck({
+          appId: options.appId,
+          apiKey: options.apiKey,
+          agentId: conciergeId,
+          fetch: upstream,
+        })
+      : null;
+  // Warm the check so a mismatch is logged at start-up, not on the first turn.
+  void toolSheet?.get();
   const cloudHosts = new Set(options.allowedHosts ?? []);
   for (const host of cloudHosts)
     if (!/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/.test(host)) throw new Error('Invalid deployment host');
@@ -228,7 +246,13 @@ export function createApiHandler(options: ApiOptions) {
         return;
       }
       if (req.method === 'GET' && url.pathname === '/api/health') {
-        reply(res, 200, { ok: true, mode: 'live', environment });
+        const sheet = await toolSheet?.get();
+        reply(res, 200, {
+          ok: true,
+          mode: 'live',
+          environment,
+          ...(sheet ? { toolSheet: { status: sheet.status, unanswered: sheet.unanswered } } : {}),
+        });
         return;
       }
       if (req.method === 'GET' && url.pathname === '/api/catalog-vocabulary') {
@@ -288,6 +312,15 @@ export function createApiHandler(options: ApiOptions) {
       } else if (req.method === 'POST' && url.pathname === '/api/chat') {
         if (!validIdentity(conciergeId)) {
           reply(res, 503, { error: 'Concierge is not configured' });
+          return;
+        }
+        const sheet = await toolSheet?.get();
+        if (sheet?.status === 'mismatch') {
+          reply(res, 503, {
+            error: 'The agent declares tools this app cannot answer',
+            code: 'tool_sheet_mismatch',
+            unanswered: sheet.unanswered,
+          });
           return;
         }
         payload = chatSchema.parse(await body(req));

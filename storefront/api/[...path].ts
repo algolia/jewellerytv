@@ -8,6 +8,7 @@ export default async function vercelApi(req: IncomingMessage, res: ServerRespons
   try {
     handler ??= createApiHandler({
       ...loadConfig(),
+      toolSheetGuard: true,
       allowedHosts: [process.env.VERCEL_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL,
         ...(process.env.APP_ALLOWED_HOSTS || '').split(',')].filter((host): host is string => !!host),
     });
