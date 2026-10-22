@@ -25,11 +25,6 @@
   <aside class="docs-sidebar" aria-label="Documentation navigation">
     <details open>
       <summary class="side-summary">All pages</summary>
-      <div class="side-search">
-        <span class="lens" aria-hidden="true">Search pages</span>
-        <input id="navfilter" type="search" placeholder="Find a page"
-               aria-label="Find a page">
-      </div>
       <nav class="docs-nav" id="docnav">
         <h3>Start here</h3>
         <ul>
@@ -283,25 +278,6 @@
 
 <script>
 (function () {
-  var input = document.getElementById('navfilter');
-  if (input) {
-    input.addEventListener('input', function () {
-      var q = input.value.trim().toLowerCase();
-      var groups = document.querySelectorAll('#docnav h3');
-      var any = false;
-      groups.forEach(function (h) {
-        var ul = h.nextElementSibling, shown = 0;
-        ul.querySelectorAll('li').forEach(function (li) {
-          var hit = !q || li.textContent.toLowerCase().indexOf(q) !== -1;
-          li.style.display = hit ? '' : 'none';
-          if (hit) shown++;
-        });
-        h.style.display = shown ? '' : 'none';
-        if (shown) any = true;
-      });
-      document.querySelector('.side-empty').style.display = any ? 'none' : 'block';
-    });
-  }
   var tocLinks = document.querySelectorAll('#toc a');
   if (tocLinks.length && 'IntersectionObserver' in window) {
     var map = {};
