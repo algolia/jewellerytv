@@ -12,7 +12,7 @@ A public JTV-style storefront for exploring jewelry through conversation. One Co
 
 ![JTV Concierge workflow](storefront/docs/architecture.svg)
 
-The [editable workflow source](storefront/docs/architecture.mmd) records the runtime boundaries, the tool-sheet guard and how a change reaches production. The static SVG uses system fonts and self-contained shapes, so GitHub can render it without a separate PNG fallback.
+The [editable workflow source](storefront/docs/architecture.mmd) keeps the diagram's source. The detailed developer view, including both safety checks and how a change reaches production, lives in the public [documentation pages](storefront/public/docs/index.html). The static SVG uses system fonts and self-contained shapes, so GitHub can render it without a separate PNG fallback.
 
 The Concierge owns interpretation, tone, questions, search decisions, curation and explanations. The application owns state, identity, source boundaries, exact arithmetic and display validation. The Concierge searches the catalogue, blog and Help content with Agent Studio's own `algolia_search_index` tool and calls two deterministic client tools the application executes (`refresh_products`, `arrange_groups`), so stock, group size, bounds and refresh are tested code while judgment stays with the agent. `arrange_groups` accepts inclusive-bound flags and returns each piece's name and price. The three earlier client-side tools (`update_shopping_state`, `retrieve_evidence`, `present_choices`) were retired when this baseline replaced them in production on 2026-10-22. Product, blog and Help indices and all index settings remain read-only. The app does not contain canned Concierge replies or a second conversational router.
 
