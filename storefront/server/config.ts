@@ -20,6 +20,14 @@ export function assertAgentIdentityBoundary(config: AgentIdentityConfig) {
 
   validate('JTV_CONCIERGE_DEVELOPMENT_AGENT_ID', config.developmentAgentId);
   validate('JTV_CONCIERGE_PRODUCTION_AGENT_ID', config.productionAgentId);
+  // Local development and the hosted site must never share an agent: a shared
+  // agent sends local test turns to production conversations. The hosted site
+  // sets only the production identity, so this only compares when both are set.
+  if (config.developmentAgentId && config.developmentAgentId === config.productionAgentId) {
+    throw new Error(
+      'JTV_CONCIERGE_DEVELOPMENT_AGENT_ID and JTV_CONCIERGE_PRODUCTION_AGENT_ID must name two different agents',
+    );
+  }
 }
 
 function readLocalEnvironment() {
