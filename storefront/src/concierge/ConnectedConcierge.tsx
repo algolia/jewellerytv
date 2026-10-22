@@ -395,6 +395,25 @@ export function getConnectedTurnSystemNotice(
   return '[System notice] This request did not produce a complete response. Existing product choices remain.';
 }
 
+/** The agent sometimes writes links as HTML anchors, quoting the raw HTML
+ * embedded in help and blog article bodies. The markdown renderer drops raw
+ * HTML by design (the raw-HTML test below), so rewrite the anchor SYNTAX to
+ * markdown link syntax before rendering. Words and destination are the
+ * model's own; the authorization gate still decides whether the href renders.
+ * An href markdown cannot carry (whitespace, unbalanced paren) degrades to
+ * its label, the same outcome an unauthorized link gets. */
+export function normalizeAgentAnchors(text: string): string {
+  return text.replace(
+    /<a\s[^>]*href=("([^"]*)"|'([^']*)')[^>]*>([\s\S]*?)<\/a>/gi,
+    (_match, _quoted: string, dq?: string, sq?: string, inner?: string) => {
+      const href = dq ?? sq ?? '';
+      const label = (inner ?? '').replace(/<[^>]+>/g, '').trim();
+      if (!href || !label || /[\s()]/.test(href)) return label;
+      return `[${label}](${href})`;
+    },
+  );
+}
+
 export function ConversationMessage({
   message,
   revealed,
@@ -465,7 +484,7 @@ export function ConversationMessage({
                 },
               }}
             >
-              {text}
+              {normalizeAgentAnchors(text)}
             </Markdown>
           )}
         </div>
