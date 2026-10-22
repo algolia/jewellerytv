@@ -145,6 +145,36 @@ describe('connected conversation rendering', () => {
     part.state = 'streaming';
     expect(canonicalBlogUrlsFromMessages([partial]).size).toBe(0);
   });
+  it('renders an HTML anchor the model quoted from a record as a real link', () => {
+    const url = 'https://www.jtv.com/show/jtv-live';
+    const message: UIMessage = {
+      id: 'answer',
+      role: 'assistant',
+      parts: [
+        sourcedSearchAnswer('', url, 'help_content').parts[0],
+        { type: 'text', text: `Click <a href="${url}">Watch us Live</a> from the navigation bar.` },
+      ] as UIMessage['parts'],
+    };
+    const html = renderToStaticMarkup(
+      <ConversationMessage
+        message={message}
+        revealed
+        verifiedBlogUrls={canonicalBlogUrlsFromMessages([message])}
+      />,
+    );
+    expect(html).toContain(`href="${url}"`);
+    expect(html).toContain('Watch us Live');
+    expect(html).not.toContain('&lt;a');
+  });
+  it('degrades an unauthorized HTML anchor to its label without the tag', () => {
+    const message = assistant(
+      'Click <a href="https://example.com/live">Watch us Live</a> from the navigation bar.',
+    );
+    const html = renderToStaticMarkup(<ConversationMessage message={message} revealed />);
+    expect(html).toContain('Watch us Live');
+    expect(html).not.toContain('<a href=');
+    expect(html).not.toContain('example.com');
+  });
   it('keeps an unverified or non-JTV blog destination as plain text', () => {
     const message = sourcedSearchAnswer(
       '[Read JTV’s sapphire guide](https://example.com/sapphire-guide)',
