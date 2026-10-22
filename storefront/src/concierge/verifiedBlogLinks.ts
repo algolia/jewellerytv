@@ -25,40 +25,53 @@ function canonicalJtvUrl(value: unknown): string | null {
   }
 }
 
-/** Only client-tool results from the current transcript can authorize an
- * article or help-page link. Citation-only sources: blog and help. Help
- * records are never presentable product lines, so this set governs prose
- * links only. (Function names kept from the blog-only era; they now cover
- * every citation-capable non-product source.) */
+/** Only tool results from the current transcript can authorize an article or
+ * help-page link. Citation-only sources: the blog and help_content indexes,
+ * streamed by the agent's native search tool as `tool-algolia_search_index_<index>`
+ * parts with raw hits (the retrieve_evidence envelope is gone with the client
+ * tool layer). A record authorizes the URLs it carries: its canonical_url and
+ * any https jtv.com URL embedded in the record text (help and blog articles
+ * link pages such as the Channel Finder inside their body markdown — the
+ * model quotes those links, and 2026-10-22 receipts confirm both turns).
+ * Product searches never authorize prose links; product links keep their own
+ * verified path. */
 export function canonicalBlogUrlsFromMessages(
   messages: readonly MessageParts[],
 ): ReadonlySet<string> {
   const urls = new Set<string>();
+  const citationIndex = new Set(['blog', 'help_content']);
   for (const message of messages) {
     if (message.role !== 'assistant') continue;
     for (const rawPart of message.parts) {
       const part = object(rawPart);
-      if (part?.type !== 'tool-retrieve_evidence' || part.state !== 'output-available') continue;
+      if (part?.state !== 'output-available' || typeof part.type !== 'string') continue;
+      if (!part.type.startsWith('tool-algolia_search_index_')) continue;
+      const index = part.type.slice('tool-algolia_search_index_'.length);
+      if (!citationIndex.has(index)) continue;
       const output = object(part.output);
-      if (
-        output?.status !== 'ok' ||
-        (output.source !== 'blog' && output.source !== 'help') ||
-        !Array.isArray(output.records)
-      )
-        continue;
-      for (const rawRecord of output.records) {
-        const evidence = object(rawRecord);
+      if (!output || !Array.isArray(output.hits)) continue;
+      for (const rawHit of output.hits) {
+        const hit = object(rawHit);
         if (
-          !evidence ||
-          (evidence.source !== 'blog' && evidence.source !== 'help') ||
-          typeof evidence.objectID !== 'string' ||
-          !evidence.objectID ||
-          typeof evidence.contentHash !== 'string' ||
-          !evidence.contentHash
+          !hit ||
+          typeof hit.objectID !== 'string' ||
+          !hit.objectID ||
+          typeof hit.content_hash !== 'string' ||
+          !hit.content_hash
         )
           continue;
-        const url = canonicalJtvUrl(object(evidence.record)?.canonical_url);
-        if (url) urls.add(url);
+        const recordUrl = canonicalJtvUrl(hit.canonical_url);
+        if (recordUrl) urls.add(recordUrl);
+        for (const value of Object.values(hit)) {
+          if (typeof value !== 'string') continue;
+          // RFC 3986 ASCII URL characters only: the match stops at the closing
+          // parenthesis of a markdown link and at curly quotes, so adjacency
+          // like "](url)[Next" or "(url)" never leaks into the allowed set.
+          for (const match of value.matchAll(/https?:\/\/[A-Za-z0-9\-._~:/?#@!$&+,;=%]+/g)) {
+            const url = canonicalJtvUrl(match[0].replace(/[.,;:!'"’”]+$/, ''));
+            if (url) urls.add(url);
+          }
+        }
       }
     }
   }
