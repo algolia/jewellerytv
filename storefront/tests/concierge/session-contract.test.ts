@@ -65,7 +65,7 @@ describe('simplified session contract', () => {
     const raw = v1();
     s.values.set(LEGACY_SESSION_KEY, raw);
     const p = createSessionPersistence(s, 'm');
-    p.load().state;
+    p.load();
     p.commitMutation((state) => ({ ...state, brief: { ...state.brief, revision: 1 } }));
     expect(s.values.get(LEGACY_BACKUP_KEY)).toBe(raw);
     expect(s.values.get(V3_SESSION_KEY)).toBeTruthy();
