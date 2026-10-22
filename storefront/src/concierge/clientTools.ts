@@ -12,6 +12,7 @@
 import { createCatalogRecordFetcher, type CatalogRecordFetcher } from './tools/catalogRecord';
 import { createRefreshProducts } from './tools/refreshProducts';
 import { createArrangeGroups } from './tools/arrangeGroups';
+import { APP_ANSWERED_TOOL_NAMES, SEARCH_TOOL_PREFIX } from '../../shared/concierge/toolSheetGuard';
 
 export type ClientToolExecutor = {
   /** Claims tool names this entry can answer; an entry without onToolCall is
@@ -30,7 +31,9 @@ export type ClientToolExecutor = {
 /** Tool names as declared in the tool sheet; snake_case like production's.
  * The check tools were removed (Arijit's D2 decision): arrange_groups already
  * re-validates every piece, and refresh_products covers single-piece facts. */
-export const CLIENT_TOOL_NAMES = ['refresh_products', 'arrange_groups'] as const;
+/* The list lives in shared/concierge/toolSheetGuard.ts so the server's
+ * tool-sheet check and this registry cannot drift apart. */
+export const CLIENT_TOOL_NAMES = APP_ANSWERED_TOOL_NAMES;
 
 export function buildClientTools(
   fetchRawRecord: (objectID: string) => Promise<unknown>,
@@ -59,7 +62,7 @@ export function buildClientTools(
      * the real streamed search output in the follow-up history and the model
      * searched again from scratch (DIAG-6, measured 2026-10-21). */
     algolia_search_index: {
-      matchesToolName: (toolName: string) => toolName.startsWith('algolia_search_index'),
+      matchesToolName: (toolName: string) => toolName.startsWith(SEARCH_TOOL_PREFIX),
     },
     refresh_products: { onToolCall: executorFor(refreshProducts), timeout: 20000 },
     arrange_groups: { onToolCall: executorFor(arrangeGroups), timeout: 20000 },

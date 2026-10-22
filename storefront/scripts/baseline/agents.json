@@ -1,0 +1,5 @@
+{
+  "_comment": "The two Agent Studio agents of the baseline. Identifiers only, no credentials. Dev is what npm run dev talks to; production is what jewellerytv.vercel.app talks to. Their definitions (instructions, system prompt, tools, config) must stay identical; change dev, test, then promote.",
+  "dev": "8129ad66-170b-4bb5-926a-c81d2cb38f22",
+  "production": "0bdf59fe-e598-4db7-b139-2b93d5255bb4"
+}

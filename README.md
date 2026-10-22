@@ -6,19 +6,19 @@ The durable JTV charter, five-stage playbook, decisions, requirements and Plan 3
 
 A public JTV-style storefront for exploring jewelry through conversation. One Concierge in Algolia's Agent Studio learns the shopper's preferences, searches the read-only JTV catalogue and guidance, and helps them discover, save, compare and combine pieces. The shopper sees conversation beside a product workspace.
 
-**Status:** This repository is an incomplete Plan 3.1 snapshot. The Concierge is live on the public [main Vercel URL](https://jewellerytv.vercel.app/) with no Vercel login. Connected browser checks showed necklace discovery and correction, honest commerce boundaries, and five watches across three compact discovery groups. Short model-facing evidence references map to full canonical identities internally. The published Agent Studio state tool uses a strict required-but-nullable `sourceQuote`: precise shopper phrases are retained when supplied, while null uses the exact current short message and long messages fail closed. The exact production deployment identity is recorded in the local Plan 3.1 and `SESSION.md` handoff. Full anniversary, replacement, guardrail and continuity acceptance remains open; no checkout or purchase verification exists.
+**Status:** This repository holds the baseline of 2026-10-22: the application on `main` and the Concierge agent are the same in local development and in production ([the baseline](storefront/docs/BASELINE.md)), and all future work starts from it. The Concierge is live on the public [main Vercel URL](https://jewellerytv.vercel.app/) with no Vercel login. Full anniversary, replacement, guardrail and continuity acceptance (Plan 3.1) remains open; no checkout or purchase verification exists.
 
 **Public hosted app:** [jewellerytv.vercel.app](https://jewellerytv.vercel.app)
 
-**GitHub:** [ArijitChowdhury-Algolia/jewellerytv](https://github.com/ArijitChowdhury-Algolia/jewellerytv)
+**GitHub:** [algolia/jewellerytv](https://github.com/algolia/jewellerytv)
 
 ## How it works
 
 ![JTV Concierge workflow](storefront/docs/architecture.svg)
 
-The [editable workflow source](storefront/docs/architecture.mmd) records the full state, retrieval and exact-ID refresh paths. The static SVG uses system fonts and self-contained shapes, so GitHub can render it without a separate PNG fallback.
+The [editable workflow source](storefront/docs/architecture.mmd) records the runtime boundaries, the tool-sheet guard and how a change reaches production. The static SVG uses system fonts and self-contained shapes, so GitHub can render it without a separate PNG fallback.
 
-The Concierge owns interpretation, tone, questions, search decisions, curation and explanations. The application owns state, identity, source boundaries, exact arithmetic and display validation. On this branch the Concierge searches the catalogue, blog and Help content with Agent Studio's own `algolia_search_index` tool and calls two deterministic client tools the application executes (`refresh_products`, `arrange_groups`), so stock, group size, bounds and refresh are tested code while judgment stays with the agent. `arrange_groups` accepts inclusive-bound flags and returns each piece's name and price; the published production agent still uses the three client-side tools (`update_shopping_state`, `retrieve_evidence`, `present_choices`), which this branch does not run. Product, blog and Help indices and all index settings remain read-only. The app does not contain canned Concierge replies or a second conversational router.
+The Concierge owns interpretation, tone, questions, search decisions, curation and explanations. The application owns state, identity, source boundaries, exact arithmetic and display validation. The Concierge searches the catalogue, blog and Help content with Agent Studio's own `algolia_search_index` tool and calls two deterministic client tools the application executes (`refresh_products`, `arrange_groups`), so stock, group size, bounds and refresh are tested code while judgment stays with the agent. `arrange_groups` accepts inclusive-bound flags and returns each piece's name and price. The three earlier client-side tools (`update_shopping_state`, `retrieve_evidence`, `present_choices`) were retired when this baseline replaced them in production on 2026-10-22. Product, blog and Help indices and all index settings remain read-only. The app does not contain canned Concierge replies or a second conversational router.
 
 The browser keeps the current shopping mission in session storage. Discover, Compare and Save share that state. Discover renders the agent's arranged groups as one column of cards per group, at most three groups with two cards each, with Save and Compare on each card; the tiles are exactly what the deterministic arrange tool verified, so an out-of-stock or out-of-bounds piece never renders. When the output guardrail withholds an answer, the tiles the tool already verified stay visible beside the fixed system notice. When a tool call fails mid-turn but the model recovers with real results and an answer, the turn is shown instead of a failure notice. A new conversation keeps Saved pieces while resetting the brief and working selection. The longer-term Save/Compare session lifecycle has not been decided. Agent Studio memory is off, and there is no login or cross-device state.
 
@@ -39,7 +39,7 @@ SPA history-based page views are controlled by the GA4 web stream's enhanced mea
 
 ## Run locally
 
-Use Node.js 24 and npm. Supply the server-side Algolia values and published Concierge agent ID in the project-root `.env.local` as described in [the environment template](storefront/.env.example). The two environment variables may name the same agent. Do not put credentials in `VITE_*` variables or Git.
+Use Node.js 24 and npm. Supply the server-side Algolia values and published Concierge agent ID in the project-root `.env.local` as described in [the environment template](storefront/.env.example). The two variables name two different agents with identical definitions; see [the baseline](storefront/docs/BASELINE.md). Do not put credentials in `VITE_*` variables or Git.
 
 ```sh
 cd storefront
@@ -51,6 +51,6 @@ Open `http://localhost:5173`. The local API runs on `127.0.0.1:5174`. The [store
 
 ## Verification and limits
 
-The local build uses TypeScript, Vitest, ESLint and dependency checks. The live Concierge and guardrail must be judged through actual connected browser journeys. A successful tool receipt, a green unit suite or a deployed page is not proof of a complete shopping experience. The current release's exact test, CI, agent and deployment identities belong in the [snapshot handoff](storefront/docs/PLAN-3.1-STATUS.md).
+The local build uses TypeScript, Vitest, ESLint and dependency checks. The live Concierge and guardrail must be judged through actual connected browser journeys. A successful tool receipt, a green unit suite or a deployed page is not proof of a complete shopping experience. The baseline's agent fingerprints are recorded in [`storefront/scripts/baseline/baseline.json`](storefront/scripts/baseline/baseline.json) and checked with `node scripts/baseline/verify-baseline.mjs`; acceptance history is in the [snapshot handoff](storefront/docs/PLAN-3.1-STATUS.md).
 
 The hosted demo is publicly accessible without a Vercel login. Git-triggered deployments are disabled; a GitHub push does not deploy. The `/api/chat` endpoint is publicly reachable and invokes the published agent, so monitor its usage as public traffic grows. Customer index records, rankings, synonyms and settings must never be changed as part of this project. JTV marks and imagery are demo references and do not imply endorsement.
