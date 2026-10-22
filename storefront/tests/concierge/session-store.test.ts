@@ -60,15 +60,18 @@ describe('canonical session store', () => {
     expect(calls).toBe(1);
     expect(store.getSnapshot()).not.toBe(first);
   });
-  it('migrates v1 Saved and reset retains it while clearing working state', async () => {
+  it('migrates a v1 session to the simplified shape and reset clears selections', async () => {
     const s = new Memory();
     s.values.set(LEGACY_SESSION_KEY, legacy);
     const store = createSessionStore(s, 'm');
-    expect(store.getSnapshot()?.products).toHaveLength(1);
+    // Simplification 2026-10-22: legacy saved products and compare selections
+    // are dropped on migration; only the brief carries over.
+    expect(store.getSnapshot()?.selectionRecords).toEqual([]);
+    expect('products' in (store.getSnapshot() ?? {})).toBe(false);
     const reset = await store.resetMission('new');
     expect(reset.ok).toBe(true);
-    expect(store.getSnapshot()?.products).toHaveLength(1);
-    expect(store.getSnapshot()?.compareIds).toEqual([]);
+    expect(store.getSnapshot()?.selectionRecords).toEqual([]);
+    expect(store.getSnapshot()?.missionId).toBe('new');
   });
   it('serializes concurrent transactions against latest revision', async () => {
     const s = new Memory();

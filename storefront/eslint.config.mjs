@@ -12,6 +12,7 @@ export default tseslint.config(
       'src/catalog/fixtures.json',
       'dist/**',
       'node_modules/**',
+      'public/**',
     ],
   },
   ...tseslint.configs.recommended,

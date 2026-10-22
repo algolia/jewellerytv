@@ -232,9 +232,15 @@ export function createApiHandler(options: ApiOptions) {
     };
     try {
       const host = req.headers.host ?? '';
+      // The vite dev proxy forwards the browser's Origin header, so a demo
+      // served on any local port must be accepted; cloud deployments still
+      // come only from the configured https hosts.
+      const localOrigin = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
       if (
         (!/^(localhost|127\.0\.0\.1):\d+$/.test(host) && !cloudHosts.has(host)) ||
-        (req.headers.origin && !origins.has(req.headers.origin)) ||
+        (req.headers.origin &&
+          !origins.has(req.headers.origin) &&
+          !localOrigin.test(req.headers.origin)) ||
         req.headers['sec-fetch-site'] === 'cross-site'
       ) {
         reply(res, 403, { error: 'Origin not allowed' });
