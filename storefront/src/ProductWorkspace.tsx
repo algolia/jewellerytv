@@ -131,6 +131,11 @@ export function ProductWorkspace({
       .map((value) => value.trim().toLocaleLowerCase()),
   );
   const headingFor = (group: Discovery) => {
+    // Arijit, 2026-10-22: sub-category headings are one plain line naming the
+    // style, never an attribute pipe. "Pearl | Drop & Dangle Earrings"
+    // renders as "Pearl Drop & Dangle Earrings".
+    const piped = group.title.split('|').map((part) => part.trim()).filter(Boolean);
+    if (piped.length > 1) return piped.join(' ');
     const style = /^(.+?) style:\s*(.+)$/i.exec(group.title);
     if (style && discoveredProductTypes.size === 1 && discoveredProductTypes.has(style[1].toLowerCase()))
       return style[2].trim();
@@ -160,10 +165,9 @@ export function ProductWorkspace({
           )}
           {completeDiscoveryGrid ? (
             <div className="pw-discovery-intro">
-              <h2 className="pw-discovery-title">
-                Three different types, two variations of each type.
-              </h2>
-              <p className="pw-discovery-subtitle">Explore each style.</p>
+              {/* Arijit, 2026-10-22: one short open line replaces the long
+                  grid description; the tiles carry the specifics. */}
+              <h2 className="pw-discovery-title">Explore the category</h2>
             </div>
           ) : null}
           <div

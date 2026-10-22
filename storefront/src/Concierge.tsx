@@ -7,6 +7,8 @@ import './concierge/connected.css';
 export interface ConciergeHandle {
   /** Open the Concierge, optionally pre-filling the composer with the text. */
   ask: (text?: string) => void;
+  /** Close the Concierge panel (embed host control, plan 5.3). */
+  close: () => void;
 }
 
 export const demoTrace: {
@@ -27,8 +29,13 @@ export type ConciergePrefill = { text: string; token: number } | null;
  * own submit; the chip hands the current search text to the Concierge. */
 export const Concierge = forwardRef<
   ConciergeHandle,
-  { context?: () => Record<string, string>; blocked?: string }
->(function Concierge({ context, blocked }, ref) {
+  {
+    context?: () => Record<string, string>;
+    blocked?: string;
+    /** Embed panel hook: tells the host frame the shopper closed the panel. */
+    onClose?: () => void;
+  }
+>(function Concierge({ context, blocked, onClose }, ref) {
   const [open, setOpen] = useState(false);
   const [prefill, setPrefill] = useState<ConciergePrefill>(null);
   useImperativeHandle(
@@ -38,6 +45,7 @@ export const Concierge = forwardRef<
         setPrefill({ text: (text ?? '').trim(), token: Date.now() });
         setOpen(true);
       },
+      close: () => setOpen(false),
     }),
     [],
   );
@@ -47,7 +55,10 @@ export const Concierge = forwardRef<
       blocked={blocked}
       open={open}
       prefill={prefill}
-      onClose={() => setOpen(false)}
+      onClose={() => {
+        setOpen(false);
+        onClose?.();
+      }}
     />
   );
 });

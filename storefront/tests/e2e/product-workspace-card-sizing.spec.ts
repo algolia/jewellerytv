@@ -178,9 +178,7 @@ test('single discovery card stays compact and multi-card shelves remain balanced
         const expectedCards = Math.min(scenario.count, scenario.groups * 2);
         await expect(cards).toHaveCount(expectedCards);
         if (scenario.key === 'three-types-six-variations') {
-          await expect(page.locator('.pw-discovery-title')).toHaveText(
-            'Three different types, two variations of each type.',
-          );
+          await expect(page.locator('.pw-discovery-title')).toHaveText('Explore the category');
           await page.screenshot({
             path: path.join(runDir, `${viewport.width}-three-types-six-variations.png`),
             fullPage: true,
