@@ -9,24 +9,16 @@
  * writes a full production snapshot first, sends ONE PATCH, reads back and proves each field, and proves temp unchanged.
  * Production writes only with --execute. Needs Arijit's explicit go for that moment (mandate: production change).
  */
-import {readFileSync,writeFileSync,existsSync,mkdirSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {dirname,resolve} from 'node:path';
-import {fileURLToPath} from 'node:url';
-import {execSync} from 'node:child_process';
-const {dev:TEMP,production:PROD}=JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)),'agents.json'),'utf8'));
-const here=dirname(fileURLToPath(import.meta.url));
-const root=execSync('git rev-parse --show-toplevel',{cwd:here,encoding:'utf8'}).trim();
+import {resolve} from 'node:path';
+import {loadSettings} from './settings.mjs';
+const S=loadSettings();
+const TEMP=S.devAgentId, PROD=S.productionAgentId, appId=S.appId, readKey=S.searchKey, editKey=S.editKey, root=S.root;
 const arg=n=>{const a=process.argv.find(x=>x.startsWith('--'+n+'='));return a?a.split('=').slice(1).join('='):null;};
 const execute=process.argv.includes('--execute'), rollbackFile=arg('rollback'), expProd=arg('expect-prod'), expTemp=arg('expect-temp'), setIter=arg('set-max-iterations');
 const sha=v=>createHash('sha256').update(typeof v==='string'?v:JSON.stringify(v)).digest('hex');
 const s8=v=>sha(v).slice(0,8);
-const readEnv=p=>{const v={};if(!existsSync(p))return v;for(const l of readFileSync(p,'utf8').split(/\r?\n/)){const m=l.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);if(m)v[m[1]]=m[2].replace(/^(['"])(.*)\1$/,'$2');}return v;};
-// Credentials are gitignored and live in the primary checkout; a linked worktree has none of its own.
-const primary=execSync('git worktree list --porcelain',{cwd:root,encoding:'utf8'}).split('\n').find(l=>l.startsWith('worktree '))?.slice(9)??root;
-const loc={...readEnv(resolve(primary,'.env.local')),...readEnv(resolve(primary,'storefront/.env.local')),...readEnv(resolve(root,'.env.local')),...readEnv(resolve(root,'storefront/.env.local'))};
-const val=n=>process.env[n]??loc[n]; const appId=val('ALGOLIA_APP_ID'), readKey=val('ALGOLIA_SEARCH_API_KEY');
-const editKey=val('BLOG_INDEX_API_KEY')||val('ALGOLIA_AGENT_STUDIO_EDIT_API_KEY')||val('ALGOLIA_ADMIN_KEY');
 const url=id=>`https://${appId}.algolia.net/agent-studio/1/agents/${id}`;
 const get=async id=>{const r=await fetch(url(id),{headers:{'x-algolia-application-id':appId,'x-algolia-api-key':readKey},redirect:'error',signal:AbortSignal.timeout(20000)});if(!r.ok)throw new Error(`GET ${id} ${r.status}`);return r.json();};
 const omit=(o,k)=>Object.fromEntries(Object.entries(o).filter(([key])=>key!==k));
