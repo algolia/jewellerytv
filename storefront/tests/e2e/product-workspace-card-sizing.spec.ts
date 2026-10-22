@@ -149,26 +149,7 @@ test('single discovery card stays compact and multi-card shelves remain balanced
             items: items.slice(index * groupSize, (index + 1) * groupSize),
           }));
           return {
-            products:
-              count === 3
-                ? products
-                    .slice(1)
-                    .map((product) => ({ product, quantity: 1, observedAt: 'fixture' }))
-                : [],
-            selectionRecords: products.slice(0, count),
             discoveries,
-            activeView: 'discover' as const,
-            setView: noop,
-            compareIds: count === 3 ? [products[1].id] : [],
-            toggleCompare: noop,
-            pin: noop,
-            remove: noop,
-            setQuantity: noop,
-            refreshProducts: async () => undefined,
-            refreshing: false,
-            refreshError: '',
-            budgetCents: 50000,
-            budgetScope: 'total' as const,
           };
         };
         Object.assign(window, {
@@ -197,9 +178,7 @@ test('single discovery card stays compact and multi-card shelves remain balanced
         const expectedCards = Math.min(scenario.count, scenario.groups * 2);
         await expect(cards).toHaveCount(expectedCards);
         if (scenario.key === 'three-types-six-variations') {
-          await expect(page.locator('.pw-discovery-title')).toHaveText(
-            'Three different types, two variations of each type.',
-          );
+          await expect(page.locator('.pw-discovery-title')).toHaveText('Explore the category');
           await page.screenshot({
             path: path.join(runDir, `${viewport.width}-three-types-six-variations.png`),
             fullPage: true,

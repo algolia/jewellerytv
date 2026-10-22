@@ -16,7 +16,7 @@ The earlier client-tool Discovery work described in the [three-style Discovery r
 | `src/concierge/sessionPersistence.ts` and `shared/concierge/` | Session persistence and the shared catalogue, session and vocabulary contracts. |
 | `server/api.ts` and `server/concierge/` | Bounded `/api/chat` proxy with per-attempt upstream deadlines and an honest mid-stream error path; read-only `/api/search`, `/api/facets` and `/api/products/:id`; the exact product refresh route; the live catalogue vocabulary. |
 | `shared/concierge/toolSheetGuard.ts` and `server/concierge/toolSheetCheck.ts` | The one list of tools this build answers, and the read-only check that compares it with the tools the agent declares. A mismatch returns a labelled 503 `tool_sheet_mismatch` on `/api/chat` and is reported on `/api/health`; an unreadable agent never blocks a turn. |
-| `src/ProductWorkspace.tsx` | Discover, Compare and Save views. Discover renders the agent's arranged groups as one column of cards per group, with Save and Compare on each card. |
+| `src/ProductWorkspace.tsx` | One discovery surface (2026-10-22 simplification): the agent's arranged groups as one column of cards per group; each tile is an image, the name and one price, and links to the product detail page. The former Discover/Compare/Save tabs, save actions, compare toggles and in-canvas preview were removed; the Ask JTV chip in the site search bar is the entry. |
 | `tests/` and `evaluation/concierge-phases-1-3/` | Local regressions and a prepared but unaccepted live-journey scaffold. |
 
 The agent's tools, instructions and indexes are configured in Agent Studio, not in this repository. No product-index setting or record change is part of this application.
@@ -44,7 +44,7 @@ npm run format:check
 python3 -m unittest discover -s evaluation -p 'test_*.py'
 ```
 
-`format:check` still reports pre-existing formatting and large-module debt; do not claim an all-green quality gate from the other passing commands. Live Agent Studio tests consume model and classifier usage and are not part of `npm test`. The local Phase 3.1 runner now counts shopper turns separately from completion requests and uses real Save/Compare controls, but its live campaign, 22-turn continuity case and independent semantic review remain unexecuted.
+`format:check` still reports pre-existing formatting and large-module debt; do not claim an all-green quality gate from the other passing commands. Live Agent Studio tests consume model and classifier usage and are not part of `npm test`. The local Phase 3.1 runner counts shopper turns separately from completion requests and exercised the Save/Compare controls that the 2026-10-22 simplification removed from the UI, so it predates this baseline; its live campaign, 22-turn continuity case and independent semantic review remain unexecuted.
 
 For a read-only configuration backup, run `npm run snapshot -- <agent-id>`. The ID must be explicit; the command no longer defaults to a retired agent. Snapshots are written under ignored `evidence/` and are not release source.
 

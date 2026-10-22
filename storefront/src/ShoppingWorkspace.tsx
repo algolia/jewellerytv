@@ -1,40 +1,13 @@
 import { ProductWorkspace, type WorkspaceViewModel } from './ProductWorkspace';
-import { useShopping } from './ShoppingProvider';
 import './shopping-workspace.css';
 /** Product work lives here; the editable brief stays alongside the conversation. */
-export function ShoppingWorkspace({
-  onSend,
-  onStart,
-  model,
-  focusProductId,
-  focusProductRequest,
-  onPreviewClose,
-}: {
-  onSend?: (message: string) => void;
+export function ShoppingWorkspace({ model, onStart }: {
   onStart?: () => void;
-  onReset?: () => void;
-  model?: WorkspaceViewModel;
-  focusProductId?: string | null;
-  focusProductRequest?: number;
-  onPreviewClose?: () => void;
+  model: WorkspaceViewModel;
 }) {
-  const s = useShopping();
-  if (!s && !model) return null;
   return (
     <aside className="shopping-workspace" aria-label="Your shopping workspace">
-      {s?.error && (
-        <p className="workspace-error" role="alert">
-          {s.error}
-        </p>
-      )}
-      <ProductWorkspace
-        onAsk={onSend}
-        onStart={onStart}
-        model={model}
-        focusProductId={focusProductId}
-        focusProductRequest={focusProductRequest}
-        onPreviewClose={onPreviewClose}
-      />
+      <ProductWorkspace model={model} onStart={onStart} />
     </aside>
   );
 }

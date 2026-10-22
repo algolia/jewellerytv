@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { normalizeProduct } from '../src/catalog';
 import { ProductWorkspace, type WorkspaceViewModel } from '../src/ProductWorkspace';
 
@@ -20,8 +20,6 @@ function model(): WorkspaceViewModel {
     e = product('e'),
     f = product('f');
   return {
-    products: [],
-    selectionRecords: [a, b, c, d, e, f],
     discoveries: [
       {
         title: 'Everyday',
@@ -46,15 +44,6 @@ function model(): WorkspaceViewModel {
         ],
       },
     ],
-    activeView: 'discover',
-    setView: vi.fn(),
-    compareIds: [],
-    toggleCompare: vi.fn(),
-    pin: vi.fn(),
-    remove: vi.fn(),
-    refreshProducts: vi.fn(async () => ({ refreshed: [], missing: [] })),
-    refreshing: false,
-    refreshError: '',
   };
 }
 describe('grouped discovery workspace', () => {
@@ -65,13 +54,13 @@ describe('grouped discovery workspace', () => {
     expect(html).toContain('<h3>Everyday</h3>');
     expect(html.match(/data-product-id="a"/g)?.length).toBe(1);
     expect(html.match(/data-product-id=/g)?.length).toBe(6);
-    expect(html).toContain('Three different types, two variations of each type.');
-    expect(html).toContain('Explore each style, then save or compare the pieces you like.');
+    expect(html).toContain('Explore the category');
+    expect(html).not.toContain('Three different types');
+    expect(html).not.toContain('Explore each style');
     expect(html).toContain('Everyday');
     expect(html).toContain('Statement');
     expect(html).toContain('Gift');
-    expect(html).toContain('In stock');
-    expect(html).not.toContain('One');
+    expect(html).not.toContain('In stock');
     expect(html).not.toContain('Needs verification');
   });
 
@@ -83,9 +72,17 @@ describe('grouped discovery workspace', () => {
       workspace.discoveries[2],
     ];
     const html = renderToStaticMarkup(<ProductWorkspace model={workspace} />);
-    expect(html).not.toContain('Three different types, two variations of each type.');
-    expect(html).not.toContain('Explore each style, then save or compare the pieces you like.');
-    expect(html).not.toContain('Showing available matching pieces.');
+    expect(html).not.toContain('Explore the category');
+  });
+
+  it('renders piped agent group titles as one plain style line', () => {
+    // Arijit, 2026-10-22: the canvas speaks to shoppers, not to an agent;
+    // "Pearl | Drop & Dangle Earrings" must render as one plain line.
+    const workspace = model();
+    workspace.discoveries = [{ title: 'Pearl | Drop & Dangle Earrings', items: workspace.discoveries[0].items }];
+    const html = renderToStaticMarkup(<ProductWorkspace model={workspace} />);
+    expect(html).toContain('<h3>Pearl Drop &amp; Dangle Earrings</h3>');
+    expect(html).not.toContain('Pearl |');
   });
 
   it('omits the redundant product-type heading when all choices already share that type', () => {
@@ -131,31 +128,9 @@ describe('grouped discovery workspace', () => {
       title: 'Product type: Ring',
     }));
     const html = renderToStaticMarkup(<ProductWorkspace model={workspace} />);
-    expect(html).not.toContain('Three different types, two variations of each type.');
+    expect(html).not.toContain('Explore the category');
     expect(html.match(/class="pw-discovery-group"/g)?.length).toBe(1);
     expect(html).not.toContain('Product type: Ring');
-  });
-
-  it('renders proposed looks in Saved with saved pieces marked', () => {
-    const workspace = model();
-    workspace.activeView = 'saved';
-    workspace.products = [{ product: product('a'), quantity: 1, observedAt: '' }];
-    workspace.proposedLooks = [
-      {
-        title: 'Everyday Gold Trio',
-        lines: [
-          { product: product('a'), why: 'Anchor', quantity: 1 },
-          { product: product('c'), why: 'Companion', quantity: 1 },
-        ],
-        itemSubtotalCents: 19800,
-      },
-    ];
-    const html = renderToStaticMarkup(<ProductWorkspace model={workspace} />);
-    expect(html).toContain('Everyday Gold Trio');
-    expect(html).toContain('Saved ✓');
-    expect(html).toContain('$198.00');
-    expect(html).not.toContain('Add to combination');
-    expect(html).not.toContain('Quantity');
   });
 });
 
@@ -166,7 +141,7 @@ describe('discovery grid modes and previous-choice label', () => {
     stale = false,
   ): WorkspaceViewModel {
     const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
-    const [a, b, c, d, e, f, g, h, i] = ids.map(product);
+    const [a, b, c, d, e, f, g, h] = ids.map(product);
     const columns =
       mode === 'focused_choice'
         ? [
@@ -208,19 +183,8 @@ describe('discovery grid modes and previous-choice label', () => {
             },
           ];
     return {
-      products: [],
-      selectionRecords: [a, b, c, d, e, f, g, h, i],
       discoveries: columns,
       discoveriesStale: stale,
-      activeView: 'discover',
-      setView: vi.fn(),
-      compareIds: [],
-      toggleCompare: vi.fn(),
-      pin: vi.fn(),
-      remove: vi.fn(),
-      refreshProducts: vi.fn(async () => ({ refreshed: [], missing: [] })),
-      refreshing: false,
-      refreshError: '',
     };
   }
 
@@ -240,7 +204,7 @@ describe('discovery grid modes and previous-choice label', () => {
   it('renders a focused presentation as one column without the grid title', () => {
     const html = renderToStaticMarkup(<ProductWorkspace model={gridModel('focused_choice')} />);
     expect(html).toContain('data-group-count="1"');
-    expect(html).not.toContain('Three different types, two variations of each type.');
+    expect(html).not.toContain('Explore the category');
   });
 
   it('labels retained discoveries as previous choices when the flag is set', () => {

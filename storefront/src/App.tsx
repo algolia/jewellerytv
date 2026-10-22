@@ -260,7 +260,7 @@ function Experience() {
         enableABTest={false}
       />
       <PersistentSearchState />
-      <Shell>
+      <Shell onAsk={(text) => chat.current?.ask(text)}>
         {agentError && (
           <p className="error-state" role="alert">
             {agentError}. <Link to="/search">Start a new search</Link>
