@@ -1,11 +1,12 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 import { ConnectedConcierge } from './concierge/ConnectedConcierge';
 import { trackConciergeVisibility } from './analytics';
 import './concierge-workspace.css';
 import './concierge/connected.css';
 
 export interface ConciergeHandle {
-  ask: () => void;
+  /** Open the Concierge, optionally pre-filling the composer with the text. */
+  ask: (text?: string) => void;
 }
 
 export const demoTrace: {
@@ -18,55 +19,35 @@ export const demoTrace: {
   requests: [],
 };
 
+export type ConciergePrefill = { text: string; token: number } | null;
+
+/* Simplification 2026-10-22 (D6): the entry is the "Ask JTV" chip inside the
+ * site search bar, not a floating launcher button. The bottom-right corner
+ * belongs to the site's support widget on jtv.com. Keyword search keeps its
+ * own submit; the chip hands the current search text to the Concierge. */
 export const Concierge = forwardRef<
   ConciergeHandle,
   { context?: () => Record<string, string>; blocked?: string }
 >(function Concierge({ context, blocked }, ref) {
   const [open, setOpen] = useState(false);
-  const opener = useRef<HTMLElement | null>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const wasOpen = useRef(false);
-  useEffect(() => {
-    if (wasOpen.current !== open) trackConciergeVisibility(open);
-    if (wasOpen.current && !open) opener.current?.focus();
-    wasOpen.current = open;
-  }, [open]);
+  const [prefill, setPrefill] = useState<ConciergePrefill>(null);
   useImperativeHandle(
     ref,
     () => ({
-      ask: () => {
-        const activeElement = typeof document === 'undefined' ? null : document.activeElement;
-        opener.current =
-          activeElement instanceof HTMLElement && activeElement !== document.body
-            ? activeElement
-            : trigger.current;
+      ask: (text?: string) => {
+        setPrefill({ text: (text ?? '').trim(), token: Date.now() });
         setOpen(true);
       },
     }),
     [],
   );
-
   return (
-    <>
-      <button
-        ref={trigger}
-        type="button"
-        aria-label="Open jewelry Concierge"
-        hidden={open}
-        onClick={() => {
-          opener.current = trigger.current;
-          setOpen(true);
-        }}
-        className="concierge-launcher"
-      >
-        Ask Concierge
-      </button>
-      <ConnectedConcierge
-        context={context}
-        blocked={blocked}
-        open={open}
-        onClose={() => setOpen(false)}
-      />
-    </>
+    <ConnectedConcierge
+      context={context}
+      blocked={blocked}
+      open={open}
+      prefill={prefill}
+      onClose={() => setOpen(false)}
+    />
   );
 });

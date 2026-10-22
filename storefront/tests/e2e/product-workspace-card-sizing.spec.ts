@@ -149,26 +149,7 @@ test('single discovery card stays compact and multi-card shelves remain balanced
             items: items.slice(index * groupSize, (index + 1) * groupSize),
           }));
           return {
-            products:
-              count === 3
-                ? products
-                    .slice(1)
-                    .map((product) => ({ product, quantity: 1, observedAt: 'fixture' }))
-                : [],
-            selectionRecords: products.slice(0, count),
             discoveries,
-            activeView: 'discover' as const,
-            setView: noop,
-            compareIds: count === 3 ? [products[1].id] : [],
-            toggleCompare: noop,
-            pin: noop,
-            remove: noop,
-            setQuantity: noop,
-            refreshProducts: async () => undefined,
-            refreshing: false,
-            refreshError: '',
-            budgetCents: 50000,
-            budgetScope: 'total' as const,
           };
         };
         Object.assign(window, {

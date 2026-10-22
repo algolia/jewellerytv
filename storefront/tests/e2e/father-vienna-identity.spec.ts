@@ -113,18 +113,6 @@ test('fixture: blended explanation cannot blend card identity fields', async () 
                 ],
               },
             ],
-            activeView: 'discover' as const,
-            setView: () => undefined,
-            compareIds: [],
-            toggleCompare: () => undefined,
-            pin: () => undefined,
-            remove: () => undefined,
-            setQuantity: () => undefined,
-            refreshProducts: async () => undefined,
-            refreshing: false,
-            refreshError: '',
-            budgetCents: null,
-            budgetScope: 'total' as const,
           };
           const root = createRoot(container);
           root.render(React.createElement(ProductWorkspace, { model }));
