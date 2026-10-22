@@ -1,5 +1,7 @@
 # Public GitHub and Vercel snapshot
 
+> **Current release path.** Releases and agent promotions now run through `scripts/baseline/` (`release-app.sh`, `promote-agent.mjs`, `verify-baseline.mjs`); see [BASELINE.md](BASELINE.md). The sections below describe the Vercel project and its boundaries.
+
 Repository: [ArijitChowdhury-Algolia/jewellerytv](https://github.com/ArijitChowdhury-Algolia/jewellerytv). Vercel project: `algolia/jewellerytv`. Production alias: [jewellerytv.vercel.app](https://jewellerytv.vercel.app).
 
 This release is an explicitly requested snapshot of incomplete Plan 3.1 work. It must not be described as a completed shopping experience. The [status handoff](PLAN-3.1-STATUS.md) lists the observed passes and failures.
