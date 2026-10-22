@@ -1,9 +1,5 @@
 # JTV Concierge demo
 
-## Canonical project wiki
-
-The durable JTV charter, five-stage playbook, decisions, requirements and Plan 3.1 gates live in Arijit's local Obsidian project wiki at `/Users/arijitchowdhury/Dropbox/AI-Development/Obsidian/Arijit-Second-Brain/Projects/jewellerytv/index.md`. That wiki, `SESSION.md` and `docs/HANDOFF.md` are local to the original checkout and are not included in a fresh GitHub clone. The portable [Plan 3.1 status](storefront/docs/PLAN-3.1-STATUS.md) and [storefront operating rules](storefront/AGENTS.md) travel with this repository. In the original checkout, also read the local root `AGENTS.md` (linked by `CLAUDE.md`) and the canonical vault SOPs.
-
 A public JTV-style storefront for exploring jewelry through conversation. One Concierge in Algolia's Agent Studio learns the shopper's preferences, searches the read-only JTV catalogue and guidance, and helps them discover pieces. The shopper sees conversation beside a single product canvas; clicking a tile opens the product page.
 
 **Status:** This repository holds the baseline of 2026-10-22: the application on `main` and the Concierge agent are the same in local development and in production ([the baseline](storefront/docs/BASELINE.md)), and all future work starts from it. The Concierge is live on the public [main Vercel URL](https://jewellerytv.vercel.app/) with no Vercel login. Full anniversary, replacement, guardrail and continuity acceptance (Plan 3.1) remains open; no checkout or purchase verification exists.

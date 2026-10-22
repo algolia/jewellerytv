@@ -45,7 +45,7 @@ describe('connected Concierge transcript continuity', () => {
         role: 'assistant',
         parts: [
           {
-            type: 'tool-retrieve_evidence',
+            type: 'tool-algolia_search_index_help_content',
             toolCallId: 'call-1',
             state: 'output-error',
             input: {},
