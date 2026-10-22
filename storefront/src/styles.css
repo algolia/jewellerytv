@@ -14,7 +14,10 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 .favorite-button{position:absolute;right:6px;top:6px;z-index:1;background:#ffffffe8;border:0;border-radius:50%;width:40px;height:40px;display:grid;place-items:center}.product-link{display:block}.price-label{font-size:12px;color:#686868}.product-code{font-size:12px;color:#737373}.thumbnail-row{display:flex;gap:8px;overflow-x:auto;padding:12px 0}.thumbnail-row button{flex:0 0 70px;border:1px solid #ccc;background:white;padding:3px;min-height:70px}.thumbnail-row button[aria-pressed=true]{border:2px solid var(--blue)}.thumbnail-row img{height:64px;width:64px;object-fit:contain}.secondary-button{background:#fff;border:1px solid #777;min-height:44px;padding:10px 20px}.primary-button:hover{background:#005b82;text-decoration:none}.secondary-button:hover{background:#f3f3f3}.product-image-wrap img{width:100%;height:100%;object-fit:contain}
 
-/* Ask JTV chip inside the site search bar (simplification D6, 2026-10-22). */
-.header-search .ask-chip{background:var(--blue);border:0;border-radius:20px;color:#fff;font-weight:700;font-size:13px;min-height:32px;padding:0 14px;margin-right:6px;display:flex;align-items:center;white-space:nowrap}
-.header-search .ask-chip:hover{filter:brightness(1.06)}
-@media(max-width:800px){.header-search .ask-chip{min-height:28px;font-size:12px;padding:0 11px}}
+/* Ask JTV chip inside the site search bar (simplification D6, 2026-10-22).
+   Reads as a chip, not a second search button: tinted surface, blue text,
+   ask icon, sits between the input and the search submit. */
+.header-search .ask-chip{display:flex;align-items:center;gap:6px;width:auto;min-width:0;line-height:1;background:#eaf4f8;border:1px solid #bcd9e6;border-radius:18px;color:var(--blue);font-weight:700;font-size:13px;min-height:30px;padding:0 12px;margin:0 8px 0 4px;white-space:nowrap}
+.header-search .ask-chip:hover{background:#dceef6}
+.header-search .ask-chip svg{flex-shrink:0}
+@media(max-width:800px){.header-search .ask-chip{min-height:26px;font-size:12px;padding:0 10px;gap:4px}}
