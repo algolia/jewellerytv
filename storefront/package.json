@@ -16,7 +16,9 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "snapshot": "tsx server/snapshot.ts",
-    "check:server": "node scripts/check-server-runtime.mjs"
+    "check:server": "node scripts/check-server-runtime.mjs",
+    "baseline:verify": "node scripts/baseline/verify-baseline.mjs",
+    "agent:promote": "node scripts/baseline/promote-agent.mjs"
   },
   "dependencies": {
     "instantsearch.css": "^8.5.1",
