@@ -23,7 +23,7 @@ The agent's tools, instructions and indexes are configured in Agent Studio, not 
 
 ## Local run
 
-Use Node.js 24. Place server credentials and the selected agent identity in the parent project's `.env.local`; see [`.env.example`](.env.example). Set `JTV_CONCIERGE_DEVELOPMENT_AGENT_ID` and `JTV_CONCIERGE_PRODUCTION_AGENT_ID` to the two agents listed in [`scripts/baseline/agents.json`](scripts/baseline/agents.json): they are different agents with identical definitions. `npm run dev` is the only supported local stack: do not start extra instances, wrapper scripts or alternate ports. Never commit that file or pass credentials through `VITE_*` variables.
+Use Node.js 24. Place server credentials and the selected agent identity in the parent project's `.env.local`; see [`.env.example`](.env.example). Set `JTV_CONCIERGE_DEVELOPMENT_AGENT_ID` and `JTV_CONCIERGE_PRODUCTION_AGENT_ID` to two different agents with identical definitions; the app and the baseline tools refuse to run if they are the same. `npm run dev` is the only supported local stack: do not start extra instances, wrapper scripts or alternate ports. Never commit that file or pass credentials through `VITE_*` variables.
 
 ```sh
 npm ci
