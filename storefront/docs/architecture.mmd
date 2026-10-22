@@ -1,37 +1,33 @@
 flowchart TB
   subgraph B["Shopper's browser"]
     direction LR
-    Shopper["Shopper"] --> UI["Two-column JTV workspace"]
-    UI -->|"sends the message"| Chat["InstantSearch chat client (useChat)"]
-    Chat -->|"reply streams as it is written"| UI
-    UI --> Tiles["Workspace tiles: one column per group, built from verified tool results in the stream"]
-    UI --> State[("Per-tab session state")]
-    Chat -->|"tool calls"| Exec["Client tool executors: refresh_products, arrange_groups"]
-    Exec -->|"structured results returned to the agent"| Chat
+    Shopper["Shopper"] -->|"types a request"| Page["JTV page: conversation left, product tiles right"]
+    Page -->|"the message"| Chat["Chat client (InstantSearch, in the page)"]
+    Chat -->|"streamed reply carries the checked pieces"| Tiles["Product tiles: one column per group, only checked pieces"]
+    Page -->|"saved pieces, per tab"| State[("Session state, per tab")]
+    Chat -->|"routes the agent's tool calls here"| Check["Product checks in the browser: in stock, price fits, groups fill"]
   end
 
   subgraph S["JTV website server (Node)"]
     direction LR
-    ChatAPI["/api/chat proxy"] --> Guard{"Tool-sheet guard: tools the agent declares vs tools this build answers"}
-    ReadOnly["Read-only APIs: /api/products/:id, /api/agent-product-refresh, /api/search, /api/facets"]
-    ReadOnly --> Product[("prod_catalog, read-only")]
+    ChatAPI["Chat API (/api/chat): forwards to the agent"] --> Guard{"Tool check: the agent may only offer tools this build can run"}
+    ReadOnly["Read-only APIs: product lookups, search, refresh"]
   end
 
   subgraph A["Algolia Agent Studio"]
     direction LR
-    Agent["Concierge agent: dev or production, one definition"]
-    Agent -->|"native tool"| Search["algolia_search_index"]
-    Search -->|"queries"| Indexes[("prod_catalog, blog, help_content, read-only")]
-    Indexes -->|"returns matches"| Agent
-    Agent -->|"finished text"| Output["Output guardrail: five categories on the reply"]
+    Out["Output guardrail: reviews every reply against five rules; can withhold it"] -->|"approved reply"| Agent["Concierge agent: one definition; test and live identical"]
+    Agent -->|"searches"| Search["Catalogue search, the agent's own tool"]
+    Search --> Catalogue[("JTV catalogue: products, blog, help articles, read-only")]
   end
 
-  Chat -->|"POST /api/chat"| ChatAPI
-  Guard -->|"match"| Agent
-  Guard -.->|"mismatch: labelled 503 tool_sheet_mismatch"| Chat
-  Exec -->|"read-only record lookups"| ReadOnly
-  Output -->|"approved reply streams back"| Chat
-  Output -.->|"withheld: fixed system notice beside the kept tiles"| UI
+  Chat -->|"the message"| ChatAPI
+  Guard -->|"tools match"| Agent
+  Guard -.->|"mismatch: the page shows a clear error, not a failure"| Chat
+  Check -->|"looks up each piece, read-only"| ReadOnly
+  ReadOnly -->|"reads the same catalogue"| Catalogue
+  Agent -->|"the reply, streamed"| Chat
+  Out -.->|"withheld: a fixed notice; the checked tiles stay"| Page
 
   subgraph Release["How a change reaches production"]
     direction LR
