@@ -1,5 +1,18 @@
 # Plan 3.1 snapshot handoff
 
+> **Historical snapshot from October 7, 2026.** Everything below is acceptance
+> history: it describes the system as it stood on that date and is kept unchanged as
+> a record. It does not describe the current system. Since then, the 2026-10-22
+> [baseline](BASELINE.md) replaced it. Today's system is one Concierge definition in
+> development and production (development agent `8129ad66`, production agent
+> `0bdf59fe`), the native `algolia_search_index` tool plus two client tools
+> (`refresh_products`, `arrange_groups`), model `claude-sonnet-5`, and releases
+> through `scripts/baseline/` as described in [BASELINE.md](BASELINE.md) and
+> [deployment.md](deployment.md). The repository is
+> [algolia/jewellerytv](https://github.com/algolia/jewellerytv). Agent names, agent
+> IDs, tool names, model claims and repository links in the body are true only for
+> October 7, 2026.
+
 ## October 7 consolidated application update
 
 **Public access update:** At Arijit's request, Vercel Authentication was disabled for the JTV project (`ssoProtection: null`). Both production aliases and the deployment URL returned HTTP 200 without a Vercel login. A fresh unauthenticated Brave session opened the app and completed one bounded Concierge greeting. This project setting applies to existing deployments; no application redeploy or Agent Studio change was needed. The public chat endpoint consumes agent usage and should be monitored.
