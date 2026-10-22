@@ -35,7 +35,6 @@ export function buildTurnContext(
   const certaintyCode = { explicit: 'e', tentative: 't' } as const;
   const shoppingState = {
     factColumns: 'id,field,value,scope,strength,certainty,status',
-    activeView: session.activeView,
     facts: session.brief.facts
       .filter((fact) => fact.status === 'active' || fact.status === 'tentative')
       .map(({ id, field, value, scope, strength, certainty, status }) => [
@@ -47,8 +46,6 @@ export function buildTurnContext(
         certaintyCode[certainty],
         status === 'tentative' ? 't' : 'a',
       ]),
-    saved: session.products.map(({ objectID, quantity }) => [objectID, quantity]),
-    compareIds: session.compareIds,
   };
   const pieces = chunksOf(JSON.stringify(shoppingState));
   const result: Record<string, string> = {

@@ -43,63 +43,19 @@ const receipt = z
     result: z.object({ status: z.string() }).passthrough(),
   })
   .strict();
-const cents = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).nullable();
-const proposalLine = z
-  .object({
-    evidenceRef: z.string().min(1),
-    objectID: z.string().min(1),
-    contentHash: z.string().min(1),
-    quantity: z.number().int().min(1).max(20),
-    componentSlot: z.string().min(1),
-    explanation: z.string().min(1),
-    unitPriceCents: cents,
-    lineSubtotalCents: cents,
-  })
-  .strict();
-const proposal = z
-  .object({
-    missionId: z.string().min(1),
-    stateRevision: z.number().int().nonnegative(),
-    evidenceBatchRevision: z.number().int().nonnegative(),
-    turnId: z.string().min(1),
-    proposalId: z.string().min(1),
-    kind: z.enum(['product_groups', 'complete_looks']),
-    mode: z.enum(['three_style_grid', 'focused_choice']).nullable().optional(),
-    groups: z
-      .array(
-        z
-          .object({
-            title: z.string().min(1),
-            lines: z.array(proposalLine).min(1).max(3),
-            itemSubtotalCents: cents,
-          })
-          .strict(),
-      )
-      .min(1)
-      .max(3),
-    combinedItemSubtotalCents: cents,
-    assessment: z
-      .object({
-        perItem: z.enum(['accepted', 'unresolved', 'conflict']),
-        total: z.enum(['accepted', 'unresolved', 'conflict']),
-        reasons: z.array(z.string()),
-      })
-      .strict(),
-  })
-  .strict();
-export type CommittedProposal = z.infer<typeof proposal>;
-export type SessionReceipt = z.infer<typeof receipt>;
+/* Simplification 2026-10-22 (decisions D1 to D3): the session no longer holds
+ * saved products, compare selections, the active workspace view or a committed
+ * proposal. The workspace shows discovery columns and links to the PDP; Save
+ * and Compare live on jtv.com (Love List, cart), not in this app. A session
+ * carries the brief, the identity-verified selection records the agent's tools
+ * reference, receipts and the evidence ledger. */
 export const conciergeSessionSchema = z
   .object({
     version: z.literal(3),
     missionId: z.string().min(1),
     brief: briefStateV3Schema,
-    products: z.array(savedProductSchema).max(12),
     selectionRecords: z.array(savedProductSchema).max(12),
-    compareIds: z.array(z.string()).max(3),
-    activeView: z.enum(['discover', 'saved', 'compare']),
     receipts: z.array(receipt).max(200),
-    committedProposal: proposal.nullable().optional(),
     evidence: z
       .array(
         z
@@ -118,35 +74,13 @@ export type ConciergeSession = z.infer<typeof conciergeSessionSchema>;
 export function validateConciergeSession(value: unknown): ConciergeSession | null {
   try {
     const parsed = conciergeSessionSchema.parse(value);
-    const savedIds = new Set(parsed.products.map((product) => product.objectID));
     const selectionIds = new Set(parsed.selectionRecords.map((product) => product.objectID));
-    const knownIds = new Set([...savedIds, ...selectionIds]);
-    const compareIds = new Set(parsed.compareIds);
-    if (
-      savedIds.size !== parsed.products.length ||
-      selectionIds.size !== parsed.selectionRecords.length ||
-      compareIds.size !== parsed.compareIds.length ||
-      parsed.compareIds.some((id) => !knownIds.has(id))
-    )
-      return null;
+    if (selectionIds.size !== parsed.selectionRecords.length) return null;
     const registry = new Map<string, SourceBoundProduct>();
-    for (const product of [...parsed.products, ...parsed.selectionRecords]) {
+    for (const product of parsed.selectionRecords) {
       const existing = registry.get(product.objectID);
       if (existing && JSON.stringify(existing) !== JSON.stringify(product)) return null;
       registry.set(product.objectID, product);
-    }
-    if (parsed.committedProposal) {
-      for (const g of parsed.committedProposal.groups)
-        for (const l of g.lines) {
-          const product = registry.get(l.objectID);
-          if (
-            !product ||
-            product.binding !== 'evidence_bound' ||
-            product.evidenceRef !== l.evidenceRef ||
-            product.contentHash !== l.contentHash
-          )
-            return null;
-        }
     }
     for (const evidence of parsed.evidence ?? []) {
       const product = registry.get(evidence.objectID);

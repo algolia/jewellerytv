@@ -5,13 +5,9 @@ import { extractNativePresentation } from './nativeResults';
 import { createSessionStore } from './sessionStore.js';
 import { createConciergeToolRuntime } from './toolRuntime';
 import type { StorageLike } from './sessionPersistence.js';
-import type { RetrieveEvidenceResult } from '../../shared/concierge/retrieval/types.js';
-import type { SourceBoundProduct } from '../../shared/concierge/sessionContract.js';
-import { createExactProductRefresh } from './exactProductRefresh.js';
 
 type Runtime = ReturnType<typeof createConciergeToolRuntime>;
 type Store = ReturnType<typeof createSessionStore>;
-type ProductEntry = { product: Product; quantity: number; observedAt: string };
 
 function normalize(raw: unknown): Product | null {
   try {
@@ -19,10 +15,6 @@ function normalize(raw: unknown): Product | null {
   } catch {
     return null;
   }
-}
-function entry(raw: SourceBoundProduct): ProductEntry | null {
-  const product = normalize(raw.raw);
-  return product ? { product, quantity: raw.quantity, observedAt: raw.observedAt ?? '' } : null;
 }
 
 export type ConciergeWorkspaceSession = {
@@ -35,7 +27,6 @@ export type ConciergeWorkspaceSession = {
 export function createConciergeWorkspaceSession(options: {
   storage: StorageLike;
   initialMissionId: string;
-  fetchExactProducts?: (body: unknown, signal?: AbortSignal) => Promise<RetrieveEvidenceResult>;
   fetchProductRecord?: (id: string) => Promise<unknown>;
 }): ConciergeWorkspaceSession {
   const store = createSessionStore(options.storage, options.initialMissionId);
@@ -43,18 +34,6 @@ export function createConciergeWorkspaceSession(options: {
     storage: options.storage,
     initialMissionId: options.initialMissionId,
   });
-  const fetchExactProducts =
-    options.fetchExactProducts ??
-    (async (body: unknown) => {
-      const response = await fetch('/api/agent-product-refresh', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) throw new Error('Exact product refresh failed');
-      return (await response.json()) as RetrieveEvidenceResult;
-    });
-  const refresh = createExactProductRefresh(store, fetchExactProducts);
   const fetchProductRecord =
     options.fetchProductRecord ??
     (async (id: string) => {
@@ -65,13 +44,11 @@ export function createConciergeWorkspaceSession(options: {
   /* F1 native adapter: cards from the agent's own grouped tool call. The agent
    * decides the groups and the products; this only reads the objectIDs off the
    * stream, hydrates full records through the existing read-only exact-product
-   * path, and hands the workspace columns the same shape present_choices used.
+   * path, and hands the workspace columns the same shape the tools produce.
    * No conversation logic, no agent speech, no new model calls.
    *
-   * H1: a shown native card must be Saveable and Comparable. The staged,
-   * identity-verified records enter the session store as `legacy_unbound` —
-   * the same slot the old client-tool flow filled with `evidence_bound`
-   * records. The identity guarantee is the verified hydrated record: a record
+   * The staged, identity-verified records enter the session store as
+   * `legacy_unbound` so the agent's refresh tool can reference them: a record
    * is only used when its own objectID equals the objectID the agent named
    * and the card hydration requested. */
   async function stageNativePresentation(
@@ -104,13 +81,13 @@ export function createConciergeWorkspaceSession(options: {
     const groups = presentation.groups.flatMap((group) => {
       const items = group.objectIDs.flatMap((objectID) => {
         const product = normalize(verified.get(objectID));
-        return product ? [{ product, why: group.why, assessment: 'unknown' as const }] : [];
+        return product ? [{ product, why: group.why }] : [];
       });
       return items.length ? [{ title: group.title, items }] : [];
     });
     if (!groups.length) return null;
-    // Register the verified records so Save and Compare can reference them
-    // (the session contract requires referenced ids to be stored records).
+    // Register the verified records so the agent's refresh tool can reference
+    // them (the session contract requires referenced ids to be stored records).
     const session = store.getSnapshot();
     if (session) {
       const additions = [...verified.entries()]
@@ -137,136 +114,22 @@ export function createConciergeWorkspaceSession(options: {
     }
     return groups;
   }
+  /* Simplification 2026-10-22 (D1 to D5): the workspace is a single discovery
+   * surface. Tiles link to the PDP; Save, Compare and the tabbed views are
+   * retired, so the view model carries only what the columns render. */
   function getModel(nativeGroups?: WorkspaceGroup[]): WorkspaceViewModel {
     const session = store.getSnapshot();
-    if (!session) {
-      const disabled = () => undefined;
+    if (!session)
       return {
-        products: [],
-        selectionRecords: [],
         discoveries: [],
-        activeView: 'discover',
-        setView: disabled,
-        compareIds: [],
-        toggleCompare: disabled,
-        pin: disabled,
-        remove: disabled,
-        refreshProducts: refresh.refreshProducts,
-        refreshing: false,
-        refreshError: 'The saved session is unavailable. Workspace actions are disabled.',
-        assessment: () => 'Needs verification',
+        discoveriesStale: false,
+        discoveryUnavailable: true,
       };
-    }
-    const state = session;
-    const all = [...(state?.products ?? []), ...(state?.selectionRecords ?? [])];
-    const products = new Map(all.map((item) => [item.objectID, item]));
-    const proposal = state.committedProposal ?? null;
-    const groups =
-      proposal?.assessment.perItem === 'accepted'
-        ? proposal.groups.flatMap((group) => {
-            const items = group.lines.flatMap((line) => {
-              const persisted = products.get(line.objectID);
-              const raw = persisted?.raw;
-              const product = normalize(raw);
-              return product
-                ? [{ product, why: line.explanation, assessment: 'compliant' as const }]
-                : [];
-            });
-            return items.length
-              ? [{ title: group.title, items, mode: proposal.mode ?? undefined }]
-              : [];
-          })
-        : [];
-    const proposedLooks =
-      proposal?.kind === 'complete_looks'
-        ? proposal.groups.map((group) => ({
-            title: group.title,
-            lines: group.lines.flatMap((line) => {
-              const product = normalize(products.get(line.objectID)?.raw);
-              return product ? [{ product, why: line.explanation, quantity: line.quantity }] : [];
-            }),
-            itemSubtotalCents: group.itemSubtotalCents,
-          }))
-        : [];
-    const selectedProducts = new Map<string, Product>();
-    for (const item of all) {
-      const product = normalize(item.raw);
-      if (product) selectedProducts.set(item.objectID, product);
-    }
-    for (const group of groups)
-      for (const item of group.items) selectedProducts.set(item.product.id, item.product);
-    const expectedRevision = state?.brief.revision ?? 0;
-    const transact = (apply: (current: typeof state) => typeof state | Promise<typeof state>) => {
-      if (!state) return;
-      void store.transact({
-        expectedRevision,
-        apply: (current) => apply(current as typeof state) as typeof current,
-      });
+    return {
+      discoveries: nativeGroups ?? [],
+      discoveriesStale: false,
+      discoveryUnavailable: false,
     };
-    const legacyIds = new Set(
-      (state?.products ?? [])
-        .filter((item) => item.binding === 'legacy_unbound')
-        .map((item) => item.objectID),
-    );
-    const verifiedIds = new Set(
-      proposal?.assessment.perItem === 'accepted'
-        ? proposal.groups.flatMap((group) => group.lines.map((line) => line.objectID))
-        : [],
-    );
-    const assessment = (product: Product, status?: 'compliant' | 'unknown') => {
-      if (verifiedIds.has(product.id)) return null;
-      if (legacyIds.has(product.id) || !status) return 'Needs verification';
-      return status === 'unknown' ? 'Needs verification' : null;
-    };
-    const model: WorkspaceViewModel = {
-      products: state.products.flatMap(entry).filter((item): item is ProductEntry => item !== null),
-      selectionRecords: [...selectedProducts.values()],
-      /* F1: native grouped results render in the same columns when the turn
-       * carried no committed proposal (the native agent has no client tools).
-       * A client-tool proposal still wins when one exists. */
-      discoveries: groups.length ? groups : (nativeGroups ?? []),
-      discoveriesStale:
-        groups.length > 0 && proposal?.stateRevision !== state.brief.revision,
-      discoveryUnavailable:
-        proposal?.kind === 'product_groups' &&
-        (proposal.assessment.perItem !== 'accepted' ||
-          groups.reduce((count, group) => count + group.items.length, 0) !==
-            proposal.groups.reduce((count, group) => count + group.lines.length, 0)),
-      proposedLooks,
-      activeView: state.activeView ?? 'discover',
-      setView: (activeView) => transact((current) => ({ ...current, activeView })),
-      compareIds: state.compareIds ?? [],
-      toggleCompare: (id) =>
-        transact((current) => {
-          const ids = [...current.compareIds];
-          const index = ids.indexOf(id);
-          if (index >= 0) ids.splice(index, 1);
-          else if (ids.length < 3 && selectedProducts.has(id)) ids.push(id);
-          else return current;
-          return { ...current, compareIds: ids };
-        }),
-      pin: (raw) => {
-        if ((state?.products.length ?? 0) >= 12) return;
-        const product = normalize(raw);
-        if (!product || state.products.some((item) => item.objectID === product.id)) return;
-        // H1: a native card's record is identity-verified at hydration (its
-        // own objectID matched the requested id), so a staged legacy_unbound
-        // record is Saveable just like an evidence-bound one.
-        const existing = state.selectionRecords.find((item) => item.objectID === product.id);
-        if (!existing) return;
-        transact((current) => ({ ...current, products: [...current.products, existing] }));
-      },
-      remove: (id) =>
-        transact((current) => ({
-          ...current,
-          products: current.products.filter((item) => item.objectID !== id),
-        })),
-      refreshProducts: refresh.refreshProducts,
-      refreshing: refresh.isRefreshing(),
-      refreshError: refresh.getError(),
-      assessment,
-    };
-    return model;
   }
   return { store, runtime, getModel, stageNativePresentation };
 }

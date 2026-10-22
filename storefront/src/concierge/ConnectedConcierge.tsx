@@ -357,11 +357,7 @@ function latestAssistant(messages: readonly UIMessage[]) {
   return [...messages].reverse().find((message) => message.role === 'assistant');
 }
 
-export function parseVerifiedProductLink(
-  href: string | undefined,
-  knownIds: ReadonlySet<string>,
-  verifiedIds: ReadonlySet<string>,
-) {
+export function parseVerifiedProductLink(href: string | undefined, knownIds: ReadonlySet<string>) {
   const match = href?.match(/^\/product\/([^/?#]+)$/);
   if (!match) return null;
   let id: string;
@@ -370,7 +366,7 @@ export function parseVerifiedProductLink(
   } catch {
     return null;
   }
-  return knownIds.has(id) && verifiedIds.has(id) ? id : null;
+  return knownIds.has(id) ? id : null;
 }
 
 /** Fixed UI status, never presented as generated Concierge language. A turn
@@ -400,7 +396,6 @@ export function ConversationMessage({
   provisional = false,
   verifiedBlogUrls,
   knownProductIds = new Set<string>(),
-  verifiedProductIds = new Set<string>(),
   onProductLink,
 }: {
   message: UIMessage;
@@ -408,7 +403,6 @@ export function ConversationMessage({
   provisional?: boolean;
   verifiedBlogUrls?: ReadonlySet<string>;
   knownProductIds?: ReadonlySet<string>;
-  verifiedProductIds?: ReadonlySet<string>;
   onProductLink?: (id: string, event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const textParts = displayTextParts(message);
@@ -439,7 +433,7 @@ export function ConversationMessage({
                   a: {
                     component: ({ href, children }: { href?: string; children?: ReactNode }) => {
                       const productId = href?.match(/^\/product\/[^/?#]+$/)
-                        ? parseVerifiedProductLink(href, knownProductIds, verifiedProductIds)
+                        ? parseVerifiedProductLink(href, knownProductIds)
                         : null;
                       const productHref = productId ? href : null;
                       const articleHref = verifiedBlogHref(href, verifiedBlogUrls ?? new Set());
@@ -505,8 +499,6 @@ export function ConnectedConcierge({
   const [hiddenPriorMessageIds, setHiddenPriorMessageIds] = useState<Set<string>>(() => new Set());
   const [systemNotices, setSystemNotices] = useState<string[]>([]);
   const [section, setSection] = useState<'conversation' | 'products'>('conversation');
-  const [focusProductId, setFocusProductId] = useState<string | null>(null);
-  const [focusProductRequest, setFocusProductRequest] = useState(0);
   const [briefControls, setBriefControls] = useState<HTMLDivElement | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const followTranscriptRef = useRef(true);
@@ -545,14 +537,18 @@ export function ConnectedConcierge({
   const model = session.getModel(nativeGroups ?? undefined);
   const runtime = session.runtime;
   const brief = snapshot?.brief;
-  const verifiedProductIds = useMemo(
+  /* Product link guard, simplified 2026-10-22: a chat link opens the PDP only
+   * when the id is a product this session actually holds. Every record in the
+   * store passed identity verification when it was staged (its own objectID
+   * matched what the agent named), so the known-records set is the guard; the
+   * old evidence-ledger distinction retired with the Save and Compare build. */
+  const knownProductIds = useMemo(
     () =>
-      new Set(
-        [...(snapshot?.products ?? []), ...(snapshot?.selectionRecords ?? [])]
-          .filter((item) => item.binding === 'evidence_bound')
-          .map((item) => item.objectID),
-      ),
-    [snapshot],
+      new Set([
+        ...(snapshot?.selectionRecords ?? []).map((item) => item.objectID),
+        ...model.discoveries.flatMap((group) => group.items.map((item) => item.product.id)),
+      ]),
+    [snapshot, model.discoveries],
   );
   const handleProductLink = useCallback(
     (id: string, event: MouseEvent<HTMLAnchorElement>) => {
@@ -565,36 +561,11 @@ export function ConnectedConcierge({
         event.altKey
       )
         return;
-      event.preventDefault();
-      const knownProductIds = new Set([
-        ...model.products.map((item) => item.product.id),
-        ...model.selectionRecords.map((item) => item.id),
-        ...model.discoveries.flatMap((group) => group.items.map((item) => item.product.id)),
-      ]);
-      if (
-        !parseVerifiedProductLink(
-          `/product/${encodeURIComponent(id)}`,
-          knownProductIds,
-          verifiedProductIds,
-        )
-      )
-        return;
-      model.setView('discover');
-      setFocusProductId(id);
-      setFocusProductRequest((request) => request + 1);
-      setSection('products');
-      void model.refreshProducts([id]);
+      if (!parseVerifiedProductLink(`/product/${encodeURIComponent(id)}`, knownProductIds))
+        event.preventDefault();
+      /* A verified link keeps its default navigation to the product page. */
     },
-    [model, verifiedProductIds],
-  );
-  const knownProductIds = useMemo(
-    () =>
-      new Set([
-        ...model.products.map((item) => item.product.id),
-        ...model.selectionRecords.map((item) => item.id),
-        ...model.discoveries.flatMap((group) => group.items.map((item) => item.product.id)),
-      ]),
-    [model.products, model.selectionRecords, model.discoveries],
+    [knownProductIds],
   );
   const applyBrief = useCallback(
     async (operation: Parameters<typeof applyBriefOperationsV3>[1]['operations'][number]) => {
@@ -1061,7 +1032,6 @@ export function ConnectedConcierge({
                 !revealed.has(message.id)
               }
               knownProductIds={knownProductIds}
-              verifiedProductIds={verifiedProductIds}
               verifiedBlogUrls={verifiedBlogUrls}
               onProductLink={handleProductLink}
             />
@@ -1120,9 +1090,6 @@ export function ConnectedConcierge({
       productWorkspace={
         <ShoppingWorkspace
           model={model}
-          focusProductId={focusProductId}
-          focusProductRequest={focusProductRequest}
-          onPreviewClose={() => setFocusProductId(null)}
           onStart={() => {
             setSection('conversation');
             requestAnimationFrame(() =>

@@ -1,15 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-import { createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it } from 'vitest';
 import { createBriefStateV3 } from '../../shared/briefState';
-type RefreshRequest = {
-  missionId: string;
-  expectedRevision: number;
-  turnId: string;
-  exactObjectIDs: string[];
-};
 import { createConciergeWorkspaceSession } from '../../src/concierge/ConciergeWorkspaceProvider';
 import { V3_SESSION_KEY, type StorageLike } from '../../src/concierge/sessionPersistence';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement } from 'react';
 import { ProductWorkspace } from '../../src/ProductWorkspace';
 
 class MemoryStorage implements StorageLike {
@@ -22,347 +16,160 @@ class MemoryStorage implements StorageLike {
   }
 }
 
-function session(binding: 'evidence_bound' | 'legacy_unbound' = 'evidence_bound') {
-  const raw = {
-    objectID: 'saved-1',
-    Catalog_TitleDescription: 'Saved necklace',
-    Pricing_ActivePrice: 125,
+function rawRecord(objectID: string, price = 125) {
+  return {
+    objectID,
+    Catalog_TitleDescription: `Necklace ${objectID}`,
+    Pricing_ActivePrice: price,
     Media_Images: [],
   };
+}
+
+function sessionWithoutRetiredFields() {
   return {
     version: 3,
     missionId: 'mission-provider',
     brief: createBriefStateV3('mission-provider'),
-    products: [
-      {
-        sourceIndex: 'prod_catalog',
-        objectID: 'saved-1',
-        raw,
-        quantity: 1,
-        observedAt: null,
-        binding,
-        contentHash: binding === 'evidence_bound' ? 'hash-1' : null,
-        evidenceRef: binding === 'evidence_bound' ? 'ref-1' : null,
-      },
-    ],
     selectionRecords: [
       {
         sourceIndex: 'prod_catalog',
-        objectID: 'saved-1',
-        raw,
+        objectID: 'kept-1',
+        raw: rawRecord('kept-1'),
         quantity: 1,
         observedAt: null,
-        binding,
-        contentHash: binding === 'evidence_bound' ? 'hash-1' : null,
-        evidenceRef: binding === 'evidence_bound' ? 'ref-1' : null,
+        binding: 'legacy_unbound',
+        contentHash: null,
+        evidenceRef: null,
       },
     ],
-    compareIds: ['saved-1'],
-    activeView: 'compare',
     receipts: [],
-    evidence:
-      binding === 'evidence_bound'
-        ? [
-            {
-              evidenceRef: 'ref-1',
-              sourceIndex: 'prod_catalog',
-              objectID: 'saved-1',
-              contentHash: 'hash-1',
-            },
-          ]
-        : [],
   };
 }
 
-describe('v3 workspace session adapter', () => {
-  it('labels a persisted Discover proposal as previous after the accepted brief changes', () => {
-    const storage = new MemoryStorage();
-    storage.setItem(
-      V3_SESSION_KEY,
-      JSON.stringify({
-        ...session(),
-        brief: { ...createBriefStateV3('mission-provider'), revision: 1 },
-        activeView: 'discover',
-        committedProposal: {
-          missionId: 'mission-provider',
-          stateRevision: 0,
-          evidenceBatchRevision: 0,
-          turnId: 'old-turn',
-          proposalId: 'old-proposal',
-          kind: 'product_groups',
-          mode: null,
-          groups: [
-            {
-              title: 'Earring style: Hoop',
-              itemSubtotalCents: null,
-              lines: [
-                {
-                  evidenceRef: 'ref-1',
-                  objectID: 'saved-1',
-                  contentHash: 'hash-1',
-                  quantity: 1,
-                  componentSlot: 'earrings',
-                  explanation: 'Previously supported choice',
-                  unitPriceCents: 12500,
-                  lineSubtotalCents: 12500,
-                },
-              ],
-            },
-          ],
-          combinedItemSubtotalCents: null,
-          assessment: { perItem: 'accepted', total: 'accepted', reasons: [] },
+function arrangeTurn(objectIDs: string[]) {
+  return [
+    { role: 'user', parts: [] },
+    {
+      role: 'assistant',
+      parts: [
+        {
+          type: 'tool-arrange_groups',
+          output: {
+            status: 'ok',
+            groups: objectIDs.map((objectID) => ({
+              title: `Style ${objectID}`,
+              items: [{ objectID }],
+            })),
+          },
         },
-      }),
-    );
-    const adapter = createConciergeWorkspaceSession({
-      storage,
-      initialMissionId: 'unused',
-    });
-    expect(adapter.getModel().discoveries).toHaveLength(1);
-    expect(adapter.getModel().discoveriesStale).toBe(true);
-    expect(
-      renderToStaticMarkup(createElement(ProductWorkspace, { model: adapter.getModel() })),
-    ).toContain('Showing your previous choices.');
-  });
+      ],
+    },
+  ];
+}
 
-  it('rehydrates Saved-only Compare from the canonical store', () => {
+describe('simplified workspace session adapter', () => {
+  it('hands the workspace only the discovery columns and renders tiles as PDP links', async () => {
     const storage = new MemoryStorage();
-    storage.setItem(V3_SESSION_KEY, JSON.stringify(session()));
+    storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
+    const adapter = createConciergeWorkspaceSession({
+      storage,
+      initialMissionId: 'unused',
+      fetchProductRecord: async (id) => rawRecord(id),
+    });
+    const groups = await adapter.stageNativePresentation(arrangeTurn(['a-1', 'b-1']));
+    expect(groups).not.toBeNull();
+    const model = adapter.getModel(groups ?? []);
+    expect(model.discoveries).toHaveLength(2);
+    expect('products' in model).toBe(false);
+    expect('compareIds' in model).toBe(false);
+    expect('activeView' in model).toBe(false);
+    expect('pin' in model).toBe(false);
+    expect('toggleCompare' in model).toBe(false);
+    const html = renderToStaticMarkup(createElement(ProductWorkspace, { model }));
+    expect(html).toContain('href="/product/a-1"');
+    expect(html).toContain('Necklace a-1');
+    expect(html).not.toContain('Save');
+    expect(html).not.toContain('Compare');
+    expect(html).not.toContain('In stock');
+  });
+  it('renders the welcome state when the turn showed nothing', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
+    const adapter = createConciergeWorkspaceSession({ storage, initialMissionId: 'unused' });
+    const html = renderToStaticMarkup(
+      createElement(ProductWorkspace, { model: adapter.getModel() }),
+    );
+    expect(html).toContain('Discover a new favorite');
+  });
+  it('stays honest when the persisted session is unavailable', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(V3_SESSION_KEY, 'corrupt-v3');
     const adapter = createConciergeWorkspaceSession({
       storage,
       initialMissionId: 'unused',
     });
     const model = adapter.getModel();
-    expect(model.activeView).toBe('compare');
-    expect(model.compareIds).toEqual(['saved-1']);
-    expect(model.products[0].product.id).toBe('saved-1');
+    expect(model.discoveries).toEqual([]);
+    expect(model.discoveryUnavailable).toBe(true);
   });
-  it('withholds Discover cards until every displayed product passes item eligibility', () => {
+  it('registers identity-verified staged records for the agent tools', async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
+    const adapter = createConciergeWorkspaceSession({
+      storage,
+      initialMissionId: 'unused',
+      fetchProductRecord: async (id) => rawRecord(id),
+    });
+    await adapter.stageNativePresentation(arrangeTurn(['new-1']));
+    const session = adapter.store.getSnapshot();
+    expect(session?.selectionRecords.map((r) => r.objectID)).toContain('new-1');
+    expect(session?.selectionRecords.find((r) => r.objectID === 'new-1')?.binding).toBe(
+      'legacy_unbound',
+    );
+  });
+  it('drops a staged record whose hydrated identity does not match the named id', async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
+    const adapter = createConciergeWorkspaceSession({
+      storage,
+      initialMissionId: 'unused',
+      fetchProductRecord: async () => rawRecord('different-id'),
+    });
+    const groups = await adapter.stageNativePresentation(arrangeTurn(['named-1']));
+    expect(groups).toBeNull();
+    expect(
+      adapter.store.getSnapshot()?.selectionRecords.some((r) => r.objectID === 'named-1'),
+    ).toBe(false);
+  });
+  it('loads a pre-simplification session by stripping the retired fields', () => {
     const storage = new MemoryStorage();
     storage.setItem(
       V3_SESSION_KEY,
       JSON.stringify({
-        ...session(),
-        committedProposal: {
-          missionId: 'mission-provider',
-          stateRevision: 0,
-          evidenceBatchRevision: 0,
-          turnId: 'uncertain-turn',
-          proposalId: 'uncertain-proposal',
-          kind: 'product_groups',
-          groups: [
-            {
-              title: 'Halo',
-              itemSubtotalCents: null,
-              lines: [
-                {
-                  evidenceRef: 'ref-1',
-                  objectID: 'saved-1',
-                  contentHash: 'hash-1',
-                  quantity: 1,
-                  componentSlot: 'ring',
-                  explanation: 'Supported by the source record',
-                  unitPriceCents: 12500,
-                  lineSubtotalCents: 12500,
-                },
-              ],
-            },
-          ],
-          combinedItemSubtotalCents: null,
-          assessment: { perItem: 'unresolved', total: 'unresolved', reasons: ['fit:unknown'] },
-        },
-      }),
-    );
-    const adapter = createConciergeWorkspaceSession({
-      storage,
-      initialMissionId: 'unused',
-    });
-    expect(adapter.getModel().discoveries).toEqual([]);
-    expect(adapter.getModel().discoveryUnavailable).toBe(true);
-    // Existing saved state remains intact while an unresolved Discover proposal is withheld.
-    expect(adapter.getModel().products.map((item) => item.product.id)).toEqual(['saved-1']);
-  });
-  it('marks legacy unbound Saved records as needing verification', () => {
-    const storage = new MemoryStorage();
-    storage.setItem(V3_SESSION_KEY, JSON.stringify(session('legacy_unbound')));
-    const adapter = createConciergeWorkspaceSession({
-      storage,
-      initialMissionId: 'unused',
-    });
-    const model = adapter.getModel();
-    expect(model.assessment?.(model.products[0].product)).toBe('Needs verification');
-  });
-  it('refreshes a compared item from exact source-bound evidence without changing its selection', async () => {
-    const storage = new MemoryStorage();
-    storage.setItem(
-      V3_SESSION_KEY,
-      JSON.stringify({
-        ...session(),
-        committedProposal: {
-          missionId: 'mission-provider',
-          stateRevision: 0,
-          evidenceBatchRevision: 0,
-          turnId: 'original-turn',
-          proposalId: 'original-proposal',
-          kind: 'product_groups',
-          groups: [
-            {
-              title: 'Original choice',
-              itemSubtotalCents: 12500,
-              lines: [
-                {
-                  evidenceRef: 'ref-1',
-                  objectID: 'saved-1',
-                  contentHash: 'hash-1',
-                  quantity: 1,
-                  componentSlot: 'necklace',
-                  explanation: 'Original record',
-                  unitPriceCents: 12500,
-                  lineSubtotalCents: 12500,
-                },
-              ],
-            },
-          ],
-          combinedItemSubtotalCents: 12500,
-          assessment: { perItem: 'accepted', total: 'accepted', reasons: [] },
-        },
-      }),
-    );
-    const fetchExactProducts = vi.fn(async (body: unknown) => {
-      const input = body as RefreshRequest;
-      return {
-        status: 'ok' as const,
-        source: 'prod_catalog' as const,
-        missionId: input.missionId,
-        revision: input.expectedRevision,
-        expectedRevision: input.expectedRevision,
-        turnId: input.turnId,
-        effectiveFilters: [],
-        unresolved: [],
-        records: [
+        ...sessionWithoutRetiredFields(),
+        products: [
           {
-            source: 'prod_catalog' as const,
-            objectID: 'saved-1',
-            contentHash: 'hash-2',
-            evidenceRef: 'prod_catalog/saved-1/hash-2',
-            retrievedAt: '2026-10-06T23:00:00.000Z',
-            record: {
-              objectID: 'saved-1',
-              Catalog_TitleDescription: 'Updated necklace',
-              Pricing_ActivePrice: 130,
-              Media_Images: [],
-            },
+            sourceIndex: 'prod_catalog',
+            objectID: 'old-saved',
+            raw: rawRecord('old-saved'),
+            quantity: 1,
+            observedAt: null,
+            binding: 'legacy_unbound',
+            contentHash: null,
+            evidenceRef: null,
           },
         ],
-      };
-    });
-    const adapter = createConciergeWorkspaceSession({
-      storage,
-      initialMissionId: 'unused',
-      fetchExactProducts,
-    });
-    await adapter.getModel().refreshProducts(['saved-1']);
-    const updated = adapter.store.getSnapshot();
-    expect(fetchExactProducts).toHaveBeenCalledWith(
-      expect.objectContaining({
-        exactObjectIDs: ['saved-1'],
+        compareIds: ['old-saved'],
+        activeView: 'saved',
+        committedProposal: { missionId: 'mission-provider', groups: [] },
       }),
     );
-    expect(updated?.compareIds).toEqual(['saved-1']);
-    expect(updated?.products[0]).toEqual(updated?.selectionRecords[0]);
-    expect(updated?.products[0]).toMatchObject({
-      contentHash: 'hash-2',
-      evidenceRef: 'prod_catalog/saved-1/hash-2',
-    });
-    expect(updated?.evidence?.[0]).toMatchObject({
-      contentHash: 'hash-2',
-      evidenceRef: 'prod_catalog/saved-1/hash-2',
-    });
-    expect(updated?.committedProposal).toBeFalsy();
-    expect(adapter.getModel().products[0].product.price).toBe(130);
-    expect(adapter.getModel().refreshError).toBe('');
-  });
-  it('keeps prior product data when exact refresh returns the wrong identity', async () => {
-    const storage = new MemoryStorage();
-    storage.setItem(V3_SESSION_KEY, JSON.stringify(session()));
-    const adapter = createConciergeWorkspaceSession({
-      storage,
-      initialMissionId: 'unused',
-      fetchExactProducts: async (body: unknown) => ({
-        status: 'ok',
-        source: 'prod_catalog',
-        missionId: (body as RefreshRequest).missionId,
-        revision: (body as RefreshRequest).expectedRevision,
-        expectedRevision: (body as RefreshRequest).expectedRevision,
-        turnId: (body as RefreshRequest).turnId,
-        effectiveFilters: [],
-        unresolved: [],
-        records: [
-          {
-            source: 'prod_catalog',
-            objectID: 'other',
-            contentHash: 'wrong',
-            evidenceRef: 'prod_catalog/other/wrong',
-            retrievedAt: '2026-10-06T23:00:00.000Z',
-            record: { objectID: 'other', Catalog_TitleDescription: 'Wrong item' },
-          },
-        ],
-      }),
-    });
-    await adapter.getModel().refreshProducts(['saved-1']);
-    expect(adapter.store.getSnapshot()?.products[0].contentHash).toBe('hash-1');
-    expect(adapter.getModel().refreshError).toMatch(/could not be refreshed/i);
-  });
-  it('does not write an in-flight refresh into a newly reset mission', async () => {
-    const storage = new MemoryStorage();
-    storage.setItem(V3_SESSION_KEY, JSON.stringify(session()));
-    let release: (() => void) | undefined;
-    let markStarted: (() => void) | undefined;
-    const started = new Promise<void>((resolve) => {
-      markStarted = resolve;
-    });
-    const adapter = createConciergeWorkspaceSession({
-      storage,
-      initialMissionId: 'unused',
-      fetchExactProducts: (body: unknown) =>
-        new Promise((resolve) => {
-          const input = body as RefreshRequest;
-          markStarted?.();
-          release = () =>
-            resolve({
-              status: 'ok',
-              source: 'prod_catalog',
-              missionId: input.missionId,
-              revision: input.expectedRevision,
-              expectedRevision: input.expectedRevision,
-              turnId: input.turnId,
-              effectiveFilters: [],
-              unresolved: [],
-              records: [
-                {
-                  source: 'prod_catalog',
-                  objectID: 'saved-1',
-                  contentHash: 'hash-new',
-                  evidenceRef: 'prod_catalog/saved-1/hash-new',
-                  retrievedAt: '2026-10-06T23:00:00.000Z',
-                  record: {
-                    objectID: 'saved-1',
-                    Catalog_TitleDescription: 'New title',
-                    Pricing_ActivePrice: 130,
-                  },
-                },
-              ],
-            });
-        }),
-    });
-    const pending = adapter.getModel().refreshProducts(['saved-1']);
-    await started;
-    await adapter.store.resetMission('next-mission');
-    release?.();
-    await pending;
-    expect(adapter.store.getSnapshot()?.missionId).toBe('next-mission');
-    expect(adapter.store.getSnapshot()?.products[0].raw.Catalog_TitleDescription).toBe(
-      'Saved necklace',
-    );
+    const adapter = createConciergeWorkspaceSession({ storage, initialMissionId: 'unused' });
+    const session = adapter.store.getSnapshot();
+    expect(session).not.toBeNull();
+    expect(session?.selectionRecords.map((r) => r.objectID)).toEqual(['kept-1']);
+    expect('products' in (session ?? {})).toBe(false);
+    expect('compareIds' in (session ?? {})).toBe(false);
+    expect('committedProposal' in (session ?? {})).toBe(false);
   });
 });
