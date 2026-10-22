@@ -1,10 +1,10 @@
 # JTV Concierge storefront
 
-This is the React and Node application behind the [JTV Concierge snapshot](../README.md). It connects a two-column shopping UI to one published Concierge in Algolia's Agent Studio. This branch (`agent-2`) is the native-first rebuild: the agent searches the catalogue, blog and Help content with Agent Studio's own `algolia_search_index` tool and calls two deterministic client tools this application executes (`refresh_products`, `arrange_groups`), keeping judgment with the agent and stock, group size, bounds and refresh as tested code. `arrange_groups` accepts inclusive-bound flags and returns each piece's name and price. The application renders the workspace tiles from the `arrange_groups` output, keeps session state, and provides read-only exact product refresh and catalogue vocabulary. It has not been run against the currently published production agent, which still uses the three client-side tools, and it is not deployed.
+This is the React and Node application behind the [JTV Concierge](../README.md). It connects a two-column shopping UI to one Concierge in Algolia's Agent Studio. It is the **baseline** established on 2026-10-22 ([docs/BASELINE.md](docs/BASELINE.md)): local development and production run this exact code and the same agent definition, and every future change starts from here. The agent searches the catalogue, blog and Help content with Agent Studio's own `algolia_search_index` tool and calls two deterministic client tools this application executes (`refresh_products`, `arrange_groups`), keeping judgment with the agent and stock, group size, bounds and refresh as tested code. `arrange_groups` accepts inclusive-bound flags and returns each piece's name and price. The application renders the workspace tiles from the `arrange_groups` output, keeps session state, and provides read-only exact product refresh and catalogue vocabulary. A server-side tool-sheet check turns a mismatch between the agent's declared tools and the tools this build answers into a labelled error instead of an agent that appears to fail.
 
-The current snapshot is incomplete. See the [Plan 3.1 handoff](docs/PLAN-3.1-STATUS.md) for observed passes, failures, pending work, agent inventory and the exact release version. The [workflow diagram](../README.md#how-it-works) shows the runtime boundaries; its editable source is [architecture.mmd](docs/architecture.mmd).
+Shopper-journey acceptance (Plan 3.1) is not complete. See the [Plan 3.1 handoff](docs/PLAN-3.1-STATUS.md) for observed passes, failures and pending work. The [workflow diagram](../README.md#how-it-works) shows the runtime boundaries; its editable source is [architecture.mmd](docs/architecture.mmd).
 
-The earlier client-tool Discovery work described in the [three-style Discovery repair plan](docs/DISCOVERY-REPAIR-PLAN.md) targeted the client-tool path that this branch removed, so it is historical here.
+The earlier client-tool Discovery work described in the [three-style Discovery repair plan](docs/DISCOVERY-REPAIR-PLAN.md) targeted the earlier client-tool path (`retrieve_evidence`, `update_shopping_state`, `present_choices`) that the baseline retired, so it is historical here.
 
 ## Source map
 
@@ -15,6 +15,7 @@ The earlier client-tool Discovery work described in the [three-style Discovery r
 | `src/concierge/nativeResults.ts` and `toolRuntime.ts` | Read the agent's tool results (search hits and the arranged groups) out of the conversation stream for the workspace tiles, and run the turn lifecycle. No generated shopper language. |
 | `src/concierge/sessionPersistence.ts` and `shared/concierge/` | Session persistence and the shared catalogue, session and vocabulary contracts. |
 | `server/api.ts` and `server/concierge/` | Bounded `/api/chat` proxy with per-attempt upstream deadlines and an honest mid-stream error path; read-only `/api/search`, `/api/facets` and `/api/products/:id`; the exact product refresh route; the live catalogue vocabulary. |
+| `shared/concierge/toolSheetGuard.ts` and `server/concierge/toolSheetCheck.ts` | The one list of tools this build answers, and the read-only check that compares it with the tools the agent declares. A mismatch returns a labelled 503 `tool_sheet_mismatch` on `/api/chat` and is reported on `/api/health`; an unreadable agent never blocks a turn. |
 | `src/ProductWorkspace.tsx` | Discover, Compare and Save views. Discover renders the agent's arranged groups as one column of cards per group, with Save and Compare on each card. |
 | `tests/` and `evaluation/concierge-phases-1-3/` | Local regressions and a prepared but unaccepted live-journey scaffold. |
 
@@ -22,7 +23,7 @@ The agent's tools, instructions and indexes are configured in Agent Studio, not 
 
 ## Local run
 
-Use Node.js 24. Place server credentials and the selected agent identity in the parent project's `.env.local`; see [`.env.example`](.env.example). The development and production identity variables may name the same published agent. Never commit that file or pass credentials through `VITE_*` variables.
+Use Node.js 24. Place server credentials and the selected agent identity in the parent project's `.env.local`; see [`.env.example`](.env.example). Set `JTV_CONCIERGE_DEVELOPMENT_AGENT_ID` and `JTV_CONCIERGE_PRODUCTION_AGENT_ID` to the two agents listed in [`scripts/baseline/agents.json`](scripts/baseline/agents.json): they are different agents with identical definitions. `npm run dev` is the only supported local stack: do not start extra instances, wrapper scripts or alternate ports. Never commit that file or pass credentials through `VITE_*` variables.
 
 ```sh
 npm ci
@@ -57,4 +58,4 @@ stamped with the agent configuration and source state they describe. The pages a
 
 ## Deployment
 
-Deployments are explicit CLI releases only: `git.deploymentEnabled` in [vercel.json](vercel.json) is false for every branch including `main`, so GitHub pushes never deploy. Deploy from a clean Git archive of the exact release commit with the canonical project pinned, then verify the served commit, unauthenticated access, `/api/health`, a read-only product request and an actual Concierge turn. Follow the [deployment guide](docs/deployment.md).
+Deployments are explicit CLI releases only: `git.deploymentEnabled` in [vercel.json](vercel.json) is false for every branch including `main`, so GitHub pushes never deploy. Releases use [`scripts/baseline/release-app.sh`](scripts/baseline/release-app.sh), which deploys a clean Git archive of an exact commit without switching the live alias (`deploy`) and then switches it in seconds (`promote`); the agent follows with [`scripts/baseline/promote-agent.mjs`](scripts/baseline/promote-agent.mjs), which refuses unless the tested hashes still match and writes a rollback snapshot first. After any release run `node scripts/baseline/verify-baseline.mjs` and check an actual Concierge turn on the public URL. The full procedure, rollback and the rule for updating the baseline are in [docs/BASELINE.md](docs/BASELINE.md); the Vercel project setup is in the [deployment guide](docs/deployment.md).

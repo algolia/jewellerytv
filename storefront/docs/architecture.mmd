@@ -2,7 +2,9 @@ flowchart LR
   Shopper[Shopper] --> UI[Two-column JTV workspace]
   UI --> SDK[InstantSearch Chat SDK]
   SDK --> ChatAPI[Application /api/chat proxy]
-  ChatAPI --> Agent[One Agent Studio Concierge]
+  ChatAPI --> Guard{"Tool-sheet guard: agent's declared tools vs tools this build answers"}
+  Guard -->|match| Agent[Agent Studio Concierge: dev or production agent, one definition]
+  Guard -.->|mismatch: labelled 503| UI
   Agent -->|native tool| Search[algolia_search_index]
   Search --> Indexes[(Indexes configured on the agent: prod_catalog, blog, help_content)]
   Indexes --> Agent
@@ -14,3 +16,11 @@ flowchart LR
   UI --> Refresh[Exact-ID refresh API]
   Refresh --> Product[(prod_catalog, read-only)]
   UI --> State[Per-tab session state]
+
+  subgraph Release["How a change reaches production"]
+    direction LR
+    Local["Change and test locally: npm run dev + dev agent"] --> Main["Merge to main: pull request, CI green"]
+    Main --> Promote["Promote: scripts/baseline, agent then app"]
+    Promote --> Prod["Production: Vercel app + production agent"]
+    Prod --> Verify["verify-baseline.mjs"]
+  end

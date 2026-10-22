@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="620" viewBox="0 0 1240 620" font-family="Helvetica, Arial, sans-serif">
-  <title>JTV Concierge workflow, native search plus two deterministic tools (agent-2)</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="770" viewBox="0 0 1240 770" font-family="Helvetica, Arial, sans-serif">
+  <title>JTV Concierge workflow: native search plus two deterministic tools, the tool-sheet guard, and the baseline release path</title>
   <defs>
     <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#33415c"/>
     </marker>
   </defs>
-  <rect width="1240" height="620" fill="#ffffff"/>
+  <rect width="1240" height="770" fill="#ffffff"/>
 
   <!-- Row 1: shopper to agent -->
   <polyline points="210,92 250,92" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
@@ -63,11 +63,11 @@
 
   <rect x="710" y="60" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
   <text x="805" y="87" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">/api/chat proxy</text>
-  <text x="805" y="107" text-anchor="middle" font-size="12" fill="#3d4a66">server/api.ts</text>
+  <text x="805" y="107" text-anchor="middle" font-size="11" fill="#3d4a66">server/api.ts + tool-sheet guard</text>
 
   <rect x="940" y="60" width="190" height="64" rx="10" fill="#e9f7ef" stroke="#1e7a4a" stroke-width="1.6"/>
   <text x="1035" y="87" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Agent Studio Concierge</text>
-  <text x="1035" y="107" text-anchor="middle" font-size="12" fill="#3d4a66">one published agent</text>
+  <text x="1035" y="107" text-anchor="middle" font-size="12" fill="#3d4a66">dev or production agent</text>
 
   <rect x="940" y="200" width="190" height="64" rx="10" fill="#e9f7ef" stroke="#1e7a4a" stroke-width="1.6"/>
   <text x="1035" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">algolia_search_index</text>
@@ -101,5 +101,30 @@
   <text x="115" y="227" text-anchor="middle" font-size="15" font-weight="700" fill="#14213d">Per-tab session state</text>
   <text x="115" y="247" text-anchor="middle" font-size="12" fill="#3d4a66">sessionPersistence.ts</text>
 
-  <text x="20" y="596" font-size="12" fill="#5b6678">Blue: application. Green: Agent Studio. Amber: Algolia indexes (read-only to this project). The agent decides what to search, say and show; the deterministic tools verify price, stock, group size and refresh; the application renders.</text>
+  <!-- Release path band: how a change reaches production -->
+  <line x1="20" y1="584" x2="1220" y2="584" stroke="#c9d1de" stroke-width="1"/>
+  <text x="20" y="610" font-size="14" font-weight="700" fill="#14213d">How a change reaches production (one code base, one dev stack, two agents with one definition)</text>
+  <polyline points="210,662 250,662" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <polyline points="440,662 480,662" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <polyline points="670,662 710,662" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <polyline points="900,662 940,662" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
+  <rect x="20" y="630" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="115" y="657" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Change and test locally</text>
+  <text x="115" y="677" text-anchor="middle" font-size="12" fill="#3d4a66">npm run dev + dev agent</text>
+  <rect x="250" y="630" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="345" y="657" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Merge to main</text>
+  <text x="345" y="677" text-anchor="middle" font-size="12" fill="#3d4a66">pull request, CI green</text>
+  <rect x="480" y="630" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="575" y="657" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Promote</text>
+  <text x="575" y="677" text-anchor="middle" font-size="12" fill="#3d4a66">scripts/baseline: agent, then app</text>
+  <rect x="710" y="630" width="190" height="64" rx="10" fill="#e9f7ef" stroke="#1e7a4a" stroke-width="1.6"/>
+  <text x="805" y="657" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Production</text>
+  <text x="805" y="677" text-anchor="middle" font-size="12" fill="#3d4a66">Vercel app + production agent</text>
+  <rect x="940" y="630" width="190" height="64" rx="10" fill="#eef3fb" stroke="#2a4f8f" stroke-width="1.6"/>
+  <text x="1035" y="657" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Verify</text>
+  <text x="1035" y="677" text-anchor="middle" font-size="12" fill="#3d4a66">verify-baseline.mjs</text>
+
+  <text x="20" y="728" font-size="12" fill="#5b6678">Blue: application and tooling. Green: Agent Studio and production. Amber: Algolia indexes (read-only to this project).</text>
+  <text x="20" y="746" font-size="12" fill="#5b6678">The agent decides what to search, say and show; the deterministic tools verify price, stock, group size and refresh; the application renders.</text>
+  <text x="20" y="764" font-size="12" fill="#5b6678">The guard names a tool mismatch (labelled 503) instead of letting the agent appear to fail.</text>
 </svg>
