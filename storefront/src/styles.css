@@ -16,8 +16,7 @@
 
 /* Ask JTV chip inside the site search bar (simplification D6, 2026-10-22).
    Reads as a chip, not a second search button: tinted surface, blue text,
-   ask icon, sits between the input and the search submit. */
-.header-search .ask-chip{display:flex;align-items:center;gap:6px;width:auto;min-width:0;line-height:1;background:#eaf4f8;border:1px solid #bcd9e6;border-radius:18px;color:var(--blue);font-weight:700;font-size:13px;min-height:30px;padding:0 12px;margin:0 8px 0 4px;white-space:nowrap}
+   centered label, sits between the input and the search submit. */
+.header-search .ask-chip{display:flex;align-items:center;justify-content:center;width:auto;min-width:0;line-height:1;background:#eaf4f8;border:1px solid #bcd9e6;border-radius:30px;color:var(--blue);font-weight:700;font-size:13px;min-height:30px;padding:0 16px;margin:0 8px 0 4px;white-space:nowrap}
 .header-search .ask-chip:hover{background:#dceef6}
-.header-search .ask-chip svg{flex-shrink:0}
 @media(max-width:800px){.header-search .ask-chip{min-height:26px;font-size:12px;padding:0 10px;gap:4px}}
