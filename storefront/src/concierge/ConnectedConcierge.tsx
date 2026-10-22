@@ -472,11 +472,13 @@ export function ConnectedConcierge({
   blocked,
   onClose,
   open = true,
+  prefill = null,
 }: {
   context?: () => Record<string, string>;
   blocked?: string;
   onClose: () => void;
   open?: boolean;
+  prefill?: { text: string; token: number } | null;
 }) {
   const latestTurn = useRef<{ turnId: string; sourceMessageId: string }>({
     turnId: '',
@@ -662,6 +664,17 @@ export function ConnectedConcierge({
     onError: onChatError,
     requiresSearch: false,
   });
+  /* The Ask JTV chip hands the search box text over as a draft, never as a
+   * sent message: the shopper reads it, edits it and sends it themselves. */
+  const prefillToken = prefill?.token ?? 0;
+  const prefillText = prefill?.text ?? '';
+  useEffect(() => {
+    if (!open || !prefillToken) return;
+    if (prefillText) chat.setInput(prefillText);
+    // The chat handle is stable for the panel's lifetime; only a new token
+    // (a fresh chip click) may overwrite the composer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefillToken]);
 
   const hydratedTranscriptId = useRef<string | null>(null);
   useEffect(() => {
