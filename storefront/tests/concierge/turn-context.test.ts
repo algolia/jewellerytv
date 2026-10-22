@@ -38,50 +38,8 @@ function session(values: string[]) {
     version: 3,
     missionId: 'mission',
     brief,
-    products: [
-      {
-        sourceIndex: 'prod_catalog',
-        objectID: 'saved-1',
-        binding: 'legacy_unbound',
-        contentHash: null,
-        evidenceRef: null,
-        raw: { objectID: 'saved-1' },
-        quantity: 2,
-        observedAt: null,
-      },
-    ],
     selectionRecords: [record],
-    compareIds: ['saved-1'],
-    activeView: 'discover',
     receipts: [],
-    committedProposal: {
-      missionId: 'mission',
-      stateRevision: 1,
-      evidenceBatchRevision: 1,
-      turnId: 'previous-turn',
-      proposalId: 'proposal-1',
-      kind: 'product_groups',
-      groups: [
-        {
-          title: 'Most restrained',
-          itemSubtotalCents: null,
-          lines: [
-            {
-              evidenceRef: 'ref-1',
-              objectID: 'watch-1',
-              contentHash: 'hash-1',
-              quantity: 1,
-              componentSlot: 'watch',
-              explanation: 'Compact choice',
-              unitPriceCents: null,
-              lineSubtotalCents: null,
-            },
-          ],
-        },
-      ],
-      combinedItemSubtotalCents: null,
-      assessment: { perItem: 'unresolved', total: 'unresolved', reasons: [] },
-    },
     evidence: [
       {
         evidenceRef: 'ref-1',
@@ -102,7 +60,7 @@ function decoded(context: Record<string, string>) {
 }
 
 describe('latest-turn shopping context', () => {
-  it('retains accepted facts and saved selections, and no longer echoes retired fields', () => {
+  it('carries accepted facts and nothing from the retired save and compare surfaces', () => {
     const context = buildTurnContext(
       session(['blue dial', 'metal bracelet', 'restrained size', 'under $300', 'watch']),
       { page: 'home' },
@@ -112,11 +70,11 @@ describe('latest-turn shopping context', () => {
     expect(state.facts).toHaveLength(5);
     expect(state.factColumns).toBe('id,field,value,scope,strength,certainty,status');
     expect(state.facts[0].slice(3)).toEqual([['m', null], 'p', 'e', 'a']);
-    expect(state.saved).toEqual([['saved-1', 2]]);
-    expect(state.compareIds).toEqual(['saved-1']);
-    // Retired with the old tools (D6, 2026-10-21): the metadata no longer
-    // echoes committedProposal groups or the brief revision, even when a
-    // restored pre-native session still carries a committed proposal.
+    // Simplification 2026-10-22 (D1 to D3): saved lists, compare selections and
+    // the active view no longer exist, so the context cannot echo them.
+    expect('saved' in state).toBe(false);
+    expect('compareIds' in state).toBe(false);
+    expect('activeView' in state).toBe(false);
     expect('currentGroups' in state).toBe(false);
     expect(context).toMatchObject({
       page: 'home',
@@ -136,20 +94,13 @@ describe('latest-turn shopping context', () => {
         .facts[0][2].text,
     ).toBe(value);
   });
-  it('keeps a long accepted brief and six saves within the bounded field shape', () => {
+  it('keeps a long accepted brief within the bounded field shape', () => {
     const current = session(
       Array.from({ length: 11 }, (_, index) => `Preference ${index}: ${'blue '.repeat(8)}`),
     );
     current.brief.facts.forEach((item, index) => {
       item.id = `call_${'x'.repeat(24)}-fact-${index}`;
     });
-    current.products = Array.from({ length: 6 }, (_, index) => ({
-      ...current.products[0],
-      objectID: `saved-${index}`,
-      raw: { objectID: `saved-${index}` },
-    }));
-    current.compareIds = ['saved-0', 'saved-1'];
-    current.activeView = 'compare';
     const context = buildTurnContext(
       current,
       { route: '/' },
@@ -157,30 +108,21 @@ describe('latest-turn shopping context', () => {
     );
     const state = decoded(context);
     expect(state.facts).toHaveLength(11);
-    expect(state.saved).toHaveLength(6);
-    expect(state.compareIds).toEqual(['saved-0', 'saved-1']);
-    expect(state.activeView).toBe('compare');
-    expect('currentGroups' in state).toBe(false);
     expect(encoder.encode(JSON.stringify(context)).length).toBeLessThanOrEqual(4096);
   });
   it('does not reject a valid multi-turn brief solely for exceeding 4 KB total', () => {
     const current = session(
-      Array.from({ length: 18 }, (_, index) => `Preference ${index}: ${'blue '.repeat(15)}`),
+      Array.from({ length: 30 }, (_, index) => `Preference ${index}: ${'blue '.repeat(15)}`),
     );
     current.brief.facts.forEach((item, index) => {
       item.id = `call_${'x'.repeat(24)}-fact-${index}`;
     });
-    current.products = Array.from({ length: 6 }, (_, index) => ({
-      ...current.products[0],
-      objectID: `saved-${index}`,
-      raw: { objectID: `saved-${index}` },
-    }));
     const context = buildTurnContext(
       current,
       { route: '/' },
       { turnId: `turn-${'x'.repeat(36)}`, sourceMessageId: `shopper-${'x'.repeat(36)}` },
     );
-    expect(decoded(context).facts).toHaveLength(18);
+    expect(decoded(context).facts).toHaveLength(30);
     expect(encoder.encode(JSON.stringify(context)).length).toBeGreaterThan(4096);
     expect(Object.values(context).every((value) => encoder.encode(value).length <= 1024)).toBe(
       true,

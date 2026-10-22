@@ -23,24 +23,13 @@ const blankBrief: BriefStateV3 = {
   events: [],
 };
 
-function workspace(view: WorkspaceViewModel['activeView'] = 'discover'): WorkspaceViewModel {
+function workspace(): WorkspaceViewModel {
   return {
-    products: view === 'saved' ? [{ product: piece, quantity: 1, observedAt: 'now' }] : [],
-    selectionRecords: [piece],
     discoveries: [{ title: 'A direction', items: [{ product: piece, why: 'A grounded choice' }] }],
-    activeView: view,
-    setView: vi.fn(),
-    compareIds: view === 'compare' ? ['piece-1'] : [],
-    toggleCompare: vi.fn(),
-    pin: vi.fn(),
-    remove: vi.fn(),
-    refreshProducts: vi.fn(async () => ({ refreshed: [], missing: [] })),
-    refreshing: false,
-    refreshError: '',
   };
 }
 
-function modal(view: WorkspaceViewModel['activeView'] = 'discover') {
+function layout(model: WorkspaceViewModel) {
   return (
     <ConciergeWorkspaceLayout
       headerActions={
@@ -66,45 +55,33 @@ function modal(view: WorkspaceViewModel['activeView'] = 'discover') {
           <input aria-label="Ask the Concierge" />
         </label>
       }
-      productWorkspace={<ShoppingWorkspace model={workspace(view)} />}
+      productWorkspace={<ShoppingWorkspace model={model} />}
       sectionSwitch={
         <>
-          <button aria-pressed={view === 'discover'}>Conversation</button>
-          <button aria-pressed={view === 'saved'}>Products</button>
+          <button aria-pressed={true}>Conversation</button>
+          <button aria-pressed={false}>Products</button>
         </>
       }
-      section={view === 'saved' ? 'shopping' : 'conversation'}
+      section="conversation"
     />
   );
 }
 
 describe('restored approved workspace composition', () => {
-  it('renders the two columns, compact Preferences count, tabs, and populated product actions', () => {
-    const html = renderToStaticMarkup(modal());
+  it('renders the two columns, the brief and a single product surface with no tabs', () => {
+    const html = renderToStaticMarkup(layout(workspace()));
     expect(html).toContain('class="conversation-column"');
     expect(html).toContain('class="shopping-column"');
     expect(html).toContain('Preferences');
-    expect(html).toContain('Discover');
-    expect(html).not.toContain('Selected');
-    expect(html).toContain('Compare');
-    expect(html).toContain('Save');
+    expect(html).toContain('Sterling silver necklace');
+    expect(html).toContain('href="/product/piece-1"');
+    expect(html).not.toContain('pw-views');
+    expect(html).not.toContain('Remove from saved');
+    expect(html).not.toContain('Remove from comparison');
     expect(html).not.toContain('Add to combination');
   });
 
-  it('keeps saved and compare labels available for populated views', () => {
-    for (const view of ['saved', 'compare'] as const) {
-      const html = renderToStaticMarkup(modal(view));
-      expect(html).toContain(view === 'saved' ? 'Remove from saved' : 'Remove from comparison');
-    }
-  });
-
-  it('shows honest empty states and a mobile Products section marker', () => {
-    const emptyModel = {
-      ...workspace('saved'),
-      products: [],
-      discoveries: [],
-      selectionRecords: [],
-    };
+  it('shows the honest empty state and the mobile Products section marker', () => {
     const html = renderToStaticMarkup(
       <ConciergeWorkspaceLayout
         headerActions={<button type="button">Close</button>}
@@ -115,13 +92,15 @@ describe('restored approved workspace composition', () => {
         }
         messages={<p>Conversation</p>}
         composer={<button type="button">Send</button>}
-        productWorkspace={<ShoppingWorkspace model={emptyModel} />}
+        productWorkspace={
+          <ShoppingWorkspace model={{ discoveries: [], discoveryUnavailable: true }} />
+        }
         sectionSwitch={<button aria-pressed="true">Products</button>}
         section="shopping"
       />,
     );
     expect(html).toContain('data-section="shopping"');
-    expect(html).toContain('Save a piece you like, and keep it here.');
+    expect(html).toContain('No confirmed matches are ready to show.');
     expect(html).toContain('aria-expanded="false"');
   });
 });

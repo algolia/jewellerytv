@@ -4,7 +4,6 @@ import { expect, it } from 'vitest';
 import { createBriefState, applyBriefOperations } from '../shared/briefState';
 import { formatBriefValue } from '../shared/briefSchema';
 import { compileBriefConstraints as compileBriefConstraintsBase, checkBriefConflicts as checkBriefConflictsBase } from '../shared/briefConstraints';
-import { newShoppingState, withBrief } from '../src/ShoppingProvider';
 const foreign = {
   id: 'gbp',
   field: 'budget' as const,
@@ -50,11 +49,12 @@ it('leaves affordability unknown without a currency conversion', () => {
     'unknown',
   );
 });
-it('does not display a GBP number as a USD workspace limit', () => {
-  const shopping = withBrief(newShoppingState(), state());
-  expect(shopping.budgetCents).toBeNull();
-  expect(shopping.facts[0].value).toContain('GBP');
-  expect(shopping.facts[0].value).not.toContain('$');
+it('keeps a stated foreign currency out of USD-only display limits', () => {
+  const s = state();
+  // The retired workspace budget adapter was removed with Save (D1, 2026-10-22);
+  // the brief itself must keep the foreign currency intact, never a USD number.
+  expect(s.facts[0].value).toMatchObject({ currency: 'GBP', cents: 15000 });
+  expect(JSON.stringify(s.facts[0].value)).not.toContain('$');
 });
 it('an explicit USD correction replaces the foreign limit and compiles normally', () => {
   let s = state();
@@ -76,7 +76,7 @@ it('an explicit USD correction replaces the foreign limit and compiles normally'
     ],
   });
   expect(compileBriefConstraints(s).filters).toBe('Pricing_ActivePrice <= 120.00');
-  expect(withBrief(newShoppingState(), s).budgetCents).toBe(12000);
+  expect(s.facts.find((f) => f.id === 'usd')?.value).toMatchObject({ currency: 'USD' });
 });
 it('formats USD compatibly while preserving a different explicit currency', () => {
   expect(formatBriefValue({ ...foreign.value, currency: 'USD' })).toBe('Up to $150.00 total');

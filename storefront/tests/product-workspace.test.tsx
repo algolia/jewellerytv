@@ -1,226 +1,73 @@
 /*
- * Scenarios for the Compare facts display:
- * - Hide fields missing from every compared product.
- * - Keep a shared row when one product has a value and mark only the other as unrecorded.
- * - Use normalized catalogue fields rather than a fixed attribute checklist.
+ * Simplified workspace contract (2026-10-22, D1 to D5): one discovery surface,
+ * tiles link to the PDP, no compare grid and no brief badges on tiles. These
+ * tests keep the render rules that survive the simplification: no scripted
+ * guidance copy, no conversation prose inside tiles, one honest detail link.
  */
-// Distinct view contracts: comparison isn't a basket; images are real records.
-import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { it, expect, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { normalizeProduct } from '../src/catalog';
-import { createBriefState, applyBriefOperations } from '../shared/briefState';
-import type { BriefFactInput } from '../shared/briefSchema';
-const mock = vi.hoisted(() => ({ state: {} as any }));
-vi.mock('../src/ShoppingProvider', () => ({ useShopping: () => mock.state }));
-import { ProductWorkspace } from '../src/ProductWorkspace';
-const pieces = [
-  normalizeProduct({
-    objectID: 'a',
-    Catalog_TitleDescription: 'Necklace',
-    Pricing_ActivePrice: 54.99,
-    Media_Images: ['https://example.com/a.jpg'],
-  }),
-  normalizeProduct({
-    objectID: 'b',
-    Catalog_TitleDescription: 'Ring',
-    Pricing_ActivePrice: 94.99,
-    Media_Images: ['https://example.com/b.jpg'],
-  }),
-];
-function budgetBrief(
-  cents = 15000,
-  operator: 'lt' | 'lte' = 'lte',
-  basis: 'total' | 'per-item' = 'total',
-  extra: BriefFactInput[] = [],
-) {
-  const brief = createBriefState('workspace-budget');
-  const fact: BriefFactInput = {
-    id: 'budget',
-    field: 'budget',
-    value: { kind: 'money', cents, currency: 'USD', operator, basis },
-    scope: { kind: 'mission' },
-    strength: 'requirement',
-    status: 'active',
-    origin: 'ui',
-    evidence: { messageId: 'manual', quote: 'Manual budget', explicit: true, verified: true },
-  };
-  return applyBriefOperations(brief, {
-    missionId: brief.missionId,
-    expectedRevision: 0,
-    turnId: 'manual',
-    operations: [fact, ...extra].map((fact) => ({ type: 'add', fact })),
-  });
-}
-function state(view: string) {
+import { ProductWorkspace, type WorkspaceViewModel } from '../src/ProductWorkspace';
+
+const piece = normalizeProduct({
+  objectID: 'a',
+  Catalog_TitleDescription: 'Necklace',
+  Pricing_ActivePrice: 54.99,
+  Inventory_InStock: true,
+  Media_Images: ['https://example.com/a.jpg'],
+});
+
+function model(overrides: Partial<WorkspaceViewModel> = {}): WorkspaceViewModel {
   return {
-    brief: budgetBrief(),
-    products: pieces.map((product) => ({ product, quantity: 1 })),
-    selectionRecords: pieces,
-    discoveries: [],
-    displayIntro: '',
-    activeView: view,
-    compareIds: ['a', 'b'],
-    refreshing: false,
-    refreshError: '',
-    setView: vi.fn(),
-    refreshProducts: vi.fn(),
-    toggleCompare: vi.fn(),
-    pin: vi.fn(),
-    remove: vi.fn(),
+    discoveries: [{ title: 'Options', items: [{ product: piece }] }],
+    ...overrides,
   };
 }
-it('omits comparison fields that are missing from every selected product', () => {
-  mock.state = state('compare');
-  const html = renderToStaticMarkup(<ProductWorkspace />);
-  expect(html).toContain('a.jpg');
-  expect(html).toContain('b.jpg');
-  expect(html).not.toContain('Not recorded');
-  expect(html).not.toContain('Brand');
-  expect(html).not.toContain('Gemstone shape');
-  expect(html).not.toContain('Gemstone dimensions');
-  expect(html).not.toContain('Item subtotal');
-  expect(html).not.toContain('Help me compare');
-});
-it('shows a missing value only when another compared product supplies that field', () => {
-  const brand = normalizeProduct({
-    objectID: 'brand',
-    Catalog_TitleDescription: 'White gold necklace',
-    Catalog_ProductType: 'Necklace',
-    Catalog_Brand: 'JTV Collection',
-    Catalog_JewelryMaterialNavigationName: ['Gold'],
-    Catalog_JewelryMaterialNavigationPurity: ['14K'],
-    Pricing_ActivePrice: 100,
-  });
-  const noBrand = normalizeProduct({
-    objectID: 'no-brand',
-    Catalog_TitleDescription: 'White gold chain',
-    Catalog_ProductType: 'Necklace',
-    Catalog_JewelryMaterialNavigationName: ['Gold'],
-    Catalog_JewelryMaterialNavigationPurity: ['14K'],
-    Pricing_ActivePrice: 120,
-  });
-  mock.state = {
-    ...state('compare'),
-    products: [
-      { product: brand, quantity: 1 },
-      { product: noBrand, quantity: 1 },
-    ],
-    selectionRecords: [brand, noBrand],
-    compareIds: ['brand', 'no-brand'],
-  };
-  const html = renderToStaticMarkup(<ProductWorkspace />);
-  expect(html.match(/<dt>Brand<\/dt>/g)).toHaveLength(2);
-  expect(html).toContain('<dd>JTV Collection</dd>');
-  expect(html).toContain('<dd>Not recorded</dd>');
-  expect(html).not.toContain('Gemstone shape');
-  expect(html).not.toContain('Gemstone dimensions');
-});
-it('keeps category-level conversation prose out of compact Discover product tiles', () => {
-  mock.state = {
-    ...state('discover'),
-    displayIntro: 'Choose **blue** <script>bad</script>',
-    discoveries: [{ title: 'Options', items: [{ product: pieces[0], why: '**Small** stone' }] }],
-  };
-  const html = renderToStaticMarkup(<ProductWorkspace />);
-  expect(html).not.toContain('Choose');
-  expect(html).not.toContain('Small');
-  expect(html).not.toContain('**Small**');
-  expect(html).not.toContain('<script>');
-});
 
-it('shows foreign-budget uncertainty without turning an inclusive USD boundary into a violation', () => {
-  const foreign: BriefFactInput = {
-    id: 'foreign',
-    field: 'budget',
-    value: { kind: 'money', cents: 10000, currency: 'GBP', operator: 'lt', basis: 'total' },
-    scope: { kind: 'mission' },
-    strength: 'requirement',
-    status: 'active',
-    origin: 'ui',
-    evidence: { messageId: 'foreign', quote: 'GBP budget', explicit: true, verified: true },
-  };
-  mock.state = {
-    ...state('compare'),
-    brief: budgetBrief(14998, 'lte', 'total', [foreign]),
-  };
-  const html = renderToStaticMarkup(<ProductWorkspace />);
-  expect(html).toContain('Under GBP 100.00 total: evidence or scope unavailable');
-  expect(html).toContain('Needs verification');
-  expect(html).not.toContain('Check against your brief');
-  expect(html).not.toContain('Above your saved limit');
-  expect(html).not.toContain('remains before other charges');
-});
-it('keeps the Discover, Compare and Save tab labels in the accepted order', () => {
-  mock.state = state('discover');
-  const html = renderToStaticMarkup(<ProductWorkspace />);
-  const nav = html.match(/<nav class="pw-views"[^>]*>[\s\S]*?<\/nav>/)?.[0] ?? '';
-  expect(nav).toContain('>Discover</button>');
-  expect(nav).toContain('>Compare</button>');
-  expect(nav).toContain('>Save</button>');
-});
+describe('simplified product workspace', () => {
+  it('opens product details from the tile: title and image sit inside one link', () => {
+    const html = renderToStaticMarkup(<ProductWorkspace model={model()} />);
+    const main = html.match(/<a[^>]*class="pw-product-main"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? '';
+    expect(main).toContain('pw-product-title');
+    expect(main).toContain('href="/product/a"');
+    expect(main).toContain('View details for');
+  });
 
-it('renders no tab guidance line: the panel spends its pixels on products, not copy about itself', () => {
-  // Arijit, 2026-10-14: the guidance sentence under the tab list is redundant
-  // copy above the heading; real estate is at a premium. It must not render
-  // on any view, and its text must not survive anywhere in the panel.
-  for (const view of ['discover', 'compare', 'saved'] as const) {
-    mock.state = state(view);
-    const html = renderToStaticMarkup(<ProductWorkspace />);
+  it('keeps conversation prose out of compact Discover product tiles', () => {
+    const chatty = normalizeProduct({
+      ...piece.raw,
+      Catalog_TitleDescription: 'Necklace',
+    }) as typeof piece;
+    const html = renderToStaticMarkup(
+      <ProductWorkspace
+        model={{
+          discoveries: [
+            { title: 'Options', why: 'Choose **blue**', items: [{ product: chatty, why: '**Small** stone' }] },
+          ],
+        }}
+      />,
+    );
+    expect(html).not.toContain('Choose');
+    expect(html).not.toContain('Small');
+    expect(html).not.toContain('**Small**');
+  });
+
+  it('renders no tab guidance line: the panel spends its pixels on products, not copy about itself', () => {
+    // Arijit, 2026-10-14: guidance copy above the products is redundant; real
+    // estate is at a premium. It must not render anywhere in the panel.
+    const html = renderToStaticMarkup(<ProductWorkspace model={model()} />);
     expect(html.indexOf('pw-view-guidance')).toBe(-1);
     expect(html).not.toContain('shows current recommendations');
     expect(html).not.toContain('holds the pieces you picked');
     expect(html).not.toContain('keeps the pieces you explicitly saved');
-  }
-});
-
-it('warns about a saved record conflicting with the only verified tentative budget', () => {
-  const initial = createBriefState('tentative-only');
-  const brief = applyBriefOperations(initial, {
-    missionId: initial.missionId,
-    expectedRevision: 0,
-    turnId: 'spoken-limit',
-    operations: [
-      {
-        type: 'add',
-        fact: {
-          id: 'tentative-budget',
-          field: 'budget',
-          value: {
-            kind: 'money',
-            cents: 5000,
-            currency: 'USD',
-            operator: 'lt',
-            basis: 'unresolved',
-          },
-          scope: { kind: 'mission' },
-          strength: 'requirement',
-          status: 'tentative',
-          origin: 'spoken',
-          evidence: {
-            messageId: 'spoken-limit',
-            quote: 'under $50',
-            explicit: true,
-            verified: true,
-          },
-        },
-      },
-    ],
   });
-  mock.state = { ...state('saved'), brief, budgetCents: null };
-  const html = renderToStaticMarkup(<ProductWorkspace />);
-  expect(html).toContain('Price conflicts with under $50.00');
-  expect(html).toContain('Check against your brief');
-});
 
-it('opens product details from the Discover card: title and image sit inside one detail button', () => {
-  mock.state = {
-    ...state('discover'),
-    discoveries: [{ title: 'Options', items: [{ product: pieces[0] }] }],
-  };
-  const html = renderToStaticMarkup(<ProductWorkspace />);
-  const main = html.match(/<button[^>]*class="pw-product-main"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '';
-  expect(main).toContain('pw-product-title');
-  expect(main).toContain('View details for');
-  expect(html).not.toContain('pw-view-guidance');
+  it('never renders compare or brief-conflict chrome on tiles', () => {
+    const html = renderToStaticMarkup(<ProductWorkspace model={model()} />);
+    expect(html).not.toContain('Compare');
+    expect(html).not.toContain('Check against your brief');
+    expect(html).not.toContain('Needs verification');
+    expect(html).not.toContain('Not recorded');
+    expect(html).not.toContain('Item subtotal');
+  });
 });

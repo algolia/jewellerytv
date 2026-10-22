@@ -78,16 +78,13 @@ function migrateLegacy(value: Record<string, unknown>): PersistedSession | null 
     const brief = briefStateSchema.parse(value.brief);
     if (brief.missionId !== value.missionId) return null;
     const v3 = migrateBriefStateV2ToV3(brief);
-    const products = normalizeProducts(value.products);
-    if (!products) return null;
+    /* Simplification 2026-10-22: legacy saved products and compare selections
+     * are dropped, not carried. Save lives on jtv.com now (D1, D2). */
     return validateConciergeSession({
       version: 3,
       missionId: value.missionId,
       brief: v3,
-      products,
       selectionRecords: [],
-      compareIds: Array.isArray(value.compareIds) ? value.compareIds : [],
-      activeView: 'saved',
       receipts: [],
     }) as PersistedSession | null;
   } catch {
@@ -97,7 +94,7 @@ function migrateLegacy(value: Record<string, unknown>): PersistedSession | null 
 function parseV3(value: Record<string, unknown> | null): PersistedSession | null {
   try {
     if (!value || value.version !== 3 || typeof value.missionId !== 'string') return null;
-    for (const collection of [value.products, value.selectionRecords, value.evidence]) {
+    for (const collection of [value.selectionRecords, value.evidence]) {
       if (
         Array.isArray(collection) &&
         collection.some(
@@ -112,34 +109,18 @@ function parseV3(value: Record<string, unknown> | null): PersistedSession | null
     }
     const brief = briefStateV3Schema.parse(value.brief);
     if (brief.missionId !== value.missionId) return null;
-    const products = normalizeProducts(value.products);
     const selectionRecords = normalizeProducts(value.selectionRecords);
-    if (!products || !selectionRecords) return null;
-    const normalizeIds = (input: unknown, max: number) => {
-      if (input === undefined) return [];
-      if (!Array.isArray(input) || input.length > max || input.some((id) => typeof id !== 'string')) return null;
-      return input as string[];
-    };
-    const compareIds = normalizeIds(value.compareIds, 3);
-    if (!compareIds) return null;
+    if (!selectionRecords) return null;
+    /* Sessions written before the simplification carry saved products, compare
+     * selections, the active view and a committed proposal. Those features are
+     * retired (D1 to D3); the fields are stripped here so an older session
+     * degrades to its brief and selection records instead of failing. */
     const canonical = {
       version: 3,
       missionId: value.missionId,
       brief,
-      products,
       selectionRecords,
-      compareIds,
-      activeView: String(value.activeView) === 'combination'
-        ? 'saved'
-        : ['discover', 'saved', 'compare'].includes(String(value.activeView))
-          ? value.activeView
-          : 'discover',
       receipts: Array.isArray(value.receipts) ? value.receipts : [],
-      ...(value.committedProposal &&
-      typeof value.committedProposal === 'object' &&
-      Array.isArray((value.committedProposal as Record<string, unknown>).groups)
-        ? { committedProposal: value.committedProposal }
-        : {}),
       ...(Array.isArray(value.evidence)
         ? {
             evidence: value.evidence
@@ -189,10 +170,7 @@ export function createSessionPersistence(storage: StorageLike, initialMissionId?
                 version: 3,
                 missionId: initialMissionId,
                 brief: createBriefStateV3(initialMissionId),
-                products: [],
                 selectionRecords: [],
-                compareIds: [],
-                activeView: 'discover',
                 receipts: [],
               }) as PersistedSession | null)
             : null;
@@ -238,10 +216,8 @@ export function createSessionPersistence(storage: StorageLike, initialMissionId?
       if (!current.state && current.v3Raw !== null) {
         const loose = parse(current.v3Raw);
         if (loose && loose.version === 3) {
-          delete loose.committedProposal;
           delete loose.evidence;
           loose.receipts = [];
-          loose.activeView = 'saved';
           const recovered = parseV3(loose);
           if (recovered) current = { ...current, state: recovered };
         }
@@ -253,19 +229,12 @@ export function createSessionPersistence(storage: StorageLike, initialMissionId?
       }
       let next: PersistedSession;
       try {
-        const saved = Array.isArray(current.state.products)
-          ? current.state.products.slice(0, 12)
-          : [];
         next = {
           version: 3,
           missionId,
           brief: createBriefStateV3(missionId),
-          products: saved,
           selectionRecords: [],
-          compareIds: [],
-          activeView: 'discover',
           receipts: [],
-          committedProposal: null,
           evidence: [],
         };
         next = { ...next, brief: briefStateV3Schema.parse(next.brief) };

@@ -1,12 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { normalizeProduct } from '../src/catalog';
-import {
-  ProductWorkspace,
-  workspaceCompareAction,
-  workspaceSaveAction,
-  type WorkspaceViewModel,
-} from '../src/ProductWorkspace';
+import { ProductWorkspace, type WorkspaceViewModel } from '../src/ProductWorkspace';
 
 const product = normalizeProduct({
   objectID: 'saved-1',
@@ -15,51 +10,56 @@ const product = normalizeProduct({
   Media_Images: [],
 });
 
-function model(activeView: WorkspaceViewModel['activeView'] = 'discover'): WorkspaceViewModel {
+function model(): WorkspaceViewModel {
   return {
-    products: [{ product, quantity: 1, observedAt: '2026-10-06T00:00:00Z' }],
-    selectionRecords: [product],
     discoveries: [
       {
         title: 'One choice',
-        items: [{ product, why: 'A useful direction', assessment: 'unknown' }],
+        items: [{ product, why: 'A useful direction' }],
       },
     ],
-    activeView,
-    setView: vi.fn(),
-    compareIds: ['saved-1', 'missing-1'],
-    toggleCompare: vi.fn(),
-    pin: vi.fn(),
-    remove: vi.fn(),
-    refreshProducts: vi.fn(async () => ({ refreshed: [], missing: [] })),
-    refreshing: false,
-    refreshError: '',
-    assessment: (_item, status) => (status === 'unknown' ? <p>Needs verification</p> : null),
   };
 }
 
-describe('v3-ready workspace view model', () => {
-  it('renders Discover, Compare and Save as three primary tabs', () => {
+describe('simplified workspace view model', () => {
+  it('renders one discovery surface without tabs, save or compare', () => {
     const html = renderToStaticMarkup(<ProductWorkspace model={model()} />);
-    expect(html).toContain('Discover');
-    expect(html).toContain('Compare');
-    expect(html).toContain('Save');
-    expect(html).not.toContain('Selected');
-    expect(html).not.toContain('Compare (2)');
-    expect(html).not.toContain('Save (1)');
-    expect(html).not.toContain('Combination');
+    expect(html).toContain('Saved necklace');
+    expect(html).not.toContain('pw-views');
+    expect(html).not.toContain('>Discover<');
+    expect(html).not.toContain('>Compare<');
+    expect(html).not.toContain('>Save<');
     expect(html).not.toContain('Needs verification');
+    expect(html).not.toContain('Saved ✓');
   });
 
-  it('keeps unknown price and missing record honest in supplied compare view', () => {
-    const html = renderToStaticMarkup(<ProductWorkspace model={model('compare')} />);
-    expect(html).toContain('1 selected piece needs to be retrieved again');
-    expect(html).toContain('aria-label="View details for Saved necklace"');
-    expect(html).not.toContain('>View details<');
-    expect(html).toContain('Remove Saved necklace from comparison');
+  it('links a tile straight to the product detail page', () => {
+    const html = renderToStaticMarkup(<ProductWorkspace model={model()} />);
+    expect(html).toContain('href="/product/saved-1"');
+    expect(html).toContain('aria-label="View details for Saved necklace, price unavailable."');
+    expect(html).not.toContain('View product page');
   });
 
-  it('explains when an unresolved proposal is withheld from Discover', () => {
+  it('shows the name and one price only, never stock or specs', () => {
+    const priced = normalizeProduct({
+      objectID: 'priced-1',
+      Catalog_TitleDescription: 'Priced ring',
+      Pricing_ActivePrice: 129.5,
+      Inventory_InStock: true,
+      Media_Images: [],
+    });
+    const supplied: WorkspaceViewModel = {
+      discoveries: [{ title: 'Rings', items: [{ product: priced }] }],
+    };
+    const html = renderToStaticMarkup(<ProductWorkspace model={supplied} />);
+    expect(html).toContain('Priced ring');
+    expect(html).toContain('$129.50');
+    expect(html).not.toContain('In stock');
+    expect(html).not.toContain('Out of stock');
+    expect(html).not.toContain('Sizes');
+  });
+
+  it('explains when a withheld presentation leaves nothing to show', () => {
     const supplied = model();
     supplied.discoveries = [];
     supplied.discoveryUnavailable = true;
@@ -68,27 +68,17 @@ describe('v3-ready workspace view model', () => {
     expect(html).not.toContain('MAKE IT YOURS');
   });
 
-  it('shows a committed complete look and its verified subtotal without changing manual picks', () => {
-    const supplied = model('saved');
-    supplied.proposedLooks = [
-      {
-        title: 'Blue stone look',
-        lines: [{ product, why: 'Chosen necklace', quantity: 1 }],
-        itemSubtotalCents: 7999,
-      },
-    ];
-    const html = renderToStaticMarkup(<ProductWorkspace model={supplied} />);
-    expect(html).toContain('Blue stone look');
-    expect(html).toContain('Saved necklace');
-    expect(html).toContain('$79.99');
-    expect(html).not.toContain('Add to combination');
+  it('offers the welcome state on an empty fresh workspace', () => {
+    const html = renderToStaticMarkup(
+      <ProductWorkspace model={{ discoveries: [] }} onStart={() => undefined} />,
+    );
+    expect(html).toContain('MAKE IT YOURS');
   });
 
-  it('routes Save and Compare through supplied deterministic actions', () => {
-    const supplied = model();
-    workspaceSaveAction(supplied, product);
-    workspaceCompareAction(supplied, product);
-    expect(supplied.remove).toHaveBeenCalledWith('saved-1');
-    expect(supplied.toggleCompare).toHaveBeenCalledWith('saved-1');
+  it('labels retained discoveries as previous choices when the flag is set', () => {
+    const html = renderToStaticMarkup(
+      <ProductWorkspace model={{ ...model(), discoveriesStale: true }} />,
+    );
+    expect(html).toContain('Showing your previous choices.');
   });
 });

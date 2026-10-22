@@ -55,7 +55,12 @@ describe('session persistence boundary', () => {
     }));
     expect(result.ok).toBe(true);
     expect(s.data.get(LEGACY_BACKUP_KEY)).toBe(legacy);
-    expect(JSON.parse(s.data.get(V3_SESSION_KEY)!).products).toHaveLength(1);
+    // Simplification 2026-10-22: the migrated session drops saved products and
+    // compare selections; only the brief carries over.
+    const written = JSON.parse(s.data.get(V3_SESSION_KEY)!);
+    expect(written.products).toBeUndefined();
+    expect(written.compareIds).toBeUndefined();
+    expect(written.selectionRecords).toEqual([]);
   });
   it('backs up exact loose v3 bytes before its first canonical write', () => {
     const s = new MemoryStorage();
@@ -69,7 +74,7 @@ describe('session persistence boundary', () => {
     );
     s.data.set(V3_SESSION_KEY, loose);
     const p = createSessionPersistence(s);
-    expect(p.load().state?.products).toHaveLength(1);
+    expect(p.load().state).not.toBeNull();
     expect(s.writes).toBe(0);
     expect(p.commitMutation((state) => state)).toMatchObject({ ok: true });
     expect(s.data.get(V3_BACKUP_KEY)).toBeUndefined();
@@ -93,35 +98,48 @@ describe('session persistence boundary', () => {
     ).toMatchObject({ ok: false });
     expect(t.writes).toBe(0);
   });
-  it('blocks v1 conversion when any Saved row cannot be migrated instead of dropping it', () => {
+  it('drops legacy saved rows and compare selections without blocking the brief migration', () => {
     const s = new MemoryStorage();
     const value = JSON.parse(legacy);
     value.products.push({ product: { raw: { title: 'Missing identity' } }, quantity: 1 });
     s.data.set(LEGACY_SESSION_KEY, JSON.stringify(value));
     const p = createSessionPersistence(s);
-    expect(p.load().state).toBeNull();
-    expect(p.commitMutation((state) => ({ ...state, brief: { ...state.brief, revision: 1 } })))
-      .toMatchObject({ ok: false });
-    expect(s.data.get(V3_SESSION_KEY)).toBeUndefined();
-    expect(s.data.get(LEGACY_BACKUP_KEY)).toBeUndefined();
-    expect(s.writes).toBe(0);
+    const loaded = p.load();
+    expect(loaded.state).not.toBeNull();
+    expect(loaded.state?.selectionRecords).toEqual([]);
+    const brokenBrief = JSON.parse(legacy);
+    brokenBrief.brief.revision = -1;
+    t2: {
+      const t = new MemoryStorage();
+      t.data.set(LEGACY_SESSION_KEY, JSON.stringify(brokenBrief));
+      expect(createSessionPersistence(t).load().state).toBeNull();
+      break t2;
+    }
   });
-  it('blocks canonicalization when a loose v3 Saved row cannot be migrated', () => {
+  it('keeps only catalogue-source selection records from a loose v3 payload', () => {
     const s = new MemoryStorage();
     const seed = createSessionPersistence(s, 'm').load().state!;
     const loose = JSON.stringify({
       ...seed,
-      products: [...seed.products, { product: { raw: { title: 'Missing identity' } } }],
+      selectionRecords: [
+        {
+          sourceIndex: 'blog',
+          objectID: 'foreign',
+          binding: 'legacy_unbound',
+          contentHash: null,
+          evidenceRef: null,
+          raw: { objectID: 'foreign' },
+          quantity: 1,
+          observedAt: null,
+        },
+      ],
     });
     s.data.set(V3_SESSION_KEY, loose);
     const p = createSessionPersistence(s);
     expect(p.load().state).toBeNull();
-    expect(p.commitMutation((state) => state)).toMatchObject({ ok: false });
-    expect(s.data.get(V3_SESSION_KEY)).toBe(loose);
-    expect(s.data.get(V3_BACKUP_KEY)).toBeUndefined();
     expect(s.writes).toBe(0);
   });
-  it('preserves workspace selections and makes repeated success idempotent', () => {
+  it('makes repeated success idempotent', () => {
     const s = new MemoryStorage();
     s.data.set(LEGACY_SESSION_KEY, legacy);
     const p = createSessionPersistence(s);
@@ -129,27 +147,22 @@ describe('session persistence boundary', () => {
     const writes = s.writes;
     const again = p.commitMutation((state) => state);
     expect(again.ok).toBe(true);
-    expect(JSON.parse(s.data.get(V3_SESSION_KEY)!).compareIds).toEqual(['saved']);
     expect(s.writes).toBe(writes);
   });
-  it('preserves separate selection records, quantities, and undo history across canonical write and reload', () => {
+  it('preserves selection records and undo history across canonical write and reload', () => {
     const s = new MemoryStorage();
     const seed = createSessionPersistence(s, 'm').load().state!;
     const product = {
       sourceIndex: 'prod_catalog' as const, objectID: 'working', contentHash: null, evidenceRef: null,
       binding: 'legacy_unbound' as const, raw: { objectID: 'working', title: 'Working item' }, quantity: 3, observedAt: null,
     };
-    seed.products = [{ ...product, objectID: 'saved', raw: { objectID: 'saved', title: 'Saved item' }, quantity: 2 }];
     seed.selectionRecords = [product];
-    seed.compareIds = ['saved', 'working'];
     seed.brief.events = [{ turnId: 'undo-1', revision: 1, beforeFacts: [], beforeTombstones: [] }];
     s.data.set(V3_SESSION_KEY, JSON.stringify(seed));
     const p = createSessionPersistence(s);
     expect(p.commitMutation((state) => ({ ...state, brief: { ...state.brief, revision: 2 } }))).toMatchObject({ ok: true });
     const reloaded = createSessionPersistence(s).load().state!;
-    expect(reloaded.products.map((item) => item.objectID)).toEqual(['saved']);
     expect(reloaded.selectionRecords.map((item) => item.objectID)).toEqual(['working']);
-    expect(reloaded.compareIds).toEqual(['saved', 'working']);
     expect(reloaded.brief.events).toEqual(seed.brief.events);
   });
   it('rolls back by reading the backup while leaving new v3 data intact', () => {
@@ -175,31 +188,6 @@ describe('session persistence boundary', () => {
     });
     expect(s.data.get(V3_SESSION_KEY)).toBe('corrupt-v3');
     expect(s.data.get(LEGACY_BACKUP_KEY)).toBeUndefined();
-    expect(s.writes).toBe(0);
-  });
-  it('does not relabel a foreign-source v3 product as catalogue evidence', () => {
-    const s = new MemoryStorage();
-    s.data.set(LEGACY_SESSION_KEY, legacy);
-    const seed = createSessionPersistence(s).load().state!;
-    s.data.delete(LEGACY_SESSION_KEY);
-    s.data.set(
-      V3_SESSION_KEY,
-      JSON.stringify({
-        ...seed,
-        products: [{
-          sourceIndex: 'blog',
-          objectID: 'saved',
-          binding: 'legacy_unbound',
-          contentHash: null,
-          evidenceRef: null,
-          raw: { objectID: 'saved' },
-          quantity: 1,
-          observedAt: null,
-        }],
-      }),
-    );
-    const p = createSessionPersistence(s);
-    expect(p.load().state).toBeNull();
     expect(s.writes).toBe(0);
   });
   it('fails closed when the outer and brief missions differ', () => {
@@ -287,7 +275,7 @@ describe('session persistence boundary', () => {
     ).toMatchObject({ ok: false, reason: 'invalid_mutation' });
     expect(s.writes).toBe(0);
   });
-  it('rejects an applied mutation with invalid selection identity before writing', async () => {
+  it('rejects a mutation reintroducing a retired field before writing', async () => {
     const s = new MemoryStorage();
     s.data.set(LEGACY_SESSION_KEY, legacy);
     const p = createSessionPersistence(s);
@@ -315,7 +303,7 @@ describe('session persistence boundary', () => {
     expect(s.getItem(V3_SESSION_KEY)).not.toBeNull();
     expect(s.getItem(LEGACY_BACKUP_KEY)).toBeNull();
   });
-  it('starts a fresh mission while retaining saved products and exact legacy backup bytes', async () => {
+  it('starts a fresh mission with clean selections and exact legacy backup bytes', async () => {
     const s = new MemoryStorage();
     s.data.set(LEGACY_SESSION_KEY, legacy);
     const p = createSessionPersistence(s);
@@ -326,9 +314,8 @@ describe('session persistence boundary', () => {
     const next = JSON.parse(s.getItem(V3_SESSION_KEY)!);
     expect(next.missionId).toBe('fresh-mission');
     expect(next.brief.missionId).toBe('fresh-mission');
-    expect(next.products).toHaveLength(1);
-    expect(next.compareIds).toEqual([]);
     expect(next.selectionRecords).toEqual([]);
+    expect(next.products).toBeUndefined();
   });
   it('does not overwrite a corrupt v3 record when starting a new mission', async () => {
     const s = new MemoryStorage();
