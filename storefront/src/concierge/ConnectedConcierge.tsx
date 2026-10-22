@@ -638,8 +638,10 @@ export function ConnectedConcierge({
   const onChatError = useCallback<ChatOnErrorCallback>((error) => {
     chatErrorRef.current = error;
   }, []);
-  /** Correlates this page's chat requests with the server's request log. Metadata only. */
-  const chatRequestId = useRef(crypto.randomUUID());
+  /** Correlates this page's chat requests with the server's request log. Metadata only.
+   * crypto.randomUUID needs a secure context; an embed iframe under an insecure
+   * host page has none, so fall back like newId() does. */
+  const chatRequestId = useRef(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2));
   /* Lane 1: the four deterministic client tools execute in this browser over
    * the read-only exact-product proxy; the agent's tool sheet declares them
    * and their descriptions, this only binds the executors. */

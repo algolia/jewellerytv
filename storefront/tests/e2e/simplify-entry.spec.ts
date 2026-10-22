@@ -38,4 +38,14 @@ test.describe('simplified entry and canvas', () => {
     await page.locator('.header-search button[aria-label="Search"]').click();
     await expect(page).toHaveURL(/\/search\?q=gold(\+|%20)hoops/);
   });
+
+  test('a product tile navigates to the product detail page (D4)', async ({ page }) => {
+    await page.goto('/search?q=rings');
+    const tile = page.locator('a.product-link, .product-card a').first();
+    await expect(tile).toBeVisible();
+    const href = (await tile.getAttribute('href')) ?? '';
+    expect(href).toMatch(/^\/product\//);
+    await tile.click();
+    await expect(page).toHaveURL(new RegExp(href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  });
 });
