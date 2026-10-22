@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta http-equiv="cache-control" content="no-cache">
+<title>JTV Concierge documentation</title>
+<meta name="description" content="What the JTV Concierge is, how it works, and how to look after it. Written for the JTV development, merchandising and admin teams.">
+<link rel="stylesheet" href="./docs.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="docs-header">
+  <div class="brand">
+    <span class="mark">JTV</span>
+    <span class="desc">Concierge documentation</span>
+  </div>
+  <a class="to-shop" href="/">Open the shop</a>
+</header>
+
+<div class="docs-layout">
+
+  <aside class="docs-sidebar" aria-label="Documentation navigation">
+    <details open>
+      <summary class="side-summary">All pages</summary>
+      <div class="side-search">
+        <span class="lens" aria-hidden="true">Search pages</span>
+        <input id="navfilter" type="search" placeholder="Find a page"
+               aria-label="Find a page">
+      </div>
+      <nav class="docs-nav" id="docnav">
+        <h3>Start here</h3>
+        <ul>
+          <li><a href="./index.html" aria-current="page">What is the Concierge?</a></li>
+          <li><a href="./architecture.html">How the Concierge works</a></li>
+        </ul>
+        <h3>For developers</h3>
+        <ul>
+          <li><span class="soon">The three tools, explained <span class="pill">soon</span></span></li>
+          <li><span class="soon">The code, file by file <span class="pill">soon</span></span></li>
+          <li><span class="soon">Safety checks and error messages <span class="pill">soon</span></span></li>
+          <li><span class="soon">Running and changing the system <span class="pill">soon</span></span></li>
+        </ul>
+        <h3>For merchandisers</h3>
+        <ul>
+          <li><span class="soon">The catalogue behind the Concierge <span class="pill">soon</span></span></li>
+          <li><span class="soon">What it can and cannot filter <span class="pill">soon</span></span></li>
+        </ul>
+        <h3>For administrators</h3>
+        <ul>
+          <li><span class="soon">Who can do what <span class="pill">soon</span></span></li>
+          <li><span class="soon">Costs and speed <span class="pill">soon</span></span></li>
+          <li><span class="soon">Shopper data and privacy <span class="pill">soon</span></span></li>
+          <li><span class="soon">Approvals: who decides what <span class="pill">soon</span></span></li>
+          <li><span class="soon">The old system being replaced <span class="pill">soon</span></span></li>
+        </ul>
+        <h3>Reference</h3>
+        <ul>
+          <li><span class="soon">Words this guide uses <span class="pill">soon</span></span></li>
+          <li><span class="soon">Decisions already made, and why <span class="pill">soon</span></span></li>
+        </ul>
+        <p class="side-empty">No pages match that filter.</p>
+      </nav>
+    </details>
+  </aside>
+
+  <main id="main" class="docs-main">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <span class="here">Start here</span>
+    </nav>
+
+    <header class="land-head page-head">
+      <h1>JTV Concierge documentation</h1>
+      <p class="lede">This guide explains the Concierge, the shopping assistant built into
+      the JTV website: what it is, how it works, and how your team looks after it. Start
+      with who it is for and what it covers, then meet the Concierge itself.</p>
+    </header>
+
+    <div class="content">
+
+      <h2 id="who">Who this guide is for <a class="anchor" href="#who" aria-label="Link to this section">#</a></h2>
+      <div class="tracks">
+        <section class="track" aria-labelledby="track-dev">
+          <h3 id="track-dev">Developers</h3>
+          <p class="who">Build, change, deploy and diagnose the system.</p>
+          <ul>
+            <li>How the pieces fit together</li>
+            <li>What each tool does and where its code lives</li>
+            <li>What the safety checks are and what they catch</li>
+            <li>How to change things without breaking them</li>
+          </ul>
+          <p class="first">Start with: <a href="./architecture.html">How the Concierge works</a></p>
+        </section>
+        <section class="track" aria-labelledby="track-merch">
+          <h3 id="track-merch">Merchandisers</h3>
+          <p class="who">Run the catalogue the Concierge sells from.</p>
+          <ul>
+            <li>What the Concierge can and cannot filter</li>
+            <li>How product data reaches the screen</li>
+            <li>Why the catalogue is read-only from this system</li>
+          </ul>
+          <p class="first">Start with: The catalogue behind the Concierge (soon)</p>
+        </section>
+        <section class="track" aria-labelledby="track-admin">
+          <h3 id="track-admin">Administrators</h3>
+          <p class="who">Own access, cost, data and decisions.</p>
+          <ul>
+            <li>Who can change what, and who approves it</li>
+            <li>What the system costs to run</li>
+            <li>Where shopper conversations are kept</li>
+          </ul>
+          <p class="first">Start with: Who can do what (soon)</p>
+        </section>
+      </div>
+
+      <h2 id="contents">What is in this guide <a class="anchor" href="#contents" aria-label="Link to this section">#</a></h2>
+      <p>This guide is being written now, page by page. Two pages are ready; the rest
+      follow in the order listed. Pages about how the Concierge talks are written last,
+      because its instructions are being improved at the same time.</p>
+      <div class="table-wrap page-index">
+        <table class="data">
+          <thead><tr><th>Page</th><th>For</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><a href="./index.html">What is the Concierge?</a></td><td>Everyone</td><td>Ready</td></tr>
+            <tr><td><a href="./architecture.html">How the Concierge works</a></td><td>Everyone, then developers</td><td>Ready</td></tr>
+            <tr><td>The three tools, explained</td><td>Developers</td><td>Next</td></tr>
+            <tr><td>The code, file by file</td><td>Developers</td><td>Planned</td></tr>
+            <tr><td>Safety checks and error messages</td><td>Developers</td><td>Planned</td></tr>
+            <tr><td>Running and changing the system</td><td>Developers, admins</td><td>Planned</td></tr>
+            <tr><td>The catalogue behind the Concierge</td><td>Merchandisers</td><td>Planned</td></tr>
+            <tr><td>What it can and cannot filter</td><td>Merchandisers</td><td>Planned</td></tr>
+            <tr><td>Who can do what</td><td>Administrators</td><td>Planned</td></tr>
+            <tr><td>Costs and speed</td><td>Administrators</td><td>Planned</td></tr>
+            <tr><td>Shopper data and privacy</td><td>Administrators</td><td>Planned</td></tr>
+            <tr><td>Approvals: who decides what</td><td>Administrators</td><td>Planned</td></tr>
+            <tr><td>The old system being replaced</td><td>Administrators</td><td>Planned</td></tr>
+            <tr><td>How the Concierge should talk</td><td>Everyone</td><td>Waits for the new instructions</td></tr>
+            <tr><td>Words this guide uses (glossary)</td><td>Everyone</td><td>Planned</td></tr>
+            <tr><td>Decisions already made, and why</td><td>Everyone</td><td>Planned</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="what">What is the Concierge? <a class="anchor" href="#what" aria-label="Link to this section">#</a></h2>
+      <p>The Concierge is the shopping assistant built into the JTV website. A shopper
+      describes what they are looking for in their own words. The Concierge asks a helpful
+      question when that makes sense, searches the live JTV catalogue, and shows real
+      pieces with their prices and stock.</p>
+      <p>It is an AI agent hosted by Algolia. That means it is not a menu and not a set of
+      canned answers: it reads each shopper's request, decides what to do next, and writes
+      its own replies in JTV's voice. Everything it is allowed to say and do is written in
+      its instructions, which live in Algolia's Agent Studio dashboard.</p>
+
+      <h2 id="promise">What it does for a shopper <a class="anchor" href="#promise" aria-label="Link to this section">#</a></h2>
+      <p>A shopper can say things like "I'm looking for an anniversary gift for my wife"
+      or "show me gold hoop earrings". The Concierge talks it through: it asks who the
+      gift is for when that matters, explains jewellery terms in plain language, and
+      shows a first set of real pieces rather than asking question after question. Shoppers
+      can save pieces they like, compare them side by side, and ask for education, such as
+      what a pavé setting is, drawn from JTV's own help and blog content.</p>
+      <p>Two promises sit underneath everything it says. First, every product, price and
+      stock claim comes from the live catalogue; the Concierge does not invent pieces or
+      make up availability. Second, the Concierge is honest about limits: if it cannot do
+      something, such as place an order or check today's TV schedule, it says so and
+      points the shopper to what it can do.</p>
+
+      <h2 id="turn">How a question becomes an answer <a class="anchor" href="#turn" aria-label="Link to this section">#</a></h2>
+      <p>Three things work together: the shopper, the JTV website, and the Concierge
+      itself. Behind the Concierge sits the catalogue, the live product data every answer
+      is grounded in. One exchange flows like this:</p>
+      <figure class="figure">
+        <svg viewBox="0 0 960 500" role="img" aria-labelledby="maptitle mapdesc" xmlns="http://www.w3.org/2000/svg">
+          <title id="maptitle">One shopper exchange, step by step</title>
+          <desc id="mapdesc">A sequence diagram with four lanes: the Shopper, the JTV website, the Concierge agent, and the catalogue. Step 1: the shopper asks for something in the page. Step 2: the website passes the request to the Concierge. Step 3: the Concierge searches the live catalogue. Step 4: the Concierge asks the website to check its candidate pieces. Step 5: the website looks up each piece: price, stock, details. Step 6: the website returns only the pieces that pass. Step 7: the Concierge writes the answer and a safety check reviews it. Step 8: the shopper sees the reply and the product cards.</desc>
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#454545"/>
+            </marker>
+          </defs>
+          <style>
+            .lane-h { fill: #fff; stroke: #454545; stroke-width: 1.2; }
+            .lane-app { fill: #eaf4f8; stroke: #0076a9; stroke-width: 1.4; }
+            .lane-agent { fill: #f3f3f3; stroke: #0076a9; stroke-width: 1.6; }
+            .lane-idx { fill: #fff; stroke: #454545; stroke-width: 1.2; stroke-dasharray: 5 4; }
+            .life { stroke: #bbb; stroke-width: 1; stroke-dasharray: 4 4; }
+            text { font-family: Lato, Arial, sans-serif; fill: #454545; }
+            .t { font-size: 13px; font-weight: 700; }
+            .sub { font-size: 10.5px; fill: #707070; }
+            .lbl { font-size: 12px; }
+            .num { font-weight: 700; fill: #0076a9; }
+            .flow { stroke: #454545; stroke-width: 1.4; marker-end: url(#arr); }
+          </style>
+          <rect class="lane-h" x="20" y="16" width="130" height="52" rx="6"/>
+          <text class="t" x="85" y="38" text-anchor="middle">Shopper</text>
+          <text class="sub" x="85" y="56" text-anchor="middle">sees only the page</text>
+          <rect class="lane-app" x="210" y="16" width="220" height="52" rx="6"/>
+          <text class="t" x="320" y="38" text-anchor="middle">JTV website</text>
+          <text class="sub" x="320" y="56" text-anchor="middle">shows products, checks every piece</text>
+          <rect class="lane-agent" x="490" y="16" width="220" height="52" rx="6"/>
+          <text class="t" x="600" y="38" text-anchor="middle">The Concierge</text>
+          <text class="sub" x="600" y="56" text-anchor="middle">the AI agent that answers</text>
+          <rect class="lane-idx" x="770" y="16" width="170" height="52" rx="6"/>
+          <text class="t" x="855" y="38" text-anchor="middle">The catalogue</text>
+          <text class="sub" x="855" y="56" text-anchor="middle">live product data, read-only</text>
+          <line class="life" x1="85" y1="68" x2="85" y2="470"/>
+          <line class="life" x1="320" y1="68" x2="320" y2="470"/>
+          <line class="life" x1="600" y1="68" x2="600" y2="470"/>
+          <line class="life" x1="855" y1="68" x2="855" y2="470"/>
+          <line class="flow" x1="85" y1="104" x2="316" y2="104"/>
+          <text class="lbl" x="96" y="96"><tspan class="num">1</tspan>  The shopper asks for something</text>
+          <line class="flow" x1="320" y1="150" x2="596" y2="150"/>
+          <text class="lbl" x="348" y="142"><tspan class="num">2</tspan>  The website passes the request on</text>
+          <line class="flow" x1="600" y1="196" x2="851" y2="196"/>
+          <text class="lbl" x="612" y="188"><tspan class="num">3</tspan>  The Concierge searches the catalogue</text>
+          <line class="flow" x1="600" y1="242" x2="324" y2="242"/>
+          <text class="lbl" x="340" y="234"><tspan class="num">4</tspan>  It asks the website to check candidate pieces</text>
+          <line class="flow" x1="320" y1="288" x2="851" y2="288"/>
+          <text class="lbl" x="386" y="280"><tspan class="num">5</tspan>  The website looks up each piece</text>
+          <line class="flow" x1="320" y1="334" x2="596" y2="334"/>
+          <text class="lbl" x="388" y="326"><tspan class="num">6</tspan>  Only pieces that pass come back</text>
+          <line class="flow" x1="600" y1="380" x2="324" y2="380"/>
+          <text class="lbl" x="348" y="372"><tspan class="num">7</tspan>  The answer is written, then safety-checked</text>
+          <line class="flow" x1="320" y1="426" x2="89" y2="426"/>
+          <text class="lbl" x="124" y="418"><tspan class="num">8</tspan>  The shopper sees reply and cards</text>
+        </svg>
+        <figcaption class="figcap">The shopper only ever touches the page. Everything else
+        is a conversation between the website and the Concierge, and the catalogue is
+        read, never changed.</figcaption>
+      </figure>
+      <p>The same eight steps, in words:</p>
+      <ol>
+        <li>The shopper types what they want into the chat on the JTV website.</li>
+        <li>The website passes the message to the Concierge, and the reply starts
+            streaming back while it is still being written.</li>
+        <li>When the Concierge needs products, it searches the live catalogue. It can
+            narrow by price band, category, material and more.</li>
+        <li>Before anything is shown, the Concierge asks the website to check and arrange
+            its candidate pieces.</li>
+        <li>The website looks each piece up in the catalogue: is it in stock, what does it
+            cost, what are its details.</li>
+        <li>The website sends back only the pieces that pass every check, and says why
+            any piece was left out.</li>
+        <li>The Concierge writes its reply from those results in JTV's voice. A safety
+            check then reviews what it wrote; anything that breaks the rules is replaced
+            before it stays on screen.</li>
+        <li>The shopper sees the answer next to the approved product cards.</li>
+      </ol>
+    </div>
+
+    <nav class="pager" aria-label="Page navigation">
+      <div class="cell">
+        <span class="dir">Next page</span>
+        <a href="./architecture.html">How the Concierge works</a>
+      </div>
+      <div class="cell">
+        <span class="dir">Also useful</span>
+        <a href="./architecture.html#pieces">The pieces of the system</a>
+      </div>
+    </nav>
+
+    <p class="footer-note">About this page: written 2026-10-22 against the system as it
+    stands today (website source on branch <code>main</code>, Concierge agent
+    <code>8129ad66</code>, instruction text <code>6eb8ec65</code>). These identifiers are
+    recorded so future readers can match this page to the exact version it described.
+    Served from <code>storefront/public/docs/</code>; not indexed by search engines until
+    the deploy decision; contains no keys or secrets.</p>
+  </main>
+
+  <aside class="toc-rail" aria-label="On this page">
+    <h3>On this page</h3>
+    <ul id="toc">
+      <li><a href="#who">Who this guide is for</a></li>
+      <li><a href="#contents">What is in this guide</a></li>
+      <li><a href="#what">What is the Concierge?</a></li>
+      <li><a href="#promise">What it does for a shopper</a></li>
+      <li><a href="#turn">How a question becomes an answer</a></li>
+    </ul>
+  </aside>
+
+</div>
+
+<script>
+(function () {
+  var input = document.getElementById('navfilter');
+  if (input) {
+    input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase();
+      var groups = document.querySelectorAll('#docnav h3');
+      var any = false;
+      groups.forEach(function (h) {
+        var ul = h.nextElementSibling, shown = 0;
+        ul.querySelectorAll('li').forEach(function (li) {
+          var hit = !q || li.textContent.toLowerCase().indexOf(q) !== -1;
+          li.style.display = hit ? '' : 'none';
+          if (hit) shown++;
+        });
+        h.style.display = shown ? '' : 'none';
+        if (shown) any = true;
+      });
+      document.querySelector('.side-empty').style.display = any ? 'none' : 'block';
+    });
+  }
+  var tocLinks = document.querySelectorAll('#toc a');
+  if (tocLinks.length && 'IntersectionObserver' in window) {
+    var map = {};
+    tocLinks.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          tocLinks.forEach(function (a) { a.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-70px 0px -60% 0px' });
+    document.querySelectorAll('.content h2[id]').forEach(function (h) { obs.observe(h); });
+  }
+})();
+</script>
+</body>
+</html>
