@@ -47,6 +47,14 @@ python3 -m unittest discover -s evaluation -p 'test_*.py'
 
 For a read-only configuration backup, run `npm run snapshot -- <agent-id>`. The ID must be explicit; the command no longer defaults to a retired agent. Snapshots are written under ignored `evidence/` and are not release source.
 
+## Product documentation
+
+The Concierge handover documentation ships with the app: static pages under
+[public/docs](public/docs/index.html), served by every build at `/docs/`. The pages
+explain the system for the receiving development, merchandising and admin teams and are
+stamped with the agent configuration and source state they describe. The pages are marked
+`noindex` until their deployment is explicitly authorized.
+
 ## Deployment
 
 Deployments are explicit CLI releases only: `git.deploymentEnabled` in [vercel.json](vercel.json) is false for every branch including `main`, so GitHub pushes never deploy. Deploy from a clean Git archive of the exact release commit with the canonical project pinned, then verify the served commit, unauthenticated access, `/api/health`, a read-only product request and an actual Concierge turn. Follow the [deployment guide](docs/deployment.md).
