@@ -1,42 +1,7 @@
-flowchart TB
-  subgraph B["Shopper's browser"]
-    direction LR
-    Shopper["Shopper"] --> UI["Two-column JTV workspace"]
-    UI -->|"sends the message"| Chat["InstantSearch chat client (useChat)"]
-    Chat -->|"reply streams as it is written"| UI
-    UI --> Tiles["Workspace tiles: one column per group, built from verified tool results in the stream"]
-    UI --> State[("Per-tab session state")]
-    Chat -->|"tool calls"| Exec["Client tool executors: refresh_products, arrange_groups"]
-    Exec -->|"structured results returned to the agent"| Chat
-  end
-
-  subgraph S["JTV website server (Node)"]
-    direction LR
-    ChatAPI["/api/chat proxy"] --> Guard{"Tool-sheet guard: tools the agent declares vs tools this build answers"}
-    ReadOnly["Read-only APIs: /api/products/:id, /api/agent-product-refresh, /api/search, /api/facets"]
-    ReadOnly --> Product[("prod_catalog, read-only")]
-  end
-
-  subgraph A["Algolia Agent Studio"]
-    direction LR
-    Agent["Concierge agent: dev or production, one definition"]
-    Agent -->|"native tool"| Search["algolia_search_index"]
-    Search -->|"queries"| Indexes[("prod_catalog, blog, help_content, read-only")]
-    Indexes -->|"returns matches"| Agent
-    Agent -->|"finished text"| Output["Output guardrail: five categories on the reply"]
-  end
-
-  Chat -->|"POST /api/chat"| ChatAPI
-  Guard -->|"match"| Agent
-  Guard -.->|"mismatch: labelled 503 tool_sheet_mismatch"| Chat
-  Exec -->|"read-only record lookups"| ReadOnly
-  Output -->|"approved reply streams back"| Chat
-  Output -.->|"withheld: fixed system notice beside the kept tiles"| UI
-
-  subgraph Release["How a change reaches production"]
-    direction LR
-    Local["Change and test locally: npm run dev + dev agent"] --> Main["Merge to main: pull request, CI green"]
-    Main --> Promote["Promote: scripts/baseline, agent then app"]
-    Promote --> Prod["Production: Vercel app + production agent"]
-    Prod --> Verify["verify-baseline.mjs"]
-  end
+flowchart LR
+  Shopper["Shopper"] --> Page["JTV page: chat on the left, product tiles on the right"]
+  Page -->|"message"| Agent["Concierge agent (Algolia Agent Studio)"]
+  Agent -->|"searches"| Catalog[("JTV catalogue, read-only")]
+  Agent -->|"proposes pieces"| Check["The browser checks each piece: in stock, price, group size"]
+  Check -->|"only valid pieces become tiles"| Page
+  Agent -->|"reply streams back"| Page
