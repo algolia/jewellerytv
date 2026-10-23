@@ -19,9 +19,18 @@
   min-height: 0;
 }
 .concierge-workspace .conversation-column {
-  flex: 0 0 46%;
+  flex: 1;
   border-right: 0;
   background: #f9fcfd;
+}
+.concierge-workspace-body {
+  flex-direction: column;
+}
+.concierge-workspace .shopping-column {
+  display: none;
+}
+.concierge-workspace .workspace-sections {
+  display: none;
 }
 .shopping-column {
   flex: 1;

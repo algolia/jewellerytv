@@ -576,7 +576,7 @@
  * assistant answer that found them. Hidden on desktop, where the side-by-side
  * shopping workspace stays the single product surface. */
 .connected-inline-cards {
-  display: none;
+  display: block;
 }
 .connected-inline-group {
   margin: 14px 0 4px;
@@ -592,8 +592,8 @@
 }
 .connected-inline-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
 }
 .connected-inline-card {
   display: flex;
@@ -642,17 +642,14 @@
   font-size: 14px;
   font-weight: 700;
 }
-@media (max-width: 767px) {
-  .connected-inline-cards {
-    display: block;
-    margin-bottom: 16px;
-  }
+.connected-inline-cards {
+  margin-bottom: 16px;
 }
 
 /* Facet chips spike (2026-10-23): label rows + tap-refined results. Values
  * verbatim from the index; no counts. Mobile conversation surface. */
 .connected-facet-chips {
-  display: none;
+  display: block;
   margin: 14px 0 4px;
 }
 .connected-facet-label {
@@ -703,8 +700,4 @@
   color: #5b6b74;
   margin: 0 0 6px;
 }
-@media (max-width: 767px) {
-  .connected-facet-chips {
-    display: block;
-  }
-}
+
