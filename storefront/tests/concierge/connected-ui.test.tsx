@@ -16,6 +16,7 @@ import {
   canSubmitConnectedTurn,
   connectedProgressLabel,
   getConnectedTurnSystemNotice,
+  partialAssistantToReveal,
   resetConnectedConversation,
   visibleConnectedTranscript,
 } from '../../src/concierge/ConnectedConcierge';
@@ -218,6 +219,42 @@ describe('connected Concierge reset gate', () => {
       { isAbort: false, isError: true },
     );
     expect(notice).toBe('[System notice] Please refine the request.');
+  });
+  it('reveals streamed assistant text after a failed turn so the painted reply survives', () => {
+    const messages = [
+      { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Find a necklace' }] },
+      {
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [
+          { type: 'text', text: 'Here is a first look at what we carry.' },
+          {
+            type: 'tool-arrange_groups',
+            toolCallId: 'call-1',
+            state: 'output-error',
+            input: {},
+            errorText: "['WPD900'] is too long",
+          },
+        ],
+      },
+    ] as unknown as UIMessage[];
+    const revealed = partialAssistantToReveal(messages);
+    expect(revealed?.id).toBe('assistant-1');
+  });
+  it('does not reveal an empty or SDK-notice assistant message after a failed turn', () => {
+    const empty = partialAssistantToReveal([
+      { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Find a necklace' }] },
+      { id: 'assistant-1', role: 'assistant', parts: [] },
+    ] as unknown as UIMessage[]);
+    expect(empty).toBeNull();
+    const sdkNotice = partialAssistantToReveal([
+      {
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: '[System notice] Please refine the request.' }],
+      },
+    ] as unknown as UIMessage[]);
+    expect(sdkNotice).toBeNull();
   });
 });
 
