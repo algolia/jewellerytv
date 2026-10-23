@@ -1,12 +1,13 @@
-import { useMemo } from 'react';
-import type { Product } from '../catalog';
 import { InlineProductCards } from './InlineProductCards';
+import type { Product } from '../catalog';
 import type { FacetPick } from './nativeResults';
 
-/* Facet chips spike (2026-10-23): renders the model's displayFacets pick as
- * label rows (values verbatim from the index, no counts), a top-relevancy
- * preview grid from the same streamed response, and tap-refined results.
- * Single-select; a message without a pick never renders this component. */
+/* Facet chips (2026-10-23): a cascading funnel, one level at a time. The
+ * model's ordered displayFacets pick is the funnel order: level 1 renders
+ * unlabeled (the values are self-evident), and each tap refines the search —
+ * the NEXT level's values come from the refinement response's own facet
+ * counts, computed within the selection, exactly like guided navigation.
+ * A deeper level earns its label; level 1 does not. */
 
 export type ChipRow = { attribute: string; label: string; values: string[] };
 
@@ -20,7 +21,7 @@ export function humanizeAttribute(attribute: string): string {
 
 export const CHIP_VALUES_MAX = 6;
 
-export function buildChipRows(pick: FacetPick): ChipRow[] {
+export function buildChipRows(pick: Pick<FacetPick, 'displayFacets' | 'facets'>): ChipRow[] {
   return pick.displayFacets
     .map((attribute) => {
       const counts = pick.facets[attribute] ?? {};
@@ -35,39 +36,30 @@ export function buildChipRows(pick: FacetPick): ChipRow[] {
     .filter((row) => row.values.length > 1);
 }
 
-export function FacetChips({
-  pick,
-  preview,
-  active,
-  results,
-  loading,
-  onSelect,
-  onClear,
-}: {
-  pick: FacetPick;
+export function FacetChips({ row, showLabel, preview, selections, results, loading, onSelect, onClear }: {
+  row: ChipRow | null;
+  showLabel: boolean;
   preview: Product[];
-  active: { attribute: string; value: string } | null;
+  selections: { attribute: string; value: string }[];
   results: Product[] | null;
   loading: boolean;
   onSelect: (attribute: string, value: string) => void;
   onClear: () => void;
 }) {
-  const rows = useMemo(() => buildChipRows(pick), [pick]);
-  if (!rows.length) return null;
+  if (!row && !selections.length) return null;
+  const last = selections[selections.length - 1] ?? null;
   return (
     <div className="connected-facet-chips">
-      {rows.map((row) => (
+      {row ? (
         <section key={row.attribute}>
-          <h4 className="connected-facet-label">{row.label}</h4>
+          {showLabel ? <h4 className="connected-facet-label">{row.label}</h4> : null}
           <div className="connected-facet-row">
             {row.values.map((value) => (
               <button
                 type="button"
                 key={value}
                 className="connected-facet-chip"
-                aria-pressed={
-                  !!active && active.attribute === row.attribute && active.value === value
-                }
+                aria-pressed={!!last && last.attribute === row.attribute && last.value === value}
                 onClick={() => onSelect(row.attribute, value)}
               >
                 {value}
@@ -75,25 +67,18 @@ export function FacetChips({
             ))}
           </div>
         </section>
-      ))}
-      {active ? (
+      ) : null}
+      {last ? (
         <div className="connected-facet-results">
           <button type="button" className="connected-facet-back" onClick={onClear}>
             ‹ All facets
           </button>
           <p className="connected-inline-results-line" role="status">
-            {loading
-              ? 'Loading…'
-              : `${active.value} ${rowLabel(rows, active.attribute).toLowerCase()}`}
+            {loading ? 'Loading…' : `${last.value}${row ? ` · ${row.label.toLowerCase()}` : ''}`}
           </p>
           {results && results.length ? (
             <InlineProductCards
-              groups={[
-                {
-                  title: `${active.value} ${rowLabel(rows, active.attribute)}`,
-                  items: results.map((product) => ({ product })),
-                },
-              ]}
+              groups={[{ title: 'Selected', items: results.map((product) => ({ product })) }]}
               showHeadings={false}
             />
           ) : null}
@@ -106,8 +91,4 @@ export function FacetChips({
       ) : null}
     </div>
   );
-}
-
-function rowLabel(rows: ChipRow[], attribute: string): string {
-  return rows.find((row) => row.attribute === attribute)?.label ?? attribute;
 }
