@@ -782,21 +782,13 @@ export function ConnectedConcierge({
       cancelled = true;
     };
   }, [canRestoreCanvas, visibleMessages, session]);
-  /* Facet chips spike (2026-10-23): default ON on the local dev stack — the
-   * opt-in flag kept biting every demo. Set jtv-facet-chips=off to compare
-   * against the inline-cards behavior. A turn whose arrange call carries a
-   * displayFacets pick renders chip rows + a top-relevancy preview instead of
-   * inline cards; tap refines client-side through the same-origin proxy. */
-  const facetChipsOn = useMemo(() => {
-    try {
-      return safeStorage().getItem('jtv-facet-chips') !== 'off';
-    } catch {
-      return true;
-    }
-  }, []);
+  /* Facet chips (2026-10-23): a turn whose arrange call carries a displayFacets
+   * pick renders chip rows + a top-relevancy preview instead of inline cards;
+   * tap refines client-side through the same-origin proxy. No flag: the pick's
+   * presence is the switch. */
   const facetPicks = useMemo(
-    () => (facetChipsOn ? extractMessageFacetPicks(visibleMessages as never) : []),
-    [facetChipsOn, visibleMessages],
+    () => extractMessageFacetPicks(visibleMessages as never),
+    [visibleMessages],
   );
   const [facetSearches, setFacetSearches] = useState<
     Record<
@@ -1291,7 +1283,7 @@ export function ConnectedConcierge({
               onProductLink={handleProductLink}
             >
               {message.role === 'assistant' &&
-                (facetChipsOn && facetPicks.some((p) => p.messageId === message.id) ? (
+                (facetPicks.some((p) => p.messageId === message.id) ? (
                   (() => {
                     const entry = facetPicks.find((p) => p.messageId === message.id)!;
                     const preview = entry.hits
