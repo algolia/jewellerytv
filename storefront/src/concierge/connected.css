@@ -163,7 +163,7 @@
 }
 .connected-assistant-message {
   margin: 16px 0 28px;
-  max-width: min(100%, 62ch);
+  max-width: 100%;
   padding: 0 16px;
   border: 0;
   border-left: 2px solid #b8d0db;
@@ -192,6 +192,7 @@
  * same paragraph-equivalent spacing. */
 .connected-assistant-text-part {
   margin: 0 0 0.7em;
+  max-width: 65ch;
 }
 .connected-provisional {
   white-space: pre-wrap;
@@ -592,7 +593,7 @@
 }
 .connected-inline-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 .connected-inline-card {
