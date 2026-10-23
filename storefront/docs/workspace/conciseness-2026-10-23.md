@@ -16,7 +16,17 @@ Production (`0bdf59fe-e598-4db7-b139-2b93d5255bb4`) still runs the pre-change in
 |---|---|---|
 | 0 (baseline 2026-10-22) | `b54ffc95` | grammar fix, unchanged behavior |
 | 1 | `0ac7bd2e` | short-sentence format line, reread test with verbose/good example pair, "what you left out" narrowed to when it would mislead, breadth compressed to one sentence, bulleted example replaced with warm prose |
-| 2 (current dev) | `ad08b243` | topic-specific acknowledgement (no generic filler opener), the pearl flow as the worked example, Don't covers announcing results the reply will present, test clause: every sentence helps the shopper choose, reacts, or moves forward |
+| 2 | `ad08b243` (applied 2026-10-23 04:53 UTC, overwritten at 05:10) | topic-specific acknowledgement (no generic filler opener), the pearl flow as the worked example, Don't covers announcing results the reply will present, test clause: every sentence helps the shopper choose, reacts, or moves forward |
+
+## Coordination note (2026-10-23 05:10 UTC)
+
+A parallel session edited the dev agent while this program was in flight: instructions are
+now `cf2243c5` and the systemPrompt and tools also changed. The round-2 wording (pearl flow,
+test clause, acknowledgement rule) is NOT in the live dev agent text; only the round-1
+short-sentence format line survives. Round-2 content is preserved in the local rollback
+chain (`instructions.round2.md`) and can be re-applied once one lane owns the agent. Shared
+Agent Studio prompt changes between concurrent sessions must be serialized; do not patch
+until the owner is decided.
 
 Rollback snapshots for both rounds are in the local workspace
 (`instructions.old-b54ffc95.md`, `instructions.new.md`).
