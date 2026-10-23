@@ -1,9 +1,9 @@
 {
-  "recordedAt": "2026-10-22T21:14:59.806Z",
+  "recordedAt": "2026-10-23T07:04:03.499Z",
   "fingerprint": {
-    "instructions": "b54ffc95",
+    "instructions": "c1013e8b",
     "systemPrompt": "d90b149d",
-    "tools": "a1b8e86c",
+    "tools": "c91b024a",
     "config": "cf377cc5",
     "toolNames": [
       "algolia_search_index",
