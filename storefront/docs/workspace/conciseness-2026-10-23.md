@@ -18,6 +18,32 @@ Production (`0bdf59fe-e598-4db7-b139-2b93d5255bb4`) still runs the pre-change in
 | 1 | `0ac7bd2e` | short-sentence format line, reread test with verbose/good example pair, "what you left out" narrowed to when it would mislead, breadth compressed to one sentence, bulleted example replaced with warm prose |
 | 2 | `ad08b243` (applied 2026-10-23 04:53 UTC, overwritten at 05:10) | topic-specific acknowledgement (no generic filler opener), the pearl flow as the worked example, Don't covers announcing results the reply will present, test clause: every sentence helps the shopper choose, reacts, or moves forward |
 
+## Final state 2026-10-23: promoted and aligned
+
+Rounds 3-5e continued after this page's earlier sections. Round 5 hardened the post-search
+rule (first sentence names pieces, prices or directions; never found/picked/assembled/categorized),
+capped the absence claim at one sentence inside the findings, set one question mark per reply,
+taught the continue-don't-reopen seam with a worked example pair, and killed the exact-count
+leaks with a worked count example. The tool fixes (hard-bounds arrange description, all eight
+`exposed` search controls reverted) went with it.
+
+At 07:02 UTC the state was promoted to production with `scripts/baseline/promote-agent.mjs`
+(guards pinned: prod `b54ffc95:d90b149d:951e564c`, dev `c1013e8b:d90b149d:c91b024a`) and
+`verify-baseline.mjs --write-manifest` re-recorded the baseline. All nine checks pass:
+dev == production == baseline. Rollback snapshot:
+`storefront/evidence/baseline/2026-10-23T07-02-39-411Z-PRODUCTION-rollback.snapshot.json`.
+
+Known open defect (tracked follow-up, not silently dropped): the per-tool segmentation seam.
+The model writes one text segment per tool boundary and can re-open the answer at each one;
+five wording rounds reduced it to one duplicated opening image plus one stub announce line per
+multi-tool reply. First move for a fresh session: ask Algolia Engineering whether per-tool
+text segments can be constrained platform-side.
+
+Application fix riding with this commit: a failed turn no longer wipes the painted reply
+(`ConnectedConcierge.tsx` reveals streamed assistant text on failed turns, with the honest
+system notice beneath it). Note: this app fix reaches production shoppers only through a
+Vercel release; the agent promote does not ship it.
+
 ## Coordination note (2026-10-23 05:10 UTC)
 
 A parallel session edited the dev agent while this program was in flight: instructions are
