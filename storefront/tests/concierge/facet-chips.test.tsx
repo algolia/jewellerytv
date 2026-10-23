@@ -17,7 +17,6 @@ describe('buildChipRows', () => {
           C: 7,
         },
       },
-      queryText: 'diamond rings',
     });
     expect(rows[0].values).toEqual(['Ring', 'Jewelry Set', 'Toe Ring', 'A', 'B', 'C']);
     expect(rows[0].values.length).toBeLessThanOrEqual(CHIP_VALUES_MAX);
@@ -27,7 +26,6 @@ describe('buildChipRows', () => {
     const rows = buildChipRows({
       displayFacets: ['Catalog_Brand'],
       facets: { Catalog_Brand: { 'Gems En Vogue': 854 } },
-      queryText: 'gems en vogue',
     });
     expect(rows).toEqual([]);
   });

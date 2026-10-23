@@ -29,7 +29,7 @@ import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
 import { extractNativePresentation, stripTrailingNote } from './nativeResults';
 import { buildClientTools } from './clientTools';
 import { extractMessageFacetPicks } from './nativeResults';
-import { FacetChips } from './FacetChips';
+import { FacetChips, buildChipRows } from './FacetChips';
 import { normalizeProduct, type Product } from '../catalog';
 import { searchClient } from '../client';
 import type { WorkspaceGroup } from '../workspaceResults';
@@ -790,24 +790,29 @@ export function ConnectedConcierge({
     () => extractMessageFacetPicks(visibleMessages as never),
     [visibleMessages],
   );
-  const [facetSearches, setFacetSearches] = useState<
-    Record<
-      string,
-      { attribute: string; value: string; loading: boolean; products: Product[] | null }
-    >
-  >({});
+  type FacetFunnel = {
+    level: number;
+    selections: { attribute: string; value: string }[];
+    facets: Record<string, Record<string, number>>;
+    loading: boolean;
+    products: Product[] | null;
+  };
+  const [facetFunnels, setFacetFunnels] = useState<Record<string, FacetFunnel>>({});
   const handleFacetSelect = useCallback(
     async (messageId: string, attribute: string, value: string) => {
       const entry = facetPicks.find((p) => p.messageId === messageId);
       if (!entry) return;
-      const previous = facetSearches[messageId];
-      if (previous && previous.attribute === attribute && previous.value === value) {
-        setFacetSearches(({ [messageId]: _dropped, ...rest }) => rest);
-        return;
-      }
-      setFacetSearches((current) => ({
+      const previous = facetFunnels[messageId] ?? {
+        level: 0,
+        selections: [],
+        facets: entry.pick.facets,
+        loading: false,
+        products: null,
+      };
+      const selections = [...previous.selections, { attribute, value }];
+      setFacetFunnels((current) => ({
         ...current,
-        [messageId]: { attribute, value, loading: true, products: null },
+        [messageId]: { ...previous, selections, loading: true, products: null },
       }));
       try {
         const response = await searchClient.search([
@@ -815,12 +820,13 @@ export function ConnectedConcierge({
             indexName: 'prod_catalog',
             params: {
               query: entry.pick.queryText,
-              facetFilters: [`${attribute}:"${value}"`],
+              facetFilters: selections.map((s) => `${s.attribute}:"${s.value}"`),
               hitsPerPage: 8,
             },
           },
         ]);
-        const rawHits = (response as { results?: { hits?: unknown[] }[] }).results?.[0]?.hits ?? [];
+        const result = (response as { results?: Record<string, unknown>[] })?.results?.[0] ?? {};
+        const rawHits = (result.hits as unknown[] | undefined) ?? [];
         const products = rawHits
           .map((raw) => {
             try {
@@ -830,22 +836,36 @@ export function ConnectedConcierge({
             }
           })
           .filter((p): p is Product => p !== null);
-        setFacetSearches((current) => ({
+        /* The next funnel level's values are the refinement response's own
+         * facet counts, computed within the selection. No second query. */
+        const nextAttribute = entry.pick.displayFacets[selections.length];
+        const responseFacets = (result.facets as Record<string, Record<string, number>> | undefined) ?? {};
+        const nextCounts = nextAttribute ? responseFacets[nextAttribute] : undefined;
+        setFacetFunnels((current) => ({
           ...current,
-          [messageId]: { attribute, value, loading: false, products },
+          [messageId]: {
+            level: selections.length,
+            selections,
+            facets:
+              nextAttribute && nextCounts && Object.keys(nextCounts).length > 1
+                ? { [nextAttribute]: nextCounts }
+                : {},
+            loading: false,
+            products,
+          },
         }));
       } catch (error) {
         if (import.meta.env.DEV) console.warn('JTV facet refine failed', error);
-        setFacetSearches((current) => ({
+        setFacetFunnels((current) => ({
           ...current,
-          [messageId]: { attribute, value, loading: false, products: null },
+          [messageId]: { ...previous, loading: false, products: null },
         }));
       }
     },
-    [facetPicks, facetSearches],
+    [facetPicks, facetFunnels],
   );
   const handleFacetClear = useCallback((messageId: string) => {
-    setFacetSearches(({ [messageId]: _dropped, ...rest }) => rest);
+    setFacetFunnels(({ [messageId]: _dropped, ...rest }) => rest);
   }, []);
   /* Anchor staging: cards hydrate once per revealed assistant message that
    * carries a grouped tool call, mirroring the F1 rule that only a completed
@@ -1296,18 +1316,30 @@ export function ConnectedConcierge({
                         }
                       })
                       .filter((p): p is Product => p !== null);
-                    const search = facetSearches[message.id];
+                    const funnel = facetFunnels[message.id];
+                    const level = funnel?.level ?? 0;
+                    const attribute = entry.pick.displayFacets[level];
+                    const counts =
+                      level === 0
+                        ? entry.pick.facets[attribute]
+                        : funnel?.facets[attribute];
+                    const row =
+                      attribute && counts && Object.keys(counts).length > 1
+                        ? buildChipRows({
+                            displayFacets: [attribute],
+                            facets: { [attribute]: counts },
+                          })[0] ?? null
+                        : null;
                     return (
                       <FacetChips
-                        pick={entry.pick}
+                        row={row}
+                        showLabel={level > 0}
                         preview={preview}
-                        active={
-                          search ? { attribute: search.attribute, value: search.value } : null
-                        }
-                        results={search?.products ?? null}
-                        loading={!!search?.loading}
-                        onSelect={(attribute, value) =>
-                          void handleFacetSelect(message.id, attribute, value)
+                        selections={funnel?.selections ?? []}
+                        results={funnel?.products ?? null}
+                        loading={!!funnel?.loading}
+                        onSelect={(attr, value) =>
+                          void handleFacetSelect(message.id, attr, value)
                         }
                         onClear={() => handleFacetClear(message.id)}
                       />
