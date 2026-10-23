@@ -648,3 +648,63 @@
     margin-bottom: 16px;
   }
 }
+
+/* Facet chips spike (2026-10-23): label rows + tap-refined results. Values
+ * verbatim from the index; no counts. Mobile conversation surface. */
+.connected-facet-chips {
+  display: none;
+  margin: 14px 0 4px;
+}
+.connected-facet-label {
+  margin: 0 0 6px;
+  color: #527584;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+.connected-facet-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.connected-facet-chip {
+  border: 1px solid #dedede;
+  background: #eaf4f9;
+  color: inherit;
+  border-radius: 17px;
+  padding: 7px 13px;
+  font-size: 12.5px;
+  font-family: inherit;
+  min-height: 34px;
+}
+.connected-facet-chip[aria-pressed='true'] {
+  background: #0076a9;
+  border-color: #0076a9;
+  color: #fff;
+}
+.connected-facet-chip:focus-visible {
+  outline: 3px solid #0076a9;
+  outline-offset: 2px;
+}
+.connected-facet-back {
+  border: 0;
+  background: none;
+  color: #0076a9;
+  font-size: 12px;
+  padding: 2px 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+.connected-inline-results-line {
+  font-size: 11.5px;
+  color: #5b6b74;
+  margin: 0 0 6px;
+}
+@media (max-width: 767px) {
+  .connected-facet-chips {
+    display: block;
+  }
+}

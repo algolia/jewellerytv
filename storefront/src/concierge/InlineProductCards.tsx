@@ -22,9 +22,11 @@ function cardHref(id: string): string {
 export function InlineProductCards({
   groups,
   onProductLink,
+  showHeadings = true,
 }: {
   groups: WorkspaceGroup[];
   onProductLink?: (id: string, event: MouseEvent<HTMLAnchorElement>) => void;
+  showHeadings?: boolean;
 }) {
   if (!groups.length) return null;
   return (
@@ -34,7 +36,7 @@ export function InlineProductCards({
           className="connected-inline-group"
           key={`${group.title}:${group.items.map((item) => item.product.id).join(',')}`}
         >
-          <h4>{group.title}</h4>
+          {showHeadings ? <h4>{group.title}</h4> : null}
           <div className="connected-inline-grid">
             {group.items.map(({ product }: { product: Product; why?: string }) => (
               <a
