@@ -22,7 +22,6 @@ import { X } from 'lucide-react';
 import { ShoppingWorkspace } from '../ShoppingWorkspace';
 import { ConciergeWorkspaceLayout } from './ConciergeWorkspaceLayout';
 import { ResponsiveAnswerTable } from './ResponsiveAnswerTable';
-import { ConnectedShoppingBrief } from './ConnectedShoppingBrief';
 import { ConnectedWelcome, composerSendText, shouldShowEntryGuidance } from './EntryGuidance';
 import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from './starterQuestions';
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
@@ -41,7 +40,6 @@ import {
   isCompletedAssistantTurn,
   turnHasUsableResult,
 } from './turnCompletion';
-import { applyBriefOperationsV3, undoBriefV3 } from '../../shared/briefState.js';
 import { buildTurnContext } from './turnContext.js';
 import { canonicalBlogUrlsFromMessages, verifiedBlogHref } from './verifiedBlogLinks.js';
 import { recordTurnOutcome } from '../telemetry';
@@ -574,7 +572,6 @@ export function ConnectedConcierge({
   const [hiddenPriorMessageIds, setHiddenPriorMessageIds] = useState<Set<string>>(() => new Set());
   const [systemNotices, setSystemNotices] = useState<string[]>([]);
   const [section, setSection] = useState<'conversation' | 'products'>('conversation');
-  const [briefControls, setBriefControls] = useState<HTMLDivElement | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const followTranscriptRef = useRef(true);
   const onMessagesScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
@@ -617,7 +614,6 @@ export function ConnectedConcierge({
   const stagedAnchorIdsRef = useRef<Set<string>>(new Set());
   const model = session.getModel(nativeGroups ?? undefined);
   const runtime = session.runtime;
-  const brief = snapshot?.brief;
   /* Product link guard, simplified 2026-10-22: a chat link opens the PDP only
    * when the id is a product this session actually holds. Every record in the
    * store passed identity verification when it was staged (its own objectID
@@ -651,43 +647,6 @@ export function ConnectedConcierge({
     },
     [knownProductIds],
   );
-  const applyBrief = useCallback(
-    async (operation: Parameters<typeof applyBriefOperationsV3>[1]['operations'][number]) => {
-      if (!brief) throw new Error('The shopping brief is unavailable.');
-      const result = await session.store.transact({
-        expectedRevision: brief.revision,
-        apply: (current) => ({
-          ...current,
-          brief: applyBriefOperationsV3(current.brief, {
-            missionId: current.missionId,
-            expectedRevision: current.brief.revision,
-            turnId: newId('ui-turn'),
-            operations: [operation],
-          }),
-        }),
-      });
-      if (!result.ok)
-        throw new Error('The preference changed while this edit was being saved. Try again.');
-      manualEditEpoch.current++;
-      runtime.invalidateTurn();
-    },
-    [brief, runtime, session],
-  );
-  const onUndo = useCallback(async () => {
-    if (!brief?.events.length) return;
-    const result = await session.store.transact({
-      expectedRevision: brief.revision,
-      apply: (current) => ({
-        ...current,
-        brief: undoBriefV3(current.brief, current.brief.revision),
-      }),
-    });
-    if (!result.ok) setError('Undo could not be saved. Try again.');
-    else {
-      manualEditEpoch.current++;
-      runtime.invalidateTurn();
-    }
-  }, [brief, runtime, session]);
   const chatContext = useCallback(() => {
     const currentSession = session.store.getSnapshot();
     const base = context?.() ?? {};
@@ -1240,7 +1199,6 @@ export function ConnectedConcierge({
           >
             New
           </button>
-          <div ref={setBriefControls} className="brief-header-controls" />
         </>
       }
       closeAction={
@@ -1248,19 +1206,7 @@ export function ConnectedConcierge({
           <X size={18} aria-hidden="true" />
         </button>
       }
-      preferenceContent={
-        brief ? (
-          <ConnectedShoppingBrief
-            brief={brief}
-            controlsTarget={briefControls}
-            busy={!!pending}
-            onAdd={(fact) => applyBrief({ type: 'add', fact })}
-            onReplace={(factIds, fact) => applyBrief({ type: 'replace', factIds, fact })}
-            onRetract={(factIds) => applyBrief({ type: 'retract', factIds })}
-            onUndo={onUndo}
-          />
-        ) : null
-      }
+      preferenceContent={null}
       sectionSwitch={
         <>
           <button

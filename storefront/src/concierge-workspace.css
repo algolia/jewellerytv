@@ -2,7 +2,7 @@
   /* Single-column concierge: sized for reading and shopping, not for the
    * retired side-by-side split. */
   width: min(600px, calc(100vw - 48px));
-  height: calc(100dvh - 112px);
+  height: min(86dvh, 820px);
   right: 24px;
   bottom: 84px;
 }
