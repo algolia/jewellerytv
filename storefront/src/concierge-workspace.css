@@ -111,15 +111,20 @@
   .concierge-workspace-body[data-section='conversation'] .shopping-column {
     display: none;
   }
-  .concierge-workspace-body[data-section='shopping'] .conversation-column {
+  /* Mobile anchored cards (2026-10-23): no tabs on mobile. The conversation
+   * carries its product cards inline; the shopping workspace stays desktop-only. */
+  .workspace-sections {
     display: none;
+  }
+  .concierge-workspace-body .shopping-column {
+    display: none;
+  }
+  .concierge-workspace-body[data-section='shopping'] .conversation-column {
+    display: flex;
   }
   .concierge-workspace .conversation-column {
     flex: 1;
     border: 0;
-  }
-  .workspace-sections {
-    justify-content: stretch;
   }
   .workspace-sections button {
     flex: 1;
