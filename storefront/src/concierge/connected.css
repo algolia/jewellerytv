@@ -571,3 +571,80 @@
     animation: none !important;
   }
 }
+
+/* Mobile anchored cards (2026-10-23): product cards rendered inline under the
+ * assistant answer that found them. Hidden on desktop, where the side-by-side
+ * shopping workspace stays the single product surface. */
+.connected-inline-cards {
+  display: none;
+}
+.connected-inline-group {
+  margin: 14px 0 4px;
+}
+.connected-inline-group h4 {
+  margin: 0 0 8px;
+  color: #527584;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+.connected-inline-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.connected-inline-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #dedede;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+.connected-inline-card:focus-visible {
+  outline: 3px solid #0076a9;
+  outline-offset: 2px;
+}
+.connected-inline-image {
+  display: block;
+  height: 96px;
+  background: #f6fafc;
+}
+.connected-inline-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.connected-inline-image > span {
+  display: block;
+  padding-top: 40px;
+  color: #757575;
+  font-size: 10px;
+  text-align: center;
+}
+.connected-inline-copy {
+  display: block;
+  padding: 7px 9px 9px;
+}
+.connected-inline-title {
+  display: block;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.connected-inline-price {
+  display: block;
+  margin-top: 3px;
+  font-size: 14px;
+  font-weight: 700;
+}
+@media (max-width: 767px) {
+  .connected-inline-cards {
+    display: block;
+    margin-bottom: 16px;
+  }
+}

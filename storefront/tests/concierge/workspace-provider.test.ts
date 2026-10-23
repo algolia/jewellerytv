@@ -173,3 +173,95 @@ describe('simplified workspace session adapter', () => {
     expect('committedProposal' in (session ?? {})).toBe(false);
   });
 });
+
+/* Mobile anchored cards (2026-10-23): each turn's tool-verified groups hydrate
+ * per message, so the conversation can render cards under the answer that
+ * found them. */
+
+describe('stageMessageAnchors', () => {
+  const searchMessage = (id: string, hits: string[]) => ({
+    id,
+    role: 'assistant',
+    parts: [
+      {
+        type: 'tool-algolia_search_index_prod_catalog',
+        toolCallId: `search-${id}`,
+        state: 'output-available',
+        input: {},
+        output: { hits: hits.map((objectID) => rawRecord(objectID)) },
+      },
+    ],
+  });
+  const arrangedMessage = (id: string, ids: string[]) => ({
+    id,
+    role: 'assistant',
+    parts: [
+      {
+        type: 'tool-arrange_groups',
+        toolCallId: `arrange-${id}`,
+        state: 'output-available',
+        input: {},
+        output: {
+          status: 'ok',
+          groups: ids.map((objectID) => ({
+            title: `Style ${objectID}`,
+            items: [{ objectID }],
+          })),
+        },
+      },
+    ],
+  });
+
+  it('hydrates every anchored turn and registers the verified records', async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
+    const adapter = createConciergeWorkspaceSession({
+      storage,
+      initialMissionId: 'unused',
+      fetchProductRecord: async (id) => rawRecord(id),
+    });
+    const anchors = await adapter.stageMessageAnchors([
+      { role: 'user', parts: [] },
+      searchMessage('s1', ['a-1']),
+      arrangedMessage('a1', ['a-1']),
+      { role: 'user', parts: [] },
+      arrangedMessage('a2', ['a-2']),
+    ]);
+    expect([...anchors.keys()]).toEqual(['a1', 'a2']);
+    expect(anchors.get('a1')?.[0].items[0].product.id).toBe('a-1');
+    expect(anchors.get('a2')?.[0].items[0].product.id).toBe('a-2');
+    const records = adapter.store.getSnapshot()?.selectionRecords.map((r) => r.objectID);
+    expect(records).toContain('a-1');
+    expect(records).toContain('a-2');
+  });
+
+  it('drops an item whose hydrated record objectID does not match', async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
+    const adapter = createConciergeWorkspaceSession({
+      storage,
+      initialMissionId: 'unused',
+      fetchProductRecord: async () => rawRecord('somebody-elses-record'),
+    });
+    const anchors = await adapter.stageMessageAnchors([
+      { role: 'user', parts: [] },
+      arrangedMessage('a1', ['a-1']),
+    ]);
+    expect(anchors.has('a1')).toBe(false);
+  });
+
+  it('returns an empty map when no assistant message carries grouped output', async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
+    const adapter = createConciergeWorkspaceSession({
+      storage,
+      initialMissionId: 'unused',
+      fetchProductRecord: async (id) => rawRecord(id),
+    });
+    const anchors = await adapter.stageMessageAnchors([
+      { role: 'user', parts: [] },
+      { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Plain answer.' }] },
+    ]);
+    expect(anchors.size).toBe(0);
+  });
+});

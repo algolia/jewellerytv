@@ -29,7 +29,14 @@ import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
 import { extractNativePresentation, stripTrailingNote } from './nativeResults';
 import { buildClientTools } from './clientTools';
 import type { WorkspaceGroup } from '../workspaceResults';
-import { getFailedToolDetails, hasFailedTool, isCompletedAssistantTurn, turnHasUsableResult } from './turnCompletion';
+import { InlineProductCards } from './InlineProductCards';
+import { extractMessageAnchors } from './nativeResults';
+import {
+  getFailedToolDetails,
+  hasFailedTool,
+  isCompletedAssistantTurn,
+  turnHasUsableResult,
+} from './turnCompletion';
 import { applyBriefOperationsV3, undoBriefV3 } from '../../shared/briefState.js';
 import { buildTurnContext } from './turnContext.js';
 import { canonicalBlogUrlsFromMessages, verifiedBlogHref } from './verifiedBlogLinks.js';
@@ -451,6 +458,7 @@ export function ConversationMessage({
   verifiedBlogUrls,
   knownProductIds = new Set<string>(),
   onProductLink,
+  children,
 }: {
   message: UIMessage;
   revealed: boolean;
@@ -458,15 +466,21 @@ export function ConversationMessage({
   verifiedBlogUrls?: ReadonlySet<string>;
   knownProductIds?: ReadonlySet<string>;
   onProductLink?: (id: string, event: MouseEvent<HTMLAnchorElement>) => void;
+  children?: ReactNode;
 }) {
   const textParts = displayTextParts(message);
-  if (!textParts.length) return null;
+  if (!textParts.length) return children ?? null;
   if (message.role === 'user')
-    return <p className="connected-message connected-user-message">{textParts[0]}</p>;
+    return (
+      <p className="connected-message connected-user-message" data-message-id={message.id}>
+        {textParts[0]}
+      </p>
+    );
   if (!revealed && !provisional) return null;
   return (
     <div
       className={`connected-message connected-assistant-message${provisional ? ' connected-provisional' : ' connected-markdown'}`}
+      data-message-id={message.id}
       aria-live={provisional ? 'off' : undefined}
     >
       <span className="connected-assistant-label" aria-hidden="true">
@@ -517,6 +531,7 @@ export function ConversationMessage({
           )}
         </div>
       ))}
+      {children}
     </div>
   );
 }
@@ -590,6 +605,12 @@ export function ConnectedConcierge({
    * component state (not the persisted session contract) because they carry no
    * evidence ledger; a mission reset clears them with the conversation. */
   const [nativeGroups, setNativeGroups] = useState<WorkspaceGroup[] | null>(null);
+  /* Mobile anchored cards (2026-10-23): each revealed assistant message that
+   * carries a grouped tool call holds its own cards, rendered inline under the
+   * answer. Keyed by message id; cleared with the conversation. Desktop reads
+   * the same hydration through `nativeGroups` and ignores this state. */
+  const [anchoredCards, setAnchoredCards] = useState<Record<string, WorkspaceGroup[]>>({});
+  const stagedAnchorIdsRef = useRef<Set<string>>(new Set());
   const model = session.getModel(nativeGroups ?? undefined);
   const runtime = session.runtime;
   const brief = snapshot?.brief;
@@ -603,8 +624,11 @@ export function ConnectedConcierge({
       new Set([
         ...(snapshot?.selectionRecords ?? []).map((item) => item.objectID),
         ...model.discoveries.flatMap((group) => group.items.map((item) => item.product.id)),
+        ...Object.values(anchoredCards).flatMap((groups) =>
+          groups.flatMap((group) => group.items.map((item) => item.product.id)),
+        ),
       ]),
-    [snapshot, model.discoveries],
+    [snapshot, model.discoveries, anchoredCards],
   );
   const handleProductLink = useCallback(
     (id: string, event: MouseEvent<HTMLAnchorElement>) => {
@@ -695,7 +719,9 @@ export function ConnectedConcierge({
   /** Correlates this page's chat requests with the server's request log. Metadata only.
    * crypto.randomUUID needs a secure context; an embed iframe under an insecure
    * host page has none, so fall back like newId() does. */
-  const chatRequestId = useRef(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2));
+  const chatRequestId = useRef(
+    globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2),
+  );
   /* Lane 1: the four deterministic client tools execute in this browser over
    * the read-only exact-product proxy; the agent's tool sheet declares them
    * and their descriptions, this only binds the executors. */
@@ -745,14 +771,41 @@ export function ConnectedConcierge({
         const staged = await session.stageNativePresentation(visibleMessages);
         if (!cancelled && staged) setNativeGroups(staged);
       } catch (error) {
-        if (import.meta.env.DEV)
-          console.warn('JTV native canvas not restored after reload', error);
+        if (import.meta.env.DEV) console.warn('JTV native canvas not restored after reload', error);
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [canRestoreCanvas, visibleMessages, session]);
+  /* Anchor staging: cards hydrate once per revealed assistant message that
+   * carries a grouped tool call, mirroring the F1 rule that only a completed
+   * turn stages cards. A message already staged is never re-fetched; a failed
+   * pass unmarks its messages so a later transcript change retries. */
+  useEffect(() => {
+    const anchors = extractMessageAnchors(visibleMessages as never);
+    const unstaged = anchors.filter(
+      (anchor) =>
+        revealed.has(anchor.messageId) && !stagedAnchorIdsRef.current.has(anchor.messageId),
+    );
+    if (!unstaged.length) return;
+    unstaged.forEach((anchor) => stagedAnchorIdsRef.current.add(anchor.messageId));
+    const only = new Set(unstaged.map((anchor) => anchor.messageId));
+    let cancelled = false;
+    void (async () => {
+      try {
+        const staged = await session.stageMessageAnchors(visibleMessages, only);
+        if (cancelled || !staged.size) return;
+        setAnchoredCards((previous) => ({ ...previous, ...Object.fromEntries(staged) }));
+      } catch (error) {
+        only.forEach((id) => stagedAnchorIdsRef.current.delete(id));
+        if (import.meta.env.DEV) console.warn('JTV anchored cards not staged', error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visibleMessages, revealed, session]);
   /* The Ask JTV chip hands the search box text over as a draft, never as a
    * sent message: the shopper reads it, edits it and sends it themselves. */
   const prefillToken = prefill?.token ?? 0;
@@ -795,7 +848,6 @@ export function ConnectedConcierge({
     if (!chat.messages.length) return;
     if (extractNativePresentation(chat.messages)) arrangeSnapshotRef.current = chat.messages;
   }, [chat.messages]);
-
 
   const onSystemNotice = useCallback((text: string) => {
     setSystemNotices((previous) => (previous.includes(text) ? previous : [...previous, text]));
@@ -891,8 +943,7 @@ export function ConnectedConcierge({
                 const staged = await session.stageNativePresentation(messages);
                 if (staged) setNativeGroups(staged);
               } catch (error) {
-                if (import.meta.env.DEV)
-                  console.warn('JTV native presentation not staged', error);
+                if (import.meta.env.DEV) console.warn('JTV native presentation not staged', error);
               }
             } else {
               if (import.meta.env.DEV)
@@ -1018,6 +1069,8 @@ export function ConnectedConcierge({
     clearCompletedAssistantMessages(safeStorage());
     setHiddenPriorMessageIds((previous) => new Set([...previous, ...priorMessageIds]));
     setNativeGroups(null);
+    setAnchoredCards({});
+    stagedAnchorIdsRef.current = new Set();
     finishRef.current = null;
     latestTurn.current = { turnId: '', sourceMessageId: '' };
     setPending(null);
@@ -1056,8 +1109,23 @@ export function ConnectedConcierge({
           .join('\n');
   useLayoutEffect(() => {
     const viewport = messagesViewportRef.current;
-    if (viewport && followTranscriptRef.current) viewport.scrollTop = viewport.scrollHeight;
-  }, [pendingAssistantText, visibleMessages.length, revealed, systemNotices.length]);
+    if (!viewport || !followTranscriptRef.current) return;
+    /* While a turn streams, follow the bottom as before. Once the turn is
+     * complete (pending cleared), land on the last assistant message so the
+     * reply is read before its anchored cards, which render below it. */
+    if (pending) {
+      viewport.scrollTop = viewport.scrollHeight;
+      return;
+    }
+    const targets = viewport.querySelectorAll<HTMLElement>('[data-message-id]');
+    const last = targets.length ? targets[targets.length - 1] : null;
+    if (last) {
+      const delta = last.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
+      viewport.scrollTop += delta - 8;
+    } else {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+  }, [pending, pendingAssistantText, visibleMessages.length, revealed, systemNotices.length]);
   const verifiedBlogUrls = useMemo(
     () =>
       canonicalBlogUrlsFromMessages(visibleMessages.filter((message) => revealed.has(message.id))),
@@ -1144,7 +1212,14 @@ export function ConnectedConcierge({
               knownProductIds={knownProductIds}
               verifiedBlogUrls={verifiedBlogUrls}
               onProductLink={handleProductLink}
-            />
+            >
+              {message.role === 'assistant' && anchoredCards[message.id] && (
+                <InlineProductCards
+                  groups={anchoredCards[message.id]}
+                  onProductLink={handleProductLink}
+                />
+              )}
+            </ConversationMessage>
           ))}
           {systemNotices.map((notice) => (
             <p className="connected-system-notice" role="status" key={notice}>

@@ -68,9 +68,7 @@ function readGroupedInput(input: unknown): { intro: string; groups: NativeGroup[
     }
     groups.push({
       title,
-      ...(typeof rawGroup.why === 'string' && rawGroup.why.trim()
-        ? { why: rawGroup.why }
-        : {}),
+      ...(typeof rawGroup.why === 'string' && rawGroup.why.trim() ? { why: rawGroup.why } : {}),
       objectIDs,
     });
   }
@@ -104,6 +102,37 @@ function readArrangedOutput(output: unknown): NativeGroup[] | null {
   return groups;
 }
 
+/** Mobile anchored cards (2026-10-23): per assistant message, the same
+ * precedence as `extractNativePresentation` — an arrange_groups output wins,
+ * the grouped-call input is the fallback — but read from EVERY assistant
+ * message instead of only the latest turn, so the conversation can render
+ * each turn's picks under the answer that found them. Search records are NOT
+ * collected here; the hydration layer collects them across the transcript. */
+export function extractMessageAnchors(
+  messages: readonly Message[],
+): { messageId: string; groups: NativeGroup[] }[] {
+  const anchors: { messageId: string; groups: NativeGroup[] }[] = [];
+  for (const message of messages) {
+    if (message.role !== 'assistant' || !message.parts || !message.id) continue;
+    let grouped: { intro: string; groups: NativeGroup[] } | null = null;
+    let arranged: NativeGroup[] | null = null;
+    for (const part of message.parts as Part[]) {
+      if (typeof part.type !== 'string') continue;
+      if (part.type === GROUPED_TOOL) {
+        const parsed = readGroupedInput(part.input);
+        if (parsed) grouped = parsed;
+      }
+      if (part.type === ARRANGE_TOOL) {
+        const parsed = readArrangedOutput(part.output);
+        if (parsed) arranged = parsed;
+      }
+    }
+    const groups = arranged ?? grouped?.groups ?? null;
+    if (groups?.length) anchors.push({ messageId: message.id, groups });
+  }
+  return anchors;
+}
+
 /**
  * Reads the native tool parts off the latest assistant turn. Returns null when
  * the turn presented no grouped results (held turns, service answers). A
@@ -123,9 +152,7 @@ function readArrangedOutput(output: unknown): NativeGroup[] | null {
  * still holds a successful arrange_groups output — tool-verified, ready to
  * render. Reading only the latest message discarded exactly that output.
  */
-export function extractNativePresentation(
-  messages: readonly Message[],
-): NativePresentation | null {
+export function extractNativePresentation(messages: readonly Message[]): NativePresentation | null {
   let lastUser = -1;
   for (let index = messages.length - 1; index >= 0; index--) {
     if (messages[index].role === 'user') {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  extractMessageAnchors,
   extractNativePresentation,
   NOTE_ECHO_ENABLED,
   stripTrailingNote,
@@ -58,7 +59,9 @@ describe('extractNativePresentation', () => {
         role: 'assistant',
         parts: [
           searchPart([hit('WPG776'), hit('WPG777')]),
-          groupedPart([group('Solo tanzanite statement stones', ['WPG776', 'WPG777'], 'Pure stones')]),
+          groupedPart([
+            group('Solo tanzanite statement stones', ['WPG776', 'WPG777'], 'Pure stones'),
+          ]),
           { type: 'text', state: 'done', text: 'Here is a first look.' },
         ],
       },
@@ -130,10 +133,7 @@ describe('extractNativePresentation', () => {
       {
         id: 'a1',
         role: 'assistant',
-        parts: [
-          searchPart([hit('S1'), hit('S2')]),
-          groupedPart([group('Group', ['G1'])]),
-        ],
+        parts: [searchPart([hit('S1'), hit('S2')]), groupedPart([group('Group', ['G1'])])],
       },
     ];
     const result = extractNativePresentation(messages);
@@ -147,7 +147,13 @@ describe('extractNativePresentation', () => {
       {
         id: 'a1',
         role: 'assistant',
-        parts: [{ type: 'tool-algolia_grouped_results', state: 'input-available', input: { intro: 'i', groups: [group('G', ['X1'])] } }],
+        parts: [
+          {
+            type: 'tool-algolia_grouped_results',
+            state: 'input-available',
+            input: { intro: 'i', groups: [group('G', ['X1'])] },
+          },
+        ],
       },
     ];
     expect(extractNativePresentation(messages)?.groups[0].objectIDs).toEqual(['X1']);
@@ -193,5 +199,102 @@ describe('stripTrailingNote', () => {
 describe('NOTE_ECHO_ENABLED', () => {
   it('defaults OFF per F1 (Arijit is deciding whether the NOTE stays)', () => {
     expect(NOTE_ECHO_ENABLED).toBe(false);
+  });
+});
+
+/* Mobile anchored cards (2026-10-23): each assistant message that carries a
+ * grouped or arranged tool output anchors its own cards, so the conversation
+ * keeps every turn's picks in place instead of one latest-turn canvas. */
+
+describe('extractMessageAnchors', () => {
+  const arrangedPart = (groups: string[][]) => ({
+    type: 'tool-arrange_groups',
+    toolCallId: 'call-9',
+    state: 'output-available',
+    input: {},
+    output: {
+      status: 'ok',
+      groups: groups.map((items, index) => ({
+        title: `Group ${index + 1}`,
+        items: items.map((objectID) => ({ objectID })),
+      })),
+    },
+  });
+
+  it('returns one anchor per assistant message that carries an arranged output', () => {
+    const messages = [
+      userMessage('show me opal rings'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [searchPart([hit('WPG776')]), arrangedPart([['WPG776', 'WPG777']])],
+      },
+      userMessage('make it yellow gold'),
+      {
+        id: 'a2',
+        role: 'assistant',
+        parts: [searchPart([hit('WPG778')]), arrangedPart([['WPG778']])],
+      },
+    ];
+    const anchors = extractMessageAnchors(messages);
+    expect(anchors.map((anchor) => anchor.messageId)).toEqual(['a1', 'a2']);
+    expect(anchors[0].groups.map((g) => g.objectIDs)).toEqual([['WPG776', 'WPG777']]);
+    expect(anchors[1].groups.map((g) => g.objectIDs)).toEqual([['WPG778']]);
+  });
+
+  it('falls back to the grouped call input when the message has no arrange output', () => {
+    const messages = [
+      userMessage('show me opal rings'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [groupedPart([group('Under $200', ['WPG776'])])],
+      },
+    ];
+    const anchors = extractMessageAnchors(messages);
+    expect(anchors).toHaveLength(1);
+    expect(anchors[0]).toMatchObject({ messageId: 'a1' });
+    expect(anchors[0].groups[0]).toMatchObject({ title: 'Under $200', objectIDs: ['WPG776'] });
+  });
+
+  it('prefers the arranged output over the grouped input inside one message', () => {
+    const messages = [
+      userMessage('show me opal rings'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [groupedPart([group('Grouped set', ['WPG900'])]), arrangedPart([['WPG776']])],
+      },
+    ];
+    const anchors = extractMessageAnchors(messages);
+    expect(anchors[0].groups.map((g) => g.objectIDs)).toEqual([['WPG776']]);
+  });
+
+  it('skips assistant messages with no grouped tool output', () => {
+    const messages = [
+      userMessage('what makes opal different?'),
+      { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Play of color.' }] },
+    ];
+    expect(extractMessageAnchors(messages)).toEqual([]);
+  });
+
+  it('ignores a failed arrange output and yields no anchor from it', () => {
+    const messages = [
+      userMessage('show me opal rings'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'tool-arrange_groups',
+            toolCallId: 'call-9',
+            state: 'output-available',
+            input: {},
+            output: { status: 'error' },
+          },
+        ],
+      },
+    ];
+    expect(extractMessageAnchors(messages)).toEqual([]);
   });
 });
