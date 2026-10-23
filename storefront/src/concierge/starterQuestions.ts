@@ -11,13 +11,13 @@
  * Demand evidence is aggregate theme data only: never raw shopper queries and
  * never inventory counts. These are fixed UI labels, not agent replies.
  *
- * Composition (rebuilt 2026-10-23 per Arijit's direction): scenario-led short
- * chips over "show me X" templates. Gift and occasion chips lead ("I'm buying
- * a gift", "Anniversary gift", "A watch for dad"), because a chip that starts
- * a conversation beats a chip that ends it. Product chips stay as short noun
- * phrases. `voice` forces sentence-form variety (show / question / tell) and
- * `theme` forces scenario variety; one set must not sound like the same
- * sentence with swapped nouns.
+ * Composition (rebuilt 2026-10-23 per Arijit's direction, corrected after his
+ * review: never truncate a question into a fragment): full natural questions
+ * in varied sentence forms, with the NEW weight on gift and occasion chips
+ * ("I'm buying a gift", "A watch for dad", graduation, Christmas) so a set
+ * opens conversations, not just searches. `voice` forces sentence-form
+ * variety (show / question / tell) and `theme` forces scenario variety; one
+ * set must not sound like the same sentence with swapped nouns.
  */
 
 export type StarterSource = 'prod_catalog' | 'help_content';
@@ -45,27 +45,28 @@ export type StarterQuestion = {
 
 export const STARTER_QUESTION_POOL: readonly StarterQuestion[] = [
   { label: "I'm buying a gift", theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
-  { label: 'Anniversary gift', theme: 'occasion', voice: 'show', source: 'prod_catalog' },
-  { label: 'Graduation gift', theme: 'occasion', voice: 'show', source: 'prod_catalog' },
+  { label: 'Help me find an anniversary gift', theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
+  { label: 'What should I get for a graduation gift?', theme: 'occasion', voice: 'question', source: 'prod_catalog' },
   { label: 'A watch for dad', theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
-  { label: 'Christmas gift ideas', theme: 'occasion', voice: 'show', source: 'prod_catalog' },
-  { label: 'Wedding ring sets', theme: 'occasion', voice: 'show', source: 'prod_catalog' },
-  { label: 'A mothers ring for mom', theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
-  { label: 'Moissanite rings', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
-  { label: 'Opal jewelry', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
-  { label: 'Pearl earrings', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
-  { label: 'Gold hoop earrings', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
-  { label: 'Cross necklaces', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
-  { label: 'Handbags', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
+  { label: 'Show me Christmas gift ideas', theme: 'occasion', voice: 'show', source: 'prod_catalog' },
+  { label: "I'm looking for wedding ring sets", theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
+  { label: 'Help me find a mothers ring for my mom', theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
+  { label: 'Show me moissanite rings', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
+  { label: 'Show me opal jewelry', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
+  { label: 'Do you have gold hoop earrings?', theme: 'discovery', voice: 'question', source: 'prod_catalog' },
+  { label: 'Show me pearl earrings', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
+  { label: 'Show me cross necklaces', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
+  { label: 'Show me handbags and accessories', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
+  { label: 'Show me tanzanite rings', theme: 'discovery', voice: 'show', source: 'prod_catalog' },
   { label: 'Help me build a ring stack', theme: 'style', voice: 'tell', source: 'prod_catalog' },
-  { label: 'Southwest Style jewelry', theme: 'style', voice: 'show', source: 'prod_catalog' },
-  { label: 'Judith Ripka', theme: 'brand', voice: 'show', source: 'prod_catalog' },
-  { label: 'Gems en Vogue', theme: 'brand', voice: 'show', source: 'prod_catalog' },
-  { label: 'Find my birthstone', theme: 'personalization', voice: 'tell', source: 'prod_catalog' },
+  { label: 'Show me Southwest Style jewelry', theme: 'style', voice: 'show', source: 'prod_catalog' },
+  { label: 'Show me Judith Ripka jewelry', theme: 'brand', voice: 'show', source: 'prod_catalog' },
+  { label: 'Show me Gems en Vogue jewelry', theme: 'brand', voice: 'show', source: 'prod_catalog' },
+  { label: 'Help me find my birthstone', theme: 'personalization', voice: 'tell', source: 'prod_catalog' },
   { label: 'I only wear white gold', theme: 'preference', voice: 'tell', source: 'prod_catalog' },
-  { label: "What's new?", theme: 'new', voice: 'question', source: 'prod_catalog' },
-  { label: 'Jewelry on sale', theme: 'value', voice: 'show', source: 'prod_catalog' },
-  { label: 'Engagement rings under $1,000', theme: 'value', voice: 'show', source: 'prod_catalog' },
+  { label: "What's new in the collection?", theme: 'new', voice: 'question', source: 'prod_catalog' },
+  { label: 'Show me jewelry on sale', theme: 'value', voice: 'show', source: 'prod_catalog' },
+  { label: 'Show me engagement rings under $1,000', theme: 'value', voice: 'show', source: 'prod_catalog' },
   { label: 'How do I clean my jewelry?', theme: 'care', voice: 'question', source: 'help_content' },
   { label: 'How do auctions work?', theme: 'service', voice: 'question', source: 'help_content' },
   { label: 'How can I watch JTV live?', theme: 'service', voice: 'question', source: 'help_content' },
