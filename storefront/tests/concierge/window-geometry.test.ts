@@ -17,8 +17,8 @@ Scenario list:
 const desktop: Viewport = { width: 1440, height: 900 };
 
 describe('concierge window geometry', () => {
-  it('starts with a large window inside the viewport', () => {
-    expect(defaultWindowRect(desktop)).toEqual({ x: 24, y: 28, width: 1392, height: 788 });
+  it('starts with a single-column window inside the viewport', () => {
+    expect(defaultWindowRect(desktop)).toEqual({ x: 576, y: 28, width: 840, height: 788 });
   });
 
   it('keeps the window reachable when moved beyond each viewport edge', () => {
