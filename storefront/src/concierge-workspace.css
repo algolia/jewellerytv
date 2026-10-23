@@ -1,5 +1,7 @@
 .concierge-workspace.concierge-panel {
-  width: min(1180px, calc(100vw - 48px));
+  /* Single-column concierge: sized for reading and shopping, not for the
+   * retired side-by-side split. */
+  width: min(840px, calc(100vw - 48px));
   height: calc(100dvh - 112px);
   max-height: 900px;
   right: 24px;
@@ -165,7 +167,7 @@
 }
 @media (min-width: 1024px) {
   .concierge-workspace.concierge-panel {
-    width: min(1440px, calc(100vw - 48px));
+    width: min(840px, calc(100vw - 48px));
   }
   .concierge-workspace .conversation-column {
     flex-basis: 36%;
