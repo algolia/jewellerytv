@@ -391,6 +391,20 @@ export function getConnectedTurnSystemNotice(
   return '[System notice] This request did not produce a complete response. Existing product choices remain.';
 }
 
+/** A failed turn must not erase what the shopper already read. The streamed
+ * assistant text is only visible while the turn is pending (provisional); once
+ * the turn ends unrevealed it would render as nothing. Returns the latest
+ * assistant message whose streamed text should be revealed after a failed or
+ * incomplete turn, or null. The SDK's own fixed-notice message is excluded:
+ * it is already surfaced as a system notice. No wording is authored here. */
+export function partialAssistantToReveal(messages: readonly UIMessage[]) {
+  const assistant = latestAssistant(messages);
+  if (!assistant) return null;
+  const text = messageText(assistant);
+  if (!text.trim() || text.startsWith('[System notice]')) return null;
+  return assistant;
+}
+
 /** The agent sometimes writes links as HTML anchors, quoting the raw HTML
  * embedded in help and blog article bodies. The markdown renderer drops raw
  * HTML by design (the raw-HTML test below), so rewrite the anchor SYNTAX to
@@ -851,6 +865,19 @@ export function ConnectedConcierge({
               });
               runtime.endTurn(turnId);
               onSystemNotice(getConnectedTurnSystemNotice(messages, finish, transportError));
+              /* A failed turn must not erase what the shopper already read.
+               * The assistant text streamed before the failure is only visible
+               * while `pending` is set (provisional); once the turn ends it
+               * would render as neither revealed nor provisional, so the
+               * painted reply vanished and only the fixed notice remained.
+               * Reveal the streamed text here so the message stays, with the
+               * notice following it. The SDK's own fixed-notice message is
+               * excluded: that one is already surfaced through the notice
+               * above. No wording is authored or reworded here. */
+              const partialAssistant = partialAssistantToReveal(messages);
+              if (partialAssistant) {
+                setRevealed((previous) => new Set(previous).add(partialAssistant.id));
+              }
               /* DIAG-11: the SDK answers a data-guardrail-violation by writing
                * the fixed notice INTO the latest assistant message (its
                * onToolCall/data branch never reaches onData). When that
