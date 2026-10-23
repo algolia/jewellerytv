@@ -782,15 +782,16 @@ export function ConnectedConcierge({
       cancelled = true;
     };
   }, [canRestoreCanvas, visibleMessages, session]);
-  /* Facet chips spike (2026-10-23): flag-gated, default OFF. When on, a turn
-   * whose arrange call carries a displayFacets pick renders chip rows + a
-   * top-relevancy preview instead of inline cards; tap refines client-side
-   * through the same-origin search proxy. */
+  /* Facet chips spike (2026-10-23): default ON on the local dev stack — the
+   * opt-in flag kept biting every demo. Set jtv-facet-chips=off to compare
+   * against the inline-cards behavior. A turn whose arrange call carries a
+   * displayFacets pick renders chip rows + a top-relevancy preview instead of
+   * inline cards; tap refines client-side through the same-origin proxy. */
   const facetChipsOn = useMemo(() => {
     try {
-      return safeStorage().getItem('jtv-facet-chips') === 'on';
+      return safeStorage().getItem('jtv-facet-chips') !== 'off';
     } catch {
-      return false;
+      return true;
     }
   }, []);
   const facetPicks = useMemo(
