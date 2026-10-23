@@ -65,7 +65,7 @@ export const STARTER_QUESTION_POOL: readonly StarterQuestion[] = [
   { label: 'Help me find my birthstone', theme: 'personalization', voice: 'tell', source: 'prod_catalog' },
   { label: 'I only wear white gold', theme: 'preference', voice: 'tell', source: 'prod_catalog' },
   { label: "What's new in the collection?", theme: 'new', voice: 'question', source: 'prod_catalog' },
-  { label: 'Show me jewelry on sale', theme: 'value', voice: 'show', source: 'prod_catalog' },
+  { label: 'Show me clearance jewelry', theme: 'value', voice: 'show', source: 'prod_catalog' },
   { label: 'Show me engagement rings under $1,000', theme: 'value', voice: 'show', source: 'prod_catalog' },
   { label: 'How do I clean my jewelry?', theme: 'care', voice: 'question', source: 'help_content' },
   { label: 'How do auctions work?', theme: 'service', voice: 'question', source: 'help_content' },
