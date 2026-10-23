@@ -46,12 +46,19 @@ export type ArrangedGroup = {
 
 export type GroupShortfall = { group: string; missing: number };
 
+/** Eligible pieces a full group held back. Reported, never reallocated:
+ * moving a piece between directions is the model's semantic call. */
+export type ArrangeSurplus = { objectID: string; name: string; price: number; group: string };
+
 export type ArrangeGroupsOutput = {
   status: 'ok' | 'invalid_input' | 'shortfall';
   /** Tiles to display. Empty unless status is 'ok'. */
   groups: ArrangedGroup[];
   dropped: ArrangeDrop[];
   shortfall: GroupShortfall[];
+  /** Eligible pieces beyond the per-group cap, so the model can regroup them
+   * into short directions. Empty when every group is at or under the cap. */
+  surplus: ArrangeSurplus[];
   /** Set when the number of groups itself misses the requested range. */
   groupCount?: { actual: number; min: number; max: number };
   reason?: string;
@@ -65,6 +72,7 @@ const invalid = (reason: string): ArrangeGroupsOutput => ({
   groups: [],
   dropped: [],
   shortfall: [],
+  surplus: [],
 });
 
 export function createArrangeGroups(getRecords: CatalogRecordFetcher): ArrangeGroups {
@@ -95,6 +103,7 @@ export function createArrangeGroups(getRecords: CatalogRecordFetcher): ArrangeGr
     const records = await getRecords(needs);
     const dropped: ArrangeDrop[] = [];
     const shortfall: GroupShortfall[] = [];
+    const surplus: ArrangeSurplus[] = [];
     const arranged: ArrangedGroup[] = [];
     for (const group of groups) {
       const items: { objectID: string; name: string; price: number; link: string }[] = [];
@@ -129,15 +138,19 @@ export function createArrangeGroups(getRecords: CatalogRecordFetcher): ArrangeGr
       }
       const missing = minPerGroup - items.length;
       if (missing > 0) shortfall.push({ group: group.title, missing });
-      if (items.length) arranged.push({ title: group.title, items: items.slice(0, maxPerGroup) });
+      if (items.length) {
+        arranged.push({ title: group.title, items: items.slice(0, maxPerGroup) });
+        for (const item of items.slice(maxPerGroup))
+          surplus.push({ objectID: item.objectID, name: item.name, price: item.price, group: group.title });
+      }
     }
     if (groups.length < minGroups) {
       // A count below the minimum is a catalogue-driven shortfall: nothing is
       // published, the model reads the report and decides what to do next.
       // (A group that LOST a member still publishes its remaining items; the
       // shortfall rides along on the ok output so the eligible pieces show.)
-      return { status: 'shortfall', groups: [], dropped, shortfall, groupCount: { actual: groups.length, min: minGroups, max: maxGroups } };
+      return { status: 'shortfall', groups: [], dropped, shortfall, surplus, groupCount: { actual: groups.length, min: minGroups, max: maxGroups } };
     }
-    return { status: 'ok', groups: arranged, dropped, shortfall };
+    return { status: 'ok', groups: arranged, dropped, shortfall, surplus };
   };
 }
