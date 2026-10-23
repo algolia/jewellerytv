@@ -354,6 +354,26 @@ export function visibleConnectedTranscript(
   return resetting ? [] : messages.filter((message) => !hiddenPriorMessageIds.has(message.id));
 }
 
+/** Canvas restore gate (Option B, 2026-10-22). The canvas tiles are React
+ * state written only by the send path, so any full page load (a PDP trip, F5)
+ * remounts the component with an empty canvas while the SDK restores the
+ * transcript from sessionStorage. The restore effect may re-stage the canvas
+ * from the visible transcript when idle and nothing is staged yet; staging
+ * itself re-verifies identities, and a cleared conversation (hidden prior
+ * ids) stages nothing because its visible transcript is empty. */
+export function canRestoreNativeCanvas(options: {
+  visibleMessages: readonly UIMessage[];
+  nativeGroups: WorkspaceGroup[] | null;
+  pending: boolean;
+  resetting: boolean;
+}) {
+  if (options.nativeGroups || options.pending || options.resetting) return false;
+  return (
+    options.visibleMessages.some((message) => message.role === 'user') &&
+    options.visibleMessages.some((message) => message.role === 'assistant')
+  );
+}
+
 function latestAssistant(messages: readonly UIMessage[]) {
   return [...messages].reverse().find((message) => message.role === 'assistant');
 }
@@ -686,6 +706,39 @@ export function ConnectedConcierge({
     onError: onChatError,
     requiresSearch: false,
   });
+  /* Canvas restore: after a reload the transcript hydrates from storage but
+   * nothing re-runs the send path, so the canvas would stay empty. Stage once
+   * per transcript identity from the visible messages (hidden prior ids
+   * excluded, so a new conversation cannot resurrect the old canvas). */
+  const canvasRestoreAttemptRef = useRef<readonly UIMessage[] | null>(null);
+  const visibleMessages = useMemo(
+    () => visibleConnectedTranscript(chat.messages, resetting, hiddenPriorMessageIds),
+    [chat.messages, resetting, hiddenPriorMessageIds],
+  );
+  const canRestoreCanvas = canRestoreNativeCanvas({
+    visibleMessages,
+    nativeGroups,
+    pending: !!pending,
+    resetting,
+  });
+  useEffect(() => {
+    if (!canRestoreCanvas) return;
+    if (canvasRestoreAttemptRef.current === visibleMessages) return;
+    canvasRestoreAttemptRef.current = visibleMessages;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const staged = await session.stageNativePresentation(visibleMessages);
+        if (!cancelled && staged) setNativeGroups(staged);
+      } catch (error) {
+        if (import.meta.env.DEV)
+          console.warn('JTV native canvas not restored after reload', error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canRestoreCanvas, visibleMessages, session]);
   /* The Ask JTV chip hands the search box text over as a draft, never as a
    * sent message: the shopper reads it, edits it and sends it themselves. */
   const prefillToken = prefill?.token ?? 0;
@@ -960,11 +1013,6 @@ export function ConnectedConcierge({
       void send(undefined, label);
     },
     [send],
-  );
-  const visibleMessages = visibleConnectedTranscript(
-    chat.messages,
-    resetting,
-    hiddenPriorMessageIds,
   );
   const pendingSourceIndex = pending
     ? visibleMessages.findIndex(
