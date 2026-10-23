@@ -71,6 +71,14 @@ export const STARTER_QUESTION_POOL: readonly StarterQuestion[] = [
   { label: 'How do auctions work?', theme: 'service', voice: 'question', source: 'help_content' },
   { label: 'How can I watch JTV live?', theme: 'service', voice: 'question', source: 'help_content' },
   { label: 'How do returns work?', theme: 'service', voice: 'question', source: 'help_content' },
+  { label: 'Surprise me', theme: 'discovery', voice: 'tell', source: 'prod_catalog' },
+  { label: 'Treat myself', theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
+  { label: 'I have a $200 budget', theme: 'value', voice: 'tell', source: 'prod_catalog' },
+  { label: 'Lab-grown or natural?', theme: 'discovery', voice: 'question', source: 'prod_catalog' },
+  { label: 'Vintage or modern?', theme: 'style', voice: 'question', source: 'prod_catalog' },
+  { label: 'What goes with gold hoops?', theme: 'style', voice: 'question', source: 'prod_catalog' },
+  { label: 'Show me something bold', theme: 'style', voice: 'show', source: 'prod_catalog' },
+  { label: "What's new for the holidays?", theme: 'new', voice: 'question', source: 'prod_catalog' },
 ];
 
 /**
