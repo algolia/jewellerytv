@@ -7,7 +7,13 @@
  * decides what to do next; the app renders only what this tool returned, so
  * the display can never contain a piece the other tools rejected.
  * Group sizes are parameters, default three groups of two (the accepted
- * Discovery design). No shopper-facing text, no state. */
+ * Discovery design). No shopper-facing text, no state.
+ *
+ * Design-variant dedup (2026-10-23, Arijit's option B): two records of the
+ * same design that differ only in metal color, purity, size or a few dollars
+ * of price are one shopper choice. A title-derived design signature extends
+ * the exact-objectID duplicate check; a variant is dropped with reason
+ * 'variant_of_shown' so the model reads why, exactly like every other drop. */
 
 import type { CatalogRecordFetcher } from './catalogRecord';
 
@@ -31,6 +37,7 @@ export type ArrangeDropReason =
   | 'out_of_stock'
   | 'not_found'
   | 'duplicate'
+  | 'variant_of_shown'
   | 'over_ceiling'
   | 'under_floor'
   | 'unpriced';
@@ -75,6 +82,25 @@ const invalid = (reason: string): ArrangeGroupsOutput => ({
   surplus: [],
 });
 
+/** Design signature: the title words that describe the design itself, with
+ * metal colors, purities and size/weight tokens removed. Two records whose
+ * signatures match are variants of one design (same ring in yellow and white
+ * gold, the same bracelet in a different carat weight), not two choices.
+ * Exported for tests. */
+export function designSignature(name: string): string {
+  const noise = new Set([
+    'yellow', 'white', 'rose', 'pink', 'gold', 'goldtone', 'silvertone',
+    'rhodium', 'sterling', 'silver', 'silverite', 'platineve', 'over',
+    '10k', '14k', '18k', '24k', 'ctw', 'ct', 'mm', 'inch', 'inches', 'approximately',
+  ]);
+  const tokens = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s./]+/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token && !noise.has(token) && !/^\d+(?:\.\d+)?(?:\/\d+)?$/.test(token));
+  return tokens.join(' ');
+}
+
 export function createArrangeGroups(getRecords: CatalogRecordFetcher): ArrangeGroups {
   return async ({
     groups,
@@ -97,6 +123,7 @@ export function createArrangeGroups(getRecords: CatalogRecordFetcher): ArrangeGr
     }
     // First placement wins across all groups; every later copy is a duplicate.
     const placed = new Set<string>();
+    const placedDesigns = new Map<string, string>();
     const needs: string[] = [];
     for (const group of groups)
       for (const objectID of group.objectIDs) if (!placed.has(objectID)) needs.push(objectID);
@@ -134,6 +161,12 @@ export function createArrangeGroups(getRecords: CatalogRecordFetcher): ArrangeGr
           dropped.push({ objectID, reason: 'under_floor', group: group.title });
           continue;
         }
+        const signature = designSignature(record.name);
+        if (signature && placedDesigns.has(signature)) {
+          dropped.push({ objectID, reason: 'variant_of_shown', group: group.title });
+          continue;
+        }
+        if (signature) placedDesigns.set(signature, objectID);
         items.push({ objectID, name: record.name, price: record.price, link: record.link });
       }
       const missing = minPerGroup - items.length;
