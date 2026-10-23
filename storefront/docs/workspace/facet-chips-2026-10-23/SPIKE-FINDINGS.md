@@ -52,3 +52,27 @@ Turn 1 still costs the normal agent round trip (unchanged).
    production promotion on Arijit's call.
 Rollback: app flag off; agent instructions restored to sha `28b97166` (snapshot
 saved in this folder).
+
+## Update — evening session (cascade + chips-era prompt)
+
+- Chips are a **cascading funnel**: level 1 unlabeled, each tap refines and the
+  next level's values come from the refinement response's own facet counts
+  (no second query). Filters accumulate. `f37b42a`.
+- Panel narrowed to **600px** (Vuori measured at 598px live on vuoriclothing.com);
+  the 65ch line-measure removed — text fills the panel. Vertical rails removed.
+  `5426a46`, `a1c71a6`.
+- Tiles carry **image + price only** (titles in a11y/PDP). `7ba1778`.
+- Dev prompt (chips-era copy, sha `60ef3f3c`): browse replies are opener +
+  breadth + question; no direction bullets; no product names or prices that the
+  tiles show; worked examples no longer restate the bullet format. Anchor-
+  asserted edits, read-back verified.
+- **Live result, fresh turn ("show me cross necklaces")**: one opener, zero
+  bullets, 124 words, 6 material chips + 4 title-less tiles, breadth line, one
+  question. Previous shape: 350+ words, triple opener, bulleted directions with
+  product names and prices.
+- **Open**: the model still named 3 pieces in prose that the tiles show (rule
+  half-followed — battery scores it); process-narration leak ("My second search
+  went too broad") persists — evidence for the sanitize rewrite.
+- Prompt-sanitize end-to-end rewrite remains the standing next phase (Arijit
+  authorized it this session); today's edits are steps on that path, not a
+  substitute.
