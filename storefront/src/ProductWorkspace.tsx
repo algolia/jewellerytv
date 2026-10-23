@@ -163,13 +163,9 @@ export function ProductWorkspace({
               Showing your previous choices.
             </p>
           )}
-          {completeDiscoveryGrid ? (
-            <div className="pw-discovery-intro">
-              {/* Arijit, 2026-10-22: one short open line replaces the long
-                  grid description; the tiles carry the specifics. */}
-              <h2 className="pw-discovery-title">Explore the category</h2>
-            </div>
-          ) : null}
+          {/* Arijit, 2026-10-23: the generic "Explore the category" title is
+              gone. The group headings carry the meaning, so they get the
+              space; a label that names no difference earns none. */}
           <div
             className="pw-discovery-groups"
             data-group-count={groupedDiscoveries.length}
