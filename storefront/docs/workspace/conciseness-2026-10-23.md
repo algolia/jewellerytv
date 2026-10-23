@@ -1,0 +1,60 @@
+# Concierge instruction conciseness program — status 2026-10-23
+
+Portable summary of the conciseness work checked in on 2026-10-23. Raw working files, probe
+outputs and screenshots live in the local-only workspace `docs/workspace/conciseness-2026-10-22/`
+(git-ignored by the application-only policy); this page is the tracked handoff.
+
+## What changed and where
+
+The Concierge agent's `instructions` text only. No application code, no index configuration,
+no systemPrompt, no tools changed. Changes were applied programmatically (single PATCH per
+round, hash-verified readback) to the dev agent `8129ad66-170b-4bb5-926a-c81d2cb38f22`.
+Production (`0bdf59fe-e598-4db7-b139-2b93d5255bb4`) still runs the pre-change instructions
+`b54ffc95` at the time of this writing.
+
+| Round | Dev instructions sha | Content |
+|---|---|---|
+| 0 (baseline 2026-10-22) | `b54ffc95` | grammar fix, unchanged behavior |
+| 1 | `0ac7bd2e` | short-sentence format line, reread test with verbose/good example pair, "what you left out" narrowed to when it would mislead, breadth compressed to one sentence, bulleted example replaced with warm prose |
+| 2 (current dev) | `ad08b243` | topic-specific acknowledgement (no generic filler opener), the pearl flow as the worked example, Don't covers announcing results the reply will present, test clause: every sentence helps the shopper choose, reacts, or moves forward |
+
+Rollback snapshots for both rounds are in the local workspace
+(`instructions.old-b54ffc95.md`, `instructions.new.md`).
+
+## The bar the edits teach
+
+Short sentences, same warmth: the conversation keeps the empathy, joy and personal voice;
+one or two short sentences carry a point. No caps, no numbers, no limits. Verbosity is cut at
+the sentence level, never by stripping the human touch. Broad browse keeps the accepted
+first-cut + depth + call-to-action shape.
+
+## Verification (connected, headless Playwright, fresh literals each round)
+
+- Round 1 (8 conversations, 9 turns): openers still generic; announce-then-repeat narration
+  measured at 3/3/6 phrases in the three browse probes.
+- Round 2 (same suite, all-new literals): generic opener gone in 9/9 turns; narration 3→1,
+  3→0, 6→3; education reply 132→96 words with depth intact; follow-up discipline held.
+
+## Open defects after round 2 (proposed fixes drafted, not applied)
+
+1. Between-steps narration now shows display-assembly deliberation ("let me fill that third
+   direction...", "Let me finalize the display..."). Proposed A4: the shopper sees only
+   finished work.
+2. Personal-gift turn asks its deciding question twice (open and close). Proposed A5:
+   one question per turn.
+3. One exact-count leak ("216 sapphire earring pieces") against an existing never-quote-counts
+   rule; watch on retest, no new rule.
+
+## Baseline state (read via scripts/baseline/verify-baseline.mjs)
+
+`baseline.json` still records `b54ffc95`. Dev leads production (`ad08b243`), so the verify
+script reports the expected drift until the tested state is promoted with
+`scripts/baseline/promote-agent.mjs` and the baseline is re-recorded with
+`verify-baseline.mjs --write-manifest`. Promotion is explicitly gated on review of the open
+defects above.
+
+## Related
+
+- Local working folder with full evidence: `docs/workspace/conciseness-2026-10-22/`
+  (INSTRUCTION-EDITS.md has every before/after; verify-run/ has results, grading and screenshots).
+- Binding behavior bar: vault ADR 2026-10-21 conversation-behavior-bar.
