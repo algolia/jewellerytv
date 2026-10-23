@@ -28,6 +28,10 @@ import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from '.
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
 import { extractNativePresentation, stripTrailingNote } from './nativeResults';
 import { buildClientTools } from './clientTools';
+import { extractMessageFacetPicks } from './nativeResults';
+import { FacetChips } from './FacetChips';
+import { normalizeProduct, type Product } from '../catalog';
+import { searchClient } from '../client';
 import type { WorkspaceGroup } from '../workspaceResults';
 import { InlineProductCards } from './InlineProductCards';
 import { extractMessageAnchors } from './nativeResults';
@@ -778,6 +782,78 @@ export function ConnectedConcierge({
       cancelled = true;
     };
   }, [canRestoreCanvas, visibleMessages, session]);
+  /* Facet chips spike (2026-10-23): flag-gated, default OFF. When on, a turn
+   * whose arrange call carries a displayFacets pick renders chip rows + a
+   * top-relevancy preview instead of inline cards; tap refines client-side
+   * through the same-origin search proxy. */
+  const facetChipsOn = useMemo(() => {
+    try {
+      return safeStorage().getItem('jtv-facet-chips') === 'on';
+    } catch {
+      return false;
+    }
+  }, []);
+  const facetPicks = useMemo(
+    () => (facetChipsOn ? extractMessageFacetPicks(visibleMessages as never) : []),
+    [facetChipsOn, visibleMessages],
+  );
+  const [facetSearches, setFacetSearches] = useState<
+    Record<
+      string,
+      { attribute: string; value: string; loading: boolean; products: Product[] | null }
+    >
+  >({});
+  const handleFacetSelect = useCallback(
+    async (messageId: string, attribute: string, value: string) => {
+      const entry = facetPicks.find((p) => p.messageId === messageId);
+      if (!entry) return;
+      const previous = facetSearches[messageId];
+      if (previous && previous.attribute === attribute && previous.value === value) {
+        setFacetSearches(({ [messageId]: _dropped, ...rest }) => rest);
+        return;
+      }
+      setFacetSearches((current) => ({
+        ...current,
+        [messageId]: { attribute, value, loading: true, products: null },
+      }));
+      try {
+        const response = await searchClient.search([
+          {
+            indexName: 'prod_catalog',
+            params: {
+              query: entry.pick.queryText,
+              facetFilters: [`${attribute}:"${value}"`],
+              hitsPerPage: 8,
+            },
+          },
+        ]);
+        const rawHits = (response as { results?: { hits?: unknown[] }[] }).results?.[0]?.hits ?? [];
+        const products = rawHits
+          .map((raw) => {
+            try {
+              return normalizeProduct(raw);
+            } catch {
+              return null;
+            }
+          })
+          .filter((p): p is Product => p !== null);
+        setFacetSearches((current) => ({
+          ...current,
+          [messageId]: { attribute, value, loading: false, products },
+        }));
+      } catch (error) {
+        if (import.meta.env.DEV) console.warn('JTV facet refine failed', error);
+        setFacetSearches((current) => ({
+          ...current,
+          [messageId]: { attribute, value, loading: false, products: null },
+        }));
+      }
+    },
+    [facetPicks, facetSearches],
+  );
+  const handleFacetClear = useCallback((messageId: string) => {
+    setFacetSearches(({ [messageId]: _dropped, ...rest }) => rest);
+  }, []);
   /* Anchor staging: cards hydrate once per revealed assistant message that
    * carries a grouped tool call, mirroring the F1 rule that only a completed
    * turn stages cards. A message already staged is never re-fetched; a failed
@@ -1213,12 +1289,43 @@ export function ConnectedConcierge({
               verifiedBlogUrls={verifiedBlogUrls}
               onProductLink={handleProductLink}
             >
-              {message.role === 'assistant' && anchoredCards[message.id] && (
-                <InlineProductCards
-                  groups={anchoredCards[message.id]}
-                  onProductLink={handleProductLink}
-                />
-              )}
+              {message.role === 'assistant' &&
+                (facetChipsOn && facetPicks.some((p) => p.messageId === message.id) ? (
+                  (() => {
+                    const entry = facetPicks.find((p) => p.messageId === message.id)!;
+                    const preview = entry.hits
+                      .slice(0, 4)
+                      .map((raw) => {
+                        try {
+                          return normalizeProduct(raw);
+                        } catch {
+                          return null;
+                        }
+                      })
+                      .filter((p): p is Product => p !== null);
+                    const search = facetSearches[message.id];
+                    return (
+                      <FacetChips
+                        pick={entry.pick}
+                        preview={preview}
+                        active={
+                          search ? { attribute: search.attribute, value: search.value } : null
+                        }
+                        results={search?.products ?? null}
+                        loading={!!search?.loading}
+                        onSelect={(attribute, value) =>
+                          void handleFacetSelect(message.id, attribute, value)
+                        }
+                        onClear={() => handleFacetClear(message.id)}
+                      />
+                    );
+                  })()
+                ) : anchoredCards[message.id] ? (
+                  <InlineProductCards
+                    groups={anchoredCards[message.id]}
+                    onProductLink={handleProductLink}
+                  />
+                ) : null)}
             </ConversationMessage>
           ))}
           {systemNotices.map((notice) => (

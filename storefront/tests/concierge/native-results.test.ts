@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  extractFacetPick,
+  extractMessageFacetPicks,
   extractMessageAnchors,
   extractNativePresentation,
   NOTE_ECHO_ENABLED,
@@ -296,5 +298,121 @@ describe('extractMessageAnchors', () => {
       },
     ];
     expect(extractMessageAnchors(messages)).toEqual([]);
+  });
+});
+
+/* Facet chips spike (2026-10-23): the streamed search tool result carries
+ * aggregate `facets` counts, and the arrange call may carry a `displayFacets`
+ * pick. The client renders chips from these — no second query, no proxy. */
+
+describe('extractFacetPick', () => {
+  const facetSearchPart = {
+    type: 'tool-algolia_search_index_prod_catalog',
+    toolCallId: 's1',
+    state: 'output-available',
+    input: { queries: [{ query: "men's watch classic" }] },
+    output: {
+      hits: [hit('12TB0A')],
+      nbHits: 24,
+      facets: {
+        Catalog_Brand: { 'Charles Hubert': 360, Bulova: 37 },
+        Catalog_MovementComplication: { Chronograph: 310 },
+      },
+    },
+  };
+  const arrangeWithPick = {
+    type: 'tool-arrange_groups',
+    toolCallId: 'a1',
+    state: 'output-available',
+    input: {
+      groups: [{ title: 'G', objectIDs: ['12TB0A'] }],
+      displayFacets: ['Catalog_Brand', 'Catalog_MovementComplication'],
+    },
+    output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: '12TB0A' }] }] },
+  };
+
+  it('reads facet counts, the display pick and the query text from the latest turn', () => {
+    const pick = extractFacetPick([
+      userMessage('watch for dad'),
+      { id: 'a1', role: 'assistant', parts: [facetSearchPart, arrangeWithPick] },
+    ]);
+    expect(pick).not.toBeNull();
+    if (!pick) throw new Error('unreachable');
+    expect(pick.displayFacets).toEqual(['Catalog_Brand', 'Catalog_MovementComplication']);
+    expect(pick.facets.Catalog_Brand['Charles Hubert']).toBe(360);
+    expect(pick.queryText).toBe("men's watch classic");
+  });
+
+  it('returns null when the turn has no displayFacets pick', () => {
+    const pick = extractFacetPick([
+      userMessage('hello'),
+      { id: 'a1', role: 'assistant', parts: [facetSearchPart] },
+    ]);
+    expect(pick).toBeNull();
+  });
+
+  it('reads only the latest turn, mirroring the other extractors', () => {
+    const pick = extractFacetPick([
+      userMessage('first'),
+      { id: 'a1', role: 'assistant', parts: [facetSearchPart, arrangeWithPick] },
+      userMessage('second question'),
+      { id: 'a2', role: 'assistant', parts: [{ type: 'text', text: 'A service answer.' }] },
+    ]);
+    expect(pick).toBeNull();
+  });
+
+  it('returns null on a null/absent pick inside arrange input', () => {
+    const pick = extractFacetPick([
+      userMessage('watch for dad'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          facetSearchPart,
+          {
+            type: 'tool-arrange_groups',
+            toolCallId: 'a1',
+            state: 'output-available',
+            input: { groups: [{ title: 'G', objectIDs: ['x'] }] },
+            output: { status: 'ok', groups: [] },
+          },
+        ],
+      },
+    ]);
+    expect(pick).toBeNull();
+  });
+});
+
+describe('extractMessageFacetPicks', () => {
+  const facetSearchPart = {
+    type: 'tool-algolia_search_index_prod_catalog',
+    toolCallId: 's1',
+    state: 'output-available',
+    input: { queries: [{ query: "men's watch classic" }] },
+    output: {
+      hits: [hit('12TB0A'), hit('1BC76B')],
+      nbHits: 24,
+      facets: { Catalog_Brand: { 'Charles Hubert': 360, Bulova: 37 } },
+    },
+  };
+  const arrangeWithPick = {
+    type: 'tool-arrange_groups',
+    toolCallId: 'a1',
+    state: 'output-available',
+    input: { groups: [{ title: 'G', objectIDs: ['12TB0A'] }], displayFacets: ['Catalog_Brand'] },
+    output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: '12TB0A' }] }] },
+  };
+
+  it('attaches one pick per message with accumulated facets and hits', () => {
+    const picks = extractMessageFacetPicks([
+      userMessage('watch for dad'),
+      { id: 'a1', role: 'assistant', parts: [facetSearchPart, arrangeWithPick] },
+      { id: 'a2', role: 'assistant', parts: [{ type: 'text', text: 'No tools here.' }] },
+    ]);
+    expect(picks).toHaveLength(1);
+    expect(picks[0].messageId).toBe('a1');
+    expect(picks[0].pick.displayFacets).toEqual(['Catalog_Brand']);
+    expect(picks[0].pick.queryText).toBe("men's watch classic");
+    expect(picks[0].hits).toHaveLength(2);
   });
 });
