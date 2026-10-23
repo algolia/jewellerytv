@@ -76,3 +76,26 @@ saved in this folder).
 - Prompt-sanitize end-to-end rewrite remains the standing next phase (Arijit
   authorized it this session); today's edits are steps on that path, not a
   substitute.
+
+## Update — prompt rewrite applied (2026-10-23 night, Arijit go)
+
+- Full sanitize rewrite applied to the Dev agent with drift guard (baseline
+  `23adb2fb` verified unchanged before PATCH):
+  - instructions `23adb2fb` (36,331) → `cd1a32ff` (29,754), −6,577 (−18%)
+  - systemPrompt `d90b149d` (9,278) → `39f9d09f` (8,652), −626 (−7%)
+  - total 45,609 → 38,406
+- Structure: single-owner sections, Deciding-each-turn collapsed to a decision
+  table, Close absorbed into Showing directions, examples 10 → 8 with all
+  bold-format restatements removed, systemPrompt Completion section dissolved
+  (guardrail line kept, moved to Source-and-claim), Scenario 5 absorbed into
+  Display, displayFacets funnel semantics documented in systemPrompt Display.
+- Rule-loss checklist run (40+ rule markers grepped old vs new): NONE missing.
+  Em-dash found inside one example and fixed. Applied files saved as
+  `prompt-sanitize-2026-10-23/rewrite-instructions.md` and
+  `rewrite-systemPrompt.md`, baselines alongside.
+- Honest note: the review estimated ~24k; the zero-rule-loss pass landed at
+  29.7k. Deeper cuts (examples to 5, why-lines) possible in a second pass if
+  the battery shows headroom. Reply length is a scored battery metric (Arijit
+  flagged it as a required deliverable).
+- NOT yet done: the battery (35 questions), arrange_groups removal, production
+  promotion.
