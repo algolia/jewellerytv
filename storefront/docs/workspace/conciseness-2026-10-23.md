@@ -44,6 +44,14 @@ Application fix riding with this commit: a failed turn no longer wipes the paint
 system notice beneath it). Note: this app fix reaches production shoppers only through a
 Vercel release; the agent promote does not ship it.
 
+## Release 2026-10-23 07:52 UTC: round 6 live everywhere
+
+Round 6 (structured browse bullets, de-duplicated examples) promoted to production (guards
+pinned; snapshot `2026-10-23T07-52-11-354Z-PRODUCTION-rollback.snapshot.json`) and the
+baseline re-recorded: dev == production == baseline at `35561ee9`. The app (paint fix, canvas
+headings, canvas-restore fix from PR #38) released to Vercel from a clean archive of `4a3afbd`
+and aliased to jewellerytv.vercel.app. Live health: ok, toolSheet match.
+
 ## Coordination note (2026-10-23 05:10 UTC)
 
 A parallel session edited the dev agent while this program was in flight: instructions are
