@@ -59,7 +59,6 @@ export function InlineProductCards({
                   )}
                 </span>
                 <span className="connected-inline-copy">
-                  <span className="connected-inline-title">{product.title}</span>
                   <span className="connected-inline-price">
                     {product.price === null
                       ? 'Price unavailable'
