@@ -54,7 +54,7 @@ describe('grouped discovery workspace', () => {
     expect(html).toContain('<h3>Everyday</h3>');
     expect(html.match(/data-product-id="a"/g)?.length).toBe(1);
     expect(html.match(/data-product-id=/g)?.length).toBe(6);
-    expect(html).toContain('Explore the category');
+    expect(html).not.toContain('Explore the category');
     expect(html).not.toContain('Three different types');
     expect(html).not.toContain('Explore each style');
     expect(html).toContain('Everyday');
