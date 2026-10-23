@@ -166,8 +166,6 @@
   max-width: 100%;
   padding: 0 16px;
   border: 0;
-  border-left: 2px solid #b8d0db;
-  border-right: 2px solid #b8d0db;
   background: transparent;
   box-shadow: none;
   text-align: left;
@@ -192,7 +190,6 @@
  * same paragraph-equivalent spacing. */
 .connected-assistant-text-part {
   margin: 0 0 0.7em;
-  max-width: 65ch;
 }
 .connected-provisional {
   white-space: pre-wrap;
