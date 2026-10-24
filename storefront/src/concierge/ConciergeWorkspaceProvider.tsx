@@ -29,29 +29,48 @@ export type ConciergeWorkspaceSession = {
   ) => Promise<Map<string, WorkspaceGroup[]>>;
 };
 
-/* Variant dedupe (Arijit decision, 2026-10-24): the catalog carries the same
- * design as several records (size/metal variants, separate objectIDs), and
- * without the model choosing tiles two of them can fill two tiles. Same
- * family number = same design, so the first hit in relevancy order wins and
- * its variants drop. Records without a family number fall back to the
- * price-plus-normalized-title heuristic; a record with no price never
- * collapses under that fallback (unpriced pieces drop on eligibility later). */
+/* Variant dedupe (Arijit decision, 2026-10-24; signature from main's
+ * 2026-10-23 design-variant fix): the catalog carries the same design as
+ * several records (size/metal variants, separate objectIDs), and without the
+ * model choosing tiles two of them can fill two tiles. Same family number =
+ * same design, so the first hit in relevancy order wins. Records without a
+ * family number fall back to the design signature: the title with metal
+ * colors, purities and sizes stripped, so yellow- and white-gold twins at
+ * different prices collapse. A signature with no meaningful tokens never
+ * dedupes (the eligibility checks below drop degenerate records anyway). */
+const DESIGN_NOISE_TOKENS = new Set([
+  'yellow', 'white', 'rose', 'pink', 'gold', 'goldtone', 'silvertone',
+  'rhodium', 'sterling', 'silver', 'silverite', 'platineve', 'over',
+  '10k', '14k', '18k', '24k', 'ctw', 'ct', 'mm', 'inch', 'inches', 'approximately',
+]);
+
+export function designSignature(name: string): string {
+  const tokens = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s./]+/g, ' ')
+    .split(/\s+/)
+    .filter(
+      (token) =>
+        token &&
+        !DESIGN_NOISE_TOKENS.has(token) &&
+        !/^\d+(?:\.\d+)?(?:\/\d+)?$/.test(token),
+    );
+  return tokens.join(' ');
+}
+
 export function dedupeVariants(products: readonly Product[]): Product[] {
   const seenFamily = new Set<string>();
-  const seenFallback = new Set<string>();
+  const seenSignature = new Set<string>();
   return products.filter((product) => {
     if (product.familyId) {
       if (seenFamily.has(product.familyId)) return false;
       seenFamily.add(product.familyId);
       return true;
     }
-    if (product.price === null) return true;
-    const key = `${Math.round(product.price * 100)}|${product.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, ' ')
-      .trim()}`;
-    if (seenFallback.has(key)) return false;
-    seenFallback.add(key);
+    const signature = designSignature(product.title);
+    if (!signature) return true;
+    if (seenSignature.has(signature)) return false;
+    seenSignature.add(signature);
     return true;
   });
 }
