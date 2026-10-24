@@ -36,17 +36,19 @@ describe('client tools registration claims the native search tool', () => {
     expect(findTool('algolia_search_index', tools as never)).toBeDefined();
   });
 
-  it('still binds the remaining deterministic tools with executors', () => {
-    for (const name of ['refresh_products', 'arrange_groups']) {
-      const tool = findTool(name, tools as never) as { onToolCall?: unknown } | undefined;
-      expect(tool, name).toBeDefined();
-      expect(typeof tool?.onToolCall, name).toBe('function');
-    }
+  it('still binds the remaining deterministic tool with an executor', () => {
+    const tool = findTool('refresh_products', tools as never) as { onToolCall?: unknown } | undefined;
+    expect(tool).toBeDefined();
+    expect(typeof tool?.onToolCall).toBe('function');
   });
 
   it('no longer registers the removed check tools (D2)', () => {
     for (const name of ['check_price', 'check_stock']) {
       expect(findTool(name, tools as never), name).toBeUndefined();
     }
+  });
+
+  it('no longer registers arrange_groups (chips-native cut, 2026-10-24)', () => {
+    expect(findTool('arrange_groups', tools as never)).toBeUndefined();
   });
 });

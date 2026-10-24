@@ -21,7 +21,8 @@ function rawRecord(objectID: string, price = 125) {
     objectID,
     Catalog_TitleDescription: `Necklace ${objectID}`,
     Pricing_ActivePrice: price,
-    Media_Images: [],
+    Inventory_InStock: true,
+    Media_Images: ['https://example.com/a.jpg'],
   };
 }
 
