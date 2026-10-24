@@ -46,9 +46,24 @@
     "source": "https://www.jtv.com/resources/fonts/Lato-Light.woff"
   },
   {
-    "file": "hero.mp4",
-    "source": "https://media.jtv.com/video/upload/q_auto,f_mp4/v1792588995/jtv-site/promo/2026-hp-q4/full-width-holiday26-kickoff-10-80.mp4",
-    "note": "2026-10-24: holiday kickoff video replaces 2026 fall trends hero (f_mp4 requested; f_auto returned WebM)"
+    "file": "hero-slide-clearance.jpg",
+    "source": "https://images.jtv.com/media/jtv-site/promo/2020q2/p-cybermondaycountdown-ring.jpg",
+    "note": "2026-10-24: live homepage hero is a rotating carousel of campaign art; this is its clearance slide"
+  },
+  {
+    "file": "hero-slide-deals.jpg",
+    "source": "https://images.jtv.com/media/jtv-site/promo/2026q2/promoblock-appfeature-holiday26-lifestyle-giftbox.png",
+    "note": "2026-10-24 hero slide, Big Holiday Deals"
+  },
+  {
+    "file": "hero-slide-powerbuys.jpg",
+    "source": "https://images.jtv.com/media/jtv-site/promo/2026q2/promoblock-appfeature-holiday26-bella-bfj490-dol239-dol332.png",
+    "note": "2026-10-24 hero slide, Power Buys"
+  },
+  {
+    "file": "hero-slide-giftguide.jpg",
+    "source": "https://images.jtv.com/media/jtv-site/promo/2026q2/promoblock-appfeature-holiday26-branded-giftbox-black.png",
+    "note": "2026-10-24 hero slide, Holiday Gift Guide"
   },
   {
     "file": "gemstones.png",
