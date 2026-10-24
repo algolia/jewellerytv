@@ -61,9 +61,9 @@ export function Shell({children,onAsk}:{children:ReactNode;onAsk?:(text:string)=
  </header><div id="main-content" tabIndex={-1}>{children}</div><footer className="site-footer"><div className="footer-inner"><div className="footer-brand"><img src="/assets/jtv-logo.png" width="95" alt="JTV"/><p>Jewelry you'll love.</p><small>Local shopping demo. Purchases and accounts are not enabled.</small></div><div><h3>Shop</h3>{core.map(c=><Link key={c} to={category(c)}>{departments.find(d=>d[1]===c)?.[0]}</Link>)}</div><div><h3>Customer Care</h3>{['Contact Us','Shipping & Returns','Order Status','Help'].map(t=><Link key={t} to={outside(t)}>{t}</Link>)}</div><div><h3>Discover JTV</h3>{['About Us','Meet The Hosts','Learning Library','JTV Rewards'].map(t=><Link key={t} to={outside(t)}>{t}</Link>)}</div></div><div className="footer-disclosure">JTV storefront demonstration · Product information supplied by the connected catalogue</div></footer></>;
 }
 
-/* Live jtv.com homepage hero slides, 2026-10-24 refresh: the live hero is a rotating
- * carousel of campaign art; the art carries its own headlines. Routes map to local
- * demo equivalents. */
+/* Live jtv.com homepage, mirrored section by section (2026-10-24 fetch, order verified
+ * against the rendered live page). Routes map to local demo equivalents; the concierge
+ * shelf is one section among them. */
 const HERO_SLIDES=[
  {src:'/assets/hero-slide-clearance.jpg',alt:'Extra 10% off clearance plus free shipping sitewide, clearance items already marked up to 80% off',to:'/search?clearance=1'},
  {src:'/assets/hero-slide-deals.jpg',alt:'Big Holiday Deals, new items added daily',to:'/search?clearance=1'},
@@ -71,13 +71,58 @@ const HERO_SLIDES=[
  {src:'/assets/hero-slide-giftguide.jpg',alt:'2026 Holiday Gift Guide, the gifts everyone wants to see under the tree',to:'/search?q=holiday%20gift'},
 ];
 
+const GG_CARDS=[
+ {img:'/assets/rings.png',label:'Rings',to:'/category/rings'},
+ {img:'/assets/earrings.png',label:'Earrings',to:'/category/earrings'},
+ {img:'/assets/gg-birthstone.png',label:'Birthstone Jewelry',to:'/search?q=birthstone'},
+ {img:'/assets/gg-sets.png',label:'Jewelry Sets',to:'/search?q=jewelry%20sets'},
+ {img:'/assets/bracelets.png',label:'Bracelets',to:'/category/bracelets'},
+];
+const BRAND_CARDS=[
+ {img:'/assets/brand-bella.png',alt:'Bella Luce holiday lifestyle',to:'/search?brand=Bella%20Luce'},
+ {img:'/assets/brand-moissanite.png',alt:'Moissanite Fire holiday lifestyle',to:'/search?brand=Moissanite%20Fire'},
+ {img:'/assets/brand-prazana.png',alt:'Prazana Lab-Grown Diamonds holiday lifestyle',to:'/search?brand=Prazana%20Lab-Grown%20Diamonds'},
+ {img:'/assets/brand-ripka.png',alt:'Judith Ripka holiday lifestyle',to:'/search?brand=Judith%20Ripka'},
+];
+const GIFT_CARDS=[
+ {img:'/assets/gift-jewelrybox.png',label:'Jewelry Boxes',to:outside('Jewelry Boxes')},
+ {img:'/assets/gift-fragrance.png',label:'Fragrances',to:'/category/beauty'},
+ {img:'/assets/gift-purse.png',label:'Handbags',to:outside('Handbags')},
+ {img:'/assets/gift-sunglasses.png',label:'Sunglasses',to:outside('Sunglasses')},
+ {img:'/assets/gift-jmkit.png',label:'Jewelry Making',to:'/category/making'},
+];
+
 export function Home({children}:{children?:ReactNode}) {
  const reduce=typeof window<'u'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  const [slide,setSlide]=useState(0);
  const [playing,setPlaying]=useState(!reduce);
  useEffect(()=>{if(!playing)return;const t=setInterval(()=>setSlide(s=>(s+1)%HERO_SLIDES.length),6000);return()=>clearInterval(t)},[playing]);
- return <main className="home-page"><section className="home-hero" aria-roledescription="carousel" aria-label="JTV featured offers">{HERO_SLIDES.map((s,i)=><Link key={s.src} to={s.to} className={`hero-slide${i===slide?' active':''}`} aria-hidden={i!==slide} tabIndex={i===slide?0:-1}><img src={s.src} alt={s.alt}/></Link>)}<button className="hero-control" aria-label={playing?'Pause offers carousel':'Play offers carousel'} onClick={()=>setPlaying(p=>!p)}>{playing?<Pause size={17}/>:<Play size={17}/>}</button></section>
- <section className="video-strip">{!reduce&&<video src="/assets/freeshipping-banner.mp4" autoPlay muted loop playsInline aria-hidden="true"/>}{reduce&&<video src="/assets/freeshipping-banner.mp4" muted playsInline aria-hidden="true"/>}</section>
- <Link to="/search?clearance=1" className="video-feature"><video src="/assets/just-reduced.mp4" autoPlay={!reduce} muted loop playsInline aria-hidden="true"/><div className="video-feature-copy"><p className="eyebrow">SHOP OUR BEST DEALS</p><h2>EXTRA 10% OFF</h2><p>styles already marked up to 80% off! Price as marked.</p><span className="outline-button">SHOP NOW</span></div></Link>
- <section className="category-section"><h2>SHOP BY PRODUCT TYPE</h2><div className="category-tiles">{['rings','necklaces','earrings','bracelets','watches'].map(c=><Link key={c} to={category(c)}><img src={`/assets/${c}.png`} alt={`${c} from JTV's holiday collection`}/><span>{c.toUpperCase()}</span></Link>)}</div></section><section className="home-shelf">{children}</section><section className="brand-section"><h2>DISCOVER YOUR FAVORITE COLLECTION</h2><div className="brand-links">{brands.map(b=><Link key={b} to={brandSearch(b)}>{b}</Link>)}</div><Link className="text-link" to="/category/loose-gemstones">Explore loose gemstones <ChevronRight size={17}/></Link></section></main>;
+ const autoPlay=reduce?{}:{autoPlay:true};
+ return <main className="home-page">
+ <section className="gg-split"><div className="gg-split-media"><video src="/assets/gg-intro.mp4" muted loop playsInline aria-hidden="true" {...autoPlay}/></div><div className="gg-split-copy"><h2>Holiday Gift Guide</h2><p>Packed with sparkly finds for everyone on your list!</p><Link to="/search?q=holiday%20gift" className="primary-button">SHOP NOW</Link></div></section>
+ <section className="video-strip"><video src="/assets/freeshipping-banner.mp4" muted loop playsInline aria-hidden="true" {...autoPlay}/></section>
+ <Link to="/search?clearance=1" className="video-feature"><video src="/assets/just-reduced.mp4" muted loop playsInline aria-hidden="true" {...autoPlay}/><div className="video-feature-copy"><p className="eyebrow">SHOP OUR BEST DEALS</p><h2>EXTRA 10% OFF</h2><p>styles already marked up to 80% off! Price as marked.</p><span className="outline-button">SHOP NOW</span></div></Link>
+ <section className="trio-row">
+  <Link to="/search?clearance=1" className="tile-card"><img src="/assets/card-redtag.png" alt="Red tag clearance pearls"/></Link>
+  <Link to="/search?clearance=1" className="tile-card"><img src="/assets/card-justreduced.png" alt="Just reduced styles in silver and color"/></Link>
+  <Link to="/search?clearance=1" className="tile-card text-card"><p className="eyebrow">EXTRA 10% OFF</p><h3>1,000 items just went on sale</h3><p>100+ styles just added</p><span className="outline-button">SHOP NOW</span></Link>
+ </section>
+ <section className="card-row gg-row"><h2>HOLIDAY GIFT GUIDE</h2><div className="card-grid five">{GG_CARDS.map(c=><Link key={c.label} to={c.to} className="tile-card"><img src={c.img} alt={`${c.label} holiday gift guide`}/><span>{c.label.toUpperCase()}</span></Link>)}</div></section>
+ <section className="trio-row">
+  <Link to="/search?clearance=1" className="tile-card"><img src="/assets/bf-getonegiveone.png" alt="Black Friday preview, get one give one"/></Link>
+  <Link to="/search?clearance=1" className="tile-card video-card"><video src="/assets/bhd-400.mp4" muted loop playsInline aria-hidden="true" {...autoPlay}/><div className="video-card-copy"><p className="eyebrow">NEW DEALS ADDED DAILY!</p><p>Check back each day for the best gifts at our best prices!</p></div></Link>
+  <Link to="/search?q=holiday%20gift" className="tile-card"><img src="/assets/gg-rings-doq.png" alt="Holiday gift guide rings"/></Link>
+ </section>
+ <section className="pref-block"><img src="/assets/preferred-card.png" alt="JTV Preferred Account credit card"/><div className="pref-copy"><img src="/assets/lto-logo.png" alt="Limited time offer" width="120"/><h3>JTV PREFERRED ACCOUNT CREDIT CARD</h3><p>New card holders only. Must make a qualifying order of $50+ within 30 days.</p><Link to={outside('JTV Preferred Account')} className="outline-button">LEARN MORE</Link></div></section>
+ <section className="card-row brand-row"><h2>RINGS FROM BRANDS YOU LOVE</h2><div className="card-grid four">{BRAND_CARDS.map(c=><Link key={c.alt} to={c.to} className="tile-card"><img src={c.img} alt={c.alt}/></Link>)}</div></section>
+ <Link to="/search" className="mwf-block"><img src="/assets/giftboxes.png" alt="Holiday gift boxes, most wished for"/><div className="mwf-copy"><h2>MOST WISHED FOR</h2><span className="outline-button">SHOP NOW</span></div></Link>
+ <section className="card-row gifts-row"><div className="card-grid five">{GIFT_CARDS.map(c=><Link key={c.label} to={c.to} className="tile-card"><img src={c.img} alt={`${c.label} holiday gifts`}/><span>{c.label.toUpperCase()}</span></Link>)}</div></section>
+ <section className="home-shelf">{children}</section>
+ <section className="lifestyle-row">
+  <Link to="/category/earrings" className="tile-card"><img src="/assets/lifestyle-earrings.png" alt="Holiday lifestyle earrings"/></Link>
+  <Link to={outside('Gift Boxes')} className="tile-card"><img src="/assets/lifestyle-giftbox.png" alt="JTV gift box"/></Link>
+ </section>
+ <section className="about-text"><p>JTV (Jewelry Television) is your premier shopping destination for jewelry, gemstones, rings, earrings, necklaces, bracelets and more, live and online.</p><p>Celebrate yourself every day with rings that make you feel beautiful. From gemstone rings to diamond classics, discover pieces that fit your style and your budget. Whether you prefer dangle earrings, studs or hoops, find your next favorite in our collections.</p></section>
+ <section className="home-hero" aria-roledescription="carousel" aria-label="More from JTV">{HERO_SLIDES.map((s,i)=><Link key={s.src} to={s.to} className={`hero-slide${i===slide?' active':''}`} aria-hidden={i!==slide} tabIndex={i===slide?0:-1}><img src={s.src} alt={s.alt}/></Link>)}<button className="hero-control" aria-label={playing?'Pause offers carousel':'Play offers carousel'} onClick={()=>setPlaying(p=>!p)}>{playing?<Pause size={17}/>:<Play size={17}/>}</button></section>
+ </main>;
 }
