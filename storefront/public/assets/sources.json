@@ -1,27 +1,33 @@
 [
   {
     "file": "jtv-logo.png",
-    "source": "https://images.jtv.com/media/jtv-site/resources/images/logo-blue.png"
+    "source": "https://images.jtv.com/media/jtv-site/resources/images/logo-blue.png",
+    "note": "footer logo, unchanged 2026-10-24"
+  },
+  {
+    "file": "logo-black.png",
+    "source": "https://images.jtv.com/media/jtv-site/resources/images/logo-black.png",
+    "note": "live header logo as of 2026-10-24 (header switched from blue to black)"
   },
   {
     "file": "rings.png",
-    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/rings-fall.png"
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/plp-banners/2026%20Holiday%20Gift%20Guide/holiday-rings.png"
   },
   {
     "file": "necklaces.png",
-    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/necklaces-fall.png"
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/plp-banners/2026%20Holiday%20Gift%20Guide/holiday-necklaces.png"
   },
   {
     "file": "earrings.png",
-    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/earrings-fall.png"
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/plp-banners/2026%20Holiday%20Gift%20Guide/holiday-earrings.png"
   },
   {
     "file": "bracelets.png",
-    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/bracelets-fall.png"
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/plp-banners/2026%20Holiday%20Gift%20Guide/holiday-bracelets.png"
   },
   {
     "file": "watches.png",
-    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/watches-fall.png"
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/plp-banners/2026%20Holiday%20Gift%20Guide/holiday-watches.png"
   },
   {
     "file": "Lato-Regular.woff",
@@ -41,7 +47,8 @@
   },
   {
     "file": "hero.mp4",
-    "source": "https://media.jtv.com/video/upload/q_auto,f_auto/v1787079115/jtv-site/plp-banners/2026%20Fall%20Trends/fall-trends-h1-mobile2.mp4"
+    "source": "https://media.jtv.com/video/upload/q_auto,f_mp4/v1792588995/jtv-site/promo/2026-hp-q4/full-width-holiday26-kickoff-10-80.mp4",
+    "note": "2026-10-24: holiday kickoff video replaces 2026 fall trends hero (f_mp4 requested; f_auto returned WebM)"
   },
   {
     "file": "gemstones.png",
