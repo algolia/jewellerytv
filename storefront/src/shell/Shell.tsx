@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, UserRound, Heart, ShoppingBag, ChevronDown, ChevronLeft, ChevronRight, Menu, X, Tv, Pause, Play, Facebook, Instagram, Youtube, Twitter } from 'lucide-react';
+import { Search, UserRound, Heart, ShoppingBag, ChevronDown, ChevronRight, Menu, X, Tv, Facebook, Instagram, Youtube, Twitter } from 'lucide-react';
 
 const outside = (name: string) => `/outside?section=${encodeURIComponent(name)}`;
 const category = (slug: string) => `/category/${slug}`;
@@ -64,23 +64,7 @@ export function Shell({children,onAsk}:{children:ReactNode;onAsk?:(text:string)=
 /* Live jtv.com homepage, mirrored section by section (2026-10-24 fetch, order verified
  * against the rendered live page). Routes map to local demo equivalents; the concierge
  * shelf is one section among them. */
-const HERO_SLIDES=[
- {src:'/assets/hero-slide-clearance.jpg',alt:'Extra 10% off clearance plus free shipping sitewide, clearance items already marked up to 80% off',to:'/search?clearance=1'},
- {src:'/assets/hero-slide-deals.jpg',alt:'Big Holiday Deals, new items added daily',to:'/search?clearance=1'},
- {src:'/assets/hero-slide-powerbuys.jpg',alt:"Power Buys, gifts up to $500 below competitors' prices",to:outside('Power Buys')},
- {src:'/assets/hero-slide-giftguide.jpg',alt:'2026 Holiday Gift Guide, the gifts everyone wants to see under the tree',to:'/search?q=holiday%20gift'},
- {src:'/assets/hero-slide-preferred.jpg',alt:'Limited time offer, receive $50 in Brilliant Cash with a JTV Preferred Account',to:outside('JTV Preferred Account')},
- {src:'/assets/hero-slide-espanol.svg',alt:'JTV en Español',to:outside('JTV Español')},
-];
 
-const GG_CARDS=[
- {img:'/assets/rings.png',label:'Rings',to:'/category/rings'},
- {img:'/assets/earrings.png',label:'Earrings',to:'/category/earrings'},
- {img:'/assets/necklaces.png',label:'Necklaces',to:'/category/necklaces'},
- {img:'/assets/gg-birthstone.png',label:'Birthstone Jewelry',to:'/search?q=birthstone'},
- {img:'/assets/gg-sets.png',label:'Jewelry Sets',to:'/search?q=jewelry%20sets'},
- {img:'/assets/bracelets.png',label:'Bracelets',to:'/category/bracelets'},
-];
 
 /* Footer columns follow the live jtv.com footer link inventory (2026-10-24). */
 const FOOTER_COLS:{h:string;links:[string,string|null][]}[]=[
@@ -91,57 +75,18 @@ const FOOTER_COLS:{h:string;links:[string,string|null][]}[]=[
  {h:'Customer Support',links:[['My Account',null],['Contact Us',null],['Accessibility',null],['Order Status',null],['Preferred Account',null],['Manage Email Preferences',null]]},
 ];
 
-function CarouselRow({children,label}:{children:ReactNode;label:string}) {
- const ref=useRef<HTMLDivElement>(null);
- const scroll=(d:number)=>ref.current?.scrollBy({left:d*Math.max(400,ref.current.clientWidth*0.8),behavior:'smooth'});
- return <div className="carousel-wrap"><button className="car-btn" aria-label={'Scroll back: '+label} onClick={()=>scroll(-1)}><ChevronLeft size={20}/></button><div className="carousel-track" ref={ref} aria-label={label}>{children}</div><button className="car-btn" aria-label={'Scroll forward: '+label} onClick={()=>scroll(1)}><ChevronRight size={20}/></button></div>;
-}
-const BRAND_CARDS=[
- {img:'/assets/brand-bella.png',alt:'Bella Luce holiday lifestyle',to:'/search?brand=Bella%20Luce'},
- {img:'/assets/brand-moissanite.png',alt:'Moissanite Fire holiday lifestyle',to:'/search?brand=Moissanite%20Fire'},
- {img:'/assets/brand-prazana.png',alt:'Prazana Lab-Grown Diamonds holiday lifestyle',to:'/search?brand=Prazana%20Lab-Grown%20Diamonds'},
- {img:'/assets/brand-ripka.png',alt:'Judith Ripka holiday lifestyle',to:'/search?brand=Judith%20Ripka'},
-];
-const GIFT_CARDS=[
- {img:'/assets/gift-jewelrybox.png',label:'Jewelry Boxes',to:outside('Jewelry Boxes')},
- {img:'/assets/gift-fragrance.png',label:'Fragrances',to:'/category/beauty'},
- {img:'/assets/gift-purse.png',label:'Handbags',to:outside('Handbags')},
- {img:'/assets/gift-sunglasses.png',label:'Sunglasses',to:outside('Sunglasses')},
- {img:'/assets/gift-jmkit.png',label:'Jewelry Making',to:'/category/making'},
-];
 
-export function Home({children,onAir}:{children?:ReactNode;onAir?:ReactNode}) {
+/* Homepage rebuilt from scratch, 2026-10-24: section by section against the
+ * rendered live jtv.com page. Lean page: the live top sections plus the
+ * concierge shelf. Each section verified against the live capture before the
+ * next was added. */
+export function Home({children}:{children?:ReactNode}) {
  const reduce=typeof window<'u'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
- const [slide,setSlide]=useState(0);
- const [playing,setPlaying]=useState(!reduce);
- useEffect(()=>{if(!playing)return;const t=setInterval(()=>setSlide(s=>(s+1)%HERO_SLIDES.length),6000);return()=>clearInterval(t)},[playing]);
  const autoPlay=reduce?{}:{autoPlay:true};
  return <main className="home-page">
  <section className="gg-split"><div className="gg-split-media"><video src="/assets/gg-intro.mp4" muted loop playsInline aria-hidden="true" {...autoPlay}/></div><div className="gg-split-copy"><h2>Holiday Gift Guide</h2><p>Packed with sparkly finds for everyone on your list!</p><Link to="/search?q=holiday%20gift" className="primary-button">SHOP NOW</Link></div></section>
  <section className="video-strip"><video src="/assets/freeshipping-banner.mp4" muted loop playsInline aria-hidden="true" {...autoPlay}/></section>
  <Link to="/search?clearance=1" className="video-feature"><video src="/assets/just-reduced.mp4" muted loop playsInline aria-hidden="true" {...autoPlay}/><div className="video-feature-copy"><p className="eyebrow">SHOP OUR BEST DEALS</p><h2>EXTRA 10% OFF</h2><p>styles already marked up to 80% off! Price as marked.</p><span className="outline-button">SHOP NOW</span></div></Link>
- <section className="trio-row">
-  <Link to="/search?clearance=1" className="tile-card"><img src="/assets/card-redtag.png" alt="Red tag clearance pearls"/></Link>
-  <Link to="/search?clearance=1" className="tile-card"><img src="/assets/card-justreduced.png" alt="Just reduced styles in silver and color"/></Link>
-  <Link to="/search?clearance=1" className="tile-card text-card"><p className="eyebrow">EXTRA 10% OFF</p><h3>1,000 items just went on sale</h3><p>100+ styles just added</p><span className="outline-button">SHOP NOW</span></Link>
- </section>
- <section className="card-row gg-row"><h2>HOLIDAY GIFT GUIDE</h2><CarouselRow label="Holiday Gift Guide categories">{GG_CARDS.map(c=><Link key={c.label} to={c.to} className="tile-card card-fixed"><img src={c.img} alt={`${c.label} holiday gift guide`}/><span>{c.label.toUpperCase()}</span></Link>)}</CarouselRow></section>
- <section className="trio-row">
-  <Link to="/search?clearance=1" className="tile-card"><img src="/assets/bf-getonegiveone.png" alt="Black Friday preview, get one give one"/></Link>
-  <Link to="/search?clearance=1" className="tile-card video-card"><video src="/assets/bhd-400.mp4" muted loop playsInline aria-hidden="true" {...autoPlay}/><div className="video-card-copy"><p className="eyebrow">NEW DEALS ADDED DAILY!</p><p>Check back each day for the best gifts at our best prices!</p></div></Link>
-  <Link to="/search?q=holiday%20gift" className="tile-card"><img src="/assets/gg-rings-doq.png" alt="Holiday gift guide rings"/></Link>
- </section>
- {onAir}
- <section className="pref-block"><img src="/assets/preferred-card.png" alt="JTV Preferred Account credit card"/><div className="pref-copy"><img src="/assets/lto-logo.png" alt="Limited time offer" width="120"/><h3>JTV PREFERRED ACCOUNT CREDIT CARD</h3><p>New card holders only. Must make a qualifying order of $50+ within 30 days.</p><Link to={outside('JTV Preferred Account')} className="outline-button">LEARN MORE</Link></div></section>
- <section className="card-row brand-row"><h2>RINGS FROM BRANDS YOU LOVE</h2><CarouselRow label="Featured brands">{BRAND_CARDS.map(c=><Link key={c.alt} to={c.to} className="tile-card card-fixed"><img src={c.img} alt={c.alt}/></Link>)}</CarouselRow></section>
- <section className="mwf-block"><div className="mwf-copy"><h2>MOST WISHED FOR</h2><p>The pieces everyone has on their list this holiday.</p><Link to="/search" className="outline-button">SHOP NOW</Link></div><img src="/assets/giftboxes.png" alt="Holiday gift boxes"/></section>
- <section className="card-row gifts-row"><CarouselRow label="Gifts for everyone">{GIFT_CARDS.map(c=><Link key={c.label} to={c.to} className="tile-card card-fixed"><img src={c.img} alt={`${c.label} holiday gifts`}/><span>{c.label.toUpperCase()}</span></Link>)}</CarouselRow></section>
  <section className="home-shelf">{children}</section>
- <section className="lifestyle-row">
-  <Link to="/category/earrings" className="tile-card"><img src="/assets/lifestyle-earrings.png" alt="Holiday lifestyle earrings"/></Link>
-  <Link to={outside('Gift Boxes')} className="tile-card"><img src="/assets/lifestyle-giftbox.png" alt="JTV gift box"/></Link>
- </section>
- <section className="about-text"><p>JTV (Jewelry Television) is your premier shopping destination for jewelry, gemstones, rings, earrings, necklaces, bracelets and more, live and online.</p><p>Celebrate yourself every day with rings that make you feel beautiful. From gemstone rings to diamond classics, discover pieces that fit your style and your budget. Whether you prefer dangle earrings, studs or hoops, find your next favorite in our collections.</p></section>
- <section className="home-hero" aria-roledescription="carousel" aria-label="More from JTV">{HERO_SLIDES.map((s,i)=><Link key={s.src} to={s.to} className={`hero-slide${i===slide?' active':''}`} aria-hidden={i!==slide} tabIndex={i===slide?0:-1}><img src={s.src} alt={s.alt}/></Link>)}<button className="hero-control" aria-label={playing?'Pause offers carousel':'Play offers carousel'} onClick={()=>setPlaying(p=>!p)}>{playing?<Pause size={17}/>:<Play size={17}/>}</button></section>
  </main>;
 }
