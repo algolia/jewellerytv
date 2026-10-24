@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, UserRound, Heart, ShoppingBag, ChevronDown, ChevronRight, Menu, X, Tv, Pause, Play } from 'lucide-react';
+import { Search, UserRound, Heart, ShoppingBag, ChevronDown, ChevronLeft, ChevronRight, Menu, X, Tv, Pause, Play, Facebook, Instagram, Youtube, Twitter } from 'lucide-react';
 
 const outside = (name: string) => `/outside?section=${encodeURIComponent(name)}`;
 const category = (slug: string) => `/category/${slug}`;
@@ -58,7 +58,7 @@ export function Shell({children,onAsk}:{children:ReactNode;onAsk?:(text:string)=
  <div className="nav-band"><nav className="main-nav" aria-label="Main navigation"><button ref={shopButton} onClick={()=>setMenu(menu==='shop'?null:'shop')} aria-expanded={menu==='shop'} aria-controls="shop-menu"><Menu className="mobile-menu-icon" size={19}/>Shop<ChevronDown size={16}/></button><button ref={watchButton} onClick={()=>setMenu(menu==='watch'?null:'watch')} aria-expanded={menu==='watch'} aria-controls="watch-menu"><Tv size={19}/>Watch<ChevronDown size={16}/></button><Link to="/search?sort=prod_catalog_newest">New</Link><Link to="/search">Best Sellers</Link><Link to={outside('Exclusively Online')}>Exclusively Online</Link><Link to="/search?q=holiday%20gift">Holiday Gift Guide</Link><Link className="clearance-link" to="/search?clearance=1">Big Holiday Deals</Link><Link to={outside("Looks You'll Love")}>Looks You'll Love</Link><Link className="clearance-link" to="/search?clearance=1">Clearance</Link><Link to={outside('Auctions')}>Auctions</Link></nav></div>
  {menu&&<div id={`${menu}-menu`} className={`mega-menu ${menu==='watch'?'watch-menu':''}`}><button className="menu-close" aria-label="Close navigation" onClick={()=>{setMenu(null);(menu==='shop'?shopButton:watchButton).current?.focus()}}><X size={20}/></button>{menu==='shop'?<><nav className="department-list" aria-label="Shop departments">{departments.map(([label,id])=><button key={id} className={section===id?'active':''} aria-pressed={section===id} onClick={()=>setSection(id)}>{label}<ChevronRight size={15}/></button>)}</nav><div className="department-content"><DepartmentContents section={section}/></div></>:<div className="mega-links"><h3>Watch JTV</h3>{watchLinks.map(l=><Link key={l} to={outside(l)}>{l}</Link>)}</div>}</div>}
  <div className="shopping-strip">Find your next favorite. Explore the collection or ask your jewelry concierge.</div>
- </header><div id="main-content" tabIndex={-1}>{children}</div><footer className="site-footer"><div className="footer-inner"><div className="footer-brand"><img src="/assets/jtv-logo.png" width="95" alt="JTV"/><p>Jewelry you'll love.</p><small>Local shopping demo. Purchases and accounts are not enabled.</small></div><div><h3>Shop</h3>{core.map(c=><Link key={c} to={category(c)}>{departments.find(d=>d[1]===c)?.[0]}</Link>)}</div><div><h3>Customer Care</h3>{['Contact Us','Shipping & Returns','Order Status','Help'].map(t=><Link key={t} to={outside(t)}>{t}</Link>)}</div><div><h3>Discover JTV</h3>{['About Us','Meet The Hosts','Learning Library','JTV Rewards'].map(t=><Link key={t} to={outside(t)}>{t}</Link>)}</div></div><div className="footer-disclosure">JTV storefront demonstration · Product information supplied by the connected catalogue</div></footer></>;
+ </header><div id="main-content" tabIndex={-1}>{children}</div><footer className="site-footer"><div className="footer-top"><div className="footer-brand-col"><img src="/assets/jtv-logo.png" width="95" alt="JTV"/><p>Jewelry you'll love.</p><div className="footer-social">{[['Facebook',Facebook],['Instagram',Instagram],['YouTube',Youtube],['X',Twitter]].map(([name,Icon])=>{const I=Icon as typeof Facebook;return <Link key={name as string} to={outside(name as string)} aria-label={name as string}><I size={18}/></Link>})}</div><p className="footer-phone">1-800-581-3002</p></div>{FOOTER_COLS.map(col=><div key={col.h}><h3>{col.h}</h3>{col.links.map(([t,to])=><Link key={t} to={to??outside(t)}>{t}</Link>)}</div>)}</div><div className="footer-legal"><Link to={outside('Privacy Policy')}>Privacy Policy</Link><Link to={outside('Returns Policy')}>Returns Policy</Link><Link to={outside('Terms & Conditions')}>Terms &amp; Conditions</Link><Link to={outside('Your Privacy Choices')}>Your Privacy Choices</Link></div><div className="footer-disclosure">JTV storefront demonstration · Purchases and accounts are not enabled · Product information supplied by the connected catalogue</div></footer></>;
 }
 
 /* Live jtv.com homepage, mirrored section by section (2026-10-24 fetch, order verified
@@ -74,10 +74,26 @@ const HERO_SLIDES=[
 const GG_CARDS=[
  {img:'/assets/rings.png',label:'Rings',to:'/category/rings'},
  {img:'/assets/earrings.png',label:'Earrings',to:'/category/earrings'},
+ {img:'/assets/necklaces.png',label:'Necklaces',to:'/category/necklaces'},
  {img:'/assets/gg-birthstone.png',label:'Birthstone Jewelry',to:'/search?q=birthstone'},
  {img:'/assets/gg-sets.png',label:'Jewelry Sets',to:'/search?q=jewelry%20sets'},
  {img:'/assets/bracelets.png',label:'Bracelets',to:'/category/bracelets'},
 ];
+
+/* Footer columns follow the live jtv.com footer link inventory (2026-10-24). */
+const FOOTER_COLS:{h:string;links:[string,string|null][]}[]=[
+ {h:'Shop',links:[['Rings','/category/rings'],['Earrings','/category/earrings'],['Necklaces','/category/necklaces'],['Bracelets','/category/bracelets'],['Watches','/category/watches'],['Loose Gemstones','/category/loose-gemstones'],['Jewelry Making','/category/making'],['Gifts',null],['Clearance','/search?clearance=1']]},
+ {h:'Collections',links:[['Bella Luce','/search?brand=Bella%20Luce'],['Judith Ripka','/search?brand=Judith%20Ripka'],['Moissanite Fire','/search?brand=Moissanite%20Fire'],['Artisan of Bali',null],['Moda al Massimo',null],['Off Park Collection',null],['Park Avenue Collection',null],['Southwest Style',null],['Timna Collection',null]]},
+ {h:'Watch',links:[['Currently On Air',null],['JTV Live Stream',null],['JTV Extra',null],['JTV Español',null],['Jewel School TV',null],['All Series',null],['Channel Finder',null],['Program Guide',null],['Meet Our Hosts',null]]},
+ {h:'About',links:[['About Us',null],['Careers',null],['Catalog',null],['Coupons',null],['Executives',null],['Blog',null],['Personal Shopper',null],['Sweepstakes',null],['Social Media',null],['Sitemap',null]]},
+ {h:'Customer Support',links:[['My Account',null],['Contact Us',null],['Accessibility',null],['Order Status',null],['Preferred Account',null],['Manage Email Preferences',null]]},
+];
+
+function CarouselRow({children,label}:{children:ReactNode;label:string}) {
+ const ref=useRef<HTMLDivElement>(null);
+ const scroll=(d:number)=>ref.current?.scrollBy({left:d*Math.max(400,ref.current.clientWidth*0.8),behavior:'smooth'});
+ return <div className="carousel-wrap"><button className="car-btn" aria-label={'Scroll back: '+label} onClick={()=>scroll(-1)}><ChevronLeft size={20}/></button><div className="carousel-track" ref={ref} aria-label={label}>{children}</div><button className="car-btn" aria-label={'Scroll forward: '+label} onClick={()=>scroll(1)}><ChevronRight size={20}/></button></div>;
+}
 const BRAND_CARDS=[
  {img:'/assets/brand-bella.png',alt:'Bella Luce holiday lifestyle',to:'/search?brand=Bella%20Luce'},
  {img:'/assets/brand-moissanite.png',alt:'Moissanite Fire holiday lifestyle',to:'/search?brand=Moissanite%20Fire'},
@@ -107,16 +123,16 @@ export function Home({children}:{children?:ReactNode}) {
   <Link to="/search?clearance=1" className="tile-card"><img src="/assets/card-justreduced.png" alt="Just reduced styles in silver and color"/></Link>
   <Link to="/search?clearance=1" className="tile-card text-card"><p className="eyebrow">EXTRA 10% OFF</p><h3>1,000 items just went on sale</h3><p>100+ styles just added</p><span className="outline-button">SHOP NOW</span></Link>
  </section>
- <section className="card-row gg-row"><h2>HOLIDAY GIFT GUIDE</h2><div className="card-grid five">{GG_CARDS.map(c=><Link key={c.label} to={c.to} className="tile-card"><img src={c.img} alt={`${c.label} holiday gift guide`}/><span>{c.label.toUpperCase()}</span></Link>)}</div></section>
+ <section className="card-row gg-row"><h2>HOLIDAY GIFT GUIDE</h2><CarouselRow label="Holiday Gift Guide categories">{GG_CARDS.map(c=><Link key={c.label} to={c.to} className="tile-card card-fixed"><img src={c.img} alt={`${c.label} holiday gift guide`}/><span>{c.label.toUpperCase()}</span></Link>)}</CarouselRow></section>
  <section className="trio-row">
   <Link to="/search?clearance=1" className="tile-card"><img src="/assets/bf-getonegiveone.png" alt="Black Friday preview, get one give one"/></Link>
   <Link to="/search?clearance=1" className="tile-card video-card"><video src="/assets/bhd-400.mp4" muted loop playsInline aria-hidden="true" {...autoPlay}/><div className="video-card-copy"><p className="eyebrow">NEW DEALS ADDED DAILY!</p><p>Check back each day for the best gifts at our best prices!</p></div></Link>
   <Link to="/search?q=holiday%20gift" className="tile-card"><img src="/assets/gg-rings-doq.png" alt="Holiday gift guide rings"/></Link>
  </section>
  <section className="pref-block"><img src="/assets/preferred-card.png" alt="JTV Preferred Account credit card"/><div className="pref-copy"><img src="/assets/lto-logo.png" alt="Limited time offer" width="120"/><h3>JTV PREFERRED ACCOUNT CREDIT CARD</h3><p>New card holders only. Must make a qualifying order of $50+ within 30 days.</p><Link to={outside('JTV Preferred Account')} className="outline-button">LEARN MORE</Link></div></section>
- <section className="card-row brand-row"><h2>RINGS FROM BRANDS YOU LOVE</h2><div className="card-grid four">{BRAND_CARDS.map(c=><Link key={c.alt} to={c.to} className="tile-card"><img src={c.img} alt={c.alt}/></Link>)}</div></section>
- <Link to="/search" className="mwf-block"><img src="/assets/giftboxes.png" alt="Holiday gift boxes, most wished for"/><div className="mwf-copy"><h2>MOST WISHED FOR</h2><span className="outline-button">SHOP NOW</span></div></Link>
- <section className="card-row gifts-row"><div className="card-grid five">{GIFT_CARDS.map(c=><Link key={c.label} to={c.to} className="tile-card"><img src={c.img} alt={`${c.label} holiday gifts`}/><span>{c.label.toUpperCase()}</span></Link>)}</div></section>
+ <section className="card-row brand-row"><h2>RINGS FROM BRANDS YOU LOVE</h2><CarouselRow label="Featured brands">{BRAND_CARDS.map(c=><Link key={c.alt} to={c.to} className="tile-card card-fixed"><img src={c.img} alt={c.alt}/></Link>)}</CarouselRow></section>
+ <section className="mwf-block"><div className="mwf-copy"><h2>MOST WISHED FOR</h2><p>The pieces everyone has on their list this holiday.</p><Link to="/search" className="outline-button">SHOP NOW</Link></div><img src="/assets/giftboxes.png" alt="Holiday gift boxes"/></section>
+ <section className="card-row gifts-row"><CarouselRow label="Gifts for everyone">{GIFT_CARDS.map(c=><Link key={c.label} to={c.to} className="tile-card card-fixed"><img src={c.img} alt={`${c.label} holiday gifts`}/><span>{c.label.toUpperCase()}</span></Link>)}</CarouselRow></section>
  <section className="home-shelf">{children}</section>
  <section className="lifestyle-row">
   <Link to="/category/earrings" className="tile-card"><img src="/assets/lifestyle-earrings.png" alt="Holiday lifestyle earrings"/></Link>
