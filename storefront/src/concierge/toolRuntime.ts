@@ -2,18 +2,17 @@ import { createSessionPersistence, type StorageLike } from './sessionPersistence
 import type { createSessionStore } from './sessionStore.js';
 
 /**
- * Turn lifecycle for the Concierge chat (F3 native cleanup).
+ * Turn lifecycle for the Concierge chat (F3 native cleanup, chips-native cut).
  *
- * The native agent searches and converses with its own server tools
- * (`algolia_search_index`, `algolia_grouped_results`), so this runtime no
- * longer executes client tools or stages client-tool presentations: the
- * update_shopping_state executor, the retrieve_evidence fetch pipeline, the
- * present_choices staging/evidence-ledger machinery and the vocabulary TTL
- * cache all fed that path and are gone (F3 audit,
- * docs/workspace/simplify-2026-10-17/results/L2/F3-AUDIT.md). Product cards
- * come from the native grouped results (nativeResults.ts, staged by the
- * workspace provider). What remains is the turn/mission bookkeeping around
- * the persisted session store that every turn still drives.
+ * The native agent searches with its own server tool (`algolia_search_index`),
+ * so this runtime no longer executes client tools or stages client-tool
+ * presentations: the update_shopping_state executor, the retrieve_evidence
+ * fetch pipeline, the present_choices staging/evidence-ledger machinery and
+ * the vocabulary TTL cache all fed that path and are gone (F3 audit,
+ * docs/workspace/simplify-2026-10-17/results/L2/F3-AUDIT.md). Product tiles
+ * come from the streamed search output itself (nativeResults.ts, staged by
+ * the workspace provider). What remains is the turn/mission bookkeeping
+ * around the persisted session store that every turn still drives.
  */
 export function createConciergeToolRuntime(options: {
   storage: StorageLike;

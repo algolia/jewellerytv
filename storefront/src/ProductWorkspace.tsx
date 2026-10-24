@@ -10,7 +10,7 @@ import './product-workspace.css';
 export type Discovery = {
   title: string;
   why?: string;
-  mode?: 'three_style_grid' | 'focused_choice' | 'search_results';
+  mode?: 'search_results';
   items: { product: Product; why?: string }[];
 };
 export type WorkspaceViewModel = {
@@ -112,11 +112,9 @@ export function ProductWorkspace({
   }
   const seenDiscoveryIds = new Set<string>();
   const groupedDiscoveries = [...mergedDiscoveries.values()].slice(0, 3).flatMap((group) => {
-    // Grid mode may carry a meaningful third row; the chips-native search
-    // presentation is one unsplit group at the full tile cap; every other
-    // presentation keeps the accepted two-variant cap.
-    const itemCap =
-      group.mode === 'search_results' ? 8 : group.mode === 'three_style_grid' ? 3 : 2;
+    // The chips-native search presentation is one unsplit group at the full
+    // tile cap; any other presentation keeps the accepted two-per-group cap.
+    const itemCap = group.mode === 'search_results' ? 8 : 2;
     const items = group.items
       .filter((item) => {
         if (seenDiscoveryIds.has(item.product.id)) return false;

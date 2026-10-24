@@ -1,16 +1,9 @@
-/* F1 native adapter, pure extraction layer (briefs/F1-fixer-native-adapter.md).
- *
- * In the native setup the agent searches Algolia with its own server tools
- * (`algolia_search_index`, `algolia_grouped_results`); the app's only job is to
- * render. This module reads those tool parts out of the conversation stream and
- * strips the NOTE line from what the shopper sees. It holds no conversation
- * logic: it never decides what to search, say, or show next.
- *
- * Part shapes verified against raw C2 captures (results/P4/c2/s-02/capture/):
- * a search part is `tool-algolia_search_index_<index>` with `output.hits`, and
- * a grouped part is `tool-algolia_grouped_results` whose INPUT carries
- * `{intro, groups: [{title, why?, results: [{objectID, ...}]}]}` — the output
- * is only `{status: "success"}`.
+/* Chips-native extraction layer (2026-10-24): the agent searches Algolia with
+ * its own server tool (`algolia_search_index`); the app's only job is to
+ * render. This module reads the search parts out of the conversation stream —
+ * tiles, chips and anchors all derive from that one output — and strips the
+ * NOTE line from what the shopper sees. It holds no conversation logic: it
+ * never decides what to search, say, or show next.
  */
 
 /** Single switch for echoing the NOTE back into conversation state. F1 ships
@@ -30,76 +23,10 @@ type Message = { id?: string; role?: string; parts?: readonly unknown[] };
 
 export type NativeGroup = { title: string; why?: string; objectIDs: string[] };
 
-export type NativePresentation = {
-  intro: string;
-  /** Grouped-call group names, used as the workspace columns. */
-  groups: NativeGroup[];
-  /** Raw records already streamed by the search tool, keyed by objectID. */
-  records: Map<string, Record<string, unknown>>;
-};
-
-const GROUPED_TOOL = 'tool-algolia_grouped_results';
-const ARRANGE_TOOL = 'tool-arrange_groups';
 const SEARCH_TOOL_PREFIX = 'tool-algolia_search_index';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/** Latest assistant message after the last user message, mirroring
- * turnCompletion.ts's selection so both readers see the same turn. */
-function readGroupedInput(input: unknown): { intro: string; groups: NativeGroup[] } | null {
-  if (!isRecord(input)) return null;
-  const rawGroups = input.groups;
-  if (!Array.isArray(rawGroups) || rawGroups.length === 0) return null;
-  const groups: NativeGroup[] = [];
-  for (const rawGroup of rawGroups) {
-    if (!isRecord(rawGroup)) return null;
-    const title = rawGroup.title;
-    if (typeof title !== 'string' || !title.trim()) return null;
-    const rawResults = rawGroup.results;
-    if (!Array.isArray(rawResults)) return null;
-    const objectIDs: string[] = [];
-    for (const rawResult of rawResults) {
-      if (!isRecord(rawResult)) return null;
-      const objectID = rawResult.objectID;
-      if (typeof objectID !== 'string' || !objectID) return null;
-      objectIDs.push(objectID);
-    }
-    groups.push({
-      title,
-      ...(typeof rawGroup.why === 'string' && rawGroup.why.trim() ? { why: rawGroup.why } : {}),
-      objectIDs,
-    });
-  }
-  const intro = typeof input.intro === 'string' ? input.intro : '';
-  return { intro, groups };
-}
-
-/** Reads the arranged-groups tool output (Lane 1: the app renders tiles from
- * arrange_groups, whose output already dropped ineligible pieces). Returns
- * null for anything but a successful structured output; a later call
- * supersedes an earlier one on the same turn. */
-function readArrangedOutput(output: unknown): NativeGroup[] | null {
-  if (!isRecord(output) || output.status !== 'ok') return null;
-  const rawGroups = output.groups;
-  if (!Array.isArray(rawGroups)) return null;
-  const groups: NativeGroup[] = [];
-  for (const rawGroup of rawGroups) {
-    if (!isRecord(rawGroup)) return null;
-    const title = rawGroup.title;
-    if (typeof title !== 'string' || !title.trim()) return null;
-    if (!Array.isArray(rawGroup.items)) return null;
-    const objectIDs: string[] = [];
-    for (const item of rawGroup.items) {
-      if (!isRecord(item)) return null;
-      const objectID = item.objectID;
-      if (typeof objectID !== 'string' || !objectID) return null;
-      objectIDs.push(objectID);
-    }
-    if (objectIDs.length) groups.push({ title, objectIDs });
-  }
-  return groups;
 }
 
 /** Mobile anchored cards (chips-native cut): per assistant message, the
@@ -295,75 +222,6 @@ export function extractSearchPresentation(messages: readonly Message[]): SearchP
   }
   if (!objectIDs.length || !queryText) return null;
   return { queryText, objectIDs: objectIDs.slice(0, MAX_SEARCH_TILES), records };
-}
-
-/**
- * Reads the native tool parts off the latest assistant turn. Returns null when
- * the turn presented no grouped results (held turns, service answers). A
- * grouped part whose input is unusable yields null — the app never invents a
- * grid from partial data. A later grouped call supersedes an earlier one on
- * the same turn; search records accumulate across the turn's calls.
- *
- * Lane 1: an arrange_groups output wins when present — its groups are already
- * eligibility-checked by the deterministic tool, so tiles can only contain
- * pieces the tools approved. The grouped-tool input path stays as the
- * fallback for turns arranged before the tool sheet changes.
- *
- * DIAG-11: the scan covers EVERY assistant message after the last shopper
- * message, newest first, instead of only the latest one. When the output
- * guardrail withholds an answer, the SDK replaces the LATEST assistant
- * message with the fixed notice, while an earlier message of the same turn
- * still holds a successful arrange_groups output — tool-verified, ready to
- * render. Reading only the latest message discarded exactly that output.
- */
-export function extractNativePresentation(messages: readonly Message[]): NativePresentation | null {
-  let lastUser = -1;
-  for (let index = messages.length - 1; index >= 0; index--) {
-    if (messages[index].role === 'user') {
-      lastUser = index;
-      break;
-    }
-  }
-  if (lastUser < 0) return null;
-  const assistants = [...messages]
-    .slice(lastUser + 1)
-    .filter((message) => message.role === 'assistant');
-  const records = new Map<string, Record<string, unknown>>();
-  for (const assistant of assistants) {
-    if (!assistant?.parts) continue;
-    for (const part of assistant.parts as Part[]) {
-      if (typeof part.type !== 'string') continue;
-      if (part.type.startsWith(SEARCH_TOOL_PREFIX) && isRecord(part.output)) {
-        const hits = (part.output as Record<string, unknown>).hits;
-        if (Array.isArray(hits)) {
-          for (const hit of hits) {
-            if (isRecord(hit) && typeof hit.objectID === 'string' && hit.objectID) {
-              if (!records.has(hit.objectID)) records.set(hit.objectID, hit);
-            }
-          }
-        }
-      }
-    }
-  }
-  for (const assistant of [...assistants].reverse()) {
-    if (!assistant?.parts) continue;
-    let grouped: { intro: string; groups: NativeGroup[] } | null = null;
-    let arranged: NativeGroup[] | null = null;
-    for (const part of assistant.parts as Part[]) {
-      if (typeof part.type !== 'string') continue;
-      if (part.type === GROUPED_TOOL) {
-        const parsed = readGroupedInput(part.input);
-        if (parsed) grouped = parsed;
-      }
-      if (part.type === ARRANGE_TOOL) {
-        const parsed = readArrangedOutput(part.output);
-        if (parsed) arranged = parsed;
-      }
-    }
-    if (arranged) return { intro: '', groups: arranged, records };
-    if (grouped) return { intro: grouped.intro, groups: grouped.groups, records };
-  }
-  return null;
 }
 
 /**

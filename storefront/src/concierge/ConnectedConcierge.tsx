@@ -42,7 +42,7 @@ import {
 } from './turnCompletion';
 import { buildTurnContext } from './turnContext.js';
 import { canonicalBlogUrlsFromMessages, verifiedBlogHref } from './verifiedBlogLinks.js';
-import { recordTurnOutcome } from '../telemetry';
+import { recordDisplayEvent, recordTurnOutcome } from '../telemetry';
 
 type TurnFinish = {
   messages: UIMessage[];
@@ -753,6 +753,7 @@ export function ConnectedConcierge({
         const staged = await session.stageSearchPresentation(visibleMessages);
         if (!cancelled && staged) setNativeGroups(staged);
       } catch (error) {
+        recordDisplayEvent('stage-failed', 'canvas-restore staging threw');
         if (import.meta.env.DEV) console.warn('JTV native canvas not restored after reload', error);
       }
     })();
@@ -1013,6 +1014,7 @@ export function ConnectedConcierge({
                 const staged = await session.stageSearchPresentation(messages);
                 if (staged) setNativeGroups(staged);
               } catch (error) {
+                recordDisplayEvent('stage-failed', 'completed-turn staging threw');
                 if (import.meta.env.DEV) console.warn('JTV native presentation not staged', error);
               }
             } else {
@@ -1071,6 +1073,7 @@ export function ConnectedConcierge({
                   const staged = await session.stageSearchPresentation(arrangeSnapshotRef.current);
                   if (staged) setNativeGroups(staged);
                 } catch (error) {
+                  recordDisplayEvent('stage-failed', 'withhold-turn staging threw');
                   if (import.meta.env.DEV)
                     console.warn('JTV native presentation not staged on withhold', error);
                 }
