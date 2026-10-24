@@ -1,7 +1,11 @@
 import { normalizeProduct, type Product } from '../catalog';
 import type { WorkspaceViewModel } from '../ProductWorkspace';
 import type { WorkspaceGroup } from '../workspaceResults';
-import { extractMessageAnchors, extractNativePresentation } from './nativeResults';
+import {
+  extractMessageAnchors,
+  extractNativePresentation,
+  extractSearchPresentation,
+} from './nativeResults';
 import { createSessionStore } from './sessionStore.js';
 import { createConciergeToolRuntime } from './toolRuntime';
 import type { StorageLike } from './sessionPersistence.js';
@@ -22,11 +26,39 @@ export type ConciergeWorkspaceSession = {
   runtime: Runtime;
   getModel: (nativeGroups?: WorkspaceGroup[]) => WorkspaceViewModel;
   stageNativePresentation: (messages: readonly unknown[]) => Promise<WorkspaceGroup[] | null>;
+  stageSearchPresentation: (messages: readonly unknown[]) => Promise<WorkspaceGroup[] | null>;
   stageMessageAnchors: (
     messages: readonly unknown[],
     only?: ReadonlySet<string>,
   ) => Promise<Map<string, WorkspaceGroup[]>>;
 };
+
+/* Variant dedupe (Arijit decision, 2026-10-24): the catalog carries the same
+ * design as several records (size/metal variants, separate objectIDs), and
+ * without the model choosing tiles two of them can fill two tiles. Same
+ * family number = same design, so the first hit in relevancy order wins and
+ * its variants drop. Records without a family number fall back to the
+ * price-plus-normalized-title heuristic; a record with no price never
+ * collapses under that fallback (unpriced pieces drop on eligibility later). */
+export function dedupeVariants(products: readonly Product[]): Product[] {
+  const seenFamily = new Set<string>();
+  const seenFallback = new Set<string>();
+  return products.filter((product) => {
+    if (product.familyId) {
+      if (seenFamily.has(product.familyId)) return false;
+      seenFamily.add(product.familyId);
+      return true;
+    }
+    if (product.price === null) return true;
+    const key = `${Math.round(product.price * 100)}|${product.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()}`;
+    if (seenFallback.has(key)) return false;
+    seenFallback.add(key);
+    return true;
+  });
+}
 
 export function createConciergeWorkspaceSession(options: {
   storage: StorageLike;
@@ -172,6 +204,47 @@ export function createConciergeWorkspaceSession(options: {
     return hydrated;
   }
 
+  /* Chips-native staging (2026-10-24): the streamed search output IS the
+   * presentation. Hits in relevancy order become one tile group under the
+   * query text; variant twins dedupe before hydration; every displayed tile
+   * re-checks price and stock on its freshest record (the checks arrange_groups
+   * used to own) and the identity-verified set registers for refresh_products.
+   * No grouping logic, no model round-trip, no eligibility tool. */
+  async function stageSearchPresentation(
+    messages: readonly unknown[],
+  ): Promise<WorkspaceGroup[] | null> {
+    const presentation = extractSearchPresentation(messages as never);
+    if (!presentation) return null;
+    const records = presentation.records;
+    const normalized = presentation.objectIDs
+      .map((objectID) => normalize(records.get(objectID)))
+      .filter((product): product is Product => product !== null);
+    const kept = dedupeVariants(normalized);
+    const needed = kept.map((product) => product.id).filter((id) => !records.has(id));
+    for (const objectID of needed.slice(0, 12)) {
+      try {
+        const record = await fetchProductRecord(objectID);
+        if (record && typeof record === 'object' && !Array.isArray(record))
+          records.set(objectID, record as Record<string, unknown>);
+      } catch {
+        // A record that will not hydrate is skipped; the tiles show what loaded.
+      }
+    }
+    const tiles: { product: Product }[] = [];
+    const verified = new Map<string, Record<string, unknown>>();
+    for (const product of kept) {
+      const fresh = records.get(product.id);
+      if (!fresh || (fresh as Record<string, unknown>).objectID !== product.id) continue;
+      const checked = normalize(fresh);
+      if (!checked || checked.inStock === false || checked.price === null) continue;
+      verified.set(product.id, fresh);
+      tiles.push({ product: checked });
+    }
+    if (!tiles.length) return null;
+    await registerVerifiedRecords(verified);
+    return [{ title: presentation.queryText, mode: 'search_results', items: tiles }];
+  }
+
   /* Mobile anchored cards (2026-10-23): hydrate EVERY assistant message that
    * carries grouped output, not just the latest turn, so the conversation can
    * render each turn's picks under the answer that found them. Returns a map
@@ -221,5 +294,12 @@ export function createConciergeWorkspaceSession(options: {
       discoveryUnavailable: false,
     };
   }
-  return { store, runtime, getModel, stageNativePresentation, stageMessageAnchors };
+  return {
+    store,
+    runtime,
+    getModel,
+    stageNativePresentation,
+    stageSearchPresentation,
+    stageMessageAnchors,
+  };
 }

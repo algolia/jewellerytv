@@ -68,10 +68,19 @@ describe('connected Concierge progress', () => {
     expect(
       connectedProgressLabel(
         'streaming',
-        withPart({ type: 'tool-arrange_groups', state: 'input-available' }),
+        withPart({ type: 'tool-refresh_products', state: 'input-available' }),
         'shopper-1',
       ),
     ).toBe('Preparing product choices');
+    /* arrange_groups is removed from the tool set: the generic working label
+     * is correct for an unexpected part, never a named product choice. */
+    expect(
+      connectedProgressLabel(
+        'streaming',
+        withPart({ type: 'tool-arrange_groups', state: 'input-available' }),
+        'shopper-1',
+      ),
+    ).toBe('Working with JTV information');
     expect(
       connectedProgressLabel(
         'streaming',

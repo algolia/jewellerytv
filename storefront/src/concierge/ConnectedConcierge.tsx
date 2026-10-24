@@ -25,7 +25,7 @@ import { ResponsiveAnswerTable } from './ResponsiveAnswerTable';
 import { ConnectedWelcome, composerSendText, shouldShowEntryGuidance } from './EntryGuidance';
 import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from './starterQuestions';
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
-import { extractNativePresentation, stripTrailingNote } from './nativeResults';
+import { deriveFacetPick, extractSearchPresentation, stripTrailingNote } from './nativeResults';
 import { buildClientTools } from './clientTools';
 import { extractMessageFacetPicks } from './nativeResults';
 import { FacetChips, buildChipRows } from './FacetChips';
@@ -87,8 +87,7 @@ export function connectedProgressLabel(
     if (part.state !== 'input-streaming' && part.state !== 'input-available') continue;
     if (part.type === 'tool-update_shopping_state') return 'Updating preferences';
     if (part.type.startsWith('tool-algolia_search_index')) return 'Checking JTV information';
-    if (part.type === 'tool-refresh_products' || part.type === 'tool-arrange_groups')
-      return 'Preparing product choices';
+    if (part.type === 'tool-refresh_products') return 'Preparing product choices';
     return 'Working with JTV information';
   }
   return 'Concierge is working';
@@ -647,14 +646,34 @@ export function ConnectedConcierge({
     },
     [knownProductIds],
   );
+  /* Facet-funnel continuity (chips-native cut): chip taps refine client-side,
+   * so the agent would never learn the shopper's narrowing. The active
+   * selections ride the turn context instead: the next turn reads them from
+   * latest-turn metadata and applies them to its search unless the shopper
+   * changes direction. The mirror ref keeps chatContext stable across renders;
+   * handleFacetSelect/handleFacetClear own it. */
+  const activeFunnelRef = useRef<{ attribute: string; value: string }[]>([]);
   const chatContext = useCallback(() => {
     const currentSession = session.store.getSnapshot();
     const base = context?.() ?? {};
     const latest = latestTurn.current;
-    return buildTurnContext(currentSession, base, {
-      turnId: latest.turnId,
-      sourceMessageId: latest.sourceMessageId,
-    });
+    const selections = activeFunnelRef.current;
+    const extras = selections.length
+      ? {
+          activeFacetSelections: selections
+            .map((selection) => `${selection.attribute}:"${selection.value}"`)
+            .join(';'),
+        }
+      : undefined;
+    return buildTurnContext(
+      currentSession,
+      base,
+      {
+        turnId: latest.turnId,
+        sourceMessageId: latest.sourceMessageId,
+      },
+      extras,
+    );
   }, [context, session]);
 
   const chatPersistenceOptions = useMemo(
@@ -731,7 +750,7 @@ export function ConnectedConcierge({
     let cancelled = false;
     void (async () => {
       try {
-        const staged = await session.stageNativePresentation(visibleMessages);
+        const staged = await session.stageSearchPresentation(visibleMessages);
         if (!cancelled && staged) setNativeGroups(staged);
       } catch (error) {
         if (import.meta.env.DEV) console.warn('JTV native canvas not restored after reload', error);
@@ -769,6 +788,7 @@ export function ConnectedConcierge({
         products: null,
       };
       const selections = [...previous.selections, { attribute, value }];
+      activeFunnelRef.current = selections;
       setFacetFunnels((current) => ({
         ...current,
         [messageId]: { ...previous, selections, loading: true, products: null },
@@ -795,10 +815,11 @@ export function ConnectedConcierge({
             }
           })
           .filter((p): p is Product => p !== null);
-        /* The next funnel level's values are the refinement response's own
-         * facet counts, computed within the selection. No second query. */
-        const nextAttribute = entry.pick.displayFacets[selections.length];
+        /* The next funnel level's attribute derives from the refinement
+         * response's own facet counts (no model list): the just-selected
+         * attribute now holds one value and drops out on its own. */
         const responseFacets = (result.facets as Record<string, Record<string, number>> | undefined) ?? {};
+        const nextAttribute = deriveFacetPick(responseFacets)[0];
         const nextCounts = nextAttribute ? responseFacets[nextAttribute] : undefined;
         setFacetFunnels((current) => ({
           ...current,
@@ -824,6 +845,7 @@ export function ConnectedConcierge({
     [facetPicks, facetFunnels],
   );
   const handleFacetClear = useCallback((messageId: string) => {
+    activeFunnelRef.current = [];
     setFacetFunnels(({ [messageId]: _dropped, ...rest }) => rest);
   }, []);
   /* Anchor staging: cards hydrate once per revealed assistant message that
@@ -886,15 +908,15 @@ export function ConnectedConcierge({
   }, [chat.messages, chatPersistenceOptions.id]);
   /* DIAG-11: the SDK answers a data-guardrail-violation by replacing the
    * whole accumulated turn message with the fixed notice text, destroying the
-   * successful arrange_groups output that arrived earlier in the same turn
-   * (measured: the persisted transcript after a withheld turn holds one
-   * assistant message with only the notice). Snapshot the latest turn that
-   * still carries one, so the notice path can stage those tool-verified
-   * tiles. No text is authored or reworded here. */
+   * successful search output that arrived earlier in the same turn (measured:
+   * the persisted transcript after a withheld turn holds one assistant
+   * message with only the notice). Snapshot the latest turn that still
+   * carries one, so the notice path can stage those streamed tiles. No text
+   * is authored or reworded here. */
   const arrangeSnapshotRef = useRef<readonly UIMessage[] | null>(null);
   useEffect(() => {
     if (!chat.messages.length) return;
-    if (extractNativePresentation(chat.messages)) arrangeSnapshotRef.current = chat.messages;
+    if (extractSearchPresentation(chat.messages as never)) arrangeSnapshotRef.current = chat.messages;
   }, [chat.messages]);
 
   const onSystemNotice = useCallback((text: string) => {
@@ -984,11 +1006,11 @@ export function ConnectedConcierge({
                 recordCompletedAssistantMessage(safeStorage(), assistant.id);
                 setRevealed((previous) => new Set(previous).add(assistant.id));
               }
-              /* F1: render the native grouped call's products. Only a fully
-               * completed turn stages cards; an interrupted or noticed turn
-               * leaves the previous display standing. */
+              /* Chips-native: the streamed search output is the tiles. Only a
+               * fully completed turn stages cards; an interrupted or noticed
+               * turn leaves the previous display standing. */
               try {
-                const staged = await session.stageNativePresentation(messages);
+                const staged = await session.stageSearchPresentation(messages);
                 if (staged) setNativeGroups(staged);
               } catch (error) {
                 if (import.meta.env.DEV) console.warn('JTV native presentation not staged', error);
@@ -1034,11 +1056,11 @@ export function ConnectedConcierge({
                * the fixed notice INTO the latest assistant message (its
                * onToolCall/data branch never reaches onData). When that
                * happened, an earlier assistant message of the same turn may
-               * still hold a successful arrange_groups output — tool-verified
-               * tiles ready to render. Stage them and keep the existing fixed
-               * notice where the withheld text would be; no wording changes,
-               * no model calls. Detection is the message shape itself: a
-               * message whose whole text is the fixed notice. */
+               * still hold a successful search output — streamed tiles ready
+               * to render. Stage them and keep the existing fixed notice where
+               * the withheld text would be; no wording changes, no model
+               * calls. Detection is the message shape itself: a message whose
+               * whole text is the fixed notice. */
               const withholdAssistant = latestAssistant(messages);
               if (
                 withholdAssistant &&
@@ -1046,7 +1068,7 @@ export function ConnectedConcierge({
                 arrangeSnapshotRef.current
               ) {
                 try {
-                  const staged = await session.stageNativePresentation(arrangeSnapshotRef.current);
+                  const staged = await session.stageSearchPresentation(arrangeSnapshotRef.current);
                   if (staged) setNativeGroups(staged);
                 } catch (error) {
                   if (import.meta.env.DEV)

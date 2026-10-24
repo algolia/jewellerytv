@@ -187,27 +187,8 @@ describe('stageMessageAnchors', () => {
         type: 'tool-algolia_search_index_prod_catalog',
         toolCallId: `search-${id}`,
         state: 'output-available',
-        input: {},
+        input: { queries: [{ query: `query ${id}` }] },
         output: { hits: hits.map((objectID) => rawRecord(objectID)) },
-      },
-    ],
-  });
-  const arrangedMessage = (id: string, ids: string[]) => ({
-    id,
-    role: 'assistant',
-    parts: [
-      {
-        type: 'tool-arrange_groups',
-        toolCallId: `arrange-${id}`,
-        state: 'output-available',
-        input: {},
-        output: {
-          status: 'ok',
-          groups: ids.map((objectID) => ({
-            title: `Style ${objectID}`,
-            items: [{ objectID }],
-          })),
-        },
       },
     ],
   });
@@ -222,10 +203,9 @@ describe('stageMessageAnchors', () => {
     });
     const anchors = await adapter.stageMessageAnchors([
       { role: 'user', parts: [] },
-      searchMessage('s1', ['a-1']),
-      arrangedMessage('a1', ['a-1']),
+      searchMessage('a1', ['a-1']),
       { role: 'user', parts: [] },
-      arrangedMessage('a2', ['a-2']),
+      searchMessage('a2', ['a-2']),
     ]);
     expect([...anchors.keys()]).toEqual(['a1', 'a2']);
     expect(anchors.get('a1')?.[0].items[0].product.id).toBe('a-1');
@@ -235,7 +215,9 @@ describe('stageMessageAnchors', () => {
     expect(records).toContain('a-2');
   });
 
-  it('drops an item whose hydrated record objectID does not match', async () => {
+  it('anchors nothing when the streamed hits carry no usable objectID', async () => {
+    /* Anchors derive from the streamed search hits, so the identity check is
+     * inherent; the surviving failure mode is a hit without a usable id. */
     const storage = new MemoryStorage();
     storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
     const adapter = createConciergeWorkspaceSession({
@@ -245,7 +227,19 @@ describe('stageMessageAnchors', () => {
     });
     const anchors = await adapter.stageMessageAnchors([
       { role: 'user', parts: [] },
-      arrangedMessage('a1', ['a-1']),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'tool-algolia_search_index_prod_catalog',
+            toolCallId: 'search-a1',
+            state: 'output-available',
+            input: { queries: [{ query: 'query a1' }] },
+            output: { hits: [{ Catalog_TitleDescription: 'No id here' }] },
+          },
+        ],
+      },
     ]);
     expect(anchors.has('a1')).toBe(false);
   });

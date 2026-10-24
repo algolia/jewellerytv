@@ -1,6 +1,13 @@
 import {normalizeProduct,type Product} from './catalog';
 export type WorkspaceView='discover'|'compare'|'saved';
-export type WorkspaceGroup={title:string;why?:string;items:{product:Product;why?:string;assessment?:'compliant'|'unknown'}[]};
+export type WorkspaceGroup={
+ title:string;
+ why?:string;
+ /** Presentation hint: `search_results` marks the chips-native single-group
+  * display, which the workspace renders at its full tile cap instead of the
+  * grouped-presentation two-per-group cap. */
+ mode?:'search_results'|'three_style_grid';
+ items:{product:Product;why?:string;assessment?:'compliant'|'unknown'}[]};
 export type WorkspaceRecordEntry={id:string;record:unknown};
 /** Combine saved/selected IDs with exact ID or SKU tokens from the latest shopper turn. */
 export function collectWorkspaceReferenceIds(stateIds:readonly string[],latestUserText:string,records:readonly WorkspaceRecordEntry[]):string[]{

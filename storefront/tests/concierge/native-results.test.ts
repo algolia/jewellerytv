@@ -17,11 +17,18 @@ const userMessage = (text: string) => ({
   parts: [{ type: 'text', text }],
 });
 
-const searchPart = (hits: unknown[]) => ({
+const searchPart = (
+  hits: unknown[],
+  options: { queries?: number; id?: string } = {},
+) => ({
   type: 'tool-algolia_search_index_prod_catalog',
-  toolCallId: 'call-1',
+  toolCallId: options.id ?? 'call-1',
   state: 'output-available',
-  input: { queries: [{ query: 'tanzanite ring' }] },
+  input: {
+    queries: Array.from({ length: options.queries ?? 1 }, (_, index) => ({
+      query: index === 0 ? 'tanzanite ring' : `other query ${index}`,
+    })),
+  },
   output: { hits },
 });
 
@@ -207,71 +214,45 @@ describe('NOTE_ECHO_ENABLED', () => {
  * grouped or arranged tool output anchors its own cards, so the conversation
  * keeps every turn's picks in place instead of one latest-turn canvas. */
 
-describe('extractMessageAnchors', () => {
-  const arrangedPart = (groups: string[][]) => ({
-    type: 'tool-arrange_groups',
-    toolCallId: 'call-9',
-    state: 'output-available',
-    input: {},
-    output: {
-      status: 'ok',
-      groups: groups.map((items, index) => ({
-        title: `Group ${index + 1}`,
-        items: items.map((objectID) => ({ objectID })),
-      })),
-    },
-  });
-
-  it('returns one anchor per assistant message that carries an arranged output', () => {
+describe('extractMessageAnchors (chips-native)', () => {
+  it('returns one anchor per assistant message that carries a single-query search', () => {
     const messages = [
       userMessage('show me opal rings'),
       {
         id: 'a1',
         role: 'assistant',
-        parts: [searchPart([hit('WPG776')]), arrangedPart([['WPG776', 'WPG777']])],
+        parts: [searchPart([hit('WPG776'), hit('WPG777'), hit('WPG778'), hit('WPG779'), hit('WPG780')])],
       },
       userMessage('make it yellow gold'),
       {
         id: 'a2',
         role: 'assistant',
-        parts: [searchPart([hit('WPG778')]), arrangedPart([['WPG778']])],
+        parts: [searchPart([hit('WPG781')], { id: 'call-2' })],
       },
     ];
     const anchors = extractMessageAnchors(messages);
     expect(anchors.map((anchor) => anchor.messageId)).toEqual(['a1', 'a2']);
-    expect(anchors[0].groups.map((g) => g.objectIDs)).toEqual([['WPG776', 'WPG777']]);
-    expect(anchors[1].groups.map((g) => g.objectIDs)).toEqual([['WPG778']]);
+    /* Anchors cap at four tiles per message. */
+    expect(anchors[0].groups.map((g) => g.objectIDs)).toEqual([
+      ['WPG776', 'WPG777', 'WPG778', 'WPG779'],
+    ]);
+    expect(anchors[1].groups.map((g) => g.objectIDs)).toEqual([['WPG781']]);
+    expect(anchors[0].groups[0].title).toBe('tanzanite ring');
   });
 
-  it('falls back to the grouped call input when the message has no arrange output', () => {
+  it('anchors nothing on a multi-query message', () => {
     const messages = [
       userMessage('show me opal rings'),
       {
         id: 'a1',
         role: 'assistant',
-        parts: [groupedPart([group('Under $200', ['WPG776'])])],
+        parts: [searchPart([hit('WPG776')], { queries: 2 })],
       },
     ];
-    const anchors = extractMessageAnchors(messages);
-    expect(anchors).toHaveLength(1);
-    expect(anchors[0]).toMatchObject({ messageId: 'a1' });
-    expect(anchors[0].groups[0]).toMatchObject({ title: 'Under $200', objectIDs: ['WPG776'] });
+    expect(extractMessageAnchors(messages)).toEqual([]);
   });
 
-  it('prefers the arranged output over the grouped input inside one message', () => {
-    const messages = [
-      userMessage('show me opal rings'),
-      {
-        id: 'a1',
-        role: 'assistant',
-        parts: [groupedPart([group('Grouped set', ['WPG900'])]), arrangedPart([['WPG776']])],
-      },
-    ];
-    const anchors = extractMessageAnchors(messages);
-    expect(anchors[0].groups.map((g) => g.objectIDs)).toEqual([['WPG776']]);
-  });
-
-  it('skips assistant messages with no grouped tool output', () => {
+  it('skips assistant messages with no search output', () => {
     const messages = [
       userMessage('what makes opal different?'),
       { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Play of color.' }] },
@@ -279,21 +260,13 @@ describe('extractMessageAnchors', () => {
     expect(extractMessageAnchors(messages)).toEqual([]);
   });
 
-  it('ignores a failed arrange output and yields no anchor from it', () => {
+  it('skips a search part whose output has not arrived', () => {
     const messages = [
       userMessage('show me opal rings'),
       {
         id: 'a1',
         role: 'assistant',
-        parts: [
-          {
-            type: 'tool-arrange_groups',
-            toolCallId: 'call-9',
-            state: 'output-available',
-            input: {},
-            output: { status: 'error' },
-          },
-        ],
+        parts: [{ type: 'tool-algolia_search_index_prod_catalog', toolCallId: 'c1', state: 'input-available', input: { queries: [{ query: 'opal' }] } }],
       },
     ];
     expect(extractMessageAnchors(messages)).toEqual([]);
@@ -324,14 +297,16 @@ describe('extractMessageFacetPicks', () => {
     output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: '12TB0A' }] }] },
   };
 
-  it('attaches one pick per message with accumulated facets and hits', () => {
+  it('attaches one pick per message with accumulated facets and hits, derived from the counts', () => {
     const picks = extractMessageFacetPicks([
       userMessage('watch for dad'),
-      { id: 'a1', role: 'assistant', parts: [facetSearchPart, arrangeWithPick] },
+      { id: 'a1', role: 'assistant', parts: [facetSearchPart] },
       { id: 'a2', role: 'assistant', parts: [{ type: 'text', text: 'No tools here.' }] },
     ]);
     expect(picks).toHaveLength(1);
     expect(picks[0].messageId).toBe('a1');
+    /* Derived, not model-supplied: Catalog_Brand has two values, so it is the
+     * whole pick. No arrange call involved. */
     expect(picks[0].pick.displayFacets).toEqual(['Catalog_Brand']);
     expect(picks[0].pick.queryText).toBe("men's watch classic");
     expect(picks[0].hits).toHaveLength(2);
