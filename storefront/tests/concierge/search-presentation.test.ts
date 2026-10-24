@@ -197,19 +197,27 @@ describe('dedupeVariants', () => {
     expect(kept.map((p) => p.id)).toEqual(['a', 'b']);
   });
 
-  it('falls back to price plus normalized title when the family is missing', () => {
+  it('falls back to the design signature when the family is missing', () => {
     const kept = dedupeVariants([
       product('a', null, 'Huggie Hoop Earrings', 249.99),
-      product('b', null, 'Huggie   HOOP earrings', 249.99),
-      product('c', null, 'Huggie Hoop Earrings', 259.0),
+      product('b', null, 'Huggie   HOOP earrings', 259.0),
+      product('c', null, 'Drop Earrings', 249.99),
     ]);
     expect(kept.map((p) => p.id)).toEqual(['a', 'c']);
   });
 
-  it('never collapses records with no price under the fallback key', () => {
+  it('strips metal colors and purities from the signature', () => {
     const kept = dedupeVariants([
-      product('a', null, 'Mystery Pendant', null),
-      product('b', null, 'Mystery Pendant', null),
+      product('a', null, 'Oval Lab-Grown Diamond 10K Yellow Gold Huggie Hoop Earrings', 1196.99),
+      product('b', null, 'Oval Lab-Grown Diamond 10K White Gold Huggie Hoop Earrings', 1196.99),
+    ]);
+    expect(kept.map((p) => p.id)).toEqual(['a']);
+  });
+
+  it('keeps records whose title carries no meaningful tokens', () => {
+    const kept = dedupeVariants([
+      product('a', null, '14K Gold', null),
+      product('b', null, '18K Gold', null),
     ]);
     expect(kept.map((p) => p.id)).toEqual(['a', 'b']);
   });

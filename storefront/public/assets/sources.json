@@ -1,27 +1,33 @@
 [
   {
     "file": "jtv-logo.png",
-    "source": "https://images.jtv.com/media/jtv-site/resources/images/logo-blue.png"
+    "source": "https://images.jtv.com/media/jtv-site/resources/images/logo-blue.png",
+    "note": "footer logo, unchanged 2026-10-24"
+  },
+  {
+    "file": "logo-black.png",
+    "source": "https://images.jtv.com/media/jtv-site/resources/images/logo-black.png",
+    "note": "live header logo as of 2026-10-24 (header switched from blue to black)"
   },
   {
     "file": "rings.png",
-    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/rings-fall.png"
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/plp-banners/2026%20Holiday%20Gift%20Guide/holiday-rings.png"
   },
   {
     "file": "necklaces.png",
-    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/necklaces-fall.png"
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/plp-banners/2026%20Holiday%20Gift%20Guide/holiday-necklaces.png"
   },
   {
     "file": "earrings.png",
-    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/earrings-fall.png"
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/plp-banners/2026%20Holiday%20Gift%20Guide/holiday-earrings.png"
   },
   {
     "file": "bracelets.png",
-    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/bracelets-fall.png"
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/plp-banners/2026%20Holiday%20Gift%20Guide/holiday-bracelets.png"
   },
   {
     "file": "watches.png",
-    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/watches-fall.png"
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/plp-banners/2026%20Holiday%20Gift%20Guide/holiday-watches.png"
   },
   {
     "file": "Lato-Regular.woff",
@@ -40,8 +46,34 @@
     "source": "https://www.jtv.com/resources/fonts/Lato-Light.woff"
   },
   {
-    "file": "hero.mp4",
-    "source": "https://media.jtv.com/video/upload/q_auto,f_auto/v1787079115/jtv-site/plp-banners/2026%20Fall%20Trends/fall-trends-h1-mobile2.mp4"
+    "file": "freeshipping-banner.mp4",
+    "source": "https://media.jtv.com/video/upload/q_auto,f_mp4/v1791904392/jtv-site/promo/2026-hp-q4/freeshipping-tan-1600x80.mp4",
+    "note": "2026-10-24: live homepage free-shipping video banner (8s loop)"
+  },
+  {
+    "file": "just-reduced.mp4",
+    "source": "https://media.jtv.com/video/upload/v1792588995/jtv-site/promo/2026-hp-q4/full-width-holiday26-kickoff-10-80.mp4",
+    "note": "2026-10-24: live Just Reduced promo block video (2s ambient loop, original untransformed file); block overlay copy matches live"
+  },
+  {
+    "file": "hero-slide-clearance.jpg",
+    "source": "https://images.jtv.com/media/jtv-site/promo/2020q2/p-cybermondaycountdown-ring.jpg",
+    "note": "2026-10-24: live homepage hero is a rotating carousel of campaign art; this is its clearance slide"
+  },
+  {
+    "file": "hero-slide-deals.jpg",
+    "source": "https://images.jtv.com/media/jtv-site/promo/2026q2/promoblock-appfeature-holiday26-lifestyle-giftbox.png",
+    "note": "2026-10-24 hero slide, Big Holiday Deals"
+  },
+  {
+    "file": "hero-slide-powerbuys.jpg",
+    "source": "https://images.jtv.com/media/jtv-site/promo/2026q2/promoblock-appfeature-holiday26-bella-bfj490-dol239-dol332.png",
+    "note": "2026-10-24 hero slide, Power Buys"
+  },
+  {
+    "file": "hero-slide-giftguide.jpg",
+    "source": "https://images.jtv.com/media/jtv-site/promo/2026q2/promoblock-appfeature-holiday26-branded-giftbox-black.png",
+    "note": "2026-10-24 hero slide, Holiday Gift Guide"
   },
   {
     "file": "gemstones.png",
