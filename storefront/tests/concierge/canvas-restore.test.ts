@@ -6,9 +6,10 @@ import type { UIMessage } from 'instantsearch.js/es/lib/ai-lite';
  * Canvas restore after a page reload (Option B). The canvas tiles are React
  * state written only by the send path, so a full page load (PDP trip, F5)
  * remounts the component with an empty canvas while the SDK restores the
- * transcript from sessionStorage. Measured 2026-10-22 in dev: 6 tiles before
+ * transcript from sessionStorage. Measured 2026-10-22 in dev: tiles before
  * the PDP click, 0 after returning, conversation restored; the stored
- * transcript retains tool-arrange_groups and search outputs.
+ * transcript retains the search output the tiles stage from (chips-native
+ * cut: the search part IS the display source).
  *
  * The gate below decides when the restore effect may re-stage the canvas from
  * the visible transcript. Fixtures replay the restored-transcript shape.
@@ -30,15 +31,8 @@ const restoredTranscript = [
         type: 'tool-algolia_search_index_prod_catalog',
         toolCallId: 't1',
         state: 'output-available',
-        input: {},
+        input: { queries: [{ query: 'gold hoop earrings' }] },
         output: { hits: [{ objectID: 'VG271' }] },
-      },
-      {
-        type: 'tool-arrange_groups',
-        toolCallId: 't2',
-        state: 'output-available',
-        input: {},
-        output: { status: 'ok', groups: [], dropped: [], shortfall: [] },
       },
       { type: 'text', text: 'Here are the gold hoops I found.', state: 'done' },
     ],

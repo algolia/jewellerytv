@@ -1,0 +1,451 @@
+<title>Facet Chips Two-Step Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap">
+<style>
+  /* Four scenarios, all interactive, all data real index records fetched today:
+     watch for dad · diamond rings (nothing known) · anniversary under $1000
+     (occasion+budget known) · mothers ring (no chips, honest fallback).
+     Copy follows the live agent's voice; chips carry no counts, matching the
+     website's guided navigation. */
+  :root {
+    --jtv-blue: #0076a9;
+    --page-bg: #f2f5f7; --card-bg: #ffffff; --ink: #1c2b33; --ink-soft: #5b6b74;
+    --line: #d4e0e6; --chat-bg: #f9fcfd; --chip-bg: #eaf4f9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page-bg:#10181d; --card-bg:#18242b; --ink:#e8eef1; --ink-soft:#9db0ba;
+      --line:#2c3c45; --chat-bg:#142027; --chip-bg:#1d3340;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page-bg:#10181d; --card-bg:#18242b; --ink:#e8eef1; --ink-soft:#9db0ba;
+    --line:#2c3c45; --chat-bg:#142027; --chip-bg:#1d3340;
+  }
+  body {
+    background: var(--page-bg); color: var(--ink);
+    font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .sheet { max-width: 1240px; margin: 0 auto; padding-block: 28px 56px; }
+  .kicker { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--jtv-blue); margin: 0 0 6px; }
+  h1 { font-size: 25px; font-weight: 600; margin: 0 0 10px; text-wrap: balance; }
+  .intro { font-size: 15px; line-height: 1.6; color: var(--ink-soft); max-width: 66ch; margin: 0 0 26px; }
+
+  .stage { display: flex; gap: 30px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+  .col { width: 375px; max-width: 100%; }
+  .col-label { font-size: 13px; font-weight: 600; margin: 0 4px 10px; color: var(--ink); }
+  .col-note { font-size: 13px; line-height: 1.6; color: var(--ink-soft); margin: 12px 4px 0; }
+  .col-note b { color: var(--ink); }
+
+  .phone { background: var(--card-bg); border: 1px solid var(--line); border-radius: 34px; padding: 10px; box-shadow: 0 18px 44px rgba(12,30,40,.14); }
+  .screen { border-radius: 25px; overflow: hidden; border: 1px solid var(--line); background: var(--chat-bg); height: 740px; display: flex; flex-direction: column; }
+  .head { flex: none; background: var(--jtv-blue); color: #fff; padding: 12px 16px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .head .back { font-size: 18px; opacity: .85; }
+  .head .title { margin-left: auto; font-weight: 400; opacity: .9; }
+  .scroll { flex: 1; overflow-y: auto; padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 12px; }
+  .msg-user { align-self: flex-end; max-width: 86%; background: var(--jtv-blue); color: #fff; padding: 9px 13px; border-radius: 16px 16px 4px 16px; font-size: 13.5px; }
+  .msg-agent { align-self: flex-start; max-width: 92%; font-size: 13.5px; line-height: 1.55; }
+  .msg-agent .who { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--jtv-blue); margin-bottom: 4px; }
+
+  .chips-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); margin: 2px 0 6px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 8px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--chip-bg); color: var(--ink);
+    border-radius: 17px; padding: 7px 13px; font-size: 12.5px; cursor: pointer;
+    font-family: inherit;
+  }
+  .chip[aria-pressed="true"] { background: var(--jtv-blue); border-color: var(--jtv-blue); color: #fff; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .tile { background: var(--card-bg); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; text-decoration: none; color: inherit; display: block; }
+  .tile img { width: 100%; height: 108px; object-fit: contain; background: #fff; display: block; }
+  .tile .body { padding: 7px 9px 9px; }
+  .tile .name { font-size: 11px; line-height: 1.4; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tile .price { font-size: 13px; font-weight: 600; color: var(--jtv-blue); margin-top: 3px; }
+  .results-line { font-size: 11.5px; color: var(--ink-soft); margin: 0 0 4px; }
+  .all-chips { font-size: 12px; background: none; border: 0; color: var(--jtv-blue); cursor: pointer; padding: 2px 0; font-family: inherit; }
+  .promptbar { flex: none; background: var(--card-bg); border-top: 1px solid var(--line); padding: 9px 12px 12px; display: flex; gap: 8px; }
+  .promptbar .field { flex: 1; border: 1px solid var(--line); border-radius: 20px; padding: 9px 13px; font-size: 13px; color: var(--ink-soft); }
+  .promptbar .send { flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--jtv-blue); color: #fff; display: grid; place-items: center; font-size: 15px; }
+
+  .decisions { max-width: 900px; margin: 40px auto 0; background: var(--card-bg); border: 1px solid var(--line); border-radius: 14px; padding: 22px 26px; }
+  .decisions h2 { font-size: 16px; font-weight: 600; margin: 0 0 10px; }
+  .decisions p { font-size: 14px; line-height: 1.65; color: var(--ink-soft); margin: 0 0 8px; }
+  .decisions b { color: var(--ink); }
+</style>
+
+<div class="sheet">
+  <p class="kicker">Jewellerytv concierge · two-step chips</p>
+  <h1>Facets first, products on tap</h1>
+  <p class="intro">Four scenarios in the agent's own voice. Every chip taps into a live filtered query against the catalog; every product, price and image is a real record from today's index. Chips carry no counts, like the website's guided navigation.</p>
+
+  <div class="stage">
+    <div class="col">
+      <p class="col-label">"A watch for dad"</p>
+      <div class="phone"><div class="screen">
+        <div class="head"><span class="back">‹</span> JTV Concierge <span class="title">10:42</span></div>
+        <div class="scroll">
+          <div class="msg-user">watch for dad</div>
+          <div class="msg-agent">
+            <div class="who">Concierge</div>
+            <div>What a nice thing to do for your dad. Let me pull up our watch counter for you.</div>
+          </div>
+          <div>
+            <div class="chips-label">Brand</div>
+            <div class="chip-row">
+              <button class="chip" aria-pressed="false" data-set="bCharles">Charles Hubert</button>
+              <button class="chip" aria-pressed="false" data-set="bChristian">Christian Van Sant</button>
+              <button class="chip" aria-pressed="false" data-set="bBulova">Bulova</button>
+            </div>
+            <div class="chips-label">Movement</div>
+            <div class="chip-row">
+              <button class="chip" aria-pressed="false" data-set="chronos">Chronograph</button>
+              <button class="chip" aria-pressed="false" data-set="date">Date</button>
+              <button class="chip" aria-pressed="false" data-set="multi">Multi-Function</button>
+            </div>
+            <div class="chips-label">Band</div>
+            <div class="chip-row">
+              <button class="chip" aria-pressed="false" data-set="leather">Leather</button>
+              <button class="chip" aria-pressed="false" data-set="silicone">Silicone</button>
+              <button class="chip" aria-pressed="false" data-set="rubber">Rubber</button>
+            </div>
+          </div>
+          <div class="msg-agent">
+            <div class="who">Concierge</div>
+            <div>Beyond these we also carry pocket watches, watch bands, even ring watches. Does your dad lean classic and dressy, or rugged and sporty?</div>
+          </div>
+          <div class="results-slot"></div>
+        </div>
+        <div class="promptbar"><div class="field">Ask about a style, a budget, an occasion…</div><div class="send">↑</div></div>
+      </div></div>
+      <p class="col-note"><b>The breadth sentence carries what the chips don't.</b> Pocket watches and bands sit outside the three rows, so the prose names them — that's how the catalog's full depth stays visible without the chips repeating it.</p>
+    </div>
+
+    <div class="col">
+      <p class="col-label">"Show me diamond rings" — nothing known yet</p>
+      <div class="phone"><div class="screen">
+        <div class="head"><span class="back">‹</span> JTV Concierge <span class="title">10:46</span></div>
+        <div class="scroll">
+          <div class="msg-user">Show me diamond rings</div>
+          <div class="msg-agent">
+            <div class="who">Concierge</div>
+            <div>Diamond rings, always a good idea. Let me lay out our range for you.</div>
+          </div>
+          <div>
+            <div class="chips-label">Cut</div>
+            <div class="chip-row">
+              <button class="chip" aria-pressed="false" data-set="round">Round</button>
+              <button class="chip" aria-pressed="false" data-set="oval">Oval</button>
+              <button class="chip" aria-pressed="false" data-set="pear">Pear</button>
+            </div>
+            <div class="chips-label">Metal</div>
+            <div class="chip-row">
+              <button class="chip" aria-pressed="false" data-set="mWhite">White gold</button>
+              <button class="chip" aria-pressed="false" data-set="mYellow">Yellow gold</button>
+              <button class="chip" aria-pressed="false" data-set="mRose">Rose gold</button>
+            </div>
+            <div class="chips-label">Budget</div>
+            <div class="chip-row">
+              <button class="chip" aria-pressed="false" data-set="b50100">$50 to $100</button>
+              <button class="chip" aria-pressed="false" data-set="b100200">$100 to $200</button>
+              <button class="chip" aria-pressed="false" data-set="b200500">$200 to $500</button>
+            </div>
+          </div>
+          <div class="msg-agent">
+            <div class="who">Concierge</div>
+            <div>That's just the front of the case — thousands more across every cut and carat. Do you have a shape in mind, or shall I show you a few favorites?</div>
+          </div>
+          <div class="results-slot"></div>
+        </div>
+        <div class="promptbar"><div class="field">Ask about a style, a budget, an occasion…</div><div class="send">↑</div></div>
+      </div></div>
+      <p class="col-note"><b>Nothing known, so the chips are the whole opening move.</b> Cut, metal and budget are the three choices that shape a diamond ring; the shopper taps instead of answering questions. The prose keeps the breadth ("thousands more") and one soft question.</p>
+    </div>
+
+    <div class="col">
+      <p class="col-label">"Anniversary gift under $1000" — occasion and budget known</p>
+      <div class="phone"><div class="screen">
+        <div class="head"><span class="back">‹</span> JTV Concierge <span class="title">10:48</span></div>
+        <div class="scroll">
+          <div class="msg-user">Anniversary gift under $1000</div>
+          <div class="msg-agent">
+            <div class="who">Concierge</div>
+            <div>Happy anniversary to her! A piece under $1,000 gives us wonderful range — let me show you how ours is organized.</div>
+          </div>
+          <div>
+            <div class="chips-label">Kind of piece</div>
+            <div class="chip-row">
+              <button class="chip" aria-pressed="false" data-set="anEarrings">Earrings</button>
+              <button class="chip" aria-pressed="false" data-set="anRing">Ring</button>
+              <button class="chip" aria-pressed="false" data-set="anNecklace">Necklace</button>
+              <button class="chip" aria-pressed="false" data-set="anBracelet">Bracelet</button>
+            </div>
+            <div class="chips-label">Stone</div>
+            <div class="chip-row">
+              <button class="chip" aria-pressed="false" data-set="sAmethyst">Amethyst</button>
+              <button class="chip" aria-pressed="false" data-set="sGarnet">Garnet</button>
+              <button class="chip" aria-pressed="false" data-set="sEmerald">Emerald</button>
+            </div>
+          </div>
+          <div class="msg-agent">
+            <div class="who">Concierge</div>
+            <div>Amethyst and garnet are lovely in this range. Which of these is most her?</div>
+          </div>
+          <div class="results-slot"></div>
+        </div>
+        <div class="promptbar"><div class="field">Ask about a style, a budget, an occasion…</div><div class="send">↑</div></div>
+      </div></div>
+      <p class="col-note"><b>Known attributes never become chips.</b> The budget is applied inside the search and the occasion in the opener; the chips only expose what's still open. The stone row is the model's judgment — it surfaced that amethyst and garnet run deep in this budget.</p>
+    </div>
+
+    <div class="col">
+      <p class="col-label">"a mothers ring" — no honest facet split</p>
+      <div class="phone"><div class="screen">
+        <div class="head"><span class="back">‹</span> JTV Concierge <span class="title">10:50</span></div>
+        <div class="scroll">
+          <div class="msg-user">a mothers ring for my mom</div>
+          <div class="msg-agent">
+            <div class="who">Concierge</div>
+            <div>A mothers ring is such a lovely way to celebrate her. It's one of our smaller selections, so let me show you what we have.</div>
+          </div>
+          <div class="grid">
+            <div class="tile"><img src="https://images.jtv.com/jewelry/JTV-BTK146-1.jpg" alt="" onerror="this.style.visibility='hidden'"><div class="body"><div class="name">White Zircon Mother and Daughter Ring, Sterling Silver</div><div class="price">$97.19</div></div></div>
+            <div class="tile"><img src="https://images.jtv.com/jewelry/silver/JTV-1SJGNA-1.jpg" alt="" onerror="this.style.visibility='hidden'"><div class="body"><div class="name">Stackable Expressions Polished Enameled Mom Ring, Sterling Silver</div><div class="price">$71.39</div></div></div>
+          </div>
+          <div class="msg-agent">
+            <div class="who">Concierge</div>
+            <div>How many birthstones are we fitting, and which months do they stand for?</div>
+          </div>
+        </div>
+        <div class="promptbar"><div class="field">Ask about a style, a budget, an occasion…</div><div class="send">↑</div></div>
+      </div></div>
+      <p class="col-note"><b>The fallback that keeps the concept honest.</b> 169 hits with no meaningful split: no chip row, straight to products and the birthstone question. Chips when the catalog has a real split, silence when it doesn't.</p>
+    </div>
+  </div>
+
+  <div class="decisions">
+    <h2>What this mockup settles</h2>
+    <p><b>No counts on chips.</b> Matching the website: the label is the affordance, the number was noise.</p>
+    <p><b>The model picks the rows.</b> Watch dad → brand, movement, band. Diamond rings → cut, metal, budget. Anniversary → kind of piece, stone. Mothers ring → nothing. Same index, four different shelves, one new field in the model's output.</p>
+    <p><b>Prose carries breadth, chips carry choice.</b> The rule the voice follows: never name a chip's value in prose; name what lies beyond the chips ("pocket watches, watch bands", "thousands more").</p>
+    <p><b>Everything is real.</b> All 17 chip sets are live filtered queries against the catalog run today; tiles, prices and images are the actual records a tap would return.</p>
+  </div>
+</div>
+
+<script>
+  const SETS = {
+    bCharles: [
+      ["1ZPF6B", "Charles-Hubert White Ceramic Multifunction White Dial Watch", "$310.09", "https://images.jtv.com/jewelry/watches/JTV-1ZPF6B-1.jpg"],
+      ["1YZYKC", "Charles-Hubert Chrome Finish Black Dial Nurse Watch", "$114.79", "https://images.jtv.com/jewelry/watches/JTV-1YZYKC-1.jpg"],
+      ["1YB16D", "Charles-Hubert Two-Tone Stainless Steel Bracelet Watch", "$195.29", "https://images.jtv.com/jewelry/watches/JTV-1YB16D-1.jpg"],
+      ["1Y8ZSA", "Charles-Hubert Stainless Steel Black Dial Watch", "$163.79", "https://images.jtv.com/jewelry/watches/JTV-1Y8ZSA-1.jpg"],
+    ],
+    bChristian: [
+      ["1TOB4D", "Christian Van Sant Romeo 42mm Black Leather Strap Watch", "$383.99", "https://images.jtv.com/jewelry/watches/JTV-1TOB4D-1.jpg"],
+      ["1THVYC", "Christian Van Sant Alessia 38mm Rose Stainless Steel Watch", "$198.09", "https://images.jtv.com/jewelry/watches/JTV-1THVYC-1.jpg"],
+      ["1RW2EL", "Christian Van Sant Anora 26mm Rose Stainless Steel Watch", "$228.89", "https://images.jtv.com/jewelry/watches/JTV-1RW2EL-1.jpg"],
+      ["1R0K4E", "Christian Van Sant Mirabella 40mm Yellow Stainless Steel Watch", "$198.09", "https://images.jtv.com/jewelry/watches/JTV-1R0K4E-1.jpg"],
+    ],
+    bBulova: [
+      ["1Y2CGA", "Bulova Men's Marine Star Stainless Steel Bracelet Watch", "$459.89", "https://images.jtv.com/jewelry/watches/JTV-1Y2CGA-1.jpg"],
+      ["1W27BA", "Bulova Marc Anthony Quadra 22mm Stainless Steel Watch", "$2,106.99", "https://images.jtv.com/jewelry/watches/JTV-1W27BA-1.jpg"],
+      ["1VNEWA", "Bulova Sutton 41mm Black Leather Strap Chronograph Watch", "$466.99", "https://images.jtv.com/jewelry/watches/JTV-1VNEWA-1.jpg"],
+      ["1S6E9A", "Bulova Racer Chronograph 42mm Black Leather Strap Watch", "$499.79", "https://images.jtv.com/jewelry/watches/JTV-1S6E9A-1.jpg"],
+    ],
+    chronos: [
+      ["1Z3FWA", "Invicta Men's I-Force 46mm Blue Dial Canvas Strap Chronograph Watch", "$118.99", "https://images.jtv.com/jewelry/watches/JTV-1Z3FWA-1.jpg"],
+      ["1Z0OUA", "Mountroyal Stainless Steel Black Dial Chrono Divers Watch", "$128.79", "https://images.jtv.com/jewelry/watches/JTV-1Z0OUA-1.jpg"],
+      ["1Y8RHA", "Movado Bold 44mm Brown Leather Strap Black Dial Chronograph Watch", "$562.99", "https://images.jtv.com/jewelry/watches/JTV-1Y8RHA-1.jpg"],
+      ["1Y57IF", "Nubeo Magellan Chronograph Blue Stainless Steel Limited Edition Watch", "$371.99", "https://images.jtv.com/jewelry/watches/JTV-1Y57IF-1.jpg"],
+    ],
+    date: [
+      ["1ZPF6B", "Charles-Hubert White Ceramic Multifunction White Dial Watch", "$310.09", "https://images.jtv.com/jewelry/watches/JTV-1ZPF6B-1.jpg"],
+      ["1Z0OUA", "Mountroyal Stainless Steel Black Dial Chrono Divers Watch", "$128.79", "https://images.jtv.com/jewelry/watches/JTV-1Z0OUA-1.jpg"],
+      ["1YZYKC", "Charles-Hubert Chrome Finish Black Dial Nurse Watch", "$114.79", "https://images.jtv.com/jewelry/watches/JTV-1YZYKC-1.jpg"],
+      ["1YIWQA", "Cadola Rally Timer Black Dial White Bezel Automatic Watch", "$142.09", "https://images.jtv.com/jewelry/watches/JTV-1YIWQA-1.jpg"],
+    ],
+    multi: [
+      ["1WC3GA", "Guess Viper 46mm Black Leather Strap Multi-function Quartz Watch", "$106.99", "https://images.jtv.com/jewelry/watches/JTV-1WC3GA-1.jpg"],
+      ["1NKA1A", "Gucci Interlocking 41mm Stainless Steel Bracelet Blue Dial Watch", "$3,293.99", "https://images.jtv.com/jewelry/watches/JTV-1NKA1A-1.jpg"],
+      ["1GBX2A", "DKNY Chambers 34mm Stainless Steel Bracelet Multi-function Watch", "$160.29", "https://images.jtv.com/jewelry/watches/JTV-1GBX2A-1.jpg"],
+      ["1EREQA", "Timex MK1 45mm Brown Leather Strap Blue Dial Multi-function Watch", "$162.99", "https://images.jtv.com/jewelry/watches/JTV-1EREQA-1.jpg"],
+    ],
+    leather: [
+      ["JRK001", "Judith Ripka Couture Vienna Diamond Accent Orange Leather Strap Watch", "$267.40", "https://images.jtv.com/jewelry/JTV-JRK001-1.jpg"],
+      ["JRJ802A", "Judith Ripka Brown Mother-Of-Pearl Bella Luce Brown Leather Watch", "$149.99", "https://images.jtv.com/jewelry/watches/JTV-JRJ802A-1.jpg"],
+      ["PPR5800A", "Judith Ripka Mother-Of-Pearl Gold-Tone Saffiano Leather Alexandra Watch", "$116.99", "https://images.jtv.com/jewelry/inet_clearance/JTV-PPR5800A-1.jpg"],
+      ["PPR7845", "Judith Ripka Couture Vienna Diamond Accent Orange Leather Watch", "$458.99", "https://images.jtv.com/jewelry/inet_clearance/JTV-PPR7845-1.jpg"],
+    ],
+    silicone: [
+      ["1Z52GE", "Invicta Sea Hunter 52mm Yellow Dial Silicone Band Watch", "$119.99", "https://images.jtv.com/jewelry/watches/JTV-1Z52GE-1.jpg"],
+      ["1Z12YA", "Invicta I-Force 50mm Gold Dial Silicone Stainless Steel Watch", "$79.99", "https://images.jtv.com/jewelry/watches/JTV-1Z12YA-1.jpg"],
+      ["1Z0EAA", "Technomarine Cruise 36.5mm White Dial Black Silicone Strap Watch", "$152.99", "https://images.jtv.com/jewelry/watches/JTV-1Z0EAA-1.jpg"],
+      ["1YOXDC", "44MM IP Yellow Case Black Sunray Dial Black Silicone Strap Watch", "$209.99", "https://images.jtv.com/jewelry/watches/JTV-1YOXDC-1.jpg"],
+    ],
+    rubber: [
+      ["1U6ZYA", "Juicy Couture Rich Girl 41mm Black Rubber Colorless Watch", "$144.99", "https://images.jtv.com/jewelry/watches/JTV-1U6ZYA-1.jpg"],
+      ["1U2TFA", "Juicy Couture BFF 38mm Black Rubber Strap Silver Dial Watch", "$101.49", "https://images.jtv.com/jewelry/watches/JTV-1U2TFA-1.jpg"],
+      ["1S639B", "Gucci Dive 40mm Green Rubber Strap Green Dial Automatic Watch", "$3,124.99", "https://images.jtv.com/jewelry/watches/JTV-1S639B-1.jpg"],
+      ["1R6PQA", "Juicy Couture Rich Girl 41mm Purple Rubber Strap Watch", "$144.99", "https://images.jtv.com/jewelry/watches/JTV-1R6PQA-1.jpg"],
+    ],
+    round: [
+      ["WPD792", "Black Opal & Prazana Lab-Grown Diamonds 18k Gold Over Silver Ring 2.92ctw", "$176.00", "https://images.jtv.com/jewelry/JTV-WPD792-1.jpg"],
+      ["WPD549", "Tanzanite With Prazana Lab Diamonds 18k Yellow Gold Over Silver Ring 0.554ctw", "$94.43", "https://images.jtv.com/jewelry/JTV-WPD549-1.jpg"],
+      ["WPD548", "Morganite With Prazana Lab-Grown Diamonds 18k Rose Gold Band Ring 0.48ctw", "$79.99", "https://images.jtv.com/jewelry/JTV-WPD548-1.jpg"],
+      ["WPD538", "Blue Tanzanite 18k Yellow Gold Over Silver Band Ring 0.44ctw", "$59.99", "https://images.jtv.com/jewelry/JTV-WPD538-1.jpg"],
+    ],
+    oval: [
+      ["ZR089", "Blue Zircon 9x7mm Oval 2.25ct", "$46.97", "https://images.jtv.com/gemstones/JTV-ZR089-1.jpg"],
+      ["ZPV004", "Red Zircon 9x7mm Oval 2.50ct", "$63.97", "https://images.jtv.com/gemstones/JTV-ZPV004-1.jpg"],
+      ["ZNS16", "Pink Zandrite Rhodium Over Sterling Silver Line Bracelet", "$244.79", "https://images.jtv.com/jewelry/JTV-ZNS16-1.jpg"],
+      ["ZNS15", "Zandrite and White Zircon Rhodium Over Sterling Silver Pendant", "$69.29", "https://images.jtv.com/jewelry/JTV-ZNS15-1.jpg"],
+    ],
+    pear: [
+      ["ZNBR15", "Mixed Shape Zandrite Bronze 2-Stone Dangle Earrings", "$55.79", "https://images.jtv.com/jewelry/JTV-ZNBR15-1.jpg"],
+      ["ZNBR13", "Mixed Shape Zandrite Bronze 3-Stone Dangle Earrings", "$60.29", "https://images.jtv.com/jewelry/JTV-ZNBR13-1.jpg"],
+      ["YBH064", "Green Russian Chrome Diopside Sterling Silver Pendant", "$89.99", "https://images.jtv.com/jewelry/JTV-YBH064-1.jpg"],
+      ["XTP922", "Tsavorite Garnet 9.5x6.4mm Pear Shape 2.06ct", "$3,768.99", "https://images.jtv.com/gemstones/JTV-XTP922-1.jpg"],
+    ],
+    mWhite: [
+      ["TSM069", "Heidi's Holiday Tanzanite With White Diamond 14K White Gold Ring", "$3,199.99", "https://images.jtv.com/jewelry/JTV-TSM069-1.jpg"],
+      ["TSM058", "Peach Morganite 14K White Gold Halo Ring 6.22ctw", "$2,157.14", "https://images.jtv.com/jewelry/JTV-TSM058-1.jpg"],
+      ["TSM057", "Peach Morganite 14k White Gold Halo Ring 2.04ctw", "$1,322.99", "https://images.jtv.com/jewelry/JTV-TSM057-1.jpg"],
+      ["TSM044", "Tanzanite With White Diamond Rhodium Over 14k White Gold Ring", "$2,828.06", "https://images.jtv.com/jewelry/JTV-TSM044-1.jpg"],
+    ],
+    mYellow: [
+      ["WPG611", "Orange Madeira Citrine 14K Yellow Gold Ring 4.55ctw", "$963.08", "https://images.jtv.com/jewelry/JTV-WPG611-1.jpg"],
+      ["WPG606", "Orange Madeira Citrine 14k Yellow Gold Ring 5.53ctw", "$1,095.11", "https://images.jtv.com/jewelry/JTV-WPG606-1.jpg"],
+      ["WPD915", "Ethiopian Opal With Prazana Lab-Grown Diamonds 18k Yellow Gold Ring", "$149.99", "https://images.jtv.com/jewelry/JTV-WPD915-1.jpg"],
+      ["WPD898", "Blue Lab Created Alexandrite 18k Yellow Gold Over Silver Ring", "$138.00", "https://images.jtv.com/jewelry/JTV-WPD898-1.jpg"],
+    ],
+    mRose: [
+      ["WPD548", "Morganite With Prazana Lab-Grown White Diamonds 18k Rose Gold Band Ring", "$79.99", "https://images.jtv.com/jewelry/JTV-WPD548-1.jpg"],
+      ["WPD473", "Morganite, White Zircon, Champagne Diamond 18k Rose Gold Ring", "$55.37", "https://images.jtv.com/jewelry/JTV-WPD473-1.jpg"],
+      ["WPD2355", "Peach Morganite With Lab-Grown Diamond Halo Ring 18K Rose Gold", "$546.29", "https://images.jtv.com/jewelry/JTV-WPD2355-1.jpg"],
+      ["WPD2181", "Peach Morganite With Prazana Lab-Grown Diamonds 18K Rose Gold Ring", "$149.99", "https://images.jtv.com/jewelry/JTV-WPD2181-1.jpg"],
+    ],
+    b50100: [
+      ["ZR046", "Red Zircon 11mm Trillion Minimum 5.00ct", "$80.00", "https://images.jtv.com/gemstones/JTV-ZR046-1.jpg"],
+      ["ZR040", "Red Zircon 11x9mm Rectangular Cushion Minimum 4.50ct", "$80.97", "https://images.jtv.com/gemstones/JTV-ZR040-1.jpg"],
+      ["ZPV004", "Red Zircon 9x7mm Oval 2.50ct", "$63.97", "https://images.jtv.com/gemstones/JTV-ZPV004-1.jpg"],
+      ["ZNS9", "Square Halo Zandrite and White Zircon Rhodium Over Sterling Silver", "$55.79", "https://images.jtv.com/jewelry/JTV-ZNS9-1.jpg"],
+    ],
+    b100200: [
+      ["ZNS8", "Zandrite and White Topaz Rhodium Over Sterling Silver Bracelet", "$159.29", "https://images.jtv.com/jewelry/JTV-ZNS8-1.jpg"],
+      ["ZNS12", "Zandrite and White Zircon Rhodium Over Sterling Silver Bracelet", "$117.00", "https://images.jtv.com/jewelry/JTV-ZNS12-1.jpg"],
+      ["ZNBR9", "Mixed Shape Zandrite Bronze Link Necklace", "$105.29", "https://images.jtv.com/jewelry/JTV-ZNBR9-1.jpg"],
+      ["ZAV081", "Orange Zircon Untreated Oval 5.00ct", "$164.97", "https://images.jtv.com/gemstones/JTV-ZAV081-1.jpg"],
+    ],
+    b200500: [
+      ["ZNS4", "Zandrite and White Zircon Rhodium Over Sterling Silver Line Bracelet", "$263.69", "https://images.jtv.com/jewelry/JTV-ZNS4-1.jpg"],
+      ["ZNS20", "Zandrite and White Zircon Rhodium Over Sterling Silver Bracelet", "$224.99", "https://images.jtv.com/jewelry/JTV-ZNS20-1.jpg"],
+      ["ZNS16", "Pink Zandrite Rhodium Over Sterling Silver Line Bracelet", "$244.79", "https://images.jtv.com/jewelry/JTV-ZNS16-1.jpg"],
+      ["XTP21", "Whitby Jet 32x21mm Free Form Double Drop Sterling Silver", "$226.08", "https://images.jtv.com/gemstones/JTV-XTP21-1.jpg"],
+    ],
+    anEarrings: [
+      ["WIG269", "Blue Lapis Lazuli 18k Yellow Gold Over Sterling Silver Earrings 0.39ctw", "$79.99", "https://images.jtv.com/jewelry/JTV-WIG269-1.jpg"],
+      ["VG273A", "14k Yellow Gold Polished 4mm Ball Post Earrings", "$74.89", "https://images.jtv.com/jewelry/gold/JTV-VG273A-1.jpg"],
+      ["VG204A", "14k Yellow Gold Satin and Diamond-cut Round Tube Hoop Earrings", "$494.89", "https://images.jtv.com/jewelry/gold/JTV-VG204A-1.jpg"],
+      ["VG156B", "14K White Gold 3mm Oval Hoop Earrings", "$431.24", "https://images.jtv.com/jewelry/gold/JTV-VG156B-1.jpg"],
+    ],
+    anRing: [
+      ["WPD1944", "Peach Morganite With Pink Moissanite 18K Rose Gold Over Sterling Silver Ring", "$299.99", "https://images.jtv.com/jewelry/JTV-WPD1944-1.jpg"],
+      ["VKJ214", "White Cubic Zirconia 18k Yellow Gold Over Sterling Silver Anniversary Ring", "$139.99", "https://images.jtv.com/jewelry/JTV-VKJ214-1.jpg"],
+      ["VKJ194", "White Cubic Zirconia Platineve and 18k Yellow Gold Over Silver Ring", "$49.49", "https://images.jtv.com/jewelry/JTV-VKJ194-1.jpg"],
+      ["VKJ137B", "White Cubic Zirconia 18k Yellow Gold Over Sterling Silver Ring", "$62.99", "https://images.jtv.com/jewelry/JTV-VKJ137B-1.jpg"],
+    ],
+    anNecklace: [
+      ["VG403G", "14k White Gold 0.95mm Box Chain 18 Inches", "$607.70", "https://images.jtv.com/jewelry/gold/JTV-VG403G-1.jpg"],
+      ["VG396B", "14k Yellow Gold 5.5mm Diamond Cut Rope Chain 18 Inches", "$7,883.95", "https://images.jtv.com/jewelry/gold/JTV-VG396B-1.jpg"],
+      ["VG395H", "14k White Gold 4.5mm Diamond Cut Rope Chain 18 Inches", "$5,589.75", "https://images.jtv.com/jewelry/gold/JTV-VG395H-1.jpg"],
+      ["VG320B", "14k Yellow Gold Diamond Cut 0.65mm Wheat Pendant Chain 18 Inches", "$291.64", "https://images.jtv.com/jewelry/gold/JTV-VG320B-1.jpg"],
+    ],
+    anBracelet: [
+      ["WIG843", "Lapis Lazuli 18k Yellow Gold Over Sterling Silver Tennis Bracelet", "$148.00", "https://images.jtv.com/jewelry/JTV-WIG843-1.jpg"],
+      ["VG381B", "14k White Gold 1.3mm Heavy-Baby Rope Chain", "$295.39", "https://images.jtv.com/jewelry/gold/JTV-VG381B-1.jpg"],
+      ["TRK574", "Blue Lapis Lazuli 18K Gold Over Sterling Silver 6mm Beaded Bracelet", "$99.99", "https://images.jtv.com/jewelry/JTV-TRK574-1.jpg"],
+    ],
+    sAmethyst: [
+      ["12SBRA", "Purple Octagonal Amethyst Rhodium Over Sterling Silver Ring", "$228.89", "https://images.jtv.com/jewelry/JTV-12SBRA-1.jpg"],
+      ["112DXA", "Round Amethyst Sterling Silver Anniversary Style Stackable Ring", "$81.89", "https://images.jtv.com/jewelry/JTV-112DXA-1.jpg"],
+      ["STK834", "African Amethyst Rhodium Over Sterling Silver Dangle Earrings", "$89.09", "https://images.jtv.com/jewelry/JTV-STK834-1.jpg"],
+      ["STK829", "Purple Amethyst Rhodium Over Silver Buckle Ring 1.74ctw", "$116.99", "https://images.jtv.com/jewelry/JTV-STK829-1.jpg"],
+    ],
+    sGarnet: [
+      ["168HSA", "Round Red Garnet Rhodium Over Sterling Silver Five Stone Ring", "$190.39", "https://images.jtv.com/jewelry/JTV-168HSA-1.jpg"],
+      ["112DXE", "Round Garnet Sterling Silver Anniversary Style Stackable Ring", "$58.79", "https://images.jtv.com/jewelry/JTV-112DXE-1.jpg"],
+      ["WPG493", "Red Garnet 14k Yellow Gold Ring 3.67ctw", "$695.78", "https://images.jtv.com/jewelry/JTV-WPG493-1.jpg"],
+      ["STK764", "Red Garnet Rhodium Over Sterling Silver Flower Ring", "$84.59", "https://images.jtv.com/jewelry/JTV-STK764-1.jpg"],
+    ],
+    sEmerald: [
+      ["1YTSQB", "10K Yellow Gold 0.40CTW Lab Created Emerald and Lab-Grown Diamond Ring", "$904.39", "https://images.jtv.com/jewelry/JTV-1YTSQB-1.jpg"],
+      ["1QOXHB", "10K Yellow Gold 0.50CTW Round Lab Created Emerald Ring", "$916.29", "https://images.jtv.com/jewelry/JTV-1QOXHB-1.jpg"],
+      ["1INDJB", "10K Yellow Gold 0.40CTW Oval Lab Created Emerald Ring", "$948.49", "https://images.jtv.com/jewelry/JTV-1INDJB-1.jpg"],
+      ["1FQAOB", "10K Yellow Gold 0.50CTW Lab Created Emerald Rectangular Ring", "$774.89", "https://images.jtv.com/jewelry/JTV-1FQAOB-1.jpg"],
+    ],
+  };
+  const LABEL = {
+    bCharles: "Charles Hubert", bChristian: "Christian Van Sant", bBulova: "Bulova",
+    chronos: "Chronograph watches", date: "Date watches", multi: "Multi-function watches",
+    leather: "Leather band watches", silicone: "Silicone band watches", rubber: "Rubber band watches",
+    round: "Round-cut diamond rings", oval: "Oval-cut diamond rings", pear: "Pear-cut diamond rings",
+    mWhite: "White gold diamond rings", mYellow: "Yellow gold diamond rings", mRose: "Rose gold diamond rings",
+    b50100: "$50 to $100", b100200: "$100 to $200", b200500: "$200 to $500",
+    anEarrings: "Anniversary earrings", anRing: "Anniversary rings", anNecklace: "Anniversary necklaces", anBracelet: "Anniversary bracelets",
+    sAmethyst: "Amethyst anniversary pieces", sGarnet: "Garnet anniversary pieces", sEmerald: "Emerald anniversary pieces",
+  };
+
+  document.querySelectorAll('.screen').forEach((screen) => {
+    const slot = screen.querySelector('.results-slot');
+    if (!slot) return;
+    let active = null;
+    const render = (setName) => {
+      slot.innerHTML = '';
+      if (!setName) return;
+      const wrap = document.createElement('div');
+      wrap.style.margin = '0 0 8px';
+      const back = document.createElement('button');
+      back.className = 'all-chips';
+      back.textContent = '‹ All facets';
+      back.onclick = () => {
+        active = null;
+        screen.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', 'false'));
+        render(null);
+      };
+      wrap.appendChild(back);
+      slot.appendChild(wrap);
+      const line = document.createElement('p');
+      line.className = 'results-line';
+      line.textContent = LABEL[setName];
+      slot.appendChild(line);
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      for (const [id, name, price, img] of SETS[setName]) {
+        const a = document.createElement('a');
+        a.className = 'tile';
+        a.href = '/product/' + id;
+        a.onclick = (e) => e.preventDefault();
+        a.innerHTML = '<img src="' + img + '" alt="" onerror="this.style.visibility=\'hidden\'"><div class="body"><div class="name">' + name + '</div><div class="price">' + price + '</div></div>';
+        grid.appendChild(a);
+      }
+      slot.appendChild(grid);
+    };
+    screen.querySelectorAll('.chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const set = chip.dataset.set;
+        if (active === set) {
+          active = null;
+          screen.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', 'false'));
+          render(null);
+          return;
+        }
+        active = set;
+        screen.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+        render(set);
+        slot.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  });
+</script>

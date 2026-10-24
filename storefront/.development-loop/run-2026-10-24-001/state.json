@@ -1,0 +1,14 @@
+{
+  "run": "run-2026-10-24-001",
+  "task": "Chips-native concierge cut (approved plan staged-finding-neumann.md)",
+  "scope": "light",
+  "scopeReason": "No schema change, no new dependency, no new external attack surface (tool removal = net reduction). Architecture/spec/plan executed via plan mode with human approval incl. 9.5-bar challenge; battery + promotion gates preserved.",
+  "phase": "1-app-display-path",
+  "phase0": {
+    "snapshot": "storefront/scripts/baseline/snapshots/dev-2026-10-24-precut.json",
+    "shas": { "instructions": "09449b31", "systemPrompt": "39f9d09f" },
+    "branchDeviation": "No new branch: worktree-Prompter is the dedicated lane AND is currently serving 5173 (branching mid-serve violates standing rule). Cut commits incrementally here.",
+    "agentWiring": "Local 5173 dev server -> JTV_CONCIERGE_DEVELOPMENT_AGENT_ID=8129ad66 (verified in worktree .env.local).",
+    "promptsToDisk": "pending"
+  }
+}

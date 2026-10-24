@@ -23,11 +23,14 @@ function chunksOf(value: string): string[] {
   return chunks;
 }
 
-/** Session data for continuity, never product evidence or an intent decision. */
+/** Session data for continuity, never product evidence or an intent decision.
+ * `extras` carries chip-funnel continuity (the active facet selections), which
+ * lives outside the shopping-state JSON as plain metadata keys. */
 export function buildTurnContext(
   session: ConciergeSession | null,
   base: Record<string, string>,
   turn: { turnId: string; sourceMessageId: string },
+  extras?: Record<string, string>,
 ): Record<string, string> {
   if (!session) throw new Error('Shopping state is unavailable');
   const scopeCode = { mission: 'm', item: 'i', recipient: 'r', component: 'c' } as const;
@@ -50,6 +53,7 @@ export function buildTurnContext(
   const pieces = chunksOf(JSON.stringify(shoppingState));
   const result: Record<string, string> = {
     ...base,
+    ...extras,
     missionId: session.missionId,
     turnId: turn.turnId,
     sourceMessageId: turn.sourceMessageId,

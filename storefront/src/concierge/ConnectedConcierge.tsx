@@ -22,18 +22,27 @@ import { X } from 'lucide-react';
 import { ShoppingWorkspace } from '../ShoppingWorkspace';
 import { ConciergeWorkspaceLayout } from './ConciergeWorkspaceLayout';
 import { ResponsiveAnswerTable } from './ResponsiveAnswerTable';
-import { ConnectedShoppingBrief } from './ConnectedShoppingBrief';
 import { ConnectedWelcome, composerSendText, shouldShowEntryGuidance } from './EntryGuidance';
 import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from './starterQuestions';
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
-import { extractNativePresentation, stripTrailingNote } from './nativeResults';
+import { deriveFacetPick, extractSearchPresentation, stripTrailingNote } from './nativeResults';
 import { buildClientTools } from './clientTools';
+import { extractMessageFacetPicks } from './nativeResults';
+import { FacetChips, buildChipRows } from './FacetChips';
+import { normalizeProduct, type Product } from '../catalog';
+import { searchClient } from '../client';
 import type { WorkspaceGroup } from '../workspaceResults';
-import { getFailedToolDetails, hasFailedTool, isCompletedAssistantTurn, turnHasUsableResult } from './turnCompletion';
-import { applyBriefOperationsV3, undoBriefV3 } from '../../shared/briefState.js';
+import { InlineProductCards } from './InlineProductCards';
+import { extractMessageAnchors } from './nativeResults';
+import {
+  getFailedToolDetails,
+  hasFailedTool,
+  isCompletedAssistantTurn,
+  turnHasUsableResult,
+} from './turnCompletion';
 import { buildTurnContext } from './turnContext.js';
 import { canonicalBlogUrlsFromMessages, verifiedBlogHref } from './verifiedBlogLinks.js';
-import { recordTurnOutcome } from '../telemetry';
+import { recordDisplayEvent, recordTurnOutcome } from '../telemetry';
 
 type TurnFinish = {
   messages: UIMessage[];
@@ -78,8 +87,7 @@ export function connectedProgressLabel(
     if (part.state !== 'input-streaming' && part.state !== 'input-available') continue;
     if (part.type === 'tool-update_shopping_state') return 'Updating preferences';
     if (part.type.startsWith('tool-algolia_search_index')) return 'Checking JTV information';
-    if (part.type === 'tool-refresh_products' || part.type === 'tool-arrange_groups')
-      return 'Preparing product choices';
+    if (part.type === 'tool-refresh_products') return 'Preparing product choices';
     return 'Working with JTV information';
   }
   return 'Concierge is working';
@@ -451,6 +459,7 @@ export function ConversationMessage({
   verifiedBlogUrls,
   knownProductIds = new Set<string>(),
   onProductLink,
+  children,
 }: {
   message: UIMessage;
   revealed: boolean;
@@ -458,15 +467,21 @@ export function ConversationMessage({
   verifiedBlogUrls?: ReadonlySet<string>;
   knownProductIds?: ReadonlySet<string>;
   onProductLink?: (id: string, event: MouseEvent<HTMLAnchorElement>) => void;
+  children?: ReactNode;
 }) {
   const textParts = displayTextParts(message);
-  if (!textParts.length) return null;
+  if (!textParts.length) return children ?? null;
   if (message.role === 'user')
-    return <p className="connected-message connected-user-message">{textParts[0]}</p>;
+    return (
+      <p className="connected-message connected-user-message" data-message-id={message.id}>
+        {textParts[0]}
+      </p>
+    );
   if (!revealed && !provisional) return null;
   return (
     <div
       className={`connected-message connected-assistant-message${provisional ? ' connected-provisional' : ' connected-markdown'}`}
+      data-message-id={message.id}
       aria-live={provisional ? 'off' : undefined}
     >
       <span className="connected-assistant-label" aria-hidden="true">
@@ -517,6 +532,7 @@ export function ConversationMessage({
           )}
         </div>
       ))}
+      {children}
     </div>
   );
 }
@@ -555,7 +571,6 @@ export function ConnectedConcierge({
   const [hiddenPriorMessageIds, setHiddenPriorMessageIds] = useState<Set<string>>(() => new Set());
   const [systemNotices, setSystemNotices] = useState<string[]>([]);
   const [section, setSection] = useState<'conversation' | 'products'>('conversation');
-  const [briefControls, setBriefControls] = useState<HTMLDivElement | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement>(null);
   const followTranscriptRef = useRef(true);
   const onMessagesScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
@@ -590,9 +605,14 @@ export function ConnectedConcierge({
    * component state (not the persisted session contract) because they carry no
    * evidence ledger; a mission reset clears them with the conversation. */
   const [nativeGroups, setNativeGroups] = useState<WorkspaceGroup[] | null>(null);
+  /* Mobile anchored cards (2026-10-23): each revealed assistant message that
+   * carries a grouped tool call holds its own cards, rendered inline under the
+   * answer. Keyed by message id; cleared with the conversation. Desktop reads
+   * the same hydration through `nativeGroups` and ignores this state. */
+  const [anchoredCards, setAnchoredCards] = useState<Record<string, WorkspaceGroup[]>>({});
+  const stagedAnchorIdsRef = useRef<Set<string>>(new Set());
   const model = session.getModel(nativeGroups ?? undefined);
   const runtime = session.runtime;
-  const brief = snapshot?.brief;
   /* Product link guard, simplified 2026-10-22: a chat link opens the PDP only
    * when the id is a product this session actually holds. Every record in the
    * store passed identity verification when it was staged (its own objectID
@@ -603,8 +623,11 @@ export function ConnectedConcierge({
       new Set([
         ...(snapshot?.selectionRecords ?? []).map((item) => item.objectID),
         ...model.discoveries.flatMap((group) => group.items.map((item) => item.product.id)),
+        ...Object.values(anchoredCards).flatMap((groups) =>
+          groups.flatMap((group) => group.items.map((item) => item.product.id)),
+        ),
       ]),
-    [snapshot, model.discoveries],
+    [snapshot, model.discoveries, anchoredCards],
   );
   const handleProductLink = useCallback(
     (id: string, event: MouseEvent<HTMLAnchorElement>) => {
@@ -623,51 +646,34 @@ export function ConnectedConcierge({
     },
     [knownProductIds],
   );
-  const applyBrief = useCallback(
-    async (operation: Parameters<typeof applyBriefOperationsV3>[1]['operations'][number]) => {
-      if (!brief) throw new Error('The shopping brief is unavailable.');
-      const result = await session.store.transact({
-        expectedRevision: brief.revision,
-        apply: (current) => ({
-          ...current,
-          brief: applyBriefOperationsV3(current.brief, {
-            missionId: current.missionId,
-            expectedRevision: current.brief.revision,
-            turnId: newId('ui-turn'),
-            operations: [operation],
-          }),
-        }),
-      });
-      if (!result.ok)
-        throw new Error('The preference changed while this edit was being saved. Try again.');
-      manualEditEpoch.current++;
-      runtime.invalidateTurn();
-    },
-    [brief, runtime, session],
-  );
-  const onUndo = useCallback(async () => {
-    if (!brief?.events.length) return;
-    const result = await session.store.transact({
-      expectedRevision: brief.revision,
-      apply: (current) => ({
-        ...current,
-        brief: undoBriefV3(current.brief, current.brief.revision),
-      }),
-    });
-    if (!result.ok) setError('Undo could not be saved. Try again.');
-    else {
-      manualEditEpoch.current++;
-      runtime.invalidateTurn();
-    }
-  }, [brief, runtime, session]);
+  /* Facet-funnel continuity (chips-native cut): chip taps refine client-side,
+   * so the agent would never learn the shopper's narrowing. The active
+   * selections ride the turn context instead: the next turn reads them from
+   * latest-turn metadata and applies them to its search unless the shopper
+   * changes direction. The mirror ref keeps chatContext stable across renders;
+   * handleFacetSelect/handleFacetClear own it. */
+  const activeFunnelRef = useRef<{ attribute: string; value: string }[]>([]);
   const chatContext = useCallback(() => {
     const currentSession = session.store.getSnapshot();
     const base = context?.() ?? {};
     const latest = latestTurn.current;
-    return buildTurnContext(currentSession, base, {
-      turnId: latest.turnId,
-      sourceMessageId: latest.sourceMessageId,
-    });
+    const selections = activeFunnelRef.current;
+    const extras = selections.length
+      ? {
+          activeFacetSelections: selections
+            .map((selection) => `${selection.attribute}:"${selection.value}"`)
+            .join(';'),
+        }
+      : undefined;
+    return buildTurnContext(
+      currentSession,
+      base,
+      {
+        turnId: latest.turnId,
+        sourceMessageId: latest.sourceMessageId,
+      },
+      extras,
+    );
   }, [context, session]);
 
   const chatPersistenceOptions = useMemo(
@@ -695,7 +701,9 @@ export function ConnectedConcierge({
   /** Correlates this page's chat requests with the server's request log. Metadata only.
    * crypto.randomUUID needs a secure context; an embed iframe under an insecure
    * host page has none, so fall back like newId() does. */
-  const chatRequestId = useRef(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2));
+  const chatRequestId = useRef(
+    globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2),
+  );
   /* Lane 1: the four deterministic client tools execute in this browser over
    * the read-only exact-product proxy; the agent's tool sheet declares them
    * and their descriptions, this only binds the executors. */
@@ -742,17 +750,140 @@ export function ConnectedConcierge({
     let cancelled = false;
     void (async () => {
       try {
-        const staged = await session.stageNativePresentation(visibleMessages);
+        const staged = await session.stageSearchPresentation(visibleMessages);
         if (!cancelled && staged) setNativeGroups(staged);
       } catch (error) {
-        if (import.meta.env.DEV)
-          console.warn('JTV native canvas not restored after reload', error);
+        recordDisplayEvent('stage-failed', 'canvas-restore staging threw');
+        if (import.meta.env.DEV) console.warn('JTV native canvas not restored after reload', error);
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [canRestoreCanvas, visibleMessages, session]);
+  /* Facet chips (2026-10-23): a turn whose arrange call carries a displayFacets
+   * pick renders chip rows + a top-relevancy preview instead of inline cards;
+   * tap refines client-side through the same-origin proxy. No flag: the pick's
+   * presence is the switch. */
+  const facetPicks = useMemo(
+    () => extractMessageFacetPicks(visibleMessages as never),
+    [visibleMessages],
+  );
+  type FacetFunnel = {
+    level: number;
+    selections: { attribute: string; value: string }[];
+    facets: Record<string, Record<string, number>>;
+    loading: boolean;
+    products: Product[] | null;
+  };
+  const [facetFunnels, setFacetFunnels] = useState<Record<string, FacetFunnel>>({});
+  const handleFacetSelect = useCallback(
+    async (messageId: string, attribute: string, value: string) => {
+      const entry = facetPicks.find((p) => p.messageId === messageId);
+      if (!entry) return;
+      const previous = facetFunnels[messageId] ?? {
+        level: 0,
+        selections: [],
+        facets: entry.pick.facets,
+        loading: false,
+        products: null,
+      };
+      const selections = [...previous.selections, { attribute, value }];
+      activeFunnelRef.current = selections;
+      setFacetFunnels((current) => ({
+        ...current,
+        [messageId]: { ...previous, selections, loading: true, products: null },
+      }));
+      try {
+        const response = await searchClient.search([
+          {
+            indexName: 'prod_catalog',
+            params: {
+              query: entry.pick.queryText,
+              facetFilters: selections.map((s) => `${s.attribute}:"${s.value}"`),
+              /* The agent's own search returns only in-stock pieces
+               * (developer-set searchParameters.filters); the funnel refines
+               * client-side, so it must carry the same filter or the deeper
+               * levels show pieces the first level excluded. */
+              filters: 'Inventory_InStock:true',
+              hitsPerPage: 8,
+            },
+          },
+        ]);
+        const result = (response as { results?: Record<string, unknown>[] })?.results?.[0] ?? {};
+        const rawHits = (result.hits as unknown[] | undefined) ?? [];
+        const products = rawHits
+          .map((raw) => {
+            try {
+              return normalizeProduct(raw);
+            } catch {
+              return null;
+            }
+          })
+          /* A record with no usable image renders a broken tile; the funnel
+           * shows what the shopper can actually see. */
+          .filter((p): p is Product => p !== null && p.images.length > 0);
+        /* The next funnel level's attribute derives from the refinement
+         * response's own facet counts (no model list): the just-selected
+         * attribute now holds one value and drops out on its own. */
+        const responseFacets = (result.facets as Record<string, Record<string, number>> | undefined) ?? {};
+        const nextAttribute = deriveFacetPick(responseFacets)[0];
+        const nextCounts = nextAttribute ? responseFacets[nextAttribute] : undefined;
+        setFacetFunnels((current) => ({
+          ...current,
+          [messageId]: {
+            level: selections.length,
+            selections,
+            facets:
+              nextAttribute && nextCounts && Object.keys(nextCounts).length > 1
+                ? { [nextAttribute]: nextCounts }
+                : {},
+            loading: false,
+            products,
+          },
+        }));
+      } catch (error) {
+        if (import.meta.env.DEV) console.warn('JTV facet refine failed', error);
+        setFacetFunnels((current) => ({
+          ...current,
+          [messageId]: { ...previous, loading: false, products: null },
+        }));
+      }
+    },
+    [facetPicks, facetFunnels],
+  );
+  const handleFacetClear = useCallback((messageId: string) => {
+    activeFunnelRef.current = [];
+    setFacetFunnels(({ [messageId]: _dropped, ...rest }) => rest);
+  }, []);
+  /* Anchor staging: cards hydrate once per revealed assistant message that
+   * carries a grouped tool call, mirroring the F1 rule that only a completed
+   * turn stages cards. A message already staged is never re-fetched; a failed
+   * pass unmarks its messages so a later transcript change retries. */
+  useEffect(() => {
+    const anchors = extractMessageAnchors(visibleMessages as never);
+    const unstaged = anchors.filter(
+      (anchor) =>
+        revealed.has(anchor.messageId) && !stagedAnchorIdsRef.current.has(anchor.messageId),
+    );
+    if (!unstaged.length) return;
+    unstaged.forEach((anchor) => stagedAnchorIdsRef.current.add(anchor.messageId));
+    const only = new Set(unstaged.map((anchor) => anchor.messageId));
+    let cancelled = false;
+    void (async () => {
+      try {
+        const staged = await session.stageMessageAnchors(visibleMessages, only);
+        if (cancelled || !staged.size) return;
+        setAnchoredCards((previous) => ({ ...previous, ...Object.fromEntries(staged) }));
+      } catch (error) {
+        only.forEach((id) => stagedAnchorIdsRef.current.delete(id));
+        if (import.meta.env.DEV) console.warn('JTV anchored cards not staged', error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visibleMessages, revealed, session]);
   /* The Ask JTV chip hands the search box text over as a draft, never as a
    * sent message: the shopper reads it, edits it and sends it themselves. */
   const prefillToken = prefill?.token ?? 0;
@@ -785,17 +916,16 @@ export function ConnectedConcierge({
   }, [chat.messages, chatPersistenceOptions.id]);
   /* DIAG-11: the SDK answers a data-guardrail-violation by replacing the
    * whole accumulated turn message with the fixed notice text, destroying the
-   * successful arrange_groups output that arrived earlier in the same turn
-   * (measured: the persisted transcript after a withheld turn holds one
-   * assistant message with only the notice). Snapshot the latest turn that
-   * still carries one, so the notice path can stage those tool-verified
-   * tiles. No text is authored or reworded here. */
+   * successful search output that arrived earlier in the same turn (measured:
+   * the persisted transcript after a withheld turn holds one assistant
+   * message with only the notice). Snapshot the latest turn that still
+   * carries one, so the notice path can stage those streamed tiles. No text
+   * is authored or reworded here. */
   const arrangeSnapshotRef = useRef<readonly UIMessage[] | null>(null);
   useEffect(() => {
     if (!chat.messages.length) return;
-    if (extractNativePresentation(chat.messages)) arrangeSnapshotRef.current = chat.messages;
+    if (extractSearchPresentation(chat.messages as never)) arrangeSnapshotRef.current = chat.messages;
   }, [chat.messages]);
-
 
   const onSystemNotice = useCallback((text: string) => {
     setSystemNotices((previous) => (previous.includes(text) ? previous : [...previous, text]));
@@ -884,15 +1014,15 @@ export function ConnectedConcierge({
                 recordCompletedAssistantMessage(safeStorage(), assistant.id);
                 setRevealed((previous) => new Set(previous).add(assistant.id));
               }
-              /* F1: render the native grouped call's products. Only a fully
-               * completed turn stages cards; an interrupted or noticed turn
-               * leaves the previous display standing. */
+              /* Chips-native: the streamed search output is the tiles. Only a
+               * fully completed turn stages cards; an interrupted or noticed
+               * turn leaves the previous display standing. */
               try {
-                const staged = await session.stageNativePresentation(messages);
+                const staged = await session.stageSearchPresentation(messages);
                 if (staged) setNativeGroups(staged);
               } catch (error) {
-                if (import.meta.env.DEV)
-                  console.warn('JTV native presentation not staged', error);
+                recordDisplayEvent('stage-failed', 'completed-turn staging threw');
+                if (import.meta.env.DEV) console.warn('JTV native presentation not staged', error);
               }
             } else {
               if (import.meta.env.DEV)
@@ -935,11 +1065,11 @@ export function ConnectedConcierge({
                * the fixed notice INTO the latest assistant message (its
                * onToolCall/data branch never reaches onData). When that
                * happened, an earlier assistant message of the same turn may
-               * still hold a successful arrange_groups output — tool-verified
-               * tiles ready to render. Stage them and keep the existing fixed
-               * notice where the withheld text would be; no wording changes,
-               * no model calls. Detection is the message shape itself: a
-               * message whose whole text is the fixed notice. */
+               * still hold a successful search output — streamed tiles ready
+               * to render. Stage them and keep the existing fixed notice where
+               * the withheld text would be; no wording changes, no model
+               * calls. Detection is the message shape itself: a message whose
+               * whole text is the fixed notice. */
               const withholdAssistant = latestAssistant(messages);
               if (
                 withholdAssistant &&
@@ -947,9 +1077,10 @@ export function ConnectedConcierge({
                 arrangeSnapshotRef.current
               ) {
                 try {
-                  const staged = await session.stageNativePresentation(arrangeSnapshotRef.current);
+                  const staged = await session.stageSearchPresentation(arrangeSnapshotRef.current);
                   if (staged) setNativeGroups(staged);
                 } catch (error) {
+                  recordDisplayEvent('stage-failed', 'withhold-turn staging threw');
                   if (import.meta.env.DEV)
                     console.warn('JTV native presentation not staged on withhold', error);
                 }
@@ -1018,6 +1149,8 @@ export function ConnectedConcierge({
     clearCompletedAssistantMessages(safeStorage());
     setHiddenPriorMessageIds((previous) => new Set([...previous, ...priorMessageIds]));
     setNativeGroups(null);
+    setAnchoredCards({});
+    stagedAnchorIdsRef.current = new Set();
     finishRef.current = null;
     latestTurn.current = { turnId: '', sourceMessageId: '' };
     setPending(null);
@@ -1056,8 +1189,23 @@ export function ConnectedConcierge({
           .join('\n');
   useLayoutEffect(() => {
     const viewport = messagesViewportRef.current;
-    if (viewport && followTranscriptRef.current) viewport.scrollTop = viewport.scrollHeight;
-  }, [pendingAssistantText, visibleMessages.length, revealed, systemNotices.length]);
+    if (!viewport || !followTranscriptRef.current) return;
+    /* While a turn streams, follow the bottom as before. Once the turn is
+     * complete (pending cleared), land on the last assistant message so the
+     * reply is read before its anchored cards, which render below it. */
+    if (pending) {
+      viewport.scrollTop = viewport.scrollHeight;
+      return;
+    }
+    const targets = viewport.querySelectorAll<HTMLElement>('[data-message-id]');
+    const last = targets.length ? targets[targets.length - 1] : null;
+    if (last) {
+      const delta = last.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
+      viewport.scrollTop += delta - 8;
+    } else {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+  }, [pending, pendingAssistantText, visibleMessages.length, revealed, systemNotices.length]);
   const verifiedBlogUrls = useMemo(
     () =>
       canonicalBlogUrlsFromMessages(visibleMessages.filter((message) => revealed.has(message.id))),
@@ -1083,7 +1231,6 @@ export function ConnectedConcierge({
           >
             New
           </button>
-          <div ref={setBriefControls} className="brief-header-controls" />
         </>
       }
       closeAction={
@@ -1091,19 +1238,7 @@ export function ConnectedConcierge({
           <X size={18} aria-hidden="true" />
         </button>
       }
-      preferenceContent={
-        brief ? (
-          <ConnectedShoppingBrief
-            brief={brief}
-            controlsTarget={briefControls}
-            busy={!!pending}
-            onAdd={(fact) => applyBrief({ type: 'add', fact })}
-            onReplace={(factIds, fact) => applyBrief({ type: 'replace', factIds, fact })}
-            onRetract={(factIds) => applyBrief({ type: 'retract', factIds })}
-            onUndo={onUndo}
-          />
-        ) : null
-      }
+      preferenceContent={null}
       sectionSwitch={
         <>
           <button
@@ -1144,7 +1279,57 @@ export function ConnectedConcierge({
               knownProductIds={knownProductIds}
               verifiedBlogUrls={verifiedBlogUrls}
               onProductLink={handleProductLink}
-            />
+            >
+              {message.role === 'assistant' &&
+                (facetPicks.some((p) => p.messageId === message.id) ? (
+                  (() => {
+                    const entry = facetPicks.find((p) => p.messageId === message.id)!;
+                    const preview = entry.hits
+                      .slice(0, 4)
+                      .map((raw) => {
+                        try {
+                          return normalizeProduct(raw);
+                        } catch {
+                          return null;
+                        }
+                      })
+                      .filter((p): p is Product => p !== null && p.images.length > 0);
+                    const funnel = facetFunnels[message.id];
+                    const level = funnel?.level ?? 0;
+                    const attribute = entry.pick.displayFacets[level];
+                    const counts =
+                      level === 0
+                        ? entry.pick.facets[attribute]
+                        : funnel?.facets[attribute];
+                    const row =
+                      attribute && counts && Object.keys(counts).length > 1
+                        ? buildChipRows({
+                            displayFacets: [attribute],
+                            facets: { [attribute]: counts },
+                          })[0] ?? null
+                        : null;
+                    return (
+                      <FacetChips
+                        row={row}
+                        showLabel={level > 0}
+                        preview={preview}
+                        selections={funnel?.selections ?? []}
+                        results={funnel?.products ?? null}
+                        loading={!!funnel?.loading}
+                        onSelect={(attr, value) =>
+                          void handleFacetSelect(message.id, attr, value)
+                        }
+                        onClear={() => handleFacetClear(message.id)}
+                      />
+                    );
+                  })()
+                ) : anchoredCards[message.id] ? (
+                  <InlineProductCards
+                    groups={anchoredCards[message.id]}
+                    onProductLink={handleProductLink}
+                  />
+                ) : null)}
+            </ConversationMessage>
           ))}
           {systemNotices.map((notice) => (
             <p className="connected-system-notice" role="status" key={notice}>

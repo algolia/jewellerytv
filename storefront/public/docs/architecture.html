@@ -143,19 +143,19 @@
   <text x="580" y="158" font-size="11" fill="#33415c" text-anchor="middle">runs in the page</text>
 
   <rect x="730" y="96" width="240" height="88" rx="8" fill="#ffffff" stroke="#0076a9" stroke-width="1.6"/>
-  <text x="850" y="122" font-size="13" font-weight="700" fill="#33415c" text-anchor="middle">Product tiles</text>
-  <text x="850" y="142" font-size="11" fill="#33415c" text-anchor="middle">one column per group,</text>
-  <text x="850" y="158" font-size="11" fill="#33415c" text-anchor="middle">only pieces the checks passed</text>
+  <text x="850" y="122" font-size="13" font-weight="700" fill="#33415c" text-anchor="middle">Tiles and chips</text>
+  <text x="850" y="142" font-size="11" fill="#33415c" text-anchor="middle">tiles from the search results,</text>
+  <text x="850" y="158" font-size="11" fill="#33415c" text-anchor="middle">chips narrow the next search</text>
 
   <path d="M 230 246 h 190 v 66 a 95 8 0 0 1 -190 0 z" fill="#eef2f7" stroke="#33415c" stroke-width="1.4"/>
   <ellipse cx="325" cy="246" rx="95" ry="8" fill="#eef2f7" stroke="#33415c" stroke-width="1.4"/>
   <text x="325" y="278" font-size="12" fill="#33415c" text-anchor="middle">Session state</text>
-  <text x="325" y="296" font-size="10.5" fill="#6b7a90" text-anchor="middle">saved pieces, per tab</text>
+  <text x="325" y="296" font-size="10.5" fill="#6b7a90" text-anchor="middle">shopping facts and chip picks, per tab</text>
 
   <rect x="560" y="240" width="300" height="88" rx="8" fill="#f8faf5" stroke="#2e7d4f" stroke-width="1.6"/>
-  <text x="710" y="264" font-size="12.5" font-weight="700" fill="#33415c" text-anchor="middle">Product checks (in the browser)</text>
-  <text x="710" y="284" font-size="11" fill="#33415c" text-anchor="middle">in stock, price fits, groups fill</text>
-  <text x="710" y="302" font-size="10.5" fill="#6b7a90" text-anchor="middle">runs the agent's two helper tools</text>
+  <text x="710" y="264" font-size="12.5" font-weight="700" fill="#33415c" text-anchor="middle">Display staging (in the browser)</text>
+  <text x="710" y="284" font-size="11" fill="#33415c" text-anchor="middle">tiles and chips from the streamed search</text>
+  <text x="710" y="302" font-size="10.5" fill="#6b7a90" text-anchor="middle">variant dedupe, stock and image checks</text>
 
   <polyline points="170,142 230,142" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
   <polyline points="430,140 490,140" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
@@ -330,14 +330,14 @@
         <li>The Concierge decides what to do: ask a question, explain something, or
             search. Searching uses a product search that runs inside Algolia and looks
             only at <code>prod_catalog</code>, the product catalogue.</li>
-        <li>When it has candidate pieces to show, the Concierge calls two helpers that
-            live in the website: one fetches fresh details for specific pieces, and one
-            arranges pieces into the titled groups shoppers see.</li>
-        <li>Those helpers look up each piece in the catalogue through the website's
-            server, using a key that can read but never write.</li>
-        <li>Helpers return clean results: pieces that pass every check, and a plain
-            reason for anything left out, such as out of stock. A piece the checks
-            rejected can never appear on screen.</li>
+        <li>The Concierge searches once per turn. The search results themselves are
+            the display: the pieces the search returned become the product tiles,
+            and the ways to narrow become the selectable options beneath them. One
+            helper lives in the website: it fetches fresh details for a specific
+            piece, through a key that can read but never write.</li>
+        <li>Before a tile shows, the website re-checks the record: in stock, priced,
+            photographed, and not a same-design twin of a tile already showing. A
+            piece that fails a check can never appear on screen.</li>
         <li>The Concierge writes its reply from those results. A safety layer then
             reviews the finished text against JTV's rules; if it breaks one, the text is
             replaced before it stays on screen.</li>
