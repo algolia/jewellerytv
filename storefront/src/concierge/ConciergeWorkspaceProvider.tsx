@@ -1,14 +1,11 @@
 import { normalizeProduct, type Product } from '../catalog';
 import type { WorkspaceViewModel } from '../ProductWorkspace';
 import type { WorkspaceGroup } from '../workspaceResults';
-import {
-  extractMessageAnchors,
-  extractNativePresentation,
-  extractSearchPresentation,
-} from './nativeResults';
+import { extractMessageAnchors, extractSearchPresentation } from './nativeResults';
 import { createSessionStore } from './sessionStore.js';
 import { createConciergeToolRuntime } from './toolRuntime';
 import type { StorageLike } from './sessionPersistence.js';
+import { recordDisplayEvent } from '../telemetry';
 
 type Runtime = ReturnType<typeof createConciergeToolRuntime>;
 type Store = ReturnType<typeof createSessionStore>;
@@ -25,7 +22,6 @@ export type ConciergeWorkspaceSession = {
   store: Store;
   runtime: Runtime;
   getModel: (nativeGroups?: WorkspaceGroup[]) => WorkspaceViewModel;
-  stageNativePresentation: (messages: readonly unknown[]) => Promise<WorkspaceGroup[] | null>;
   stageSearchPresentation: (messages: readonly unknown[]) => Promise<WorkspaceGroup[] | null>;
   stageMessageAnchors: (
     messages: readonly unknown[],
@@ -182,34 +178,13 @@ export function createConciergeWorkspaceSession(options: {
     }
   }
 
-  async function stageNativePresentation(
-    messages: readonly unknown[],
-  ): Promise<WorkspaceGroup[] | null> {
-    const presentation = extractNativePresentation(messages as never);
-    if (!presentation) return null;
-    const records = new Map(presentation.records);
-    for (const [objectID, record] of collectSearchRecords(messages))
-      if (!records.has(objectID)) records.set(objectID, record);
-    const hydrated = await hydrateGroups(presentation.groups, records);
-    if (!hydrated.length) return null;
-    // Identity check duplicated for registration: only records whose own
-    // objectID matched what the agent named enter the session store.
-    const verified = new Map<string, Record<string, unknown>>();
-    for (const group of presentation.groups)
-      for (const objectID of group.objectIDs) {
-        const record = records.get(objectID);
-        if (record && record.objectID === objectID) verified.set(objectID, record);
-      }
-    await registerVerifiedRecords(verified);
-    return hydrated;
-  }
-
   /* Chips-native staging (2026-10-24): the streamed search output IS the
    * presentation. Hits in relevancy order become one tile group under the
    * query text; variant twins dedupe before hydration; every displayed tile
-   * re-checks price and stock on its freshest record (the checks arrange_groups
-   * used to own) and the identity-verified set registers for refresh_products.
-   * No grouping logic, no model round-trip, no eligibility tool. */
+   * re-checks price and stock on its freshest record and the identity-verified
+   * set registers for refresh_products. No grouping logic, no model round
+   * trip, no eligibility tool. Staging failures surface in displayEvents in
+   * every environment so prod troubleshooting never depends on dev-only warns. */
   async function stageSearchPresentation(
     messages: readonly unknown[],
   ): Promise<WorkspaceGroup[] | null> {
@@ -220,16 +195,9 @@ export function createConciergeWorkspaceSession(options: {
       .map((objectID) => normalize(records.get(objectID)))
       .filter((product): product is Product => product !== null);
     const kept = dedupeVariants(normalized);
-    const needed = kept.map((product) => product.id).filter((id) => !records.has(id));
-    for (const objectID of needed.slice(0, 12)) {
-      try {
-        const record = await fetchProductRecord(objectID);
-        if (record && typeof record === 'object' && !Array.isArray(record))
-          records.set(objectID, record as Record<string, unknown>);
-      } catch {
-        // A record that will not hydrate is skipped; the tiles show what loaded.
-      }
-    }
+    /* Every kept id arrived in the streamed output, so no hydration pass is
+     * needed here: the tiles render from the records the search already
+     * returned, after the price/stock re-check below. */
     const tiles: { product: Product }[] = [];
     const verified = new Map<string, Record<string, unknown>>();
     for (const product of kept) {
@@ -240,17 +208,22 @@ export function createConciergeWorkspaceSession(options: {
       verified.set(product.id, fresh);
       tiles.push({ product: checked });
     }
-    if (!tiles.length) return null;
+    if (!tiles.length) {
+      recordDisplayEvent('stage-empty', `search "${presentation.queryText.slice(0, 40)}" left no displayable tiles`);
+      return null;
+    }
     await registerVerifiedRecords(verified);
+    recordDisplayEvent('stage-ok', `${tiles.length} tiles`);
     return [{ title: presentation.queryText, mode: 'search_results', items: tiles }];
   }
 
-  /* Mobile anchored cards (2026-10-23): hydrate EVERY assistant message that
-   * carries grouped output, not just the latest turn, so the conversation can
-   * render each turn's picks under the answer that found them. Returns a map
-   * keyed by assistant message id; messages without groups are absent. An
-   * optional `only` set restricts hydration to those message ids (the caller
-   * stages incrementally and already-staged messages are never re-fetched). */
+  /* Mobile anchored cards (chips-native): hydrate EVERY assistant message
+   * that carries a single-query search, not just the latest turn, so the
+   * conversation can render each turn's picks under the answer that found
+   * them. Returns a map keyed by assistant message id; messages without
+   * anchors are absent. An optional `only` set restricts hydration to those
+   * message ids (the caller stages incrementally and already-staged messages
+   * are never re-fetched). */
   async function stageMessageAnchors(
     messages: readonly unknown[],
     only?: ReadonlySet<string>,
@@ -298,7 +271,6 @@ export function createConciergeWorkspaceSession(options: {
     store,
     runtime,
     getModel,
-    stageNativePresentation,
     stageSearchPresentation,
     stageMessageAnchors,
   };

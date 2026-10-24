@@ -21,18 +21,18 @@ import {
  * checkable.
  *
  * Capture evidence (results/P4/exact24/temp4/{q10,q23,q24}/capture/):
- *   q10  failed algolia_grouped_results (malformed groups list), then 2
- *        successful prod_catalog searches, then 2 successful grouped calls.
+ *   q10  failed arrange_groups (malformed groups list), then 2
+ *        successful prod_catalog searches, then 2 successful display-tool calls.
  *   q23  failed algolia_search_index_prod_catalog (numericFilters rejected:
  *        "Additional properties are not allowed"), then 2 successful
- *        searches, then 1 successful grouped call.
+ *        searches, then 1 successful display-tool call.
  *   q24  same rejection, then 3 successful searches, then 1 successful
- *        grouped call.
+ *        display-tool call.
  */
 
 const Q10_QUESTION = 'Show me Judith Ripka jewelry';
 
-const Q10_GROUPED_ERROR_TEXT =
+const Q10_TOOL_ERROR_TEXT =
   'groups: Input should be a valid list (got "\\n<parameter name=\\"title\\">Cocktail rings")';
 
 const NUMERIC_FILTERS_ERROR_TEXT =
@@ -63,12 +63,14 @@ function successfulToolPart(toolName: string, id: string, output: Record<string,
   };
 }
 
-const groupedOutput = {
-  status: 'success',
+/* Historical q10 capture reshaped to the live tool set; the recovery logic
+ * under test is tool-name-agnostic. */
+const arrangedOutput = {
+  status: 'ok',
   groups: [
     {
       title: 'Judith Ripka rings',
-      lines: [{ objectID: 'JTV-331782', explanation: 'Bella Luce halo ring' }],
+      items: [{ objectID: 'JTV-331782', name: 'Bella Luce halo ring', price: 89.99, link: '/product/JTV-331782' }],
     },
   ],
 };
@@ -90,25 +92,25 @@ const userMessage = {
   parts: [{ type: 'text', text: Q10_QUESTION }],
 };
 
-/** q10 event order: searches land first, the grouped call fails, grouped retries succeed. */
+/** q10 event order: searches land first, the display call fails, display retries succeed. */
 function q10RecoveredParts() {
   return [
     successfulToolPart('algolia_search_index_prod_catalog', 'call-search-1', searchOutput),
     successfulToolPart('algolia_search_index_prod_catalog', 'call-search-2', searchOutput),
-    failedToolPart('algolia_grouped_results', Q10_GROUPED_ERROR_TEXT),
-    successfulToolPart('algolia_grouped_results', 'call-grouped-retry', groupedOutput),
-    successfulToolPart('algolia_grouped_results', 'call-grouped-2', groupedOutput),
+    failedToolPart('arrange_groups', Q10_TOOL_ERROR_TEXT),
+    successfulToolPart('arrange_groups', 'call-display-retry', arrangedOutput),
+    successfulToolPart('arrange_groups', 'call-display-2', arrangedOutput),
     { type: 'text', text: Q10_ANSWER_SNIPPET, state: 'done' },
   ];
 }
 
-/** q23/q24 event order: a search fails (numericFilters rejected), searches and a grouped call succeed after. */
+/** q23/q24 event order: a search fails (numericFilters rejected), searches and a display call succeed after. */
 function q23RecoveredParts() {
   return [
     failedToolPart('algolia_search_index_prod_catalog', NUMERIC_FILTERS_ERROR_TEXT),
     successfulToolPart('algolia_search_index_prod_catalog', 'call-search-retry', searchOutput),
     successfulToolPart('algolia_search_index_prod_catalog', 'call-search-retry-2', searchOutput),
-    successfulToolPart('algolia_grouped_results', 'call-grouped', groupedOutput),
+    successfulToolPart('arrange_groups', 'call-display', arrangedOutput),
     { type: 'text', text: Q10_ANSWER_SNIPPET, state: 'done' },
   ];
 }
@@ -126,13 +128,13 @@ describe('turn recovery after a mid-turn tool failure (exact24 temp4 q10, q23, q
     ] as never;
     // The failed part is still recorded, for the diagnostic log.
     expect(getFailedToolDetails(messages)).toEqual([
-      { toolName: 'algolia_grouped_results', errorText: Q10_GROUPED_ERROR_TEXT },
+      { toolName: 'arrange_groups', errorText: Q10_TOOL_ERROR_TEXT },
     ]);
     expect(hasFailedTool(messages)).toBe(true);
     expect(turnHasUsableResult(messages)).toBe(true);
   });
 
-  it('counts the q23 numericFilters-rejection turn as usable (search retry + grouped result + answer)', () => {
+  it('counts the q23 numericFilters-rejection turn as usable (search retry + display result + answer)', () => {
     const messages = [
       userMessage,
       { id: 'assistant-q23', role: 'assistant', parts: q23RecoveredParts() },
@@ -162,7 +164,7 @@ describe('turn recovery after a mid-turn tool failure (exact24 temp4 q10, q23, q
         id: 'assistant-all-failed',
         role: 'assistant',
         parts: [
-          failedToolPart('algolia_grouped_results', Q10_GROUPED_ERROR_TEXT),
+          failedToolPart('arrange_groups', Q10_TOOL_ERROR_TEXT),
           { type: 'text', text: 'Something did go through.', state: 'done' },
         ],
       },
@@ -180,7 +182,7 @@ describe('turn recovery after a mid-turn tool failure (exact24 temp4 q10, q23, q
         role: 'assistant',
         parts: [
           failedToolPart('algolia_search_index_prod_catalog', NUMERIC_FILTERS_ERROR_TEXT),
-          successfulToolPart('algolia_grouped_results', 'call-grouped', groupedOutput),
+          successfulToolPart('arrange_groups', 'call-display', arrangedOutput),
           { type: 'text', text: 'Partial thought', state: 'streaming' },
         ],
       },

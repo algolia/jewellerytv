@@ -46,21 +46,17 @@ function sessionWithoutRetiredFields() {
   };
 }
 
-function arrangeTurn(objectIDs: string[]) {
+function searchTurn(objectIDs: string[]) {
   return [
     { role: 'user', parts: [] },
     {
       role: 'assistant',
       parts: [
         {
-          type: 'tool-arrange_groups',
-          output: {
-            status: 'ok',
-            groups: objectIDs.map((objectID) => ({
-              title: `Style ${objectID}`,
-              items: [{ objectID }],
-            })),
-          },
+          type: 'tool-algolia_search_index_prod_catalog',
+          state: 'output-available',
+          input: { queries: [{ query: 'opal necklaces' }] },
+          output: { hits: objectIDs.map((objectID) => rawRecord(objectID)) },
         },
       ],
     },
@@ -68,7 +64,7 @@ function arrangeTurn(objectIDs: string[]) {
 }
 
 describe('simplified workspace session adapter', () => {
-  it('hands the workspace only the discovery columns and renders tiles as PDP links', async () => {
+  it('hands the workspace the single search group and renders tiles as PDP links', async () => {
     const storage = new MemoryStorage();
     storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
     const adapter = createConciergeWorkspaceSession({
@@ -76,10 +72,10 @@ describe('simplified workspace session adapter', () => {
       initialMissionId: 'unused',
       fetchProductRecord: async (id) => rawRecord(id),
     });
-    const groups = await adapter.stageNativePresentation(arrangeTurn(['a-1', 'b-1']));
+    const groups = await adapter.stageSearchPresentation(searchTurn(['a-1', 'b-1']));
     expect(groups).not.toBeNull();
     const model = adapter.getModel(groups ?? []);
-    expect(model.discoveries).toHaveLength(2);
+    expect(model.discoveries).toHaveLength(1);
     expect('products' in model).toBe(false);
     expect('compareIds' in model).toBe(false);
     expect('activeView' in model).toBe(false);
@@ -120,26 +116,43 @@ describe('simplified workspace session adapter', () => {
       initialMissionId: 'unused',
       fetchProductRecord: async (id) => rawRecord(id),
     });
-    await adapter.stageNativePresentation(arrangeTurn(['new-1']));
+    await adapter.stageSearchPresentation(searchTurn(['new-1']));
     const session = adapter.store.getSnapshot();
     expect(session?.selectionRecords.map((r) => r.objectID)).toContain('new-1');
     expect(session?.selectionRecords.find((r) => r.objectID === 'new-1')?.binding).toBe(
       'legacy_unbound',
     );
   });
-  it('drops a staged record whose hydrated identity does not match the named id', async () => {
+  it('shows one of a variant pair: same family number keeps the first hit only', async () => {
     const storage = new MemoryStorage();
     storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
     const adapter = createConciergeWorkspaceSession({
       storage,
       initialMissionId: 'unused',
-      fetchProductRecord: async () => rawRecord('different-id'),
+      fetchProductRecord: async (id) => rawRecord(id),
     });
-    const groups = await adapter.stageNativePresentation(arrangeTurn(['named-1']));
-    expect(groups).toBeNull();
-    expect(
-      adapter.store.getSnapshot()?.selectionRecords.some((r) => r.objectID === 'named-1'),
-    ).toBe(false);
+    const variantOf = (objectID: string, productNumber: string) => ({
+      ...rawRecord(objectID),
+      Catalog_ProductNumber: productNumber,
+    });
+    const messages = [
+      { role: 'user', parts: [] },
+      {
+        role: 'assistant',
+        parts: [
+          {
+            type: 'tool-algolia_search_index_prod_catalog',
+            state: 'output-available',
+            input: { queries: [{ query: 'huggie hoops' }] },
+            output: {
+              hits: [variantOf('a-1', 'F1'), variantOf('a-2', 'F1'), variantOf('a-3', 'F2')],
+            },
+          },
+        ],
+      },
+    ];
+    const groups = await adapter.stageSearchPresentation(messages);
+    expect(groups?.[0].items.map((item) => item.product.id)).toEqual(['a-1', 'a-3']);
   });
   it('loads a pre-simplification session by stripping the retired fields', () => {
     const storage = new MemoryStorage();

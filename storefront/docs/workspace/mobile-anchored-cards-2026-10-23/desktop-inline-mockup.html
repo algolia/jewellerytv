@@ -1,0 +1,145 @@
+<title>Desktop Inline Concierge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap">
+<style>
+  /* Layout: one desktop frame showing the concierge inline at full width,
+     then a card-treatment strip comparing three tile designs. */
+  :root {
+    --jtv-blue: #0076a9;
+    --page-bg: #f2f5f7;
+    --card-bg: #ffffff;
+    --ink: #1c2b33;
+    --ink-soft: #5b6b74;
+    --line: #d4e0e6;
+    --chat-bg: #f9fcfd;
+    --stone-a: linear-gradient(140deg, #bfe8e2 0%, #7fd4c4 35%, #4ba8a0 65%, #8fd8cf 100%);
+    --stone-b: linear-gradient(140deg, #cfe0f4 0%, #8fb4dd 45%, #5a7fb5 100%);
+    --stone-c: linear-gradient(140deg, #f3d9e2 0%, #d79fb4 50%, #a9647f 100%);
+    --stone-d: linear-gradient(140deg, #f7e3c0 0%, #dfb877 55%, #b3854a 100%);
+    --stone-e: linear-gradient(140deg, #d5f0dc 0%, #93cfa6 45%, #5f9c74 100%);
+    --stone-f: linear-gradient(140deg, #e4dcf3 0%, #b4a4d9 50%, #7e6aa8 100%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page-bg: #10181d; --card-bg: #18242b; --ink: #e8eef1; --ink-soft: #9db0ba;
+      --line: #2c3c45; --chat-bg: #142027; --jtv-blue: #3da4d8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page-bg: #10181d; --card-bg: #18242b; --ink: #e8eef1; --ink-soft: #9db0ba;
+    --line: #2c3c45; --chat-bg: #142027; --jtv-blue: #3da4d8;
+  }
+  body {
+    background: var(--page-bg); color: var(--ink);
+    font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .sheet { max-width: 1120px; margin: 0 auto; padding-block: 28px 56px; }
+  .kicker { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--jtv-blue); margin: 0 0 6px; }
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 10px; text-wrap: balance; }
+  .intro { font-size: 15px; line-height: 1.6; color: var(--ink-soft); max-width: 64ch; margin: 0 0 28px; }
+
+  /* Desktop frame */
+  .frame { background: var(--card-bg); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: 0 18px 44px rgba(12,30,40,0.12); }
+  .frame-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--card-bg); }
+  .frame-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+  .frame-bar span { margin: 0 auto; font-size: 12px; color: var(--ink-soft); }
+  .conv { background: var(--chat-bg); padding: 26px 0 0; }
+  .turn { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  .msg-user { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+  .msg-user p { margin: 0; background: var(--jtv-blue); color: #fff; padding: 10px 16px; border-radius: 18px 18px 4px 18px; font-size: 14.5px; }
+  .msg-agent { margin-bottom: 18px; }
+  .msg-agent .who { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--jtv-blue); margin-bottom: 6px; }
+  .msg-agent .text { font-size: 15px; line-height: 1.65; color: var(--ink); max-width: 62ch; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 16px 0 30px; }
+  .grid.two-remainder { grid-template-columns: repeat(4, 1fr); }
+
+  /* Card treatments */
+  .tile { background: var(--card-bg); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  .tile .img { aspect-ratio: 1 / 1; position: relative; background: #f6fafc; }
+  .tile .img::after {
+    content: ""; position: absolute; left: 32%; top: 24%; width: 34%; height: 50%;
+    border-radius: 46% 54% 52% 48% / 58% 44% 56% 42%;
+    background: var(--stone, var(--stone-a));
+    box-shadow: inset -4px -5px 9px rgba(20,40,45,0.32), inset 4px 5px 7px rgba(255,255,255,0.5);
+  }
+  .tile .band { position: absolute; left: 50%; top: 49%; width: 48%; height: 36%; transform: translate(-50%,-50%);
+    border: 3px solid #d9b45c; border-bottom-color: #c39a3f; border-radius: 50%; z-index: 1; }
+  .tile .body { padding: 10px 12px 12px; }
+  .tile .price { font-size: 16px; font-weight: 600; color: var(--ink); }
+  .tile .title { font-size: 12.5px; line-height: 1.45; color: var(--ink-soft); margin-top: 6px; }
+  .tile .desc { font-size: 12px; color: var(--ink-soft); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .variant-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .variant-note { font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); margin: 8px 2px 0; }
+  .variant-note b { color: var(--ink); }
+  .variant-block h2 { font-size: 15px; font-weight: 600; margin: 34px 0 4px; }
+  .variant-block .tag { display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--jtv-blue); margin-bottom: 10px; }
+  .pick { border: 2px solid var(--jtv-blue); border-radius: 12px; }
+
+  .shared { max-width: 860px; margin: 44px auto 0; background: var(--card-bg); border: 1px solid var(--line); border-radius: 14px; padding: 22px 26px; }
+  .shared h2 { font-size: 16px; font-weight: 600; margin: 0 0 10px; }
+  .shared p { font-size: 14px; line-height: 1.65; color: var(--ink-soft); margin: 0 0 8px; }
+  .shared b { color: var(--ink); }
+  @media (max-width: 760px) { .grid, .variant-row { grid-template-columns: repeat(2, 1fr); } }
+</style>
+
+<div class="sheet">
+  <p class="kicker">Jewellerytv concierge · desktop</p>
+  <h1>Desktop, inline like mobile</h1>
+  <p class="intro">Same anchored-cards model at full width: one scroll, cards under the answer that found them, four across. The two-column canvas goes away. Card treatment below the frame.</p>
+
+  <div class="frame">
+    <div class="frame-bar"><i></i><i></i><i></i><span>jewellerytv concierge · desktop 1280px</span></div>
+    <div class="conv">
+      <div class="turn">
+        <div class="msg-user"><p>Show me Gems en Vogue jewelry</p></div>
+        <div class="msg-agent">
+          <div class="who">Concierge</div>
+          <div class="text">Gems En Vogue is our own line of color gemstone jewelry in that signature two-tone look, and the catalog runs deep here, rings especially. Want me to narrow it by stone or budget?</div>
+        </div>
+        <div class="grid">
+          <div class="tile"><div class="img" style="--stone: var(--stone-a)"><span class="band"></span></div><div class="body"><span class="price">$494.99</span><div class="desc">Central Park Ring, multi gemstone</div></div></div>
+          <div class="tile"><div class="img" style="--stone: var(--stone-b)"><span class="band"></span></div><div class="body"><span class="price">$577.99</span><div class="desc">Swiss blue topaz and grizzly emerald</div></div></div>
+          <div class="tile"><div class="img" style="--stone: var(--stone-c)"><span class="band"></span></div><div class="body"><span class="price">$659.69</span><div class="desc">Purple garnet statement pendant</div></div></div>
+          <div class="tile"><div class="img" style="--stone: var(--stone-d)"><span class="band"></span></div><div class="body"><span class="price">$647.09</span><div class="desc">Kashmir blue topaz pendant, chain included</div></div></div>
+        </div>
+        <div class="msg-user"><p>Now just the rings under $600</p></div>
+        <div class="msg-agent">
+          <div class="who">Concierge</div>
+          <div class="text">Two of the four fit. Both are pre-owned pieces, so the value is strong for the carat weight.</div>
+        </div>
+        <div class="grid two-remainder">
+          <div class="tile"><div class="img" style="--stone: var(--stone-e)"><span class="band"></span></div><div class="body"><span class="price">$494.99</span><div class="desc">Central Park Ring, multi gemstone</div></div></div>
+          <div class="tile"><div class="img" style="--stone: var(--stone-b)"><span class="band"></span></div><div class="body"><span class="price">$577.99</span><div class="desc">Swiss blue topaz and grizzly emerald</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="variant-block">
+    <h2>Card treatment, pick by eye</h2>
+    <p class="intro" style="margin-bottom:18px">Same product, four ways. The full catalog title stays in the accessibility label and on hover in every variant; only what is visible changes.</p>
+    <div class="variant-row">
+      <div class="tile"><div class="img" style="--stone: var(--stone-f)"><span class="band"></span></div><div class="body"><span class="title" style="margin-top:0">Pre-Owned Multi Color Multi Gemstone Rhodium &amp; 24K Gold Over Palladium Silver Central Park Ring 9.94</span><span class="price">$494.99</span></div></div>
+      <div class="tile pick"><div class="img" style="--stone: var(--stone-f)"><span class="band"></span></div><div class="body"><span class="price">$494.99</span></div></div>
+      <div class="tile"><div class="img" style="--stone: var(--stone-f)"><span class="band"></span></div><div class="body"><span class="price">$494.99</span><div class="desc">Central Park Ring, multi gemstone</div></div></div>
+      <div class="tile"><div class="img" style="--stone: var(--stone-f)"><span class="band"></span></div><div class="body"><span class="price">$494.99</span><div class="desc">Pre-Owned Central Park Ring 9.94</div></div></div>
+    </div>
+    <div class="variant-row" style="margin-top:6px">
+      <p class="variant-note"><b>Today.</b> Full catalog string at card size. The transcript calls this out directly: tiles too complex for discovery.</p>
+      <p class="variant-note"><b>Image + price.</b> The Vuori end of the dial. Nothing competes with the picture. Risk: near-identical pieces read as duplicates.</p>
+      <p class="variant-note"><b>Price + one muted line.</b> A short shopper-language descriptor, truncated. My recommendation: image still leads, one line disambiguates.</p>
+      <p class="variant-note"><b>Price + prefix line.</b> Keeps the pre-owned flag visible, which price alone hides. Middle ground if pre-owned vs new matters in testing.</p>
+    </div>
+  </div>
+
+  <div class="shared">
+    <h2>What the transcript adds to this decision</h2>
+    <p><b>"Multi-column layout may be confusing."</b> The desktop two-column canvas goes the way of the mobile tabs; the concierge becomes one conversation at every width.</p>
+    <p><b>"Present product options in-line and link to the PDP."</b> Already the shipped model; desktop adoption changes nothing about the conversion path.</p>
+    <p><b>Search-bar integration.</b> The transcript's Vuori reference is about placement (search bar, not a corner widget) as much as card style. That is a separate, larger workstream and is not in this mockup.</p>
+    <p><b>Reply length.</b> Vuori simplicity is also copy. The frame above shows 2-sentence replies; today's agent runs 3 to 4 paragraphs. Prompt-side change, waits on your go.</p>
+  </div>
+</div>
