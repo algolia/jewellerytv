@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  extractFacetPick,
   extractMessageFacetPicks,
   extractMessageAnchors,
   extractNativePresentation,
@@ -305,84 +304,6 @@ describe('extractMessageAnchors', () => {
  * aggregate `facets` counts, and the arrange call may carry a `displayFacets`
  * pick. The client renders chips from these — no second query, no proxy. */
 
-describe('extractFacetPick', () => {
-  const facetSearchPart = {
-    type: 'tool-algolia_search_index_prod_catalog',
-    toolCallId: 's1',
-    state: 'output-available',
-    input: { queries: [{ query: "men's watch classic" }] },
-    output: {
-      hits: [hit('12TB0A')],
-      nbHits: 24,
-      facets: {
-        Catalog_Brand: { 'Charles Hubert': 360, Bulova: 37 },
-        Catalog_MovementComplication: { Chronograph: 310 },
-      },
-    },
-  };
-  const arrangeWithPick = {
-    type: 'tool-arrange_groups',
-    toolCallId: 'a1',
-    state: 'output-available',
-    input: {
-      groups: [{ title: 'G', objectIDs: ['12TB0A'] }],
-      displayFacets: ['Catalog_Brand', 'Catalog_MovementComplication'],
-    },
-    output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: '12TB0A' }] }] },
-  };
-
-  it('reads facet counts, the display pick and the query text from the latest turn', () => {
-    const pick = extractFacetPick([
-      userMessage('watch for dad'),
-      { id: 'a1', role: 'assistant', parts: [facetSearchPart, arrangeWithPick] },
-    ]);
-    expect(pick).not.toBeNull();
-    if (!pick) throw new Error('unreachable');
-    expect(pick.displayFacets).toEqual(['Catalog_Brand', 'Catalog_MovementComplication']);
-    expect(pick.facets.Catalog_Brand['Charles Hubert']).toBe(360);
-    expect(pick.queryText).toBe("men's watch classic");
-  });
-
-  it('returns null when the turn has no displayFacets pick', () => {
-    const pick = extractFacetPick([
-      userMessage('hello'),
-      { id: 'a1', role: 'assistant', parts: [facetSearchPart] },
-    ]);
-    expect(pick).toBeNull();
-  });
-
-  it('reads only the latest turn, mirroring the other extractors', () => {
-    const pick = extractFacetPick([
-      userMessage('first'),
-      { id: 'a1', role: 'assistant', parts: [facetSearchPart, arrangeWithPick] },
-      userMessage('second question'),
-      { id: 'a2', role: 'assistant', parts: [{ type: 'text', text: 'A service answer.' }] },
-    ]);
-    expect(pick).toBeNull();
-  });
-
-  it('returns null on a null/absent pick inside arrange input', () => {
-    const pick = extractFacetPick([
-      userMessage('watch for dad'),
-      {
-        id: 'a1',
-        role: 'assistant',
-        parts: [
-          facetSearchPart,
-          {
-            type: 'tool-arrange_groups',
-            toolCallId: 'a1',
-            state: 'output-available',
-            input: { groups: [{ title: 'G', objectIDs: ['x'] }] },
-            output: { status: 'ok', groups: [] },
-          },
-        ],
-      },
-    ]);
-    expect(pick).toBeNull();
-  });
-});
-
 describe('extractMessageFacetPicks', () => {
   const facetSearchPart = {
     type: 'tool-algolia_search_index_prod_catalog',
@@ -414,5 +335,51 @@ describe('extractMessageFacetPicks', () => {
     expect(picks[0].pick.displayFacets).toEqual(['Catalog_Brand']);
     expect(picks[0].pick.queryText).toBe("men's watch classic");
     expect(picks[0].hits).toHaveLength(2);
+  });
+});
+
+describe('extractMessageFacetPicks multi-scope guard', () => {
+  it('skips chips on a multi-query (multi-direction) turn', () => {
+    const multiQuerySearch = {
+      type: 'tool-algolia_search_index_prod_catalog',
+      toolCallId: 's1',
+      state: 'output-available',
+      input: { queries: [{ query: 'gold hoop earrings' }, { query: 'gold necklace pendant' }] },
+      output: { hits: [hit('a')], nbHits: 2, facets: { Catalog_NecklaceType: { Pendant: 4, Chain: 2 } } },
+    };
+    const arrangeWithPick = {
+      type: 'tool-arrange_groups',
+      toolCallId: 'a1',
+      state: 'output-available',
+      input: { groups: [{ title: 'G', objectIDs: ['a'] }], displayFacets: ['Catalog_NecklaceType'] },
+      output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: 'a' }] }] },
+    };
+    const picks = extractMessageFacetPicks([
+      userMessage('what goes with gold hoops'),
+      { id: 'a1', role: 'assistant', parts: [multiQuerySearch, arrangeWithPick] },
+    ]);
+    expect(picks).toEqual([]);
+  });
+
+  it('keeps chips on a single-scope turn', () => {
+    const singleSearch = {
+      type: 'tool-algolia_search_index_prod_catalog',
+      toolCallId: 's1',
+      state: 'output-available',
+      input: { queries: [{ query: 'opal rings' }] },
+      output: { hits: [hit('a')], nbHits: 2, facets: { Catalog_RingType: { Halo: 4, Band: 2 } } },
+    };
+    const arrangeWithPick = {
+      type: 'tool-arrange_groups',
+      toolCallId: 'a1',
+      state: 'output-available',
+      input: { groups: [{ title: 'G', objectIDs: ['a'] }], displayFacets: ['Catalog_RingType'] },
+      output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: 'a' }] }] },
+    };
+    const picks = extractMessageFacetPicks([
+      userMessage('show me opal rings'),
+      { id: 'a1', role: 'assistant', parts: [singleSearch, arrangeWithPick] },
+    ]);
+    expect(picks).toHaveLength(1);
   });
 });

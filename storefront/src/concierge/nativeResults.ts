@@ -143,57 +143,6 @@ export type FacetPick = {
   queryText: string;
 };
 
-export function extractFacetPick(messages: readonly Message[]): FacetPick | null {
-  let lastUser = -1;
-  for (let index = messages.length - 1; index >= 0; index--) {
-    if (messages[index].role === 'user') {
-      lastUser = index;
-      break;
-    }
-  }
-  if (lastUser < 0) return null;
-  const assistants = [...messages].slice(lastUser + 1).filter((m) => m.role === 'assistant');
-  const facets: Record<string, Record<string, number>> = {};
-  let queryText = '';
-  let displayFacets: string[] | null = null;
-  for (const assistant of assistants) {
-    if (!assistant?.parts) continue;
-    for (const part of assistant.parts as Part[]) {
-      if (typeof part.type !== 'string') continue;
-      if (
-        part.type.startsWith(SEARCH_TOOL_PREFIX) &&
-        isRecord(part.input) &&
-        Array.isArray((part.input as Record<string, unknown>).queries)
-      ) {
-        const queries = (part.input as Record<string, unknown>).queries as unknown[];
-        const first = queries[0];
-        if (!queryText && isRecord(first) && typeof first.query === 'string')
-          queryText = first.query;
-        if (isRecord(part.output) && isRecord(part.output.facets)) {
-          for (const [attr, values] of Object.entries(
-            part.output.facets as Record<string, unknown>,
-          )) {
-            if (!isRecord(values)) continue;
-            const counts: Record<string, number> = {};
-            for (const [value, count] of Object.entries(values))
-              if (typeof count === 'number') counts[value] = count;
-            if (Object.keys(counts).length) facets[attr] = counts;
-          }
-        }
-      }
-      if (part.type === ARRANGE_TOOL && isRecord(part.input)) {
-        const raw = (part.input as Record<string, unknown>).displayFacets;
-        if (Array.isArray(raw) && raw.length) {
-          const names = raw.filter((n): n is string => typeof n === 'string' && !!n.trim());
-          if (names.length) displayFacets = names;
-        }
-      }
-    }
-  }
-  if (!displayFacets) return null;
-  return { displayFacets, facets, queryText };
-}
-
 /** Per-message variant for anchored chip rendering: each assistant message
  * that carries a displayFacets pick gets one entry, with the facet counts and
  * search hits accumulated up to and including that message. */
@@ -211,6 +160,10 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
     if (message.role !== 'assistant' || !message.parts || !message.id) continue;
     const hits: Record<string, unknown>[] = [];
     let displayFacets: string[] | null = null;
+    /* A multi-query call is a multi-direction turn: its facet counts are
+     * per-direction, so a single funnel over them mismatches the tiles.
+     * Chips only apply to a single-scope discovery search. */
+    let multiScope = false;
     for (const part of message.parts as Part[]) {
       if (typeof part.type !== 'string') continue;
       if (
@@ -219,6 +172,7 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
         Array.isArray((part.input as Record<string, unknown>).queries)
       ) {
         const queries = (part.input as Record<string, unknown>).queries as unknown[];
+        if (queries.length !== 1) multiScope = true;
         const first = queries[0];
         if (!queryText && isRecord(first) && typeof first.query === 'string')
           queryText = first.query;
@@ -246,7 +200,7 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
         }
       }
     }
-    if (displayFacets && queryText)
+    if (displayFacets && queryText && !multiScope)
       out.push({
         messageId: message.id,
         pick: { displayFacets, facets: { ...facets }, queryText },
