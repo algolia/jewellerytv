@@ -1,0 +1,245 @@
+<title>Mobile Concierge Mockups</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap">
+<style>
+  /* Layout: page is a review sheet; two phone frames side by side, stacked at phone width. */
+  :root {
+    --jtv-blue: #0076a9;
+    --jtv-blue-dark: #005a82;
+    --page-bg: #f2f5f7;
+    --card-bg: #ffffff;
+    --ink: #1c2b33;
+    --ink-soft: #5b6b74;
+    --line: #d4e0e6;
+    --chat-bg: #f9fcfd;
+    --stone-opal: linear-gradient(140deg, #bfe8e2 0%, #7fd4c4 35%, #4ba8a0 65%, #8fd8cf 100%);
+    --stone-opal-warm: linear-gradient(140deg, #f5e3c0 0%, #e8c88f 40%, #7fd4c4 75%, #bfe8e2 100%);
+    --stone-amber: linear-gradient(140deg, #f7d9a8 0%, #e0a95e 55%, #b97e3a 100%);
+    --stone-rose: linear-gradient(140deg, #f6d9d4 0%, #e3a99f 55%, #c07b70 100%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page-bg: #10181d;
+      --card-bg: #18242b;
+      --ink: #e8eef1;
+      --ink-soft: #9db0ba;
+      --line: #2c3c45;
+      --chat-bg: #142027;
+      --jtv-blue: #3da4d8;
+      --jtv-blue-dark: #7cc4e8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page-bg: #10181d;
+    --card-bg: #18242b;
+    --ink: #e8eef1;
+    --ink-soft: #9db0ba;
+    --line: #2c3c45;
+    --chat-bg: #142027;
+    --jtv-blue: #3da4d8;
+    --jtv-blue-dark: #7cc4e8;
+  }
+  body {
+    background: var(--page-bg);
+    color: var(--ink);
+    font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .sheet { max-width: 1060px; margin: 0 auto; padding-block: 28px 56px; }
+  .sheet-kicker {
+    font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--jtv-blue); margin: 0 0 6px;
+  }
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 10px; text-wrap: balance; }
+  .sheet-intro { font-size: 15px; line-height: 1.6; color: var(--ink-soft); max-width: 62ch; margin: 0 0 30px; }
+
+  .frames { display: flex; gap: 34px; justify-content: center; flex-wrap: wrap; align-items: flex-start; }
+  .frame-col { width: 372px; max-width: 100%; }
+  .frame-label { display: flex; align-items: baseline; gap: 10px; margin: 0 4px 10px; }
+  .frame-label .num {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--jtv-blue); color: #fff; font-size: 13px; font-weight: 600;
+    display: grid; place-items: center; align-self: center;
+  }
+  .frame-label h2 { font-size: 16px; font-weight: 600; margin: 0; }
+  .frame-label span { font-size: 12.5px; color: var(--ink-soft); }
+
+  .phone {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 34px;
+    padding: 10px;
+    box-shadow: 0 18px 44px rgba(12, 30, 40, 0.14);
+  }
+  .screen {
+    border-radius: 25px; overflow: hidden; border: 1px solid var(--line);
+    background: var(--chat-bg);
+    height: 700px; display: flex; flex-direction: column; position: relative;
+  }
+  .screen-head {
+    flex: none; background: var(--jtv-blue); color: #fff;
+    padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .screen-head .logo { width: 54px; height: auto; }
+  .screen-head .title { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; }
+  .screen-head .back { font-size: 18px; line-height: 1; opacity: 0.85; }
+
+  .scroll { flex: 1; overflow-y: auto; padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 86%; font-size: 13.5px; line-height: 1.55; }
+  .msg.user {
+    align-self: flex-end; background: var(--jtv-blue); color: #fff;
+    padding: 9px 13px; border-radius: 16px 16px 4px 16px;
+  }
+  .msg.agent { align-self: flex-start; color: var(--ink); }
+  .msg.agent .who { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--jtv-blue); margin-bottom: 4px; }
+  .msg.agent .bubble { background: var(--card-bg); border: 1px solid var(--line); border-radius: 4px 16px 16px 16px; padding: 10px 13px; }
+
+  /* Product cards, shared by both options */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .cards.inline { align-self: stretch; padding-left: 12px; }
+  .pcard { background: var(--card-bg); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .pcard .img { height: 104px; position: relative; }
+  .pcard .img::after {
+    content: ""; position: absolute; left: 34%; top: 22%; width: 30%; height: 52%;
+    border-radius: 46% 54% 52% 48% / 58% 44% 56% 42%;
+    background: var(--stone, var(--stone-opal));
+    box-shadow: inset -3px -4px 8px rgba(20, 40, 45, 0.35), inset 3px 4px 6px rgba(255, 255, 255, 0.55);
+    filter: saturate(1.05);
+  }
+  .pcard .ring-band {
+    position: absolute; left: 50%; top: 47%; width: 44%; height: 34%;
+    transform: translate(-50%, -50%);
+    border: 3px solid #d9b45c; border-bottom-color: #c39a3f;
+    border-radius: 50%; z-index: 1;
+  }
+  .pcard .body { padding: 7px 9px 9px; }
+  .pcard .name { font-size: 11px; line-height: 1.4; color: var(--ink); min-height: 30px; }
+  .pcard .price { font-size: 13.5px; font-weight: 600; color: var(--jtv-blue-dark); margin-top: 3px; }
+  .pcard .cta { font-size: 10.5px; color: var(--ink-soft); margin-top: 2px; }
+
+  .picks-section {
+    align-self: stretch; background: var(--card-bg);
+    border: 1px solid var(--line); border-radius: 12px; padding: 11px 11px 12px;
+  }
+  .picks-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
+  .picks-head h3 { font-size: 12.5px; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink); }
+  .picks-head span { font-size: 11px; color: var(--ink-soft); }
+
+  .promptbar {
+    flex: none; background: var(--card-bg); border-top: 1px solid var(--line);
+    padding: 9px 12px 12px; display: flex; gap: 8px; align-items: center;
+  }
+  .promptbar .field {
+    flex: 1; border: 1px solid var(--line); border-radius: 20px;
+    padding: 9px 13px; font-size: 13px; color: var(--ink-soft); background: var(--chat-bg);
+  }
+  .promptbar .send {
+    flex: none; width: 36px; height: 36px; border-radius: 50%;
+    background: var(--jtv-blue); color: #fff; display: grid; place-items: center; font-size: 15px;
+  }
+
+  .notes { margin: 14px 4px 0; font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); }
+  .notes b { color: var(--ink); font-weight: 600; }
+  .notes ul { margin: 8px 0 0; padding-left: 18px; }
+  .notes li { margin-bottom: 4px; }
+
+  .shared-note {
+    max-width: 800px; margin: 40px auto 0; background: var(--card-bg);
+    border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px;
+  }
+  .shared-note h2 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+  .shared-note p { font-size: 14px; line-height: 1.65; color: var(--ink-soft); margin: 0 0 8px; }
+  .shared-note p:last-child { margin: 0; }
+  .shared-note b { color: var(--ink); }
+  @media (max-width: 820px) { .frames { gap: 40px; } }
+</style>
+
+<div class="sheet">
+  <p class="sheet-kicker">Jewellerytv concierge · mobile</p>
+  <h1>Two ways to put products back in the conversation</h1>
+  <p class="sheet-intro">Both frames drop the Conversation / Products tabs and scroll as one page. The difference is where the cards live. Scroll inside each phone.</p>
+
+  <div class="frames">
+
+    <div class="frame-col">
+      <div class="frame-label"><span class="num">1</span><h2>Stacked section</h2><span>cards in one block under the chat</span></div>
+      <div class="phone"><div class="screen">
+        <div class="screen-head">
+          <span class="back">‹</span>
+          <svg class="logo" viewBox="0 0 100 20" role="img" aria-label="JTV"><text x="0" y="15" font-family="Georgia, serif" font-size="15" font-weight="bold" fill="#ffffff">JTV</text><text x="34" y="15" font-family="Georgia, serif" font-size="11" fill="#ffffff" opacity="0.9">Jewelry Television</text></svg>
+          <span class="title" style="margin-left:auto">Concierge</span>
+        </div>
+        <div class="scroll">
+          <div class="msg user">Show me opal rings under $200</div>
+          <div class="msg agent"><div class="who">JTV concierge</div><div class="bubble">Ethiopian opals are having a moment. Here are four under $200, brightest first.</div></div>
+          <div class="msg user">Make it yellow gold</div>
+          <div class="msg agent"><div class="who">JTV concierge</div><div class="bubble">Filtered to yellow gold bands. Two keep their place, two new ones joined.</div></div>
+          <div class="picks-section">
+            <div class="picks-head"><h3>Your picks</h3><span>Updated just now</span></div>
+            <div class="cards">
+              <div class="pcard"><div class="img" style="--stone: var(--stone-opal-warm)"><span class="ring-band"></span></div><div class="body"><div class="name">Ethiopian Opal Yellow Gold Ring</div><div class="price">$149</div><div class="cta">View details</div></div></div>
+              <div class="pcard"><div class="img" style="--stone: var(--stone-amber)"><span class="ring-band"></span></div><div class="body"><div class="name">Amber Sterling Silver Ring in Gold Tone</div><div class="price">$89</div><div class="cta">View details</div></div></div>
+              <div class="pcard"><div class="img" style="--stone: var(--stone-opal)"><span class="ring-band"></span></div><div class="body"><div class="name">Opal Sterling Silver Band Ring</div><div class="price">$119</div><div class="cta">View details</div></div></div>
+              <div class="pcard"><div class="img" style="--stone: var(--stone-rose)"><span class="ring-band"></span></div><div class="body"><div class="name">Rose Tone Opal Ring, Size 7</div><div class="price">$64</div><div class="cta">View details</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="promptbar"><div class="field">Ask about a style, a budget, an occasion…</div><div class="send">↑</div></div>
+      </div></div>
+      <div class="notes">
+        <b>What it is:</b> the current product workspace, just no longer a separate tab. It sits below the whole conversation and shows the latest set of picks.
+        <ul>
+          <li>Small change: the workspace already builds this block.</li>
+          <li>One risk: the newest reply can land far above the cards, so the eye jumps.</li>
+          <li>Earlier picks need a link or they disappear from view.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="frame-col">
+      <div class="frame-label"><span class="num">2</span><h2>Anchored to answers</h2><span>cards appear under the reply that found them</span></div>
+      <div class="phone"><div class="screen">
+        <div class="screen-head">
+          <span class="back">‹</span>
+          <svg class="logo" viewBox="0 0 100 20" role="img" aria-label="JTV"><text x="0" y="15" font-family="Georgia, serif" font-size="15" font-weight="bold" fill="#ffffff">JTV</text><text x="34" y="15" font-family="Georgia, serif" font-size="11" fill="#ffffff" opacity="0.9">Jewelry Television</text></svg>
+          <span class="title" style="margin-left:auto">Concierge</span>
+        </div>
+        <div class="scroll">
+          <div class="msg user">Show me opal rings under $200</div>
+          <div class="msg agent"><div class="who">JTV concierge</div><div class="bubble">Ethiopian opals are having a moment. Here are four under $200, brightest first.</div></div>
+          <div class="cards inline">
+            <div class="pcard"><div class="img" style="--stone: var(--stone-opal)"><span class="ring-band"></span></div><div class="body"><div class="name">Opal Sterling Silver Band Ring</div><div class="price">$119</div><div class="cta">View details</div></div></div>
+            <div class="pcard"><div class="img" style="--stone: var(--stone-rose)"><span class="ring-band"></span></div><div class="body"><div class="name">Rose Tone Opal Ring, Size 7</div><div class="price">$64</div><div class="cta">View details</div></div></div>
+          </div>
+          <div class="msg user">Make it yellow gold</div>
+          <div class="msg agent"><div class="who">JTV concierge</div><div class="bubble">Filtered to yellow gold bands. Two keep their place, two new ones joined.</div></div>
+          <div class="cards inline">
+            <div class="pcard"><div class="img" style="--stone: var(--stone-opal-warm)"><span class="ring-band"></span></div><div class="body"><div class="name">Ethiopian Opal Yellow Gold Ring</div><div class="price">$149</div><div class="cta">View details</div></div></div>
+            <div class="pcard"><div class="img" style="--stone: var(--stone-amber)"><span class="ring-band"></span></div><div class="body"><div class="name">Amber Sterling Silver Ring in Gold Tone</div><div class="price">$89</div><div class="cta">View details</div></div></div>
+          </div>
+          <div class="msg user">What makes Ethiopian opal different?</div>
+          <div class="msg agent"><div class="who">JTV concierge</div><div class="bubble">It forms with water inside the stone, so it shows play-of-color: flashes of green and blue as it moves. Wipe it dry after swimming; water is fine, chlorine is not.</div></div>
+        </div>
+        <div class="promptbar"><div class="field">Ask about a style, a budget, an occasion…</div><div class="send">↑</div></div>
+      </div></div>
+      <div class="notes">
+        <b>What it is:</b> each answer carries the cards for that turn, in the message flow itself. Follow-up answers bring their own set; the previous set stays in place above.
+        <ul>
+          <li>The pattern shoppers know from AI shopping surfaces.</li>
+          <li>History stays browsable: scroll the chat, see every pick in context.</li>
+          <li>Bigger change: every turn must be wired to its own arrange_groups result.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="shared-note">
+    <h2>Shared decisions, either way</h2>
+    <p><b>Scroll target.</b> When a new reply lands, auto-scroll must stop at the reply, not at the bottom of the page, so the answer is read before the cards.</p>
+    <p><b>Input bar.</b> Stays pinned at the bottom over the scroll in both options; the composer is never lost.</p>
+    <p><b>Desktop unchanged.</b> Side-by-side layout stays as shipped. Both options are mobile-only.</p>
+    <p><b>Product page.</b> Tapping a card opens the existing product page; nothing new there.</p>
+  </div>
+</div>
