@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-  extractNativePresentation,
+  extractMessageFacetPicks,
+  extractMessageAnchors,
   NOTE_ECHO_ENABLED,
   stripTrailingNote,
 } from '../../src/concierge/nativeResults';
 
-/* Part shapes mirror the raw C2 capture s-02-t1 (results/P4/c2/s-02/capture/):
- * search parts carry `output.hits`, the grouped part carries the groups on its
- * INPUT and `{status:"success"}` on its output. */
+/* Part shapes mirror the raw C2 captures: a search part is
+ * `tool-algolia_search_index_<index>` with `output.hits`. */
 
 const userMessage = (text: string) => ({
   id: 'u1',
@@ -15,11 +15,18 @@ const userMessage = (text: string) => ({
   parts: [{ type: 'text', text }],
 });
 
-const searchPart = (hits: unknown[]) => ({
+const searchPart = (
+  hits: unknown[],
+  options: { queries?: number; id?: string } = {},
+) => ({
   type: 'tool-algolia_search_index_prod_catalog',
-  toolCallId: 'call-1',
+  toolCallId: options.id ?? 'call-1',
   state: 'output-available',
-  input: { queries: [{ query: 'tanzanite ring' }] },
+  input: {
+    queries: Array.from({ length: options.queries ?? 1 }, (_, index) => ({
+      query: index === 0 ? 'tanzanite ring' : `other query ${index}`,
+    })),
+  },
   output: { hits },
 });
 
@@ -30,128 +37,6 @@ const hit = (objectID: string, extra: Record<string, unknown> = {}) => ({
   Inventory_InStock: false,
   Media_Images: ['https://example.com/a.jpg'],
   ...extra,
-});
-
-const groupedPart = (
-  groups: unknown[],
-  intro = 'An intro line',
-  output: unknown = { status: 'success' },
-) => ({
-  type: 'tool-algolia_grouped_results',
-  toolCallId: 'call-2',
-  state: 'output-available',
-  input: { intro, groups },
-  output,
-});
-
-const group = (title: string, ids: string[], why?: string) =>
-  why === undefined
-    ? { title, results: ids.map((objectID) => ({ objectID })) }
-    : { title, why, results: ids.map((objectID) => ({ objectID })) };
-
-describe('extractNativePresentation', () => {
-  it('reads group names, order and objectIDs from the grouped call input', () => {
-    const messages = [
-      userMessage('show me tanzanite rings'),
-      {
-        id: 'a1',
-        role: 'assistant',
-        parts: [
-          searchPart([hit('WPG776'), hit('WPG777')]),
-          groupedPart([group('Solo tanzanite statement stones', ['WPG776', 'WPG777'], 'Pure stones')]),
-          { type: 'text', state: 'done', text: 'Here is a first look.' },
-        ],
-      },
-    ];
-    const result = extractNativePresentation(messages);
-    expect(result).not.toBeNull();
-    expect(result?.intro).toBe('An intro line');
-    expect(result?.groups).toHaveLength(1);
-    expect(result?.groups[0].title).toBe('Solo tanzanite statement stones');
-    expect(result?.groups[0].why).toBe('Pure stones');
-    expect(result?.groups[0].objectIDs).toEqual(['WPG776', 'WPG777']);
-    expect(result?.records.get('WPG776')).toMatchObject({ objectID: 'WPG776' });
-  });
-
-  it('returns null on a turn with no grouped call (held or service turn)', () => {
-    const messages = [
-      userMessage('what is your return policy?'),
-      {
-        id: 'a1',
-        role: 'assistant',
-        parts: [{ type: 'text', state: 'done', text: 'Returns are 30 days.' }],
-      },
-    ];
-    expect(extractNativePresentation(messages)).toBeNull();
-  });
-
-  it('returns null when the grouped input is unusable, never a partial grid', () => {
-    const messages = [
-      userMessage('show me rings'),
-      {
-        id: 'a1',
-        role: 'assistant',
-        parts: [groupedPart([{ title: 'A group', results: [{ noObjectID: true }] }])],
-      },
-    ];
-    expect(extractNativePresentation(messages)).toBeNull();
-  });
-
-  it('uses the latest assistant turn and the latest grouped call', () => {
-    const messages = [
-      userMessage('first question'),
-      {
-        id: 'a1',
-        role: 'assistant',
-        parts: [groupedPart([group('Old turn grid', ['OLD1'])])],
-      },
-      userMessage('second question'),
-      {
-        id: 'a2',
-        role: 'assistant',
-        parts: [
-          searchPart([hit('NEW1')]),
-          groupedPart([group('New grid', ['NEW1'])]),
-          groupedPart([group('Final grid', ['NEW2'])], 'Later intro'),
-          { type: 'text', state: 'done', text: 'Reply.' },
-        ],
-      },
-    ];
-    const result = extractNativePresentation(messages);
-    expect(result?.groups).toHaveLength(1);
-    expect(result?.groups[0].objectIDs).toEqual(['NEW2']);
-    expect(result?.records.has('OLD1')).toBe(false);
-    expect(result?.records.has('NEW1')).toBe(true);
-  });
-
-  it('keeps search records even when the grouped call references other ids', () => {
-    const messages = [
-      userMessage('show me rings'),
-      {
-        id: 'a1',
-        role: 'assistant',
-        parts: [
-          searchPart([hit('S1'), hit('S2')]),
-          groupedPart([group('Group', ['G1'])]),
-        ],
-      },
-    ];
-    const result = extractNativePresentation(messages);
-    expect(result?.records.has('S1')).toBe(true);
-    expect(result?.groups[0].objectIDs).toEqual(['G1']);
-  });
-
-  it('accepts a grouped part before its output arrives (input-available)', () => {
-    const messages = [
-      userMessage('show me rings'),
-      {
-        id: 'a1',
-        role: 'assistant',
-        parts: [{ type: 'tool-algolia_grouped_results', state: 'input-available', input: { intro: 'i', groups: [group('G', ['X1'])] } }],
-      },
-    ];
-    expect(extractNativePresentation(messages)?.groups[0].objectIDs).toEqual(['X1']);
-  });
 });
 
 describe('stripTrailingNote', () => {
@@ -193,5 +78,147 @@ describe('stripTrailingNote', () => {
 describe('NOTE_ECHO_ENABLED', () => {
   it('defaults OFF per F1 (Arijit is deciding whether the NOTE stays)', () => {
     expect(NOTE_ECHO_ENABLED).toBe(false);
+  });
+});
+
+/* Mobile anchored cards (2026-10-23): each assistant message that carries a
+ * grouped or arranged tool output anchors its own cards, so the conversation
+ * keeps every turn's picks in place instead of one latest-turn canvas. */
+
+describe('extractMessageAnchors (chips-native)', () => {
+  it('returns one anchor per assistant message that carries a single-query search', () => {
+    const messages = [
+      userMessage('show me opal rings'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [searchPart([hit('WPG776'), hit('WPG777'), hit('WPG778'), hit('WPG779'), hit('WPG780')])],
+      },
+      userMessage('make it yellow gold'),
+      {
+        id: 'a2',
+        role: 'assistant',
+        parts: [searchPart([hit('WPG781')], { id: 'call-2' })],
+      },
+    ];
+    const anchors = extractMessageAnchors(messages);
+    expect(anchors.map((anchor) => anchor.messageId)).toEqual(['a1', 'a2']);
+    /* Anchors cap at four tiles per message. */
+    expect(anchors[0].groups.map((g) => g.objectIDs)).toEqual([
+      ['WPG776', 'WPG777', 'WPG778', 'WPG779'],
+    ]);
+    expect(anchors[1].groups.map((g) => g.objectIDs)).toEqual([['WPG781']]);
+    expect(anchors[0].groups[0].title).toBe('tanzanite ring');
+  });
+
+  it('anchors nothing on a multi-query message', () => {
+    const messages = [
+      userMessage('show me opal rings'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [searchPart([hit('WPG776')], { queries: 2 })],
+      },
+    ];
+    expect(extractMessageAnchors(messages)).toEqual([]);
+  });
+
+  it('skips assistant messages with no search output', () => {
+    const messages = [
+      userMessage('what makes opal different?'),
+      { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Play of color.' }] },
+    ];
+    expect(extractMessageAnchors(messages)).toEqual([]);
+  });
+
+  it('skips a search part whose output has not arrived', () => {
+    const messages = [
+      userMessage('show me opal rings'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [{ type: 'tool-algolia_search_index_prod_catalog', toolCallId: 'c1', state: 'input-available', input: { queries: [{ query: 'opal' }] } }],
+      },
+    ];
+    expect(extractMessageAnchors(messages)).toEqual([]);
+  });
+});
+
+/* Facet chips spike (2026-10-23): the streamed search tool result carries
+ * aggregate `facets` counts, and the arrange call may carry a `displayFacets`
+ * pick. The client renders chips from these — no second query, no proxy. */
+
+describe('extractMessageFacetPicks', () => {
+  const facetSearchPart = {
+    type: 'tool-algolia_search_index_prod_catalog',
+    toolCallId: 's1',
+    state: 'output-available',
+    input: { queries: [{ query: "men's watch classic" }] },
+    output: {
+      hits: [hit('12TB0A'), hit('1BC76B')],
+      nbHits: 24,
+      facets: { Catalog_Brand: { 'Charles Hubert': 360, Bulova: 37 } },
+    },
+  };
+
+  it('attaches one pick per message with accumulated facets and hits, derived from the counts', () => {
+    const picks = extractMessageFacetPicks([
+      userMessage('watch for dad'),
+      { id: 'a1', role: 'assistant', parts: [facetSearchPart] },
+      { id: 'a2', role: 'assistant', parts: [{ type: 'text', text: 'No tools here.' }] },
+    ]);
+    expect(picks).toHaveLength(1);
+    expect(picks[0].messageId).toBe('a1');
+    /* Derived, not model-supplied: Catalog_Brand has two values, so it is the
+     * whole pick. No arrange call involved. */
+    expect(picks[0].pick.displayFacets).toEqual(['Catalog_Brand']);
+    expect(picks[0].pick.queryText).toBe("men's watch classic");
+    expect(picks[0].hits).toHaveLength(2);
+  });
+});
+
+describe('extractMessageFacetPicks multi-scope guard', () => {
+  it('skips chips on a multi-query (multi-direction) turn', () => {
+    const multiQuerySearch = {
+      type: 'tool-algolia_search_index_prod_catalog',
+      toolCallId: 's1',
+      state: 'output-available',
+      input: { queries: [{ query: 'gold hoop earrings' }, { query: 'gold necklace pendant' }] },
+      output: { hits: [hit('a')], nbHits: 2, facets: { Catalog_NecklaceType: { Pendant: 4, Chain: 2 } } },
+    };
+    const arrangeWithPick = {
+      type: 'tool-arrange_groups',
+      toolCallId: 'a1',
+      state: 'output-available',
+      input: { groups: [{ title: 'G', objectIDs: ['a'] }], displayFacets: ['Catalog_NecklaceType'] },
+      output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: 'a' }] }] },
+    };
+    const picks = extractMessageFacetPicks([
+      userMessage('what goes with gold hoops'),
+      { id: 'a1', role: 'assistant', parts: [multiQuerySearch, arrangeWithPick] },
+    ]);
+    expect(picks).toEqual([]);
+  });
+
+  it('keeps chips on a single-scope turn', () => {
+    const singleSearch = {
+      type: 'tool-algolia_search_index_prod_catalog',
+      toolCallId: 's1',
+      state: 'output-available',
+      input: { queries: [{ query: 'opal rings' }] },
+      output: { hits: [hit('a')], nbHits: 2, facets: { Catalog_RingType: { Halo: 4, Band: 2 } } },
+    };
+    const arrangeWithPick = {
+      type: 'tool-arrange_groups',
+      toolCallId: 'a1',
+      state: 'output-available',
+      input: { groups: [{ title: 'G', objectIDs: ['a'] }], displayFacets: ['Catalog_RingType'] },
+      output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: 'a' }] }] },
+    };
+    const picks = extractMessageFacetPicks([
+      userMessage('show me opal rings'),
+      { id: 'a1', role: 'assistant', parts: [singleSearch, arrangeWithPick] },
+    ]);
+    expect(picks).toHaveLength(1);
   });
 });
