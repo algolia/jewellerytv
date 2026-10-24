@@ -11,7 +11,6 @@
 
 import { createCatalogRecordFetcher, type CatalogRecordFetcher } from './tools/catalogRecord';
 import { createRefreshProducts } from './tools/refreshProducts';
-import { createArrangeGroups } from './tools/arrangeGroups';
 import { APP_ANSWERED_TOOL_NAMES, SEARCH_TOOL_PREFIX } from '../../shared/concierge/toolSheetGuard';
 
 export type ClientToolExecutor = {
@@ -29,8 +28,10 @@ export type ClientToolExecutor = {
 };
 
 /** Tool names as declared in the tool sheet; snake_case like production's.
- * The check tools were removed (Arijit's D2 decision): arrange_groups already
- * re-validates every piece, and refresh_products covers single-piece facts. */
+ * The check tools were removed (Arijit's D2 decision, 2026-10-21) and
+ * arrange_groups followed (chips-native cut, 2026-10-24): the tiles render
+ * from the streamed search output, so refresh_products is the only client
+ * executor left. */
 /* The list lives in shared/concierge/toolSheetGuard.ts so the server's
  * tool-sheet check and this registry cannot drift apart. */
 export const CLIENT_TOOL_NAMES = APP_ANSWERED_TOOL_NAMES;
@@ -40,7 +41,6 @@ export function buildClientTools(
 ): Record<string, ClientToolExecutor> {
   const getRecords: CatalogRecordFetcher = createCatalogRecordFetcher(fetchRawRecord);
   const refreshProducts = createRefreshProducts(getRecords);
-  const arrangeGroups = createArrangeGroups(getRecords);
   const executorFor =
     <I, O>(run: (input: I) => Promise<O>) =>
     async ({ toolName, input, addToolResult }: { toolName: string; input: unknown; addToolResult: (r: { state: 'output-available'; output: unknown } | { state: 'output-error'; errorText: string }) => Promise<unknown> }) => {
@@ -65,6 +65,5 @@ export function buildClientTools(
       matchesToolName: (toolName: string) => toolName.startsWith(SEARCH_TOOL_PREFIX),
     },
     refresh_products: { onToolCall: executorFor(refreshProducts), timeout: 20000 },
-    arrange_groups: { onToolCall: executorFor(arrangeGroups), timeout: 20000 },
   };
 }

@@ -5,8 +5,9 @@
  * turn fails in a way that reads like an agent fault (2026-10-21: a new
  * agent config against an older build). */
 
-/** Client-side executors the app registers. */
-export const APP_ANSWERED_TOOL_NAMES = ['refresh_products', 'arrange_groups'] as const;
+/** Client-side executors the app registers (chips-native cut: arrange_groups
+ * is gone — the tiles render from the streamed search output). */
+export const APP_ANSWERED_TOOL_NAMES = ['refresh_products'] as const;
 
 /** The native search tool is answered by Agent Studio itself; the app only
  * claims the name. The runtime name carries an index suffix. */

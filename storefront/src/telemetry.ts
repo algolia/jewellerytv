@@ -1,13 +1,15 @@
 /** Bounded metadata-only trace: never shopper text, tool payloads or private reasoning. */
-export type ClientTrace={requestId:string;turnId:string;missionId?:string;startedAt:string;headersMs?:number;firstUsefulOutputMs?:number;streamCompletionMs?:number;termination?:'finished'|'cancelled'|'failed';status?:number;server?:unknown;events:{type:string;ms:number;toolCallId?:string;toolKind?:'search'|'display'|'other';revision?:number;count?:number;outcome?:'loaded'|'failed'}[]};
+export type ClientTrace={requestId:string;turnId:string;missionId?:string;startedAt:string;headersMs?:number;firstUsefulOutputMs?:number;streamCompletionMs?:number;termination?:'finished'|'cancelled'|'failed';status?:number;server?:unknown;events:{type:string;ms:number;toolCallId?:string;toolKind?:'search'|'other';revision?:number;count?:number;outcome?:'loaded'|'failed'}[]};
 export const clientTraces:ClientTrace[]=[];
 export function beginTrace(turnId:string,missionId?:string){const trace:ClientTrace={requestId:crypto.randomUUID(),turnId,missionId,startedAt:new Date().toISOString(),events:[]};traceStarts.set(trace,performance.now());clientTraces.push(trace);if(clientTraces.length>50)clientTraces.shift();return trace}
 export function observeTrace(trace:ClientTrace,event:Record<string,unknown>,elapsed:number){
  const type=String(event.type??'');if(type.includes('reasoning'))return;
- if((type==='text-delta'||(type==='tool-input-available'&&event.toolName==='algolia_grouped_results'))&&trace.firstUsefulOutputMs===undefined)trace.firstUsefulOutputMs=Math.round(elapsed);
+ /* The chips-native search both drives the display and precedes the reply, so
+  * its call is the first useful output alongside the first text delta. */
+ if((type==='text-delta'||(type==='tool-input-available'&&typeof event.toolName==='string'&&event.toolName.startsWith('algolia_search_')))&&trace.firstUsefulOutputMs===undefined)trace.firstUsefulOutputMs=Math.round(elapsed);
  if(type==='error')trace.termination='failed';
  if(type==='finish'){trace.streamCompletionMs=Math.round(elapsed);if(trace.termination!=='failed')trace.termination='finished'}
- if(['start','finish','error','tool-input-start','tool-input-available','tool-output-available','tool-output-error','data-guardrail-violation','data-shopping-brief'].includes(type)&&trace.events.length<100)trace.events.push({type,ms:Math.round(elapsed),...(typeof event.toolCallId==='string'?{toolCallId:event.toolCallId}:{}),...(typeof event.toolName==='string'?{toolKind:(event.toolName.startsWith('algolia_search_')?'search':event.toolName==='algolia_grouped_results'||event.toolName==='algolia_display_results'?'display':'other') as 'search'|'display'|'other'}:{})});
+ if(['start','finish','error','tool-input-start','tool-input-available','tool-output-available','tool-output-error','data-guardrail-violation','data-shopping-brief'].includes(type)&&trace.events.length<100)trace.events.push({type,ms:Math.round(elapsed),...(typeof event.toolCallId==='string'?{toolCallId:event.toolCallId}:{}),...(typeof event.toolName==='string'?{toolKind:(event.toolName.startsWith('algolia_search_')?'search':'other') as 'search'|'other'}:{})});
  if(type==='data-telemetry')trace.server=event.data;
 }
 
@@ -48,3 +50,11 @@ export const turnOutcomes:TurnOutcomeRecord[]=[];
  * failure class that renders as the generic incomplete-response notice.
  */
 export function recordTurnOutcome(turnId:string,requestId:string,patch:{finishFired:boolean;isAbort:boolean;isError:boolean;decision:TurnOutcomeRecord['decision']}){const record:TurnOutcomeRecord={turnId,requestId,startedAt:new Date().toISOString(),...patch};turnOutcomes.push(record);if(turnOutcomes.length>50)turnOutcomes.shift();return record}
+
+/** Bounded metadata-only display-path events (chips-native cut): staging
+ * failures and empty displays surface here in every environment so prod
+ * troubleshooting does not depend on dev-only console warns. Never payloads,
+ * never shopper text; `detail` carries a short code, not an error message. */
+export type DisplayEventRecord={at:string;kind:'stage-failed'|'stage-empty'|'stage-ok';detail:string};
+export const displayEvents:DisplayEventRecord[]=[];
+export function recordDisplayEvent(kind:DisplayEventRecord['kind'],detail:string){const record:DisplayEventRecord={at:new Date().toISOString(),kind,detail:detail.slice(0,120)};displayEvents.push(record);if(displayEvents.length>50)displayEvents.shift();return record}

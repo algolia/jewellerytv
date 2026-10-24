@@ -2,9 +2,9 @@ export type Viewport = { width: number; height: number };
 export type WindowRect = { x: number; y: number; width: number; height: number };
 
 const EDGE_GAP = 16;
-const MIN_WIDTH = 640;
+const MIN_WIDTH = 560;
 const MIN_HEIGHT = 420;
-const DEFAULT_WIDTH = 1440;
+const DEFAULT_WIDTH = 600;
 const DEFAULT_MAX_HEIGHT = 900;
 
 function clamp(value: number, min: number, max: number) {

@@ -134,89 +134,57 @@ describe('grouped discovery workspace', () => {
   });
 });
 
-describe('discovery grid modes and previous-choice label', () => {
+describe('presentation caps and previous-choice label', () => {
   function gridModel(
-    mode: 'three_style_grid' | 'focused_choice' | undefined,
-    thirdRow = false,
+    mode: 'search_results' | undefined,
+    extraRows = false,
     stale = false,
   ): WorkspaceViewModel {
     const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
     const [a, b, c, d, e, f, g, h] = ids.map(product);
-    const columns =
-      mode === 'focused_choice'
-        ? [
-            {
-              title: 'Halo',
-              mode,
-              items: [
-                { product: a, why: 'One' },
-                { product: b, why: 'Two' },
-              ],
-            },
-          ]
-        : [
-            {
-              title: 'Halo',
-              mode,
-              items: [
-                { product: a, why: 'One' },
-                { product: b, why: 'Two' },
-                ...(thirdRow ? [{ product: g, why: 'Seven' }] : []),
-              ],
-            },
-            {
-              title: 'Solitaire',
-              mode,
-              items: [
-                { product: c, why: 'Three' },
-                { product: d, why: 'Four' },
-              ],
-            },
-            {
-              title: 'Pave',
-              mode,
-              items: [
-                { product: e, why: 'Five' },
-                { product: f, why: 'Six' },
-                ...(thirdRow ? [{ product: h, why: 'Eight' }] : []),
-              ],
-            },
-          ];
+    const columns = [
+      {
+        title: 'opal necklaces',
+        mode,
+        items: [
+          { product: a, why: 'One' },
+          { product: b, why: 'Two' },
+          { product: c, why: 'Three' },
+          { product: d, why: 'Four' },
+          { product: e, why: 'Five' },
+          { product: f, why: 'Six' },
+          { product: g, why: 'Seven' },
+          { product: h, why: 'Eight' },
+          ...(extraRows ? [{ product: ids[8], why: 'Nine' }.product ? { product: product('i'), why: 'Nine' } : { product: product('i'), why: 'Nine' }] : []),
+        ],
+      },
+    ];
     return {
       discoveries: columns,
       discoveriesStale: stale,
     };
   }
 
-  it('renders a third row only in grid mode when a column carries it', () => {
-    const html = renderToStaticMarkup(<ProductWorkspace model={gridModel('three_style_grid', true)} />);
+  it('renders the chips-native search group at the full tile cap', () => {
+    const html = renderToStaticMarkup(<ProductWorkspace model={gridModel('search_results')} />);
     expect(html.match(/data-product-id=/g)?.length).toBe(8);
-    expect(html).toContain('data-group-count="3"');
   });
 
-  it('caps non-grid presentations at two variants per column', () => {
-    const html = renderToStaticMarkup(
-      <ProductWorkspace model={gridModel('three_style_grid', false)} />,
-    );
-    expect(html.match(/data-product-id=/g)?.length).toBe(6);
-  });
-
-  it('renders a focused presentation as one column without the grid title', () => {
-    const html = renderToStaticMarkup(<ProductWorkspace model={gridModel('focused_choice')} />);
-    expect(html).toContain('data-group-count="1"');
-    expect(html).not.toContain('Explore the category');
+  it('caps a plain presentation at two variants per column', () => {
+    const html = renderToStaticMarkup(<ProductWorkspace model={gridModel(undefined)} />);
+    expect(html.match(/data-product-id=/g)?.length).toBe(2);
   });
 
   it('labels retained discoveries as previous choices when the flag is set', () => {
     const html = renderToStaticMarkup(
-      <ProductWorkspace model={gridModel('three_style_grid', false, true)} />,
+      <ProductWorkspace model={gridModel(undefined, false, true)} />,
     );
     expect(html).toContain('Showing your previous choices.');
   });
 
   it('omits the previous-choice label for a fresh selection', () => {
     const html = renderToStaticMarkup(
-      <ProductWorkspace model={gridModel('three_style_grid', false, false)} />,
+      <ProductWorkspace model={gridModel(undefined, false, false)} />,
     );
     expect(html).not.toContain('Showing your previous choices.');
   });
