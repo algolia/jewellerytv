@@ -56,6 +56,110 @@
     "note": "2026-10-24: live Just Reduced promo block video (2s ambient loop, original untransformed file); block overlay copy matches live"
   },
   {
+    "file": "gg-intro.mp4",
+    "source": "https://media.jtv.com/video/upload/q_auto,f_auto/jtv-site/Nav%20Promos/nav-promos-2026-q4/gift-guide-1x1-1.mp4",
+    "note": "2026-10-24: live Gift Guide split-block video (15s)"
+  },
+  {
+    "file": "bhd-400.mp4",
+    "source": "https://media.jtv.com/video/upload/q_auto,f_auto/v1790963979/jtv-site/promo/2026-hp-q4/BHD_400x400_1.mp4",
+    "note": "2026-10-24: live Big Holiday Deals video card (10s)"
+  },
+  {
+    "file": "card-redtag.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1791812638/jtv-site/promo/2026-hp-q4/one-third-carousel-redtag-pearls-apl604-apl760-plv179.png"
+  },
+  {
+    "file": "card-justreduced.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1792772249/jtv-site/promo/2026-hp-q4/one-third-carousel-justreduced-lifestyle-colorsilver-seh147-ctb1934-ctb2369-dok3407.png"
+  },
+  {
+    "file": "gg-birthstone.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790872053/jtv-site/promo/2026-hp-q4/carousel-holiday26-giftguide-birthstonejewelry.png"
+  },
+  {
+    "file": "gg-sets.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790872132/jtv-site/promo/2026-hp-q4/carousel-holiday26-giftguide-jewelrysets.png"
+  },
+  {
+    "file": "gg-rings-doq.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1791812641/jtv-site/promo/2026-hp-q4/one-third-content-block-holiday26-giftguide-rings-doq134-rst2118.png"
+  },
+  {
+    "file": "bf-getonegiveone.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1792161161/jtv-site/promo/2026-hp-q4/one-third-content-block-holiday26-blackfridaypreview-getonegiveone.png"
+  },
+  {
+    "file": "preferred-card.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786764/jtv-site/promo/2026-hp-q4/one-half-content-block-lifestyle-preferredcard.png",
+    "note": "2026-10-24: desktop variant replaced the mobile one first fetched"
+  },
+  {
+    "file": "lto-logo.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/jtv-site/promo/2026-hp-q3/limited-time-offer-logo2.png"
+  },
+  {
+    "file": "brand-bella.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786755/jtv-site/promo/2026-hp-q4/carousel-lifestyle-bella-bfj490-dol239-dol332.png"
+  },
+  {
+    "file": "brand-moissanite.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786755/jtv-site/promo/2026-hp-q4/carousel-lifestyle-moissanite-jmf383-jhmf894-jmf813-jmf426-jmf562a.png"
+  },
+  {
+    "file": "brand-prazana.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786755/jtv-site/promo/2026-hp-q4/carousel-lifestyle-prazana-143tlae-143tlaf-143tloa-143tlap.png"
+  },
+  {
+    "file": "brand-ripka.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786757/jtv-site/promo/2026-hp-q4/carousel-lifestyle-ripka-jrj802-jrj476a.png"
+  },
+  {
+    "file": "giftboxes.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786761/jtv-site/promo/2026-hp-q4/mobile-one-half-promo-block-holiday-giftboxes.png"
+  },
+  {
+    "file": "gift-jewelrybox.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786333/jtv-site/promo/2026-hp-q4/carousel-block-holiday-jewelrybox.png"
+  },
+  {
+    "file": "gift-fragrance.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786333/jtv-site/promo/2026-hp-q4/carousel-block-holiday-giftguide-fragrance.png"
+  },
+  {
+    "file": "gift-purse.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786769/jtv-site/promo/2026-hp-q4/carousel-block-holiday-purse-1b1x0d-1bdqba.png"
+  },
+  {
+    "file": "gift-sunglasses.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786754/jtv-site/promo/2026-hp-q4/carousel-block-sunglasses-1awiu.png"
+  },
+  {
+    "file": "gift-jmkit.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786754/jtv-site/promo/2026-hp-q4/carousel-block-jmkit2400.png"
+  },
+  {
+    "file": "lifestyle-earrings.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790786763/jtv-site/promo/2026-hp-q4/one-half-content-block-holiday-lifestyle-earrings.png"
+  },
+  {
+    "file": "lifestyle-giftbox.png",
+    "source": "https://media.jtv.com/image/upload/q_auto,f_auto/v1790871605/jtv-site/promo/2026-hp-q4/one-half-content-block-holiday-lifestyle-jtvgiftbox-black.png"
+  },
+  {
+    "file": "jtv-logo-full.png",
+    "source": "https://images.jtv.com/media/jtv-site/resources/images/logo-blue@2x.png",
+    "note": "concierge entry guidance logo, from the 2026-10-02 build"
+  },
+  {
+    "file": "hero-slide-preferred.jpg",
+    "source": "https://images.jtv.com/media/jtv-site/promo/2026q1/promoblock_appfeature_preferredaccount.png"
+  },
+  {
+    "file": "hero-slide-espanol.svg",
+    "source": "https://images.jtv.com/media/jtv-site/social-icons/social_facebook.svg"
+  },
+  {
     "file": "hero-slide-clearance.jpg",
     "source": "https://images.jtv.com/media/jtv-site/promo/2020q2/p-cybermondaycountdown-ring.jpg",
     "note": "2026-10-24: live homepage hero is a rotating carousel of campaign art; this is its clearance slide"

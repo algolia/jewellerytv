@@ -69,6 +69,8 @@ const HERO_SLIDES=[
  {src:'/assets/hero-slide-deals.jpg',alt:'Big Holiday Deals, new items added daily',to:'/search?clearance=1'},
  {src:'/assets/hero-slide-powerbuys.jpg',alt:"Power Buys, gifts up to $500 below competitors' prices",to:outside('Power Buys')},
  {src:'/assets/hero-slide-giftguide.jpg',alt:'2026 Holiday Gift Guide, the gifts everyone wants to see under the tree',to:'/search?q=holiday%20gift'},
+ {src:'/assets/hero-slide-preferred.jpg',alt:'Limited time offer, receive $50 in Brilliant Cash with a JTV Preferred Account',to:outside('JTV Preferred Account')},
+ {src:'/assets/hero-slide-espanol.svg',alt:'JTV en Español',to:outside('JTV Español')},
 ];
 
 const GG_CARDS=[
@@ -108,7 +110,7 @@ const GIFT_CARDS=[
  {img:'/assets/gift-jmkit.png',label:'Jewelry Making',to:'/category/making'},
 ];
 
-export function Home({children}:{children?:ReactNode}) {
+export function Home({children,onAir}:{children?:ReactNode;onAir?:ReactNode}) {
  const reduce=typeof window<'u'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  const [slide,setSlide]=useState(0);
  const [playing,setPlaying]=useState(!reduce);
@@ -129,6 +131,7 @@ export function Home({children}:{children?:ReactNode}) {
   <Link to="/search?clearance=1" className="tile-card video-card"><video src="/assets/bhd-400.mp4" muted loop playsInline aria-hidden="true" {...autoPlay}/><div className="video-card-copy"><p className="eyebrow">NEW DEALS ADDED DAILY!</p><p>Check back each day for the best gifts at our best prices!</p></div></Link>
   <Link to="/search?q=holiday%20gift" className="tile-card"><img src="/assets/gg-rings-doq.png" alt="Holiday gift guide rings"/></Link>
  </section>
+ {onAir}
  <section className="pref-block"><img src="/assets/preferred-card.png" alt="JTV Preferred Account credit card"/><div className="pref-copy"><img src="/assets/lto-logo.png" alt="Limited time offer" width="120"/><h3>JTV PREFERRED ACCOUNT CREDIT CARD</h3><p>New card holders only. Must make a qualifying order of $50+ within 30 days.</p><Link to={outside('JTV Preferred Account')} className="outline-button">LEARN MORE</Link></div></section>
  <section className="card-row brand-row"><h2>RINGS FROM BRANDS YOU LOVE</h2><CarouselRow label="Featured brands">{BRAND_CARDS.map(c=><Link key={c.alt} to={c.to} className="tile-card card-fixed"><img src={c.img} alt={c.alt}/></Link>)}</CarouselRow></section>
  <section className="mwf-block"><div className="mwf-copy"><h2>MOST WISHED FOR</h2><p>The pieces everyone has on their list this holiday.</p><Link to="/search" className="outline-button">SHOP NOW</Link></div><img src="/assets/giftboxes.png" alt="Holiday gift boxes"/></section>

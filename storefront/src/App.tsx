@@ -139,6 +139,75 @@ function HomeProducts() {
     </section>
   );
 }
+
+/* Live jtv.com renders an On-Air section between the deal rows and the
+ * Preferred Account block: the live TV stream (JWPlayer, their public
+ * playlist) plus the current and recent on-air items. The stream is theirs;
+ * the item strips show our connected catalogue. */
+declare global {
+  interface Window {
+    jwplayer?: (id: string) => {
+      setup: (opts: Record<string, unknown>) => void;
+      remove?: () => void;
+    };
+  }
+}
+function HomeOnAir() {
+  const { items } = useHits();
+  const host = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const id = 'onair-player';
+    const lib = document.createElement('script');
+    lib.src = '//content.jwplatform.com/libraries/VaWDbo4e.js';
+    lib.async = true;
+    lib.onload = () => {
+      if (window.jwplayer && host.current) {
+        window
+          .jwplayer(id)
+          .setup({
+            playlist: '//cdn.jwplayer.com/v2/media/id2Frx0C',
+            autostart: true,
+            mute: true,
+            width: '100%',
+            aspectratio: '16:9',
+          });
+      }
+    };
+    document.body.appendChild(lib);
+    return () => {
+      try {
+        window.jwplayer?.(id).remove?.();
+      } catch {
+        /* player already gone */
+      }
+      lib.remove();
+    };
+  }, []);
+  return (
+    <section className="on-air" aria-label="JTV On Air">
+      <div className="on-air-video" ref={host} id="onair-player" />
+      <div className="on-air-current">
+        <h3>
+          <span className="on-air-dot" aria-hidden="true" />
+          Current On-Air Item
+        </h3>
+        <div className="product-grid">
+          {items.slice(0, 1).map((item) => (
+            <ProductCard key={item.objectID} item={item} />
+          ))}
+        </div>
+      </div>
+      <div className="on-air-recent">
+        <h3>Recent On-Air Items</h3>
+        <div className="product-grid">
+          {items.slice(1, 5).map((item) => (
+            <ProductCard key={item.objectID} item={item} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 function Experience() {
   const location = useLocation();
   const { indexUiState, results, status, error } = useInstantSearch({ catchError: true });
@@ -270,7 +339,7 @@ function Experience() {
           <Route
             path="/"
             element={
-              <Home>
+              <Home onAir={<HomeOnAir />}>
                 <HomeProducts />
               </Home>
             }
