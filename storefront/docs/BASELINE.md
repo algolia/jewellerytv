@@ -1,15 +1,15 @@
 # The baseline
 
-Established 2026-10-22. Updated 2026-10-23 (merchandising-filter tool promotion: the search tool gained the `Pricing_DiscountPercentRange` facet and a `prod_catalog_newest` index entry; instructions and system prompt unchanged). This is the golden set: the application on `main` and the Concierge agent definition, identical in local development and in production. Every future feature or fix starts from this point. If something here is not true, that is a bug to fix, not a variation to tolerate.
+Established 2026-10-22. Updated 2026-10-23 (merchandising-filter tool promotion: the search tool gained the `Pricing_DiscountPercentRange` facet and a `prod_catalog_newest` index entry; instructions and system prompt unchanged). Updated 2026-10-24 (chips-native cut: `arrange_groups` removed from the tool sheet and the application; instructions and system prompt rewritten to the two-scenario funnel model; the streamed search result is the display). This is the golden set: the application on `main` and the Concierge agent definition, identical in local development and in production. Every future feature or fix starts from this point. If something here is not true, that is a bug to fix, not a variation to tolerate.
 
 ## What the baseline is
 
 | Part | Definition |
 | --- | --- |
-| Application | The code on `main` at the tag `baseline-2026-10-23`. Production serves a clean Git archive of that exact commit. |
+| Application | The code on `main`. Production serves a clean Git archive of the released commit. |
 | Agent | Two Agent Studio agents with **identical definitions**: development (`npm run dev` talks to it) and production (the public site talks to it). Their identifiers are configuration, not code: the settings `JTV_CONCIERGE_DEVELOPMENT_AGENT_ID` and `JTV_CONCIERGE_PRODUCTION_AGENT_ID` (in the gitignored `.env.local` locally, in Vercel's environment settings in production). The app and the baseline tools read the same settings, and both refuse to run if the two are the same. |
-| Agent definition | Instructions, system prompt, tool sheet and configuration, fingerprinted in [`scripts/baseline/baseline.json`](../scripts/baseline/baseline.json). The agent's text lives in Agent Studio, not in this public repository. |
-| Tools | One native search tool, `algolia_search_index`, and two client tools this application executes: `refresh_products` and `arrange_groups`. |
+| Agent definition | Instructions, system prompt, tool sheet and configuration, fingerprinted in [`scripts/baseline/baseline.json`](../scripts/baseline/baseline.json). The agent's text lives in Agent Studio, not in this public repository. After the 2026-10-24 cut the prompts live as reviewable files under `docs/workspace/prompt-review-2026-10-23/cut/` alongside the live agent. |
+| Tools | One native search tool, `algolia_search_index`, and one client tool this application executes: `refresh_products`. The tiles render from the streamed search output; `arrange_groups` was removed on 2026-10-24. |
 | Model | `claude-sonnet-5`, same provider on both agents. |
 | Guardrail | The five configured categories, identical on both agents. |
 | Production URL | https://jewellerytv.vercel.app, one Vercel project (`algolia/jewellerytv`). |

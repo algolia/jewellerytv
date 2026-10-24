@@ -39,11 +39,6 @@ const hit = (objectID: string, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-const group = (title: string, ids: string[], why?: string) =>
-  why === undefined
-    ? { title, results: ids.map((objectID) => ({ objectID })) }
-    : { title, why, results: ids.map((objectID) => ({ objectID })) };
-
 describe('stripTrailingNote', () => {
   it('strips a plain trailing NOTE line', () => {
     const { display, note } = stripTrailingNote('Here is a first look.\n\nNOTE: shown IDs A, B');
@@ -164,13 +159,6 @@ describe('extractMessageFacetPicks', () => {
       nbHits: 24,
       facets: { Catalog_Brand: { 'Charles Hubert': 360, Bulova: 37 } },
     },
-  };
-  const arrangeWithPick = {
-    type: 'tool-arrange_groups',
-    toolCallId: 'a1',
-    state: 'output-available',
-    input: { groups: [{ title: 'G', objectIDs: ['12TB0A'] }], displayFacets: ['Catalog_Brand'] },
-    output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: '12TB0A' }] }] },
   };
 
   it('attaches one pick per message with accumulated facets and hits, derived from the counts', () => {

@@ -22,7 +22,6 @@ const execute = process.argv.includes('--execute');
 const expect = arg('expect');
 const sha = (v) => createHash('sha256').update(typeof v === 'string' ? v : JSON.stringify(v)).digest('hex');
 const s8 = (v) => sha(v).slice(0, 8);
-const omit = (o, k) => Object.fromEntries(Object.entries(o).filter(([key]) => key !== key));
 const stripNulls = (v) =>
   Array.isArray(v) ? v.map(stripNulls) : v && typeof v === 'object'
     ? Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null).map(([k, x]) => [k, stripNulls(x)]))

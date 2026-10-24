@@ -29,19 +29,19 @@
   <text x="580" y="158" font-size="11" fill="#33415c" text-anchor="middle">runs in the page</text>
 
   <rect x="730" y="96" width="240" height="88" rx="8" fill="#ffffff" stroke="#0076a9" stroke-width="1.6"/>
-  <text x="850" y="122" font-size="13" font-weight="700" fill="#33415c" text-anchor="middle">Product tiles</text>
-  <text x="850" y="142" font-size="11" fill="#33415c" text-anchor="middle">one column per group,</text>
-  <text x="850" y="158" font-size="11" fill="#33415c" text-anchor="middle">only pieces the checks passed</text>
+  <text x="850" y="122" font-size="13" font-weight="700" fill="#33415c" text-anchor="middle">Tiles and chips</text>
+  <text x="850" y="142" font-size="11" fill="#33415c" text-anchor="middle">tiles from the search results,</text>
+  <text x="850" y="158" font-size="11" fill="#33415c" text-anchor="middle">chips narrow the next search</text>
 
   <path d="M 230 246 h 190 v 66 a 95 8 0 0 1 -190 0 z" fill="#eef2f7" stroke="#33415c" stroke-width="1.4"/>
   <ellipse cx="325" cy="246" rx="95" ry="8" fill="#eef2f7" stroke="#33415c" stroke-width="1.4"/>
   <text x="325" y="278" font-size="12" fill="#33415c" text-anchor="middle">Session state</text>
-  <text x="325" y="296" font-size="10.5" fill="#6b7a90" text-anchor="middle">saved pieces, per tab</text>
+  <text x="325" y="296" font-size="10.5" fill="#6b7a90" text-anchor="middle">shopping facts and chip picks, per tab</text>
 
   <rect x="560" y="240" width="300" height="88" rx="8" fill="#f8faf5" stroke="#2e7d4f" stroke-width="1.6"/>
-  <text x="710" y="264" font-size="12.5" font-weight="700" fill="#33415c" text-anchor="middle">Product checks (in the browser)</text>
-  <text x="710" y="284" font-size="11" fill="#33415c" text-anchor="middle">in stock, price fits, groups fill</text>
-  <text x="710" y="302" font-size="10.5" fill="#6b7a90" text-anchor="middle">runs the agent's two helper tools</text>
+  <text x="710" y="264" font-size="12.5" font-weight="700" fill="#33415c" text-anchor="middle">Display staging (in the browser)</text>
+  <text x="710" y="284" font-size="11" fill="#33415c" text-anchor="middle">tiles and chips from the streamed search</text>
+  <text x="710" y="302" font-size="10.5" fill="#6b7a90" text-anchor="middle">variant dedupe, stock and image checks</text>
 
   <polyline points="170,142 230,142" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
   <polyline points="430,140 490,140" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
@@ -51,7 +51,7 @@
   <polyline points="300,184 300,240" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
   <text x="312" y="218" font-size="10.5" fill="#33415c" text-anchor="start">kept while the tab lives</text>
   <polyline points="620,184 620,240" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="632" y="218" font-size="10.5" fill="#33415c" text-anchor="start">routes the agent's tool calls here</text>
+  <text x="632" y="218" font-size="10.5" fill="#33415c" text-anchor="start">stages the display here</text>
 
   <polyline points="490,160 430,160 430,480 450,480" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
   <text x="418" y="310" font-size="10.5" fill="#33415c" text-anchor="end">the message</text>
@@ -75,7 +75,7 @@
 
   <polyline points="610,480 660,480" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
   <polyline points="820,328 820,380 980,380 980,440" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="906" y="372" font-size="10.5" fill="#33415c" text-anchor="middle">looks up each piece, read-only</text>
+  <text x="906" y="372" font-size="10.5" fill="#33415c" text-anchor="middle">exact-product refresh, read-only</text>
 
   <rect x="60" y="628" width="240" height="88" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
   <text x="180" y="654" font-size="12.5" font-weight="700" fill="#33415c" text-anchor="middle">Output guardrail</text>
