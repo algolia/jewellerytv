@@ -1,14 +1,13 @@
 {
-  "recordedAt": "2026-10-23T15:23:04.018Z",
+  "recordedAt": "2026-10-24T19:14:08.933Z",
   "fingerprint": {
-    "instructions": "28b97166",
-    "systemPrompt": "d90b149d",
-    "tools": "c91b024a",
+    "instructions": "9956e6c5",
+    "systemPrompt": "d516838e",
+    "tools": "d4e73684",
     "config": "cf377cc5",
     "toolNames": [
       "algolia_search_index",
-      "refresh_products",
-      "arrange_groups"
+      "refresh_products"
     ],
     "model": "claude-sonnet-5"
   }
