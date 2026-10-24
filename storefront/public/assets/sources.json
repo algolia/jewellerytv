@@ -46,6 +46,16 @@
     "source": "https://www.jtv.com/resources/fonts/Lato-Light.woff"
   },
   {
+    "file": "freeshipping-banner.mp4",
+    "source": "https://media.jtv.com/video/upload/q_auto,f_mp4/v1791904392/jtv-site/promo/2026-hp-q4/freeshipping-tan-1600x80.mp4",
+    "note": "2026-10-24: live homepage free-shipping video banner (8s loop)"
+  },
+  {
+    "file": "just-reduced.mp4",
+    "source": "https://media.jtv.com/video/upload/v1792588995/jtv-site/promo/2026-hp-q4/full-width-holiday26-kickoff-10-80.mp4",
+    "note": "2026-10-24: live Just Reduced promo block video (2s ambient loop, original untransformed file); block overlay copy matches live"
+  },
+  {
     "file": "hero-slide-clearance.jpg",
     "source": "https://images.jtv.com/media/jtv-site/promo/2020q2/p-cybermondaycountdown-ring.jpg",
     "note": "2026-10-24: live homepage hero is a rotating carousel of campaign art; this is its clearance slide"
