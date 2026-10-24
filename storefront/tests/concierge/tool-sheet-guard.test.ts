@@ -10,8 +10,12 @@ import {
 import { buildClientTools } from '../../src/concierge/clientTools';
 
 describe('tool sheet comparison', () => {
-  it('accepts the three-tool sheet this app answers', () => {
-    expect(unansweredTools(['algolia_search_index', 'refresh_products', 'arrange_groups'])).toEqual([]);
+  it('accepts the cut two-tool sheet this app answers', () => {
+    expect(unansweredTools(['algolia_search_index', 'refresh_products'])).toEqual([]);
+  });
+
+  it('names arrange_groups unanswered after the chips-native cut', () => {
+    expect(unansweredTools(['algolia_search_index', 'refresh_products', 'arrange_groups'])).toEqual(['arrange_groups']);
   });
 
   it('accepts the runtime search tool name with an index suffix', () => {
@@ -51,7 +55,7 @@ const agentResponse = (names: string[]) =>
 
 describe('tool sheet check', () => {
   it('reads the agent read-only with the search key and reports a match', async () => {
-    const fetchSpy = vi.fn(async () => agentResponse(['algolia_search_index', 'refresh_products', 'arrange_groups']));
+    const fetchSpy = vi.fn(async () => agentResponse(['algolia_search_index', 'refresh_products']));
     const check = createToolSheetCheck({ appId: 'TEST123', apiKey: 'search-key', agentId: 'agent-1', fetch: fetchSpy });
     expect(await check.get()).toMatchObject({ status: 'match', unanswered: [] });
     const [url, init] = fetchSpy.mock.calls[0] as unknown as [string, RequestInit];
@@ -63,9 +67,12 @@ describe('tool sheet check', () => {
   it('reports a mismatch naming the unanswered tools', async () => {
     const check = createToolSheetCheck({
       appId: 'TEST123', apiKey: 'k', agentId: 'agent-1', logger: () => {},
-      fetch: async () => agentResponse(['update_shopping_state', 'arrange_groups']),
+      fetch: async () => agentResponse(['update_shopping_state', 'retrieve_evidence']),
     });
-    expect(await check.get()).toMatchObject({ status: 'mismatch', unanswered: ['update_shopping_state'] });
+    expect(await check.get()).toMatchObject({
+      status: 'mismatch',
+      unanswered: ['update_shopping_state', 'retrieve_evidence'],
+    });
   });
 
   it('fails open when the agent cannot be read, and retries sooner than a known result', async () => {
@@ -92,7 +99,7 @@ describe('tool sheet check', () => {
     expect((await check.get()).status).toBe('mismatch');
     await check.get();
     expect(fetchSpy).toHaveBeenCalledTimes(1);
-    names = ['algolia_search_index', 'refresh_products', 'arrange_groups'];
+    names = ['algolia_search_index', 'refresh_products'];
     now += 31_000;
     expect((await check.get()).status).toBe('match');
   });
@@ -158,7 +165,7 @@ describe('tool sheet guard on the API', () => {
   });
 
   it('serves a chat turn when the sheet matches', async () => {
-    const { chat } = await appWith(['algolia_search_index', 'refresh_products', 'arrange_groups']);
+    const { chat } = await appWith(['algolia_search_index', 'refresh_products']);
     expect((await chat()).status).toBe(200);
   });
 

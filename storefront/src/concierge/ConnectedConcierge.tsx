@@ -801,6 +801,11 @@ export function ConnectedConcierge({
             params: {
               query: entry.pick.queryText,
               facetFilters: selections.map((s) => `${s.attribute}:"${s.value}"`),
+              /* The agent's own search returns only in-stock pieces
+               * (developer-set searchParameters.filters); the funnel refines
+               * client-side, so it must carry the same filter or the deeper
+               * levels show pieces the first level excluded. */
+              filters: 'Inventory_InStock:true',
               hitsPerPage: 8,
             },
           },
@@ -815,7 +820,9 @@ export function ConnectedConcierge({
               return null;
             }
           })
-          .filter((p): p is Product => p !== null);
+          /* A record with no usable image renders a broken tile; the funnel
+           * shows what the shopper can actually see. */
+          .filter((p): p is Product => p !== null && p.images.length > 0);
         /* The next funnel level's attribute derives from the refinement
          * response's own facet counts (no model list): the just-selected
          * attribute now holds one value and drops out on its own. */
@@ -1286,7 +1293,7 @@ export function ConnectedConcierge({
                           return null;
                         }
                       })
-                      .filter((p): p is Product => p !== null);
+                      .filter((p): p is Product => p !== null && p.images.length > 0);
                     const funnel = facetFunnels[message.id];
                     const level = funnel?.level ?? 0;
                     const attribute = entry.pick.displayFacets[level];

@@ -204,7 +204,10 @@ export function createConciergeWorkspaceSession(options: {
       const fresh = records.get(product.id);
       if (!fresh || (fresh as Record<string, unknown>).objectID !== product.id) continue;
       const checked = normalize(fresh);
-      if (!checked || checked.inStock === false || checked.price === null) continue;
+      /* A record with no usable image renders a broken tile: skip it, the
+       * shopper cannot shop an empty image well. */
+      if (!checked || checked.images.length === 0) continue;
+      if (checked.inStock === false || checked.price === null) continue;
       verified.set(product.id, fresh);
       tiles.push({ product: checked });
     }
