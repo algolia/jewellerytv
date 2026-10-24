@@ -1,33 +1,32 @@
 flowchart TB
   subgraph B["Shopper's browser"]
     direction LR
-    Shopper["Shopper"] -->|"types a request"| Page["JTV page: conversation left, product tiles right"]
+    Shopper["Shopper"] -->|"types a request or taps a chip"| Page["JTV page: conversation with tiles and narrowing chips beside it"]
     Page -->|"the message"| Chat["Chat client (InstantSearch, in the page)"]
-    Chat -->|"streamed reply carries the checked pieces"| Tiles["Product tiles: one column per group, only checked pieces"]
-    Page -->|"saved pieces, per tab"| State[("Session state, per tab")]
-    Chat -->|"routes the agent's tool calls here"| Check["Product checks in the browser: in stock, price fits, groups fill"]
+    Chat -->|"the streamed search result IS the display"| Tiles["Staging in the browser: tiles from the search hits, facet chips from the same response, variant dedupe, stock and image checks"]
+    Page -->|"shopping facts + active chip picks"| State[("Session state, per tab")]
   end
 
   subgraph S["JTV website server (Node)"]
     direction LR
     ChatAPI["Chat API (/api/chat): forwards to the agent"] --> Guard{"Tool check: the agent may only offer tools this build can run"}
-    ReadOnly["Read-only APIs: product lookups, search, refresh"]
+    ReadOnly["Read-only APIs: exact-product refresh, search"]
   end
 
   subgraph A["Algolia Agent Studio"]
     direction LR
     Out["Output guardrail: reviews every reply against five rules; can withhold it"] -->|"approved reply"| Agent["Concierge agent: one definition; test and live identical"]
-    Agent -->|"searches"| Search["Catalogue search, the agent's own tool"]
+    Agent -->|"one search per turn"| Search["Catalogue search, the agent's own tool"]
     Search --> Catalogue[("JTV catalogue: products, blog, help articles, read-only")]
   end
 
   Chat -->|"the message"| ChatAPI
   Guard -->|"tools match"| Agent
   Guard -.->|"mismatch: the page shows a clear error, not a failure"| Chat
-  Check -->|"looks up each piece, read-only"| ReadOnly
+  Tiles -->|"exact-product refresh, read-only"| ReadOnly
   ReadOnly -->|"reads the same catalogue"| Catalogue
   Agent -->|"the reply, streamed"| Chat
-  Out -.->|"withheld: a fixed notice; the checked tiles stay"| Page
+  Out -.->|"withheld: a fixed notice; the staged tiles stay"| Page
 
   subgraph Release["How a change reaches production"]
     direction LR
