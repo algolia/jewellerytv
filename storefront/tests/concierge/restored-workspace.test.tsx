@@ -1,7 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
-import type { BriefStateV3 } from '../../shared/briefSchema';
-import { ConnectedShoppingBrief } from '../../src/concierge/ConnectedShoppingBrief';
+import { describe, expect, it } from 'vitest';
 import { ConciergeWorkspaceLayout } from '../../src/concierge/ConciergeWorkspaceLayout';
 import { ShoppingWorkspace } from '../../src/ShoppingWorkspace';
 import { normalizeProduct } from '../../src/catalog';
@@ -13,15 +11,6 @@ const piece = normalizeProduct({
   Pricing_ActivePrice: 125,
   Media_Images: [],
 });
-const blankBrief: BriefStateV3 = {
-  version: 3,
-  missionId: 'mission-restored',
-  revision: 0,
-  facts: [],
-  processedTurns: [],
-  tombstones: [],
-  events: [],
-};
 
 function workspace(): WorkspaceViewModel {
   return {
@@ -39,13 +28,9 @@ function layout(model: WorkspaceViewModel) {
         </>
       }
       preferenceControls={
-        <ConnectedShoppingBrief
-          brief={blankBrief}
-          onAdd={vi.fn()}
-          onReplace={vi.fn()}
-          onRetract={vi.fn()}
-          onUndo={vi.fn()}
-        />
+        <button type="button" aria-expanded="false">
+          Preferences (0)
+        </button>
       }
       messages={<p>Conversation answer</p>}
       status={<p role="status">Concierge is considering your request.</p>}
