@@ -52,7 +52,7 @@ export type PresentProducts = (input: PresentProductsInput) => Promise<PresentPr
  * live value list, derived from the index (never hand-maintained). */
 export type VocabularyLike = { values: Record<string, string[]> };
 
-const MAX_TILES = 8;
+const MAX_TILES = 9;
 const MIN_TOKEN_LENGTH = 4;
 
 const invalid = (reason: string): PresentProductsOutput => ({
