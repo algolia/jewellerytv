@@ -696,6 +696,13 @@ export function ConnectedConcierge({
    * reliable transport signal is this ref. Read like finishRef.
    */
   const chatErrorRef = useRef<Error | null>(null);
+  /* The shopper's own message text for the current turn, captured at send
+   * time. present_products derives the requirement from these words — the
+   * tool's only source (the model-quoted requirement field was removed after
+   * the battery measured 8% model compliance). Read by the clientTools
+   * supplier below; the memo holds this ref for its lifetime, so the supplier
+   * always sees the latest send. */
+  const shopperMessageRef = useRef<string | null>(null);
   const onChatError = useCallback<ChatOnErrorCallback>((error) => {
     chatErrorRef.current = error;
   }, []);
@@ -716,7 +723,10 @@ export function ConnectedConcierge({
           if (!response.ok) throw new Error('Product record could not be loaded.');
           return await response.json();
         },
-        { vocabulary: loadCatalogVocabulary },
+        {
+          vocabulary: loadCatalogVocabulary,
+          shopperMessage: () => shopperMessageRef.current,
+        },
       ),
     [],
   );
@@ -946,6 +956,7 @@ export function ConnectedConcierge({
       const turnId = newId('turn');
       const startManualEditEpoch = manualEditEpoch.current;
       latestTurn.current = { turnId, sourceMessageId };
+      shopperMessageRef.current = text;
       finishRef.current = null;
       chatErrorRef.current = null;
       runtime.beginTurn(turnId);

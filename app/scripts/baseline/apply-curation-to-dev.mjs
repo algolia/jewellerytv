@@ -61,16 +61,17 @@ const presentDeclaration = {
   name: 'present_products',
   type: 'client_side',
   // 200-char client description cap; the semantics live in the system prompt.
+  // No `requirement` field (2026-10-25): the tool reads the shopper's own
+  // message from the app — the model quoted it on only 8% of material turns.
   description:
-    "After a search, send 9-12 chosen objectIDs best first, displayFacets (1-3 facet names), and requirement: the shopper's named material or stone, quoted. It checks pieces and returns a full shelf.".slice(0, 200),
+    "After a search, send 9-12 chosen objectIDs best first, displayFacets (1-3 facet names). It checks pieces — stock, price, image, twins, and the shopper's named material — and returns a full shelf.".slice(0, 200),
   inputSchema: {
     type: 'object',
     properties: {
       objectIDs: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 24 },
       displayFacets: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 3 },
-      requirement: { type: 'string', maxLength: 120 },
     },
-    required: ['objectIDs', 'requirement'],
+    required: ['objectIDs'],
     additionalProperties: false,
   },
 };

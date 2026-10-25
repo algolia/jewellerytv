@@ -257,7 +257,7 @@ describe('present_products tool', () => {
     expect((await present({ objectIDs: [] })).status).toBe('invalid_input');
   });
 
-  it('drops pieces whose material fields contradict the quoted requirement', async () => {
+  it('drops pieces whose material fields contradict the shopper\'s own message', async () => {
     const vocabulary = {
       values: {
         'Catalog_JewelryMaterialNavigationPurity': ['Sterling', '10K', '14K', '18K', '24K'],
@@ -287,9 +287,11 @@ describe('present_products tool', () => {
       }
       return map;
     };
-    const result = await createPresentProducts(materialAware, { vocabulary: async () => vocabulary })({
+    const result = await createPresentProducts(materialAware, {
+      vocabulary: async () => vocabulary,
+      shopperMessage: () => 'show me sterling silver rings',
+    })({
       objectIDs: ['silver', 'goldplated'],
-      requirement: 'sterling silver',
     });
     expect(result.status).toBe('ok');
     expect(result.objectIDs.map((i) => i.objectID)).toEqual(['silver']);
@@ -300,12 +302,47 @@ describe('present_products tool', () => {
     expect(result.enforced?.values).toEqual(['Sterling']);
   });
 
-  it('enforces nothing when the requirement matches no vocabulary value', async () => {
-    const result = await createPresentProducts(fetcher, { vocabulary: async () => ({ values: { Metal: ['Gold'] } }) })({
+  it('enforces nothing when the shopper message matches no vocabulary value', async () => {
+    const result = await createPresentProducts(fetcher, {
+      vocabulary: async () => ({ values: { Metal: ['Gold'] } }),
+      shopperMessage: () => 'something exotic and unobtainium',
+    })({
       objectIDs: ['a'],
-      requirement: 'something exotic and unobtainium',
     });
     expect(result.status).toBe('ok');
+    expect(result.enforced).toBeUndefined();
+  });
+
+  it('ignores a model-quoted requirement — only the shopper\'s message enforces', async () => {
+    /* The structural fix, asserted at the runtime boundary: even if a prompt
+     * regression makes the model quote a requirement field again, the tool
+     * never reads it. Enforcement flows only from the shopper's own words.
+     * The vocabulary carries the material attributes, so under the old
+     * model-quoted behavior this call WOULD have enforced Sterling. */
+    const vocabulary = {
+      values: { 'Catalog_JewelryMaterialNavigationPurity': ['Sterling', '10K', '14K'] },
+    };
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
+      objectIDs: ['a'],
+      requirement: 'sterling silver',
+    } as never);
+    expect(result.enforced).toBeUndefined();
+  });
+
+  it('enforces nothing when no shopper message is available', async () => {
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => ({ values: { Metal: ['Gold'] } }) })({
+      objectIDs: ['a'],
+    });
+    expect(result.enforced).toBeUndefined();
+  });
+
+  it('enforces nothing when the shopper message names no material or stone', async () => {
+    const result = await createPresentProducts(fetcher, {
+      vocabulary: async () => ({ values: { Metal: ['Gold'] } }),
+      shopperMessage: () => 'gift ideas for a friend',
+    })({
+      objectIDs: ['a'],
+    });
     expect(result.enforced).toBeUndefined();
   });
 });

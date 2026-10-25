@@ -1,12 +1,18 @@
-/* Curation tool (2026-10-24, requirement enforcement 2026-10-25): one call
- * after the search decides what displays. The model reads the streamed search
- * result, chooses the pieces, and quotes the shopper's named material or
- * stone; this tool runs the deterministic checks — exists, in stock, priced,
- * photographed, not a same-design twin, and the quoted requirement matched
- * against the piece's actual material fields via the runtime vocabulary — and
- * returns the verified list with names and prices so the model writes its
- * reply from exactly what will show. A piece it dropped can never appear. No
- * grouping, no bounds: the chips-era shelf is one flat list capped at eight. */
+/* Curation tool (2026-10-24, requirement enforcement 2026-10-25, structural
+ * source change 2026-10-25): one call after the search decides what displays.
+ * The model reads the streamed search result and chooses the pieces; this tool
+ * runs the deterministic checks — exists, in stock, priced, photographed, not
+ * a same-design twin, and the requirement enforced against the piece's actual
+ * material fields via the runtime vocabulary — and returns the verified list
+ * with names and prices so the model writes its reply from exactly what will
+ * show. A piece it dropped can never appear.
+ *
+ * The requirement's SOURCE is the shopper's own message text, supplied by the
+ * app through the send path — never a model-quoted field. The model quoted
+ * `requirement` on only 8% of material turns (battery 2026-10-25), so
+ * prompt-based enforcement fails structurally on this model version; reading
+ * the shopper's words removes the model from the loop entirely. No grouping,
+ * no bounds: the chips-era shelf is one flat list capped at nine. */
 
 import type { CatalogRecordFetcher } from './catalogRecord';
 import { designSignature } from './designVariant';
@@ -14,10 +20,6 @@ export { designSignature };
 
 export type PresentProductsInput = {
   objectIDs: readonly string[];
-  /** The material, stone or gem family the shopper named, quoted from the
-   * conversation. The tool matches it against the runtime vocabulary and
-   * drops candidates whose material fields contradict it. */
-  requirement?: string;
   /** One to three facet attribute names from the search's facet counts, the
    * narrowing options the app renders as chips, first shown first. */
   displayFacets?: readonly string[];
@@ -81,7 +83,7 @@ const CONCEPT_ATTRIBUTES: Record<string, readonly string[]> = {
 
 export type EnforcedRequirement = { attribute: string; values: string[] };
 
-/** Match the shopper's quoted requirement to vocabulary values by exact word
+/** Match the shopper's own message to vocabulary values by exact word
  * (light singularization for shopper plurals: "rubies" → "ruby"). Within the
  * winning concept — the one whose attributes matched anything, fewest total
  * matched values first — the attribute with the fewest matched values is the
@@ -138,9 +140,15 @@ function satisfies(recordMaterial: Record<string, string[]>, enforced: EnforcedR
 
 export function createPresentProducts(
   getRecords: CatalogRecordFetcher,
-  options?: { vocabulary?: () => Promise<VocabularyLike | null> },
+  options?: {
+    vocabulary?: () => Promise<VocabularyLike | null>;
+    /** The shopper's own message text for this turn, held by the app's send
+     * path. The tool extracts the named material/stone words itself — the
+     * model is never the source of the requirement. */
+    shopperMessage?: () => string | null | undefined;
+  },
 ): PresentProducts {
-  return async ({ objectIDs, displayFacets, requirement }) => {
+  return async ({ objectIDs, displayFacets }) => {
     if (!Array.isArray(objectIDs) || objectIDs.length === 0)
       return invalid('objectIDs must be a non-empty array');
     if (objectIDs.length > 24) return invalid(`${objectIDs.length} objectIDs exceeds the maximum of 24`);
@@ -149,13 +157,16 @@ export function createPresentProducts(
       .filter((name, index, all) => all.indexOf(name) === index)
       .slice(0, 3);
 
-    /* Requirement enforcement needs the live vocabulary; without it the check
-     * is skipped and behavior matches the pre-enforcement build. */
+    /* Requirement enforcement reads the shopper's own message, not a
+     * model-quoted field. Without the live vocabulary, the supplier, or any
+     * matching words, the check is skipped and behavior matches the
+     * pre-enforcement build. */
     let enforced: EnforcedRequirement | null = null;
-    if (typeof requirement === 'string' && requirement.trim()) {
+    const shopperMessage = options?.shopperMessage?.();
+    if (typeof shopperMessage === 'string' && shopperMessage.trim()) {
       try {
         const vocabulary = (await options?.vocabulary?.()) ?? null;
-        if (vocabulary) enforced = matchRequirement(requirement, vocabulary)[0] ?? null;
+        if (vocabulary) enforced = matchRequirement(shopperMessage, vocabulary)[0] ?? null;
       } catch {
         enforced = null;
       }
