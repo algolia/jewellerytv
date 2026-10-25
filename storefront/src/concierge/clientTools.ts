@@ -11,6 +11,7 @@
 
 import { createCatalogRecordFetcher, type CatalogRecordFetcher } from './tools/catalogRecord';
 import { createRefreshProducts } from './tools/refreshProducts';
+import { createPresentProducts } from './tools/presentProducts';
 import { APP_ANSWERED_TOOL_NAMES, SEARCH_TOOL_PREFIX } from '../../shared/concierge/toolSheetGuard';
 
 export type ClientToolExecutor = {
@@ -41,6 +42,7 @@ export function buildClientTools(
 ): Record<string, ClientToolExecutor> {
   const getRecords: CatalogRecordFetcher = createCatalogRecordFetcher(fetchRawRecord);
   const refreshProducts = createRefreshProducts(getRecords);
+  const presentProducts = createPresentProducts(getRecords);
   const executorFor =
     <I, O>(run: (input: I) => Promise<O>) =>
     async ({ toolName, input, addToolResult }: { toolName: string; input: unknown; addToolResult: (r: { state: 'output-available'; output: unknown } | { state: 'output-error'; errorText: string }) => Promise<unknown> }) => {
@@ -65,5 +67,6 @@ export function buildClientTools(
       matchesToolName: (toolName: string) => toolName.startsWith(SEARCH_TOOL_PREFIX),
     },
     refresh_products: { onToolCall: executorFor(refreshProducts), timeout: 20000 },
+    present_products: { onToolCall: executorFor(presentProducts), timeout: 20000 },
   };
 }

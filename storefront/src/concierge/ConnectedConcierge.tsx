@@ -25,7 +25,7 @@ import { ResponsiveAnswerTable } from './ResponsiveAnswerTable';
 import { ConnectedWelcome, composerSendText, shouldShowEntryGuidance } from './EntryGuidance';
 import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from './starterQuestions';
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
-import { deriveFacetPick, extractSearchPresentation, stripTrailingNote } from './nativeResults';
+import { extractSearchPresentation, stripTrailingNote } from './nativeResults';
 import { buildClientTools } from './clientTools';
 import { extractMessageFacetPicks } from './nativeResults';
 import { FacetChips, buildChipRows } from './FacetChips';
@@ -823,11 +823,10 @@ export function ConnectedConcierge({
           /* A record with no usable image renders a broken tile; the funnel
            * shows what the shopper can actually see. */
           .filter((p): p is Product => p !== null && p.images.length > 0);
-        /* The next funnel level's attribute derives from the refinement
-         * response's own facet counts (no model list): the just-selected
-         * attribute now holds one value and drops out on its own. */
+        /* The next funnel level's attribute is the model's own order: the pick
+         * deeper in the list narrows the one before it. */
+        const nextAttribute = entry.pick.displayFacets[selections.length];
         const responseFacets = (result.facets as Record<string, Record<string, number>> | undefined) ?? {};
-        const nextAttribute = deriveFacetPick(responseFacets)[0];
         const nextCounts = nextAttribute ? responseFacets[nextAttribute] : undefined;
         setFacetFunnels((current) => ({
           ...current,

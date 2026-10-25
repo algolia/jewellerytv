@@ -15,6 +15,14 @@ const userMessage = (text: string) => ({
   parts: [{ type: 'text', text }],
 });
 
+const presentPart = (objectIDs: string[], displayFacets: string[] = []) => ({
+  type: 'tool-present_products',
+  toolCallId: 'call-present',
+  state: 'output-available',
+  input: { objectIDs, displayFacets },
+  output: { status: 'ok', objectIDs: objectIDs.map((objectID) => ({ objectID })), dropped: [], displayFacets },
+});
+
 const searchPart = (
   hits: unknown[],
   options: { queries?: number; id?: string } = {},
@@ -92,13 +100,13 @@ describe('extractMessageAnchors (chips-native)', () => {
       {
         id: 'a1',
         role: 'assistant',
-        parts: [searchPart([hit('WPG776'), hit('WPG777'), hit('WPG778'), hit('WPG779'), hit('WPG780')])],
+        parts: [searchPart([hit('WPG776'), hit('WPG777'), hit('WPG778'), hit('WPG779'), hit('WPG780')]), presentPart(['WPG776', 'WPG777', 'WPG778', 'WPG779', 'WPG780'])],
       },
       userMessage('make it yellow gold'),
       {
         id: 'a2',
         role: 'assistant',
-        parts: [searchPart([hit('WPG781')], { id: 'call-2' })],
+        parts: [searchPart([hit('WPG781')], { id: 'call-2' }), presentPart(['WPG781'])],
       },
     ];
     const anchors = extractMessageAnchors(messages);
@@ -117,7 +125,7 @@ describe('extractMessageAnchors (chips-native)', () => {
       {
         id: 'a1',
         role: 'assistant',
-        parts: [searchPart([hit('WPG776')], { queries: 2 })],
+        parts: [searchPart([hit('WPG776')], { queries: 2 }), presentPart(['WPG776'])],
       },
     ];
     expect(extractMessageAnchors(messages)).toEqual([]);
@@ -164,7 +172,7 @@ describe('extractMessageFacetPicks', () => {
   it('attaches one pick per message with accumulated facets and hits, derived from the counts', () => {
     const picks = extractMessageFacetPicks([
       userMessage('watch for dad'),
-      { id: 'a1', role: 'assistant', parts: [facetSearchPart] },
+      { id: 'a1', role: 'assistant', parts: [facetSearchPart, presentPart(['12TB0A'], ['Catalog_Brand'])] },
       { id: 'a2', role: 'assistant', parts: [{ type: 'text', text: 'No tools here.' }] },
     ]);
     expect(picks).toHaveLength(1);
@@ -186,16 +194,9 @@ describe('extractMessageFacetPicks multi-scope guard', () => {
       input: { queries: [{ query: 'gold hoop earrings' }, { query: 'gold necklace pendant' }] },
       output: { hits: [hit('a')], nbHits: 2, facets: { Catalog_NecklaceType: { Pendant: 4, Chain: 2 } } },
     };
-    const arrangeWithPick = {
-      type: 'tool-arrange_groups',
-      toolCallId: 'a1',
-      state: 'output-available',
-      input: { groups: [{ title: 'G', objectIDs: ['a'] }], displayFacets: ['Catalog_NecklaceType'] },
-      output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: 'a' }] }] },
-    };
     const picks = extractMessageFacetPicks([
       userMessage('what goes with gold hoops'),
-      { id: 'a1', role: 'assistant', parts: [multiQuerySearch, arrangeWithPick] },
+      { id: 'a1', role: 'assistant', parts: [multiQuerySearch, presentPart(['a'], ['Catalog_NecklaceType'])] },
     ]);
     expect(picks).toEqual([]);
   });
@@ -208,16 +209,9 @@ describe('extractMessageFacetPicks multi-scope guard', () => {
       input: { queries: [{ query: 'opal rings' }] },
       output: { hits: [hit('a')], nbHits: 2, facets: { Catalog_RingType: { Halo: 4, Band: 2 } } },
     };
-    const arrangeWithPick = {
-      type: 'tool-arrange_groups',
-      toolCallId: 'a1',
-      state: 'output-available',
-      input: { groups: [{ title: 'G', objectIDs: ['a'] }], displayFacets: ['Catalog_RingType'] },
-      output: { status: 'ok', groups: [{ title: 'G', items: [{ objectID: 'a' }] }] },
-    };
     const picks = extractMessageFacetPicks([
       userMessage('show me opal rings'),
-      { id: 'a1', role: 'assistant', parts: [singleSearch, arrangeWithPick] },
+      { id: 'a1', role: 'assistant', parts: [singleSearch, presentPart(['a'], ['Catalog_RingType'])] },
     ]);
     expect(picks).toHaveLength(1);
   });

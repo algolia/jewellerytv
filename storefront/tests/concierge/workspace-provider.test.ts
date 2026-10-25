@@ -47,7 +47,7 @@ function sessionWithoutRetiredFields() {
   };
 }
 
-function searchTurn(objectIDs: string[]) {
+function searchTurn(objectIDs: string[], chosen: string[] = objectIDs) {
   return [
     { role: 'user', parts: [] },
     {
@@ -58,6 +58,17 @@ function searchTurn(objectIDs: string[]) {
           state: 'output-available',
           input: { queries: [{ query: 'opal necklaces' }] },
           output: { hits: objectIDs.map((objectID) => rawRecord(objectID)) },
+        },
+        {
+          type: 'tool-present_products',
+          state: 'output-available',
+          input: { objectIDs: chosen, displayFacets: [] },
+          output: {
+            status: 'ok',
+            objectIDs: chosen.map((objectID) => ({ objectID, name: `Necklace ${objectID}`, price: 125 })),
+            dropped: [],
+            displayFacets: [],
+          },
         },
       ],
     },
@@ -124,7 +135,7 @@ describe('simplified workspace session adapter', () => {
       'legacy_unbound',
     );
   });
-  it('shows one of a variant pair: same family number keeps the first hit only', async () => {
+  it('stages the model-curated subset, not the full search result', async () => {
     const storage = new MemoryStorage();
     storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
     const adapter = createConciergeWorkspaceSession({
@@ -132,27 +143,8 @@ describe('simplified workspace session adapter', () => {
       initialMissionId: 'unused',
       fetchProductRecord: async (id) => rawRecord(id),
     });
-    const variantOf = (objectID: string, productNumber: string) => ({
-      ...rawRecord(objectID),
-      Catalog_ProductNumber: productNumber,
-    });
-    const messages = [
-      { role: 'user', parts: [] },
-      {
-        role: 'assistant',
-        parts: [
-          {
-            type: 'tool-algolia_search_index_prod_catalog',
-            state: 'output-available',
-            input: { queries: [{ query: 'huggie hoops' }] },
-            output: {
-              hits: [variantOf('a-1', 'F1'), variantOf('a-2', 'F1'), variantOf('a-3', 'F2')],
-            },
-          },
-        ],
-      },
-    ];
-    const groups = await adapter.stageSearchPresentation(messages);
+    /* The search streamed three hits; the model chose two via present_products. */
+    const groups = await adapter.stageSearchPresentation(searchTurn(['a-1', 'a-2', 'a-3'], ['a-1', 'a-3']));
     expect(groups?.[0].items.map((item) => item.product.id)).toEqual(['a-1', 'a-3']);
   });
   it('loads a pre-simplification session by stripping the retired fields', () => {
@@ -203,6 +195,18 @@ describe('stageMessageAnchors', () => {
         state: 'output-available',
         input: { queries: [{ query: `query ${id}` }] },
         output: { hits: hits.map((objectID) => rawRecord(objectID)) },
+      },
+      {
+        type: 'tool-present_products',
+        toolCallId: `present-${id}`,
+        state: 'output-available',
+        input: { objectIDs: hits.slice(0, 4), displayFacets: [] },
+        output: {
+          status: 'ok',
+          objectIDs: hits.slice(0, 4).map((objectID) => ({ objectID })),
+          dropped: [],
+          displayFacets: [],
+        },
       },
     ],
   });
