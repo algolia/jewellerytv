@@ -98,13 +98,13 @@ function gitHead(repoRoot: string): string {
 }
 
 function latestSavedSnapshot(repoRoot: string): string {
-  const evidenceDirectory = path.join(repoRoot, 'storefront', 'evidence');
+  const evidenceDirectory = path.join(repoRoot, 'app', 'evidence');
   const names = fs
     .readdirSync(evidenceDirectory)
     .filter((name) => /^agent-\d{4}-\d{2}-\d{2}T.*\.json$/.test(name))
     .sort();
   if (!names.length)
-    throw new Error('No saved Agent Studio readback exists in storefront/evidence.');
+    throw new Error('No saved Agent Studio readback exists in app/evidence.');
   return path.join(evidenceDirectory, names[names.length - 1]);
 }
 
@@ -115,7 +115,7 @@ function hashText(value: string): string {
 function readRuntimePins(repoRoot: string): RuntimePins {
   const agentSnapshotPath = path.resolve(repoRoot, requiredEnvironment('JTV_STAGE4_AGENT_SNAPSHOT'));
   if (agentSnapshotPath !== path.resolve(latestSavedSnapshot(repoRoot))) {
-    throw new Error('Agent snapshot must be the latest saved readback in storefront/evidence.');
+    throw new Error('Agent snapshot must be the latest saved readback in app/evidence.');
   }
   const candidateDirectory = path.join(
     repoRoot,

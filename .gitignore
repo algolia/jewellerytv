@@ -3,6 +3,6 @@
 !/.gitignore
 !/.github/
 !/README.md
-!/storefront/
+!/app/
 
 .DS_Store

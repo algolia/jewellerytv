@@ -436,15 +436,15 @@ describe('Stage 4 question campaign safety harness', () => {
   it('hashes sorted app source and refuses a changed runtime pin', () => {
     const root = mkdtempSync(path.join(os.tmpdir(), 'jtv-stage4-runtime-pin-'));
     try {
-      for (const directory of ['storefront/src', 'storefront/shared', 'storefront/server']) {
+      for (const directory of ['app/src', 'app/shared', 'app/server']) {
         mkdirSync(path.join(root, directory), { recursive: true });
         writeFileSync(path.join(root, directory, 'entry.ts'), `export const x = '${directory}';`);
       }
       for (const file of [
-        'storefront/vite.config.ts',
-        'storefront/package.json',
-        'storefront/package-lock.json',
-        'storefront/scripts/dev.mjs',
+        'app/vite.config.ts',
+        'app/package.json',
+        'app/package-lock.json',
+        'app/scripts/dev.mjs',
       ]) {
         mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
         writeFileSync(path.join(root, file), `pin:${file}`);
@@ -460,7 +460,7 @@ describe('Stage 4 question campaign safety harness', () => {
           { ...pins, runtimeSha256: 'd'.repeat(64) },
         ),
       ).toThrow(/runtimeSha256/);
-      writeFileSync(path.join(root, 'storefront/src/entry.ts'), 'changed');
+      writeFileSync(path.join(root, 'app/src/entry.ts'), 'changed');
       expect(calculateStage4RuntimePin(root).runtimeSha256).not.toBe(first.runtimeSha256);
     } finally {
       rmSync(root, { recursive: true, force: true });

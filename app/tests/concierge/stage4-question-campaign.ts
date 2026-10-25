@@ -269,14 +269,14 @@ export function calculateStage4RuntimePin(repoRoot: string): {
   files: Record<string, string>;
 } {
   const files = [
-    ...['storefront/src', 'storefront/shared', 'storefront/server'].flatMap((dir) =>
+    ...['app/src', 'app/shared', 'app/server'].flatMap((dir) =>
       sourceFiles(repoRoot, dir),
     ),
     ...[
-      'storefront/vite.config.ts',
-      'storefront/package.json',
-      'storefront/package-lock.json',
-      'storefront/scripts/dev.mjs',
+      'app/vite.config.ts',
+      'app/package.json',
+      'app/package-lock.json',
+      'app/scripts/dev.mjs',
     ].map((relative) => path.join(repoRoot, relative)),
   ].sort();
   const hashes: Record<string, string> = {};
@@ -299,10 +299,10 @@ export function calculateStage4HarnessPin(repoRoot: string): {
   files: Record<string, string>;
 } {
   const paths = [
-    'storefront/tests/concierge/stage4-question-campaign.ts',
-    'storefront/tests/concierge/stage4-question-campaign.test.ts',
-    'storefront/tests/e2e/concierge-stage4-question-campaign.spec.ts',
-    'storefront/tests/e2e/concierge-stage4-question-campaign.config.ts',
+    'app/tests/concierge/stage4-question-campaign.ts',
+    'app/tests/concierge/stage4-question-campaign.test.ts',
+    'app/tests/e2e/concierge-stage4-question-campaign.spec.ts',
+    'app/tests/e2e/concierge-stage4-question-campaign.config.ts',
   ];
   const hashes = Object.fromEntries(
     paths.map((relative) => [
