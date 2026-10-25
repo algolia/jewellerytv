@@ -103,14 +103,14 @@ const rows = ledger.map((t) => {
   const dropTag = t.presents?.length
     ? t.presents.reduce((n, p) => n + p.dropped.length, 0)
     : 0;
-  const color = t.error ? '#fdd' : t.tiles.length || t.presents.length ? '#e8f5e9' : '#fffde7';
+  const color = t.error ? '#fdd' : (t.tiles?.length || t.presents?.length) ? '#e8f5e9' : '#fffde7';
   return `<tr style="background:${color}">
     <td>${t.leg}</td><td>${(t.index ?? 0) + 1}</td><td>${t.turn}</td>
     <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">${t.ask ?? ''}</td>
     <td>${reqTag}</td>
     <td>${t.presents?.[0]?.requirement ?? ''}</td>
     <td>${enforcedTag}</td>
-    <td>${t.tiles.length}</td><td>${t.chips.length}</td><td>${dropTag}</td>
+    <td>${t.tiles?.length ?? 0}</td><td>${t.chips?.length ?? 0}</td><td>${dropTag}</td>
     <td>${t.notices?.length ?? 0}</td><td>${((t.ms ?? 0) / 1000).toFixed(0)}s</td>
     <td>${t.error ?? 'ok'}</td>
     <td>${shotTag}</td>
