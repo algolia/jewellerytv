@@ -562,11 +562,22 @@ export function ConnectedConcierge({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [resetting, setResetting] = useState(false);
   // Starter set for the current conversation: varied across scenarios and
-  // sentence voices, re-selected on each new conversation so consecutive
-  // welcome views differ. UI label rotation only; no shopper data, no tracking.
-  const [starterSet, setStarterSet] = useState<readonly StarterQuestion[]>(() =>
-    selectStarterSet(STARTER_QUESTION_POOL),
-  );
+  // sentence voices, nine per set (Arijit's standing rule: never fewer than
+  // six), with a Show more control and rotation on conversation reset. Every
+  // label the shopper has seen OR sent this session is excluded from later
+  // sets, so the welcome reacts to the shopper's own selections. UI label
+  // rotation only; no shopper data, no tracking.
+  const usedStarterLabelsRef = useRef<Set<string>>(new Set());
+  const nextStarterSet = useCallback((current: readonly StarterQuestion[]) => {
+    const set = selectStarterSet(STARTER_QUESTION_POOL, [...usedStarterLabelsRef.current]);
+    for (const question of set) usedStarterLabelsRef.current.add(question.label);
+    return set;
+  }, []);
+  const [starterSet, setStarterSet] = useState<readonly StarterQuestion[]>(() => {
+    const set = selectStarterSet(STARTER_QUESTION_POOL);
+    for (const question of set) usedStarterLabelsRef.current.add(question.label);
+    return set;
+  });
   const [error, setError] = useState('');
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
   const [hiddenPriorMessageIds, setHiddenPriorMessageIds] = useState<Set<string>>(() => new Set());
@@ -696,6 +707,13 @@ export function ConnectedConcierge({
    * reliable transport signal is this ref. Read like finishRef.
    */
   const chatErrorRef = useRef<Error | null>(null);
+  /* The shopper's own message text for the current turn, captured at send
+   * time. present_products derives the requirement from these words — the
+   * tool's only source (the model-quoted requirement field was removed after
+   * the battery measured 8% model compliance). Read by the clientTools
+   * supplier below; the memo holds this ref for its lifetime, so the supplier
+   * always sees the latest send. */
+  const shopperMessageRef = useRef<string | null>(null);
   const onChatError = useCallback<ChatOnErrorCallback>((error) => {
     chatErrorRef.current = error;
   }, []);
@@ -716,7 +734,10 @@ export function ConnectedConcierge({
           if (!response.ok) throw new Error('Product record could not be loaded.');
           return await response.json();
         },
-        { vocabulary: loadCatalogVocabulary },
+        {
+          vocabulary: loadCatalogVocabulary,
+          shopperMessage: () => shopperMessageRef.current,
+        },
       ),
     [],
   );
@@ -946,6 +967,7 @@ export function ConnectedConcierge({
       const turnId = newId('turn');
       const startManualEditEpoch = manualEditEpoch.current;
       latestTurn.current = { turnId, sourceMessageId };
+      shopperMessageRef.current = text;
       finishRef.current = null;
       chatErrorRef.current = null;
       runtime.beginTurn(turnId);
@@ -1162,21 +1184,24 @@ export function ConnectedConcierge({
     setSystemNotices([]);
     setRevealed(new Set());
     setSection('conversation');
-    setStarterSet((current) =>
-      selectStarterSet(
-        STARTER_QUESTION_POOL,
-        current.map((question) => question.label),
-      ),
-    );
-  }, [chat, pending, runtime]);
+    setStarterSet((current) => nextStarterSet(current));
+  }, [chat, pending, runtime, nextStarterSet]);
 
-  /** Starter chips send their exact displayed label through the one send path. */
+  /** Starter chips send their exact displayed label through the one send path.
+   * A sent label joins the used pool, so it never comes back as a chip this
+   * session — the welcome reacts to what the shopper actually picked. */
   const handleStarterAsk = useCallback(
     (label: string) => {
+      usedStarterLabelsRef.current.add(label);
       void send(undefined, label);
     },
     [send],
   );
+
+  /** Show more: swap in the next nine, excluding everything shown or sent. */
+  const handleShowMoreStarters = useCallback(() => {
+    setStarterSet((current) => nextStarterSet(current));
+  }, [nextStarterSet]);
   const pendingSourceIndex = pending
     ? visibleMessages.findIndex(
         (message) => message.role === 'user' && message.id === pending.sourceMessageId,
@@ -1266,6 +1291,7 @@ export function ConnectedConcierge({
               startersDisabled={!!pending || resetting || !!blocked}
               starters={starterSet}
               onAsk={handleStarterAsk}
+              onMore={handleShowMoreStarters}
             />
           )}
           {visibleMessages.map((message, index) => (

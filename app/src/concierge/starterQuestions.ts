@@ -44,7 +44,7 @@ export type StarterQuestion = {
 };
 
 export const STARTER_QUESTION_POOL: readonly StarterQuestion[] = [
-  { label: "I'm buying a gift", theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
+  { label: "What's a good gift?", theme: 'occasion', voice: 'question', source: 'prod_catalog' },
   { label: 'Help me find an anniversary gift', theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
   { label: 'What should I get for a graduation gift?', theme: 'occasion', voice: 'question', source: 'prod_catalog' },
   { label: 'A watch for dad', theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
@@ -72,8 +72,8 @@ export const STARTER_QUESTION_POOL: readonly StarterQuestion[] = [
   { label: 'How can I watch JTV live?', theme: 'service', voice: 'question', source: 'help_content' },
   { label: 'How do returns work?', theme: 'service', voice: 'question', source: 'help_content' },
   { label: 'Surprise me', theme: 'discovery', voice: 'tell', source: 'prod_catalog' },
-  { label: 'Treat myself', theme: 'occasion', voice: 'tell', source: 'prod_catalog' },
-  { label: 'I have a $200 budget', theme: 'value', voice: 'tell', source: 'prod_catalog' },
+  { label: 'Something for me?', theme: 'occasion', voice: 'question', source: 'prod_catalog' },
+  { label: "What's good under $200?", theme: 'value', voice: 'question', source: 'prod_catalog' },
   { label: 'Lab-grown or natural?', theme: 'discovery', voice: 'question', source: 'prod_catalog' },
   { label: 'Vintage or modern?', theme: 'style', voice: 'question', source: 'prod_catalog' },
   { label: 'What goes with gold hoops?', theme: 'style', voice: 'question', source: 'prod_catalog' },
@@ -82,16 +82,17 @@ export const STARTER_QUESTION_POOL: readonly StarterQuestion[] = [
 ];
 
 /**
- * Pick a varied starter set for one welcome view: `size` distinct questions,
- * at most `cap` per theme and per voice while the pool allows, excluding the
- * labels the previous welcome view showed so consecutive sets differ. Pure:
- * the optional rng keeps selection deterministic under test.
+ * Pick a varied starter set for one welcome view: `size` distinct questions
+ * (Arijit's standing rule: a set shows nine — never fewer than six), at most
+ * `cap` per theme and per voice while the pool allows, excluding the labels
+ * already shown or sent this session so consecutive sets differ. Pure: the
+ * optional rng keeps selection deterministic under test.
  */
 export function selectStarterSet(
   pool: readonly StarterQuestion[],
   previousLabels: readonly string[] = [],
   rng: () => number = Math.random,
-  size = 5,
+  size = 9,
 ): readonly StarterQuestion[] {
   const previous = new Set(previousLabels);
   const eligible = pool.filter((question) => !previous.has(question.label));
