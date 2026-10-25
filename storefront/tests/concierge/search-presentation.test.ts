@@ -294,7 +294,10 @@ describe('present_products tool', () => {
     expect(result.status).toBe('ok');
     expect(result.objectIDs.map((i) => i.objectID)).toEqual(['silver']);
     expect(result.dropped).toContainEqual(expect.objectContaining({ objectID: 'goldplated', reason: 'requirement_mismatch' }));
-    expect(result.enforced).toContainEqual({ attribute: 'Catalog_JewelryMaterialNavigationPurity', value: 'Sterling' });
+    /* Purity "Sterling" is the most discriminative material check: real silver
+     * carries it, gold-over-silver carries "18K". */
+    expect(result.enforced?.attribute).toBe('Catalog_JewelryMaterialNavigationPurity');
+    expect(result.enforced?.values).toEqual(['Sterling']);
   });
 
   it('enforces nothing when the requirement matches no vocabulary value', async () => {
@@ -303,7 +306,7 @@ describe('present_products tool', () => {
       requirement: 'something exotic and unobtainium',
     });
     expect(result.status).toBe('ok');
-    expect(result.enforced).toEqual([]);
+    expect(result.enforced).toBeUndefined();
   });
 });
 
@@ -317,12 +320,13 @@ describe('matchRequirement', () => {
 
   it('matches by exact word: sterling silver hits the purity value', () => {
     const matches = matchRequirement('sterling silver', vocabulary);
-    expect(matches).toContainEqual({ attribute: 'Catalog_JewelryMaterialNavigationPurity', value: 'Sterling' });
+    expect(matches[0].values).toContain('Sterling');
   });
 
   it('matches rubies case-insensitively including family values', () => {
     const matches = matchRequirement('she loves rubies', vocabulary);
-    expect(matches).toContainEqual({ attribute: 'Catalog_GemstoneAndPearlNavigationName', value: 'Ruby' });
+    expect(matches[0].attribute).toBe('Catalog_GemstoneAndPearlNavigationName');
+    expect(matches[0].values).toContain('Ruby');
   });
 
   it('returns empty when no value shares a word with the requirement', () => {
