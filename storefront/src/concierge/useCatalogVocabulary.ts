@@ -39,6 +39,10 @@ async function load(): Promise<CatalogVocabulary | null> {
 /** Module-level cached live vocabulary for components outside the tool runtime.
  * Returns null until loaded; callers fall back gracefully (never to stale code
  * for validation — the runtime writer owns validation and fails closed). */
+export function loadCatalogVocabulary(): Promise<CatalogVocabulary | null> {
+  return load();
+}
+
 export function useCatalogVocabulary(): CatalogVocabulary | null {
   const [value, setValue] = useState<CatalogVocabulary | null>(cache?.value ?? null);
   useEffect(() => {

@@ -41,6 +41,7 @@ import {
   turnHasUsableResult,
 } from './turnCompletion';
 import { buildTurnContext } from './turnContext.js';
+import { loadCatalogVocabulary } from './useCatalogVocabulary';
 import { canonicalBlogUrlsFromMessages, verifiedBlogHref } from './verifiedBlogLinks.js';
 import { recordDisplayEvent, recordTurnOutcome } from '../telemetry';
 
@@ -709,11 +710,14 @@ export function ConnectedConcierge({
    * and their descriptions, this only binds the executors. */
   const clientTools = useMemo(
     () =>
-      buildClientTools(async (objectID) => {
-        const response = await fetch(`/api/products/${encodeURIComponent(objectID)}`);
-        if (!response.ok) throw new Error('Product record could not be loaded.');
-        return await response.json();
-      }),
+      buildClientTools(
+        async (objectID) => {
+          const response = await fetch(`/api/products/${encodeURIComponent(objectID)}`);
+          if (!response.ok) throw new Error('Product record could not be loaded.');
+          return await response.json();
+        },
+        { vocabulary: loadCatalogVocabulary },
+      ),
     [],
   );
   const chat = useChat<UIMessage>({

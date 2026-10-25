@@ -4,7 +4,7 @@ import {
   extractMessageAnchors,
   extractSearchPresentation,
 } from '../../src/concierge/nativeResults';
-import { createPresentProducts } from '../../src/concierge/tools/presentProducts';
+import { createPresentProducts, matchRequirement } from '../../src/concierge/tools/presentProducts';
 
 /* Curation restored (2026-10-24): the model picks pieces + facets via
  * `present_products`; the extractors read that call and cross-check every
@@ -255,5 +255,77 @@ describe('present_products tool', () => {
 
   it('rejects an empty call', async () => {
     expect((await present({ objectIDs: [] })).status).toBe('invalid_input');
+  });
+
+  it('drops pieces whose material fields contradict the quoted requirement', async () => {
+    const vocabulary = {
+      values: {
+        'Catalog_JewelryMaterialNavigationPurity': ['Sterling', '10K', '14K', '18K', '24K'],
+        'Catalog_GemstoneAndPearlNavigationName': ['Ruby', 'Sapphire', 'Emerald'],
+      },
+    };
+    const catalog: Record<string, ReturnType<typeof record>> = {
+      silver: record('silver', { name: 'Sterling Silver Heart Pendant' }),
+      goldplated: record('goldplated', { name: 'Opal 18k Yellow Gold Over Sterling Silver Pendant' }),
+    };
+    const materialAware = async (ids: readonly string[]) => {
+      const map = new Map();
+      for (const id of ids) {
+        const base = catalog[id];
+        const isGoldPlated = id === 'goldplated';
+        map.set(id, {
+          objectID: id,
+          name: base.name,
+          price: 100,
+          inStock: true,
+          imageUrl: 'https://example.com/a.jpg',
+          link: `/product/${id}`,
+          materialFields: isGoldPlated
+            ? { 'Catalog_JewelryMaterialNavigationName': ['Gold Over Silver'], 'Catalog_JewelryMaterialNavigationPurity': ['18K'] }
+            : { 'Catalog_JewelryMaterialNavigationName': ['Silver'], 'Catalog_JewelryMaterialNavigationPurity': ['Sterling'] },
+        });
+      }
+      return map;
+    };
+    const result = await createPresentProducts(materialAware, { vocabulary: async () => vocabulary })({
+      objectIDs: ['silver', 'goldplated'],
+      requirement: 'sterling silver',
+    });
+    expect(result.status).toBe('ok');
+    expect(result.objectIDs.map((i) => i.objectID)).toEqual(['silver']);
+    expect(result.dropped).toContainEqual(expect.objectContaining({ objectID: 'goldplated', reason: 'requirement_mismatch' }));
+    expect(result.enforced).toContainEqual({ attribute: 'Catalog_JewelryMaterialNavigationPurity', value: 'Sterling' });
+  });
+
+  it('enforces nothing when the requirement matches no vocabulary value', async () => {
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => ({ values: { Metal: ['Gold'] } }) })({
+      objectIDs: ['a'],
+      requirement: 'something exotic and unobtainium',
+    });
+    expect(result.status).toBe('ok');
+    expect(result.enforced).toEqual([]);
+  });
+});
+
+describe('matchRequirement', () => {
+  const vocabulary = {
+    values: {
+      'Catalog_JewelryMaterialNavigationPurity': ['Sterling', '10K', '14K'],
+      'Catalog_GemstoneAndPearlNavigationName': ['Ruby', 'Mahaleo Ruby', 'Sapphire'],
+    },
+  };
+
+  it('matches by exact word: sterling silver hits the purity value', () => {
+    const matches = matchRequirement('sterling silver', vocabulary);
+    expect(matches).toContainEqual({ attribute: 'Catalog_JewelryMaterialNavigationPurity', value: 'Sterling' });
+  });
+
+  it('matches rubies case-insensitively including family values', () => {
+    const matches = matchRequirement('she loves rubies', vocabulary);
+    expect(matches).toContainEqual({ attribute: 'Catalog_GemstoneAndPearlNavigationName', value: 'Ruby' });
+  });
+
+  it('returns empty when no value shares a word with the requirement', () => {
+    expect(matchRequirement('unobtainium', vocabulary)).toEqual([]);
   });
 });

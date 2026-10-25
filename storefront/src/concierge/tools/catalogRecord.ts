@@ -16,7 +16,33 @@ export type CatalogRecord = {
   imageUrl: string | null;
   /** Shopper-facing destination path for the tile. */
   link: string;
+  /** Material and gemstone facts per attribute, for requirement enforcement
+   * (the present_products tool checks the shopper's named material or stone
+   * against what the piece is actually made of). Only attributes that carry
+   * values appear; this is the app's language layer naming which raw fields
+   * count as material data, not a facet whitelist. */
+  materialFields: Record<string, string[]>;
 };
+
+/** Which raw fields count as material and gemstone facts. Our naming map, not
+ * the index's: the values themselves always come from the live record. */
+const MATERIAL_FIELD_PATHS = [
+  'Catalog_JewelryMaterialNavigationName',
+  'Catalog_JewelryMaterialNavigationPurity',
+  'Catalog_GemstoneAndPearlNavigationName',
+  'Catalog_GemstoneInformationPrimary.GemstoneName',
+] as const;
+
+function readStringField(raw: Record<string, unknown>, path: string): string[] {
+  const [head, ...tail] = path.split('.');
+  const value = raw[head];
+  const parts = tail.length
+    ? (Array.isArray(value) ? value : [value]).flatMap((part) =>
+        part && typeof part === 'object' ? [(part as Record<string, unknown>)[tail.join('.')]] : [],
+      )
+    : [value];
+  return parts.filter((v): v is string => typeof v === 'string' && !!v.trim());
+}
 
 export type CatalogRecordFetcher = (
   objectIDs: readonly string[],
@@ -39,6 +65,11 @@ export function toCatalogRecord(raw: unknown): CatalogRecord | null {
     typeof raw.Catalog_TitleDescription === 'string' && raw.Catalog_TitleDescription.trim()
       ? raw.Catalog_TitleDescription
       : objectID;
+  const materialFields: Record<string, string[]> = {};
+  for (const path of MATERIAL_FIELD_PATHS) {
+    const values = readStringField(raw, path);
+    if (values.length) materialFields[path] = values;
+  }
   return {
     objectID,
     name,
@@ -46,6 +77,7 @@ export function toCatalogRecord(raw: unknown): CatalogRecord | null {
     inStock: raw.Inventory_InStock === true,
     imageUrl,
     link: `/product/${objectID}`,
+    materialFields,
   };
 }
 
