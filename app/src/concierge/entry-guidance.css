@@ -72,6 +72,34 @@
   outline-offset: 2px;
 }
 
+/* Show more: a quiet text control under the chip cloud, styled like a link
+   rather than a ninth pill so it reads as an action, not a question. */
+.connected-starters-more {
+  display: block;
+  margin: 18px auto 0;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  color: var(--blue);
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.connected-starters-more:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.connected-starters-more:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.connected-starters-more:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
 /* One short line under the product workspace tab list. Normal flow only: it
    never overlaps cards, the composer, or the preview overlay. */
 @media (max-width: 480px) {

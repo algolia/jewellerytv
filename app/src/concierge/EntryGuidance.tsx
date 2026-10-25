@@ -39,11 +39,14 @@ export function ConnectedWelcome({
   startersDisabled,
   starters,
   onAsk,
+  onMore,
 }: {
   showStarters: boolean;
   startersDisabled: boolean;
   starters: readonly StarterQuestion[];
   onAsk: (label: string) => void;
+  /** Show more: swaps in the next set, excluding everything shown or sent. */
+  onMore?: () => void;
 }) {
   return (
     <div className="connected-welcome">
@@ -71,6 +74,16 @@ export function ConnectedWelcome({
               </li>
             ))}
           </ul>
+          {onMore && (
+            <button
+              type="button"
+              className="connected-starters-more"
+              disabled={startersDisabled}
+              onClick={onMore}
+            >
+              Show more
+            </button>
+          )}
         </div>
       )}
     </div>
