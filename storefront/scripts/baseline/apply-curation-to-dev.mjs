@@ -70,7 +70,7 @@ const presentDeclaration = {
       displayFacets: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 3 },
       requirement: { type: 'string', maxLength: 120 },
     },
-    required: ['objectIDs'],
+    required: ['objectIDs', 'requirement'],
     additionalProperties: false,
   },
 };
