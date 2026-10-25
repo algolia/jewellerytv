@@ -1,10 +1,11 @@
-/* Chips-native extraction layer (2026-10-24): the agent searches Algolia with
- * its own server tool (`algolia_search_index`); the app's only job is to
- * render. This module reads the search parts out of the conversation stream —
- * tiles, chips and anchors all derive from that one output — and strips the
- * NOTE line from what the shopper sees. It holds no conversation logic: it
- * never decides what to search, say, or show next.
- */
+/* Chips-native extraction layer (2026-10-24, curation restored): the agent
+ * searches with its own server tool, reads the streamed result, and calls
+ * `present_products` with the pieces it chose; the app renders exactly what
+ * that call verified — cross-checked against the streamed search hits, so a
+ * piece the search never returned can never render — and strips the NOTE
+ * line from what the shopper sees. It holds no conversation logic. */
+
+const PRESENT_TOOL = 'tool-present_products';
 
 /** Single switch for echoing the NOTE back into conversation state. F1 ships
  * the strip (the shopper never sees the line) but NOT the echo: Arijit is
@@ -29,13 +30,31 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Mobile anchored cards (chips-native cut): per assistant message, the
- * single-query search's own hits — up to four — become the anchored tiles the
+/** Mobile anchored cards: per assistant message, the pieces the model curated
+ * via `present_products` — up to four — become the anchored tiles the
  * conversation renders under the answer that found them. A multi-query
  * message anchors nothing, matching the tiles-path suppression. Search
  * records are NOT collected here; the hydration layer collects them across
  * the transcript. */
 const MAX_ANCHOR_TILES = 4;
+
+function readPresentInput(input: unknown): { displayFacets: string[] } | null {
+  if (!isRecord(input)) return null;
+  const raw = input.displayFacets;
+  if (!Array.isArray(raw)) return { displayFacets: [] };
+  const names = raw.filter((n): n is string => typeof n === 'string' && !!n.trim());
+  return { displayFacets: [...new Set(names)].slice(0, 3) };
+}
+
+function readPresentOutput(output: unknown): string[] | null {
+  if (!isRecord(output) || output.status !== 'ok' || !Array.isArray(output.objectIDs)) return null;
+  const ids: string[] = [];
+  for (const item of output.objectIDs) {
+    if (!isRecord(item) || typeof item.objectID !== 'string' || !item.objectID) continue;
+    if (!ids.includes(item.objectID)) ids.push(item.objectID);
+  }
+  return ids;
+}
 
 export function extractMessageAnchors(
   messages: readonly Message[],
@@ -44,10 +63,16 @@ export function extractMessageAnchors(
   for (const message of messages) {
     if (message.role !== 'assistant' || !message.parts || !message.id) continue;
     let queryText = '';
-    const objectIDs: string[] = [];
+    let objectIDs: string[] | null = null;
     let multiScope = false;
     for (const part of message.parts as Part[]) {
-      if (typeof part.type !== 'string' || !part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
+      if (typeof part.type !== 'string') continue;
+      if (part.type === PRESENT_TOOL) {
+        const present = readPresentOutput(part.output);
+        if (present?.length) objectIDs = present;
+        continue;
+      }
+      if (!part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
       const input = isRecord(part.input) ? (part.input as Record<string, unknown>) : null;
       const queries = Array.isArray(input?.queries) ? (input!.queries as unknown[]) : null;
       if (!queries) continue;
@@ -55,16 +80,8 @@ export function extractMessageAnchors(
       const first = queries[0];
       if (!queryText && isRecord(first) && typeof first.query === 'string')
         queryText = first.query;
-      if (!isRecord(part.output)) continue;
-      const hits = (part.output as Record<string, unknown>).hits;
-      if (!Array.isArray(hits)) continue;
-      for (const hit of hits) {
-        if (!isRecord(hit) || typeof hit.objectID !== 'string' || !hit.objectID) continue;
-        if (objectIDs.includes(hit.objectID)) continue;
-        objectIDs.push(hit.objectID);
-      }
     }
-    if (queryText && objectIDs.length && !multiScope)
+    if (queryText && objectIDs?.length && !multiScope)
       anchors.push({
         messageId: message.id,
         groups: [{ title: queryText, objectIDs: objectIDs.slice(0, MAX_ANCHOR_TILES) }],
@@ -73,10 +90,9 @@ export function extractMessageAnchors(
   return anchors;
 }
 
-/** Facet chips (chips-native cut 2026-10-24): the streamed search tool result
- * carries the aggregate `facets` counts, and the app derives the chip order
- * from that data itself — no model list, no static whitelist (Arijit's
- * standing rule: hard-coded attribute lists are a defect class). */
+/** Facet chips: the model picks the narrowing facets in the `present_products`
+ * call (its judgment over the search's own facet counts — the mechanism the
+ * grouped era used); the app renders them in the model's order. */
 export type FacetPick = {
   displayFacets: string[];
   facets: Record<string, Record<string, number>>;
@@ -91,27 +107,6 @@ export type MessageFacetPick = {
   pick: FacetPick;
   hits: Record<string, unknown>[];
 };
-
-const MAX_FACET_VALUES = 20;
-const MAX_FACET_ATTRIBUTES = 3;
-
-/** Order the facet attributes the app renders as chips: drop degenerate
- * facets (a single-value facet is already narrowed; a very long tail reads as
- * identifier noise), then order survivors fewest distinct values first — the
- * narrow-fastest cascade — alphabetical on ties so the order is stable. */
-export function deriveFacetPick(facets: Record<string, Record<string, number>>): string[] {
-  return Object.entries(facets)
-    .filter(([, values]) => {
-      const distinct = Object.keys(values).length;
-      return distinct >= 2 && distinct <= MAX_FACET_VALUES;
-    })
-    .sort((a, b) => {
-      const delta = Object.keys(a[1]).length - Object.keys(b[1]).length;
-      return delta !== 0 ? delta : a[0].localeCompare(b[0]);
-    })
-    .map(([attribute]) => attribute)
-    .slice(0, MAX_FACET_ATTRIBUTES);
-}
 
 function readSearchPartFacets(
   output: Record<string, unknown>,
@@ -140,8 +135,14 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
      * Chips only apply to a single-scope discovery search. */
     let multiScope = false;
     let sawSearch = false;
+    let pick: string[] | null = null;
     for (const part of message.parts as Part[]) {
       if (typeof part.type !== 'string') continue;
+      if (part.type === PRESENT_TOOL) {
+        const present = readPresentInput(part.input);
+        if (present?.displayFacets.length) pick = present.displayFacets;
+        continue;
+      }
       if (!part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
       const input = isRecord(part.input) ? (part.input as Record<string, unknown>) : null;
       const queries = Array.isArray(input?.queries) ? (input!.queries as unknown[]) : null;
@@ -159,7 +160,7 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
     }
     /* A message without its own search part never carries a pick, even though
      * the accumulated counts stay live for the messages that do. */
-    const displayFacets = !sawSearch || multiScope ? [] : deriveFacetPick(facets);
+    const displayFacets = !sawSearch || multiScope ? [] : (pick ?? []);
     if (displayFacets.length && queryText)
       out.push({
         messageId: message.id,
@@ -170,11 +171,12 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
   return out;
 }
 
-/* Tiles from the streamed search output (chips-native cut): the hits are the
- * tiles, in Algolia's own relevancy order. One search per turn is the rule,
- * so a multi-query search part suppresses the whole presentation — a mixed
- * facet sheet cannot back a single funnel, and the app never invents a grid
- * from a turn that broke the shape. */
+/* Tiles from the model's `present_products` call: the hits streamed back to
+ * the model, the model chose, the tool verified — and this extractor
+ * cross-checks every chosen id against the streamed search hits of the same
+ * turn, so a piece the search never returned can never render. One search
+ * per turn is the rule: a multi-query search part suppresses the whole
+ * presentation. */
 const MAX_SEARCH_TILES = 8;
 
 export type SearchPresentation = {
@@ -195,13 +197,19 @@ export function extractSearchPresentation(messages: readonly Message[]): SearchP
   const assistants = [...messages]
     .slice(lastUser + 1)
     .filter((message) => message.role === 'assistant');
-  const objectIDs: string[] = [];
   const records = new Map<string, Record<string, unknown>>();
   let queryText = '';
+  let chosen: string[] | null = null;
   for (const assistant of assistants) {
     if (!assistant?.parts) continue;
     for (const part of assistant.parts as Part[]) {
-      if (typeof part.type !== 'string' || !part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
+      if (typeof part.type !== 'string') continue;
+      if (part.type === PRESENT_TOOL) {
+        const present = readPresentOutput(part.output);
+        if (present?.length) chosen = present;
+        continue;
+      }
+      if (!part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
       const input = isRecord(part.input) ? (part.input as Record<string, unknown>) : null;
       const queries = Array.isArray(input?.queries) ? (input!.queries as unknown[]) : null;
       if (!queries) continue;
@@ -216,12 +224,13 @@ export function extractSearchPresentation(messages: readonly Message[]): SearchP
         if (!isRecord(hit) || typeof hit.objectID !== 'string' || !hit.objectID) continue;
         if (records.has(hit.objectID)) continue;
         records.set(hit.objectID, hit);
-        objectIDs.push(hit.objectID);
       }
     }
   }
+  /* Cross-check: only pieces the streamed search actually returned may render. */
+  const objectIDs = (chosen ?? []).filter((id) => records.has(id)).slice(0, MAX_SEARCH_TILES);
   if (!objectIDs.length || !queryText) return null;
-  return { queryText, objectIDs: objectIDs.slice(0, MAX_SEARCH_TILES), records };
+  return { queryText, objectIDs, records };
 }
 
 /**

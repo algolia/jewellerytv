@@ -6,8 +6,9 @@
  * agent config against an older build). */
 
 /** Client-side executors the app registers (chips-native cut: arrange_groups
- * is gone — the tiles render from the streamed search output). */
-export const APP_ANSWERED_TOOL_NAMES = ['refresh_products'] as const;
+ * is gone; present_products is the curation step — the model picks the pieces
+ * from the search result, the tool verifies them). */
+export const APP_ANSWERED_TOOL_NAMES = ['refresh_products', 'present_products'] as const;
 
 /** The native search tool is answered by Agent Studio itself; the app only
  * claims the name. The runtime name carries an index suffix. */

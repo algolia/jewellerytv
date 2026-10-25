@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  deriveFacetPick,
   extractMessageFacetPicks,
+  extractMessageAnchors,
   extractSearchPresentation,
 } from '../../src/concierge/nativeResults';
-import { dedupeVariants } from '../../src/concierge/ConciergeWorkspaceProvider';
-import { normalizeProduct } from '../../src/catalog';
+import { createPresentProducts } from '../../src/concierge/tools/presentProducts';
 
-/* Chips-native cut (2026-10-24): the presentation derives from the streamed
- * search output alone. Part shapes mirror the C2 captures the other
- * native-results tests use. */
+/* Curation restored (2026-10-24): the model picks pieces + facets via
+ * `present_products`; the extractors read that call and cross-check every
+ * chosen id against the streamed search hits. */
 
 const userMessage = (text: string) => ({
   id: 'u1',
@@ -32,6 +31,18 @@ const searchPart = (
   output: { hits, facets: options.facets },
 });
 
+const presentPart = (
+  objectIDs: string[],
+  displayFacets: string[] = [],
+  output: unknown = { status: 'ok', objectIDs: objectIDs.map((objectID) => ({ objectID })), dropped: [], displayFacets },
+) => ({
+  type: 'tool-present_products',
+  toolCallId: 'call-present',
+  state: 'output-available',
+  input: { objectIDs, displayFacets },
+  output,
+});
+
 const hit = (objectID: string, extra: Record<string, unknown> = {}) => ({
   objectID,
   Catalog_TitleDescription: `Product ${objectID}`,
@@ -46,179 +57,203 @@ const message = (id: string, parts: unknown[]) => ({ id, role: 'assistant', part
 const counts = (n: number, prefix = 'v') =>
   Object.fromEntries(Array.from({ length: n }, (_, index) => [`${prefix}${index}`, 10 - index]));
 
-describe('deriveFacetPick', () => {
-  it('drops single-value facets: they are already narrowed', () => {
-    const pick = deriveFacetPick({ MetalColor: counts(3), OnlyOne: { a: 5 } });
-    expect(pick).toEqual(['MetalColor']);
-  });
-
-  it('drops very long tails: identifier noise, not a shopping choice', () => {
-    const pick = deriveFacetPick({ MetalColor: counts(3), SkuNoise: counts(25, 's') });
-    expect(pick).toEqual(['MetalColor']);
-  });
-
-  it('orders fewest distinct values first: the narrow-fastest cascade', () => {
-    const pick = deriveFacetPick({ Wide: counts(12), Narrow: counts(2), Mid: counts(5) });
-    expect(pick).toEqual(['Narrow', 'Mid', 'Wide']);
-  });
-
-  it('breaks ties alphabetically so the order is deterministic', () => {
-    const pick = deriveFacetPick({ zircon: counts(4), agate: counts(4), beryl: counts(4) });
-    expect(pick).toEqual(['agate', 'beryl', 'zircon']);
-  });
-
-  it('caps at three attributes', () => {
-    const pick = deriveFacetPick({ a: counts(2), b: counts(3), c: counts(4), d: counts(5) });
-    expect(pick).toEqual(['a', 'b', 'c']);
-  });
-
-  it('returns an empty pick when nothing qualifies', () => {
-    expect(deriveFacetPick({ OnlyOne: { a: 1 }, Noise: counts(30) })).toEqual([]);
-  });
-});
-
-describe('extractSearchPresentation', () => {
-  it('takes the single-query search hits in streamed order', () => {
+describe('extractSearchPresentation (curation restored)', () => {
+  it('takes the model-curated objectIDs from the present_products output', () => {
     const messages = [
       userMessage('show me tanzanite rings'),
-      message('a1', [searchPart([hit('h1'), hit('h2'), hit('h3')])]),
+      message('a1', [searchPart([hit('h1'), hit('h2'), hit('h3'), hit('h4')]), presentPart(['h3', 'h1'])]),
     ];
     const presentation = extractSearchPresentation(messages as never);
-    expect(presentation?.objectIDs).toEqual(['h1', 'h2', 'h3']);
+    expect(presentation?.objectIDs).toEqual(['h3', 'h1']);
     expect(presentation?.queryText).toBe('tanzanite ring');
     expect(presentation?.records.get('h2')).toMatchObject({ objectID: 'h2' });
   });
 
-  it('skips duplicate objectIDs across parts of the same turn', () => {
+  it('cross-checks: a chosen id the search never returned renders nothing', () => {
     const messages = [
       userMessage('show me tanzanite rings'),
-      message('a1', [searchPart([hit('h1'), hit('h2')]), searchPart([hit('h2'), hit('h3')], { id: 'call-2' })]),
+      message('a1', [searchPart([hit('h1')]), presentPart(['h1', 'invented-id'])]),
     ];
-    expect(extractSearchPresentation(messages as never)?.objectIDs).toEqual(['h1', 'h2', 'h3']);
+    expect(extractSearchPresentation(messages as never)?.objectIDs).toEqual(['h1']);
   });
 
-  it('caps the tiles at eight', () => {
-    const hits = Array.from({ length: 14 }, (_, index) => hit(`h${index}`));
-    const messages = [userMessage('q'), message('a1', [searchPart(hits)])];
-    expect(extractSearchPresentation(messages as never)?.objectIDs).toHaveLength(8);
+  it('returns null without a successful present_products call', () => {
+    const messages = [
+      userMessage('q'),
+      message('a1', [searchPart([hit('h1')]), presentPart(['h1'], [], { status: 'empty', objectIDs: [], dropped: [], displayFacets: [] })]),
+    ];
+    expect(extractSearchPresentation(messages as never)).toBeNull();
+    expect(extractSearchPresentation([userMessage('q'), message('a1', [searchPart([hit('h1')])])] as never)).toBeNull();
   });
 
   it('suppresses the presentation when a search carried several queries', () => {
     const messages = [
       userMessage('q'),
-      message('a1', [searchPart([hit('h1')], { queries: 3 })]),
+      message('a1', [searchPart([hit('h1')], { queries: 3 }), presentPart(['h1'])]),
     ];
     expect(extractSearchPresentation(messages as never)).toBeNull();
   });
 
-  it('returns null without hits or without a query text', () => {
-    expect(extractSearchPresentation([userMessage('q'), message('a1', [searchPart([])])])).toBeNull();
-    const noQuery = {
-      type: 'tool-algolia_search_index_prod_catalog',
-      toolCallId: 'c',
-      state: 'output-available',
-      input: { queries: [{}] },
-      output: { hits: [hit('h1')] },
-    };
-    expect(extractSearchPresentation([userMessage('q'), message('a1', [noQuery])] as never)).toBeNull();
+  it('caps the tiles at eight', () => {
+    const hits = Array.from({ length: 14 }, (_, index) => hit(`h${index}`));
+    const chosen = hits.map((h) => (h as { objectID: string }).objectID);
+    const messages = [userMessage('q'), message('a1', [searchPart(hits), presentPart(chosen)])];
+    expect(extractSearchPresentation(messages as never)?.objectIDs).toHaveLength(8);
   });
 
   it('reads only the latest turn: an earlier presentation stays staged', () => {
     const messages = [
       userMessage('first'),
-      message('a1', [searchPart([hit('old')])]),
+      message('a1', [searchPart([hit('old')]), presentPart(['old'])]),
       userMessage('what about silver'),
-      message('a2', [{ type: 'text', text: 'answer without a search' }]),
+      message('a2', [{ type: 'text', text: 'answer without tools' }]),
     ];
     expect(extractSearchPresentation(messages as never)).toBeNull();
   });
 });
 
-describe('extractMessageFacetPicks (chips-native derivation)', () => {
-  it('derives the pick from the search response facet counts, not a model list', () => {
-    const facets = { MetalColor: counts(3), OnlyOne: { a: 2 } };
-    const messages = [userMessage('q'), message('a1', [searchPart([hit('h1')], { facets })])];
+describe('extractMessageFacetPicks (model pick restored)', () => {
+  it('takes the pick from the present_products input, not a heuristic', () => {
+    const facets = { Catalog_GemstoneName: counts(30), Catalog_Condition: counts(2) };
+    const messages = [
+      userMessage('q'),
+      message('a1', [searchPart([hit('h1')], { facets }), presentPart(['h1'], ['Catalog_GemstoneName'])]),
+    ];
     const picks = extractMessageFacetPicks(messages as never);
     expect(picks).toHaveLength(1);
-    expect(picks[0].pick.displayFacets).toEqual(['MetalColor']);
+    expect(picks[0].pick.displayFacets).toEqual(['Catalog_GemstoneName']);
     expect(picks[0].pick.queryText).toBe('tanzanite ring');
     expect(picks[0].hits).toHaveLength(1);
   });
 
   it('suppresses chips on a multi-query message', () => {
-    const facets = { MetalColor: counts(3) };
-    const messages = [userMessage('q'), message('a1', [searchPart([hit('h1')], { queries: 2, facets })])];
+    const messages = [
+      userMessage('q'),
+      message('a1', [searchPart([hit('h1')], { queries: 2 }), presentPart(['h1'], ['MetalColor'])]),
+    ];
     expect(extractMessageFacetPicks(messages as never)).toHaveLength(0);
   });
 
-  it('emits no pick when no facet qualifies', () => {
-    const messages = [
-      userMessage('q'),
-      message('a1', [searchPart([hit('h1')], { facets: { OnlyOne: { a: 2 } } })]),
-    ];
+  it('emits no pick when the model sent no displayFacets', () => {
+    const messages = [userMessage('q'), message('a1', [searchPart([hit('h1')]), presentPart(['h1'])])];
     expect(extractMessageFacetPicks(messages as never)).toHaveLength(0);
   });
 
   it('accumulates facet counts per message across the conversation', () => {
     const messages = [
       userMessage('q'),
-      message('a1', [searchPart([hit('h1')], { facets: { MetalColor: counts(3) }, id: 'c1' })]),
-      message('a2', [searchPart([hit('h2')], { facets: { Gemstone: counts(4) }, id: 'c2' })]),
+      message('a1', [searchPart([hit('h1')], { facets: { MetalColor: counts(3) }, id: 'c1' }), presentPart(['h1'], ['MetalColor'])]),
+      message('a2', [searchPart([hit('h2')], { facets: { Gemstone: counts(4) }, id: 'c2' }), presentPart(['h2'], ['Gemstone'])]),
     ];
     const picks = extractMessageFacetPicks(messages as never);
     expect(picks[0].pick.displayFacets).toEqual(['MetalColor']);
-    expect(picks[1].pick.displayFacets).toEqual(['MetalColor', 'Gemstone']);
+    expect(picks[1].pick.displayFacets).toEqual(['Gemstone']);
   });
 });
 
-describe('dedupeVariants', () => {
-  const product = (id: string, familyId: string | null, title: string, price: number | null) =>
-    normalizeProduct({
-      objectID: id,
-      Catalog_ProductNumber: familyId,
-      Catalog_TitleDescription: title,
-      Pricing_ActivePrice: price,
-      Inventory_InStock: true,
-    });
-
-  it('keeps the first of a family and drops its later variants', () => {
-    const kept = dedupeVariants([
-      product('a', 'F1', 'Huggie Hoop Earrings', 249.99),
-      product('b', 'F1', 'Huggie Hoop Earrings', 252.99),
+describe('extractMessageAnchors (curation restored)', () => {
+  it('returns one anchor per assistant message that carries a present_products output', () => {
+    const messages = [
+      userMessage('show me opal rings'),
+      message('a1', [searchPart([hit('WPG776'), hit('WPG777'), hit('WPG778'), hit('WPG779'), hit('WPG780')]), presentPart(['WPG776', 'WPG777', 'WPG778', 'WPG779', 'WPG780'])]),
+      userMessage('make it yellow gold'),
+      message('a2', [searchPart([hit('WPG781')], { id: 'call-2' }), presentPart(['WPG781'])]),
+    ];
+    const anchors = extractMessageAnchors(messages);
+    expect(anchors.map((anchor) => anchor.messageId)).toEqual(['a1', 'a2']);
+    /* Anchors cap at four tiles per message. */
+    expect(anchors[0].groups.map((g) => g.objectIDs)).toEqual([
+      ['WPG776', 'WPG777', 'WPG778', 'WPG779'],
     ]);
-    expect(kept.map((p) => p.id)).toEqual(['a']);
+    expect(anchors[1].groups.map((g) => g.objectIDs)).toEqual([['WPG781']]);
+    expect(anchors[0].groups[0].title).toBe('tanzanite ring');
   });
 
-  it('keeps genuinely different families', () => {
-    const kept = dedupeVariants([
-      product('a', 'F1', 'Huggie Hoop Earrings', 249.99),
-      product('b', 'F2', 'Drop Earrings', 249.99),
-    ]);
-    expect(kept.map((p) => p.id)).toEqual(['a', 'b']);
+  it('anchors nothing on a multi-query message', () => {
+    const messages = [
+      userMessage('show me opal rings'),
+      message('a1', [searchPart([hit('WPG776')], { queries: 2 }), presentPart(['WPG776'])]),
+    ];
+    expect(extractMessageAnchors(messages)).toEqual([]);
   });
 
-  it('falls back to the design signature when the family is missing', () => {
-    const kept = dedupeVariants([
-      product('a', null, 'Huggie Hoop Earrings', 249.99),
-      product('b', null, 'Huggie   HOOP earrings', 259.0),
-      product('c', null, 'Drop Earrings', 249.99),
-    ]);
-    expect(kept.map((p) => p.id)).toEqual(['a', 'c']);
+  it('skips assistant messages with no curation call', () => {
+    const messages = [
+      userMessage('what makes opal different?'),
+      { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Play of color.' }] },
+    ];
+    expect(extractMessageAnchors(messages)).toEqual([]);
+  });
+});
+
+describe('present_products tool', () => {
+  const record = (objectID: string, overrides: Record<string, unknown> = {}) => ({
+    objectID,
+    name: `Product ${objectID}`,
+    price: 125,
+    inStock: true,
+    imageUrl: 'https://example.com/a.jpg',
+    link: `/product/${objectID}`,
+    ...overrides,
+  });
+  const fetcher = async (ids: readonly string[]) => {
+    const map = new Map();
+    for (const id of ids) {
+      if (id === 'ghost') continue;
+      map.set(id, record(id));
+    }
+    return map;
+  };
+  const present = createPresentProducts(fetcher);
+
+  it('verifies every piece and echoes the facet pick', async () => {
+    const result = await present({ objectIDs: ['a', 'b'], displayFacets: ['MetalColor', 'MetalColor', 'Gemstone'] });
+    expect(result.status).toBe('ok');
+    expect(result.objectIDs.map((i) => i.objectID)).toEqual(['a', 'b']);
+    expect(result.displayFacets).toEqual(['MetalColor', 'Gemstone']);
   });
 
-  it('strips metal colors and purities from the signature', () => {
-    const kept = dedupeVariants([
-      product('a', null, 'Oval Lab-Grown Diamond 10K Yellow Gold Huggie Hoop Earrings', 1196.99),
-      product('b', null, 'Oval Lab-Grown Diamond 10K White Gold Huggie Hoop Earrings', 1196.99),
+  it('drops out-of-stock, unpriced, image-less and unknown pieces with reasons', async () => {
+    const flaky = async (ids: readonly string[]) => {
+      const map = new Map();
+      for (const id of ids) {
+        if (id === 'oos') map.set(id, record(id, { inStock: false }));
+        else if (id === 'nopr') map.set(id, record(id, { price: null }));
+        else if (id === 'noimg') map.set(id, record(id, { imageUrl: null }));
+        else if (id === 'ok') map.set(id, record(id));
+      }
+      return map;
+    };
+    const result = await createPresentProducts(flaky)({ objectIDs: ['oos', 'nopr', 'noimg', 'ghost', 'ok'] });
+    expect(result.objectIDs.map((i) => i.objectID)).toEqual(['ok']);
+    expect(result.dropped.map((d) => d.reason)).toEqual([
+      'out_of_stock',
+      'unpriced',
+      'no_image',
+      'not_found',
     ]);
-    expect(kept.map((p) => p.id)).toEqual(['a']);
   });
 
-  it('keeps records whose title carries no meaningful tokens', () => {
-    const kept = dedupeVariants([
-      product('a', null, '14K Gold', null),
-      product('b', null, '18K Gold', null),
-    ]);
-    expect(kept.map((p) => p.id)).toEqual(['a', 'b']);
+  it('collapses same-design variants and caps at eight', async () => {
+    const catalog: Record<string, Record<string, unknown>> = {};
+    const words = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+    for (let i = 0; i < 10; i++) catalog[`d${i}`] = record(`d${i}`, { name: `${words[i]} style hoop earrings` });
+    catalog.v1 = record('v1', { name: 'Oval Diamond 10K Yellow Gold Huggie Hoop Earrings' });
+    catalog.v2 = record('v2', { name: 'Oval Diamond 10K White Gold Huggie Hoop Earrings' });
+    const rich = async (ids: readonly string[]) => {
+      const map = new Map();
+      for (const id of ids) map.set(id, catalog[id]);
+      return map;
+    };
+    const variants = await createPresentProducts(rich)({ objectIDs: ['v1', 'v2'] });
+    expect(variants.objectIDs.map((i) => i.objectID)).toEqual(['v1']);
+    const many = await createPresentProducts(rich)({ objectIDs: Object.keys(catalog) });
+    /* The cap is a silent backstop: the tool description tells the model to
+     * send at most eight, best first, so an over-long list is defensive only. */
+    expect(many.objectIDs).toHaveLength(8);
+  });
+
+  it('rejects an empty call', async () => {
+    expect((await present({ objectIDs: [] })).status).toBe('invalid_input');
   });
 });
