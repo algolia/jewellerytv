@@ -123,6 +123,28 @@ function readSearchPartFacets(
   return found;
 }
 
+/** Navigable-attribute picker, index-derived (never an attribute-name list —
+ * static lists are a repeated defect class). A facet can narrow only if it
+ * carries at least two values, and a values list the size of a spec sheet
+ * does not read as a choice. Most discriminative (fewest values) first, then
+ * attribute name for stability, capped at three like the model pick. */
+const MAX_DERIVED_PILL_VALUES = 24;
+export function deriveDisplayFacets(
+  facets: Record<string, Record<string, number>>,
+): string[] {
+  return Object.entries(facets)
+    .filter(([, values]) => {
+      const count = Object.keys(values).length;
+      return count >= 2 && count <= MAX_DERIVED_PILL_VALUES;
+    })
+    .sort(
+      (a, b) =>
+        Object.keys(a[1]).length - Object.keys(b[1]).length || a[0].localeCompare(b[0]),
+    )
+    .slice(0, 3)
+    .map(([attribute]) => attribute);
+}
+
 export function extractMessageFacetPicks(messages: readonly Message[]): MessageFacetPick[] {
   const out: MessageFacetPick[] = [];
   const facets: Record<string, Record<string, number>> = {};
@@ -159,8 +181,10 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
         for (const hitRecord of output.hits) if (isRecord(hitRecord)) hits.push(hitRecord);
     }
     /* A message without its own search part never carries a pick, even though
-     * the accumulated counts stay live for the messages that do. */
-    const displayFacets = !sawSearch || multiScope ? [] : (pick ?? []);
+     * the accumulated counts stay live for the messages that do. The pills are
+     * the app's contract with the shopper, not the model's: when the model
+     * omits its displayFacets pick, the search's own counts still render. */
+    const displayFacets = !sawSearch || multiScope ? [] : (pick ?? deriveDisplayFacets(facets));
     if (displayFacets.length && queryText)
       out.push({
         messageId: message.id,

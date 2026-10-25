@@ -183,6 +183,45 @@ describe('extractMessageFacetPicks', () => {
     expect(picks[0].pick.queryText).toBe("men's watch classic");
     expect(picks[0].hits).toHaveLength(2);
   });
+
+  it('derives facet pills from the search counts even when the model omits displayFacets', () => {
+    /* The systemic contract (Arijit, 2026-10-25): every search returns products
+     * AND its facet list. The model's displayFacets pick is an override, not
+     * the gate — when it omits the pick (the same compliance failure measured
+     * at 8% on the requirement field), the app still shows the pills. */
+    const picks = extractMessageFacetPicks([
+      userMessage('gems en vogue'),
+      { id: 'a1', role: 'assistant', parts: [facetSearchPart, presentPart(['12TB0A'], [])] },
+    ]);
+    expect(picks).toHaveLength(1);
+    expect(picks[0].pick.displayFacets).toEqual(['Catalog_Brand']);
+    expect(picks[0].pick.facets['Catalog_Brand']).toBeDefined();
+  });
+
+  it('derives facet pills when the model never calls present_products at all', () => {
+    const searchOnly = {
+      type: 'tool-algolia_search_index_prod_catalog',
+      toolCallId: 's1',
+      state: 'output-available',
+      input: { queries: [{ query: 'gems en vogue' }] },
+      output: {
+        hits: [hit('a'), hit('b')],
+        nbHits: 568,
+        facets: {
+          'Catalog_BrandNavigationName': { 'Gems en Vogue': 568 },
+          'Catalog_RingType': { Halo: 120, Solitaire: 90, 'Three Stone': 60 },
+        },
+      },
+    };
+    const picks = extractMessageFacetPicks([
+      userMessage('gems en vogue'),
+      { id: 'a1', role: 'assistant', parts: [searchOnly] },
+    ]);
+    expect(picks).toHaveLength(1);
+    /* Navigable attributes only: single-value facets cannot narrow anything,
+     * so the brand (one value left) yields to the multi-value type facet. */
+    expect(picks[0].pick.displayFacets).toEqual(['Catalog_RingType']);
+  });
 });
 
 describe('extractMessageFacetPicks multi-scope guard', () => {
