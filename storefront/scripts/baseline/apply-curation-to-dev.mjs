@@ -60,18 +60,21 @@ const systemPrompt = readFileSync(resolve(here, '../../docs/workspace/prompt-rev
 const presentDeclaration = {
   name: 'present_products',
   type: 'client_side',
+  // 200-char client description cap; the semantics live in the system prompt.
   description:
-    'After a product search, send the objectIDs you choose from its results, best first (max 8), plus displayFacets: 1-3 facet attribute names. It verifies them and returns exactly what will display.',
+    "After a search, send your chosen objectIDs (max 8, best first), displayFacets (1-3 facet names), and requirement: the shopper's named material or stone, quoted. It checks pieces and returns what shows.".slice(0, 200),
   inputSchema: {
     type: 'object',
     properties: {
       objectIDs: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 24 },
       displayFacets: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 3 },
+      requirement: { type: 'string', maxLength: 120 },
     },
     required: ['objectIDs'],
     additionalProperties: false,
   },
 };
+
 const tools = normTools(live.tools)
   .filter((t) => (t.name || t.type) !== 'arrange_groups' && (t.name || t.type) !== 'present_products');
 tools.push(presentDeclaration);
@@ -84,6 +87,15 @@ const searchTool = tools.find((t) => t.type === 'algolia_search_index');
 const prodIndex = searchTool?.indices?.find((i) => i.index === 'prod_catalog');
 if (prodIndex && !prodIndex.description?.includes('facet_Catalog_JewelryMaterialNavigationPurity with the exact vocabulary values')) {
   prodIndex.description = (prodIndex.description ?? '') + MATERIAL_FILTER_RULE;
+}
+/* THE class-C root fix: the model could never send a facet filter because the
+ * searchControls never exposed the key (measured 2026-10-24: only `query` and
+ * `custom` are exposed). Capability first, compliance second. */
+if (prodIndex && prodIndex.searchControls && prodIndex.searchControls.facetFilters === undefined) {
+  prodIndex.searchControls.facetFilters = { exposed: true, default: null };
+}
+if (prodIndex && prodIndex.searchControls && prodIndex.searchControls.filters === undefined) {
+  prodIndex.searchControls.filters = { exposed: true, default: null };
 }
 if (!tools.some((t) => t.type === 'algolia_search_index')) throw new Error('search tool missing from live sheet');
 const target = { instructions, systemPrompt, tools };

@@ -39,10 +39,11 @@ export const CLIENT_TOOL_NAMES = APP_ANSWERED_TOOL_NAMES;
 
 export function buildClientTools(
   fetchRawRecord: (objectID: string) => Promise<unknown>,
+  options?: { vocabulary?: () => Promise<{ values: Record<string, string[]> } | null> },
 ): Record<string, ClientToolExecutor> {
   const getRecords: CatalogRecordFetcher = createCatalogRecordFetcher(fetchRawRecord);
   const refreshProducts = createRefreshProducts(getRecords);
-  const presentProducts = createPresentProducts(getRecords);
+  const presentProducts = createPresentProducts(getRecords, { vocabulary: options?.vocabulary });
   const executorFor =
     <I, O>(run: (input: I) => Promise<O>) =>
     async ({ toolName, input, addToolResult }: { toolName: string; input: unknown; addToolResult: (r: { state: 'output-available'; output: unknown } | { state: 'output-error'; errorText: string }) => Promise<unknown> }) => {
