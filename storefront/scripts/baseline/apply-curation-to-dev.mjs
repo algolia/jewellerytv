@@ -88,19 +88,18 @@ const prodIndex = searchTool?.indices?.find((i) => i.index === 'prod_catalog');
 if (prodIndex && !prodIndex.description?.includes('facet_Catalog_JewelryMaterialNavigationPurity with the exact vocabulary values')) {
   prodIndex.description = (prodIndex.description ?? '') + MATERIAL_FILTER_RULE;
 }
-/* THE class-C root fix: the model could never send a facet filter because the
- * searchControls never exposed the key (measured 2026-10-24: only `query` and
- * `custom` are exposed). Capability first, compliance second. */
-if (prodIndex && prodIndex.searchControls && prodIndex.searchControls.facetFilters === undefined) {
-  prodIndex.searchControls.facetFilters = { exposed: true, default: null };
-}
-if (prodIndex && prodIndex.searchControls && prodIndex.searchControls.filters === undefined) {
-  prodIndex.searchControls.filters = { exposed: true, default: null };
-}
+/* Class-C note: exposing facetFilters/filters in searchControls was attempted
+ * (2026-10-25) and the platform SILENTLY DROPS the keys on readback — the model
+ * cannot send facet filters, period. The working enforcement is present_products'
+ * requirement matching against the runtime vocabulary. Filed for JTV/Algolia. */
 if (!tools.some((t) => t.type === 'algolia_search_index')) throw new Error('search tool missing from live sheet');
 const target = { instructions, systemPrompt, tools };
 const targetHash = hash3(target);
 
+if (process.env.DEBUG_TOOLS) {
+  writeFileSync('/tmp/target-tools.json', JSON.stringify(normTools(target.tools), null, 1));
+  writeFileSync('/tmp/readback-tools.json', JSON.stringify(normTools(live.tools), null, 1));
+}
 console.log(JSON.stringify({
   phase: 'preflight',
   execute,

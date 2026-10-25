@@ -41,9 +41,9 @@ export type PresentProductsOutput = {
   objectIDs: { objectID: string; name: string; price: number }[];
   dropped: PresentDrop[];
   displayFacets: string[];
-  /** The requirement-matched (attribute, value) pairs the tool enforced, so
-   * the model and the logs can see what was checked. */
-  enforced?: { attribute: string; value: string }[];
+  /** The requirement check the tool enforced, so the model and the logs can
+   * see what was verified. */
+  enforced?: EnforcedRequirement;
 };
 
 export type PresentProducts = (input: PresentProductsInput) => Promise<PresentProductsOutput>;
@@ -63,13 +63,30 @@ const invalid = (reason: string): PresentProductsOutput => ({
   displayFacets: [],
 });
 
-/** Match the shopper's quoted requirement to vocabulary values by exact token:
- * a value counts when one of its own words equals a requirement word ("sterling
- * silver" matches Purity "Sterling"; "rubies" matches gemstone "Ruby"). A
- * light singularization handles shopper plurals ("rubies", "rings"). Exact
- * word matching keeps the rule deterministic; multi-word values only match via
- * their own words. Returns [] when nothing in the vocabulary matches — the
- * caller then enforces nothing, exactly like today. */
+/* The app's naming map: which attributes carry material facts and which carry
+ * gemstone facts (our language layer — the VALUES always come from the live
+ * vocabulary). The requirement's words decide the concept; within it, the most
+ * discriminative attribute (fewest vocabulary values sharing a requirement
+ * word) is enforced, with OR over its matched values. */
+const CONCEPT_ATTRIBUTES: Record<string, readonly string[]> = {
+  material: [
+    'Catalog_JewelryMaterialNavigationName',
+    'Catalog_JewelryMaterialNavigationPurity',
+  ],
+  gemstone: [
+    'Catalog_GemstoneAndPearlNavigationName',
+    'Catalog_GemstoneInformationPrimary.GemstoneName',
+  ],
+};
+
+export type EnforcedRequirement = { attribute: string; values: string[] };
+
+/** Match the shopper's quoted requirement to vocabulary values by exact word
+ * (light singularization for shopper plurals: "rubies" → "ruby"). Within the
+ * winning concept — the one whose attributes matched anything, fewest total
+ * matched values first — the attribute with the fewest matched values is the
+ * most discriminative check; OR over its matched values. Returns [] when the
+ * vocabulary has no match — the caller then enforces nothing. */
 function singularize(token: string): string {
   if (token.endsWith('ies') && token.length > 4) return `${token.slice(0, -3)}y`;
   if (token.endsWith('s') && !token.endsWith('ss') && token.length > 4) return token.slice(0, -1);
@@ -79,29 +96,43 @@ function singularize(token: string): string {
 export function matchRequirement(
   requirement: string,
   vocabulary: VocabularyLike,
-): { attribute: string; value: string }[] {
+): EnforcedRequirement[] {
   const tokens = requirement
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter((token) => token.length >= MIN_TOKEN_LENGTH)
     .map(singularize);
   if (!tokens.length) return [];
-  const enforced: { attribute: string; value: string }[] = [];
-  for (const [attribute, values] of Object.entries(vocabulary.values)) {
-    for (const value of values) {
-      const words = value.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-      if (words.some((word) => tokens.includes(word))) {
-        enforced.push({ attribute, value });
-        break;
+  const candidates: { concept: string; matches: EnforcedRequirement[]; total: number }[] = [];
+  for (const [concept, attributes] of Object.entries(CONCEPT_ATTRIBUTES)) {
+    const matches: EnforcedRequirement[] = [];
+    let total = 0;
+    for (const attribute of attributes) {
+      const values = (vocabulary.values[attribute] ?? []).filter((value) =>
+        value
+          .toLowerCase()
+          .split(/[^a-z0-9]+/)
+          .filter(Boolean)
+          .some((word) => tokens.includes(word)),
+      );
+      if (values.length) {
+        matches.push({ attribute, values });
+        total += values.length;
       }
     }
+    if (matches.length) candidates.push({ concept, matches, total });
   }
-  return enforced;
+  if (!candidates.length) return [];
+  candidates.sort((a, b) => a.total - b.total || a.concept.localeCompare(b.concept));
+  const winner = candidates[0].matches.sort(
+    (a, b) => a.values.length - b.values.length || a.attribute.localeCompare(b.attribute),
+  )[0];
+  return [winner];
 }
 
-function satisfies(recordMaterial: Record<string, string[]>, enforced: { attribute: string; value: string }[]) {
-  return enforced.every(({ attribute, value }) =>
-    (recordMaterial[attribute] ?? []).some((v) => v.toLowerCase() === value.toLowerCase()),
+function satisfies(recordMaterial: Record<string, string[]>, enforced: EnforcedRequirement) {
+  return (recordMaterial[enforced.attribute] ?? []).some((value) =>
+    enforced.values.includes(value),
   );
 }
 
@@ -120,13 +151,13 @@ export function createPresentProducts(
 
     /* Requirement enforcement needs the live vocabulary; without it the check
      * is skipped and behavior matches the pre-enforcement build. */
-    let enforced: { attribute: string; value: string }[] = [];
+    let enforced: EnforcedRequirement | null = null;
     if (typeof requirement === 'string' && requirement.trim()) {
       try {
         const vocabulary = (await options?.vocabulary?.()) ?? null;
-        if (vocabulary) enforced = matchRequirement(requirement, vocabulary);
+        if (vocabulary) enforced = matchRequirement(requirement, vocabulary)[0] ?? null;
       } catch {
-        enforced = [];
+        enforced = null;
       }
     }
 
@@ -148,7 +179,7 @@ export function createPresentProducts(
         dropped.push({ objectID, reason: 'not_found' });
         continue;
       }
-      if (enforced.length && !satisfies(record.materialFields, enforced)) {
+      if (enforced && !satisfies(record.materialFields, enforced)) {
         dropped.push({ objectID, reason: 'requirement_mismatch' });
         continue;
       }
@@ -174,7 +205,7 @@ export function createPresentProducts(
       if (verified.length >= MAX_TILES) break;
     }
     if (!verified.length)
-      return { status: 'empty', objectIDs: [], dropped, displayFacets: facets, enforced };
-    return { status: 'ok', objectIDs: verified, dropped, displayFacets: facets, enforced };
+      return { status: 'empty', objectIDs: [], dropped, displayFacets: facets, enforced: enforced ?? undefined };
+    return { status: 'ok', objectIDs: verified, dropped, displayFacets: facets, enforced: enforced ?? undefined };
   };
 }
