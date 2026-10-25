@@ -287,21 +287,28 @@ describe('connected entry guidance', () => {
   ];
   const VOICES: StarterVoice[] = ['show', 'question', 'tell'];
 
-  it('renders five distinct starter chips from the analytics-backed pool', () => {
+  it('renders nine distinct starter chips from the analytics-backed pool', () => {
     const set = selectStarterSet(STARTER_QUESTION_POOL, [], seededRng(2));
     const html = renderToStaticMarkup(
-      <ConnectedWelcome showStarters startersDisabled={false} starters={set} onAsk={() => {}} />,
+      <ConnectedWelcome
+        showStarters
+        startersDisabled={false}
+        starters={set}
+        onAsk={() => {}}
+        onMore={() => {}}
+      />,
     );
     expect(html).toContain('aria-label="Suggested first questions"');
     const labels = [...html.matchAll(/class="connected-starter-chip"[^>]*>([^<]*)<\/button>/g)].map(
       (match) => match[1].replace(/&#x27;/g, "'"),
     );
     expect(labels).toEqual(set.map((question) => question.label));
-    expect(new Set(labels).size).toBe(5);
+    expect(new Set(labels).size).toBe(9);
     const poolLabels = new Set(STARTER_QUESTION_POOL.map((question) => question.label));
     for (const label of labels) {
       expect(poolLabels.has(label)).toBe(true);
     }
+    expect(html).toContain('Show more');
   });
 
   it('grounds the pool in analytics themes and sources without em dashes', () => {
@@ -319,19 +326,23 @@ describe('connected entry guidance', () => {
     expect(labels.size).toBe(STARTER_QUESTION_POOL.length);
   });
 
-  it('selects five distinct labels and never repeats the previous welcome set', () => {
+  it('selects nine distinct labels and never repeats a shown or sent label', () => {
     for (const seed of [1, 7, 42]) {
       const rng = seededRng(seed);
       const first = selectStarterSet(STARTER_QUESTION_POOL, [], rng);
-      expect(first).toHaveLength(5);
-      expect(new Set(first.map((question) => question.label)).size).toBe(5);
-      const second = selectStarterSet(
-        STARTER_QUESTION_POOL,
-        first.map((question) => question.label),
-        rng,
-      );
+      expect(first).toHaveLength(9);
+      expect(new Set(first.map((question) => question.label)).size).toBe(9);
+      /* Rotate twice with everything ever shown excluded — the Show more and
+       * reset paths both pass the full used-label pool. */
+      const used = first.map((question) => question.label);
+      const second = selectStarterSet(STARTER_QUESTION_POOL, used, rng);
       for (const question of second) {
-        expect(first.some((picked) => picked.label === question.label)).toBe(false);
+        expect(used).not.toContain(question.label);
+      }
+      used.push(...second.map((question) => question.label));
+      const third = selectStarterSet(STARTER_QUESTION_POOL, used, rng);
+      for (const question of third) {
+        expect(used).not.toContain(question.label);
       }
     }
   });
@@ -346,7 +357,7 @@ describe('connected entry guidance', () => {
         perVoice.set(question.voice, (perVoice.get(question.voice) ?? 0) + 1);
       }
       for (const count of [...perTheme.values(), ...perVoice.values()]) {
-        expect(count).toBeLessThanOrEqual(2);
+        expect(count).toBeLessThanOrEqual(3);
       }
       expect(perTheme.size).toBeGreaterThanOrEqual(3);
       expect(perVoice.size).toBeGreaterThanOrEqual(2);
@@ -364,7 +375,7 @@ describe('connected entry guidance', () => {
       STARTER_QUESTION_POOL.slice(0, 20).map((question) => question.label),
       seededRng(5),
     );
-    expect(narrow).toHaveLength(5);
+    expect(narrow).toHaveLength(9);
   });
 
   it('disables starter chips while a turn is pending, resetting, or the workspace is blocked', () => {
