@@ -1,0 +1,93 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Battery report 2026-10-25</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:24px;color:#222}
+table{border-collapse:collapse;font-size:12px;width:100%}
+th,td{border:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top}
+th{background:#f5f5f5;position:sticky;top:0}
+.summary td{font-size:14px;padding:8px}
+h2{margin-top:28px}
+.pass{color:#2e7d32}.fail{color:#c62828}
+</style></head><body>
+<h1>JTV Concierge battery — 2026-10-25</h1>
+<p>6 turns captured across 1 leg(s). Run dir: <code>docs/workspace/battery-2026-10-25/smoke-2026-10-25T14-10-49-140Z</code></p>
+<h2>Summary vs pass lines</h2>
+<table class="summary"><tr><th>Leg</th><th>Tile correctness (≥90%)</th><th>Chip meaningful (≥95%)</th><th>Filter present (≥95%)</th><th>Notices (≤2)</th><th>Zero-tile turns</th><th>Verdict</th></tr>
+<tr style="background:#ffcdd2">
+    <td>Leg 1</td>
+    <td>58%</td>
+    <td>100%</td>
+    <td>40%</td>
+    <td>0</td>
+    <td>0</td>
+    <td><strong>FAIL</strong></td>
+  </tr></table>
+<h2>All turns</h2>
+<table><tr><th>Leg</th><th>Q#</th><th>Turn</th><th>Ask</th><th>Expected req</th><th>Model req</th><th>Enforced</th><th>Tiles</th><th>Chips</th><th>Drops</th><th>Notices</th><th>Time</th><th>Status</th><th>Screenshots</th></tr>
+<tr style="background:#fffde7">
+    <td>1</td><td>1</td><td>1</td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">I'm buying a gift</td>
+    <td><code style="background:#fff3e0;padding:1px 4px;border-radius:3px">gold</code></td>
+    <td></td>
+    <td></td>
+    <td>0</td><td>0</td><td>0</td>
+    <td>0</td><td>10s</td>
+    <td>ok</td>
+    <td><img src="screenshots/leg1-q1-t1-broad.png" style="max-width:280px;border:1px solid #ddd;border-radius:4px;margin:2px" loading="lazy" /></td>
+  </tr>
+<tr style="background:#e8f5e9">
+    <td>1</td><td>1</td><td>2</td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">something in gold</td>
+    <td><code style="background:#fff3e0;padding:1px 4px;border-radius:3px">gold</code></td>
+    <td>gold</td>
+    <td><code style="background:#e8f5e9;padding:1px 4px;border-radius:3px;font-size:11px">Catalog_JewelryMaterialNavigationName: 14K Gold Over Resin, Gold, Gold Filled, Gold Over Base Metal, Gold Over Brass, Gold Over Bronze, Gold Over Copper, Gold Over Palladium Silver, Gold Over Platineve®, Gold Over Resin, Gold Over Silver, Gold Over Steel</code></td>
+    <td>4</td><td>6</td><td>0</td>
+    <td>0</td><td>10s</td>
+    <td>ok</td>
+    <td><img src="screenshots/leg1-q1-t2-narrow.png" style="max-width:280px;border:1px solid #ddd;border-radius:4px;margin:2px" loading="lazy" /></td>
+  </tr>
+<tr style="background:#e8f5e9">
+    <td>1</td><td>1</td><td>3</td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">chip:Ring + follow-up</td>
+    <td><code style="background:#fff3e0;padding:1px 4px;border-radius:3px">gold</code></td>
+    <td></td>
+    <td></td>
+    <td>15</td><td>0</td><td>0</td>
+    <td>0</td><td>20s</td>
+    <td>ok</td>
+    <td><img src="screenshots/leg1-q1-t3-funnel.png" style="max-width:280px;border:1px solid #ddd;border-radius:4px;margin:2px" loading="lazy" /></td>
+  </tr>
+<tr style="background:#e8f5e9">
+    <td>1</td><td>2</td><td>1</td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">Help me find an anniversary gift</td>
+    <td><code style="background:#fff3e0;padding:1px 4px;border-radius:3px">ruby</code></td>
+    <td></td>
+    <td></td>
+    <td>15</td><td>6</td><td>0</td>
+    <td>0</td><td>17s</td>
+    <td>ok</td>
+    <td><img src="screenshots/leg1-q2-t1-broad.png" style="max-width:280px;border:1px solid #ddd;border-radius:4px;margin:2px" loading="lazy" /></td>
+  </tr>
+<tr style="background:#e8f5e9">
+    <td>1</td><td>2</td><td>2</td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">rubies</td>
+    <td><code style="background:#fff3e0;padding:1px 4px;border-radius:3px">ruby</code></td>
+    <td></td>
+    <td></td>
+    <td>15</td><td>6</td><td>0</td>
+    <td>0</td><td>10s</td>
+    <td>ok</td>
+    <td><img src="screenshots/leg1-q2-t2-narrow.png" style="max-width:280px;border:1px solid #ddd;border-radius:4px;margin:2px" loading="lazy" /></td>
+  </tr>
+<tr style="background:#e8f5e9">
+    <td>1</td><td>2</td><td>3</td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">chip:Band + follow-up</td>
+    <td><code style="background:#fff3e0;padding:1px 4px;border-radius:3px">ruby</code></td>
+    <td>rubies</td>
+    <td><code style="background:#e8f5e9;padding:1px 4px;border-radius:3px;font-size:11px">GemstoneName: Ruby, Ruby-Zoisite</code></td>
+    <td>22</td><td>8</td><td>1</td>
+    <td>0</td><td>20s</td>
+    <td>ok</td>
+    <td><img src="screenshots/leg1-q2-t3-funnel.png" style="max-width:280px;border:1px solid #ddd;border-radius:4px;margin:2px" loading="lazy" /></td>
+  </tr></table>
+</body></html>
