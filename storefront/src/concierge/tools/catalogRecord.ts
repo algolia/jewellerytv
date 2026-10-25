@@ -36,11 +36,17 @@ const MATERIAL_FIELD_PATHS = [
 function readStringField(raw: Record<string, unknown>, path: string): string[] {
   const [head, ...tail] = path.split('.');
   const value = raw[head];
+  /* Material fields arrive as scalar OR array at every level; flatten the way
+   * the catalogue adapter does so top-level arrays read correctly. */
   const parts = tail.length
-    ? (Array.isArray(value) ? value : [value]).flatMap((part) =>
-        part && typeof part === 'object' ? [(part as Record<string, unknown>)[tail.join('.')]] : [],
-      )
-    : [value];
+    ? (Array.isArray(value) ? value : [value]).flatMap((part) => {
+        if (!part || typeof part !== 'object') return [part];
+        const nested = (part as Record<string, unknown>)[tail.join('.')];
+        return Array.isArray(nested) ? nested : [nested];
+      })
+    : Array.isArray(value)
+      ? value
+      : [value];
   return parts.filter((v): v is string => typeof v === 'string' && !!v.trim());
 }
 
