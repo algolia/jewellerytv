@@ -234,7 +234,7 @@ describe('present_products tool', () => {
     ]);
   });
 
-  it('collapses same-design variants and caps at eight', async () => {
+  it('collapses same-design variants and caps at nine', async () => {
     const catalog: Record<string, Record<string, unknown>> = {};
     const words = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
     for (let i = 0; i < 10; i++) catalog[`d${i}`] = record(`d${i}`, { name: `${words[i]} style hoop earrings` });
@@ -250,7 +250,7 @@ describe('present_products tool', () => {
     const many = await createPresentProducts(rich)({ objectIDs: Object.keys(catalog) });
     /* The cap is a silent backstop: the tool description tells the model to
      * send at most eight, best first, so an over-long list is defensive only. */
-    expect(many.objectIDs).toHaveLength(8);
+    expect(many.objectIDs).toHaveLength(9);
   });
 
   it('rejects an empty call', async () => {

@@ -1,0 +1,269 @@
+[
+ {
+  "leg": 1,
+  "question": "I'm buying a gift",
+  "index": 0,
+  "requirement": "gold",
+  "turn": 1,
+  "ask": "I'm buying a gift",
+  "searches": [],
+  "presents": [],
+  "tiles": [],
+  "chips": [],
+  "notices": [],
+  "reply": "How exciting, a gift to go pick out! Tell me a bit about who it's for, so I can point you toward something they'll really love.\n\nIs this for someone special like a partner or family member, and do you have a sense of what they usually wear, like gold, silver, or maybe a favorite gemstone or color?",
+  "ms": 10090
+ },
+ {
+  "leg": 1,
+  "question": "I'm buying a gift",
+  "index": 0,
+  "requirement": "gold",
+  "turn": 2,
+  "ask": "something in gold",
+  "searches": [
+   {
+    "queries": [
+     "gold jewelry gift"
+    ],
+    "facetFilters": null
+   }
+  ],
+  "presents": [
+   {
+    "requirement": "gold",
+    "enforced": {
+     "attribute": "Catalog_JewelryMaterialNavigationName",
+     "values": [
+      "14K Gold Over Resin",
+      "Gold",
+      "Gold Filled",
+      "Gold Over Base Metal",
+      "Gold Over Brass",
+      "Gold Over Bronze",
+      "Gold Over Copper",
+      "Gold Over Palladium Silver",
+      "Gold Over Platineve®",
+      "Gold Over Resin",
+      "Gold Over Silver",
+      "Gold Over Steel"
+     ]
+    },
+    "picked": 8,
+    "returned": [
+     "SFO423B",
+     "SFO406",
+     "SFO393A",
+     "SFO431",
+     "SFO420",
+     "SFO345",
+     "SFO467",
+     "TSM014"
+    ],
+    "dropped": []
+   }
+  ],
+  "tiles": [
+   "View details for Morganite With White Diamond 14k Rose Gold Earrings 2",
+   "View details for 14K Yellow Gold 10.6mm Diamond Cut \"Rinascimento\" Ban",
+   "View details for 14k Yellow Gold Dangling Stars And Cultured Freshwate",
+   "View details for 14k Yellow Gold Raggio di Sole Rolo Link 18\" Necklace"
+  ],
+  "chips": [
+   "Ring",
+   "Earrings",
+   "Cufflinks",
+   "Necklace",
+   "Pendant",
+   "Jewelry Set"
+  ],
+  "notices": [],
+  "reply": "Gold is such a classic choice, it really can't go wrong. Let me see what I can show you.",
+  "ms": 10061
+ },
+ {
+  "leg": 1,
+  "question": "I'm buying a gift",
+  "index": 0,
+  "requirement": "gold",
+  "turn": 3,
+  "ask": "chip:Ring + follow-up",
+  "searches": [],
+  "presents": [],
+  "tiles": [
+   "View details for London Blue Topaz With Moissanite 18K Yellow Gold Ove",
+   "View details for 14K Yellow Gold 10.6mm Diamond Cut \"Rinascimento\" Ban",
+   "View details for Green Moldavite 10k Yellow Gold Ring 2.70ctw, $499.99",
+   "View details for White Lab-Grown Diamond F VS-SI 18K Yellow Gold Over ",
+   "View details for Kunzite With Pink Sapphire And White Diamond 14k Yell",
+   "View details for Natural Yellow And White Diamond 14K White Gold Clust",
+   "View details for Rhodolite Garnet And White Diamond 14k Yellow Gold Ha",
+   "View details for Cruise Ship Collection Blue Tanzanite Rhodium Over 14",
+   "View details for 14k Yellow Gold Raggio di Sole Rolo Link 18\" Necklace",
+   "View details for 14k Yellow Gold 16.6mm x 14.4mm Cross Ricami Necklace",
+   "View details for 14k Yellow Gold Greek Key Hoop Earrings, $249.99.",
+   "View details for 14k Yellow Gold Dangling Stars And Cultured Freshwate",
+   "View details for 14k Yellow Gold 6mm Vittoria Grumetta Bracelet, $928.",
+   "View details for 14k Yellow Gold 4.2mm Grumetta Collection Station 18\"",
+   "View details for Morganite With White Diamond 14k Rose Gold Earrings 2"
+  ],
+  "chips": [],
+  "notices": [],
+  "reply": "",
+  "ms": 20211
+ },
+ {
+  "leg": 1,
+  "question": "Help me find an anniversary gift",
+  "index": 1,
+  "requirement": "ruby",
+  "turn": 1,
+  "ask": "Help me find an anniversary gift",
+  "searches": [],
+  "presents": [],
+  "tiles": [
+   "View details for London Blue Topaz With Moissanite 18K Yellow Gold Ove",
+   "View details for 14K Yellow Gold 10.6mm Diamond Cut \"Rinascimento\" Ban",
+   "View details for Green Moldavite 10k Yellow Gold Ring 2.70ctw, $499.99",
+   "View details for White Lab-Grown Diamond F VS-SI 18K Yellow Gold Over ",
+   "View details for Kunzite With Pink Sapphire And White Diamond 14k Yell",
+   "View details for Natural Yellow And White Diamond 14K White Gold Clust",
+   "View details for Rhodolite Garnet And White Diamond 14k Yellow Gold Ha",
+   "View details for Cruise Ship Collection Blue Tanzanite Rhodium Over 14",
+   "View details for Yellow Citrine 10k Yellow Gold Band Ring 1.57ctw, $36",
+   "View details for 14K Yellow Gold 9.7mm Rigato Cut Band Ring, $499.99.",
+   "View details for 14K Yellow Gold 6.5mm Lily Ricami Ring, $411.75.",
+   "View details for 14k Yellow Gold 9.5mm Cigar Band Ring, $799.99.",
+   "View details for 14k Yellow Gold 8.5mm Regina Crown Ring, $1,455.39.",
+   "View details for 14k Yellow Gold 10mm Riflessi Filigree Ring, $632.99.",
+   "View details for 14k Yellow Gold Diamond Cut Etruscan Band Ring, $455."
+  ],
+  "chips": [
+   "Band",
+   "Wedding Band",
+   "Eternity Band",
+   "Anniversary",
+   "Multi-Row",
+   "Set"
+  ],
+  "notices": [],
+  "reply": "Congratulations on the anniversary, that's such a lovely reason to go gift hunting.\n\nSince we're already looking at gold rings, would she already wear a ring style like a band, or is this more a case of finding something special like a gemstone piece to mark the occasion? And is there a budget in mind?",
+  "ms": 17367
+ },
+ {
+  "leg": 1,
+  "question": "Help me find an anniversary gift",
+  "index": 1,
+  "requirement": "ruby",
+  "turn": 2,
+  "ask": "rubies",
+  "searches": [],
+  "presents": [],
+  "tiles": [
+   "View details for London Blue Topaz With Moissanite 18K Yellow Gold Ove",
+   "View details for 14K Yellow Gold 10.6mm Diamond Cut \"Rinascimento\" Ban",
+   "View details for Green Moldavite 10k Yellow Gold Ring 2.70ctw, $499.99",
+   "View details for White Lab-Grown Diamond F VS-SI 18K Yellow Gold Over ",
+   "View details for Kunzite With Pink Sapphire And White Diamond 14k Yell",
+   "View details for Natural Yellow And White Diamond 14K White Gold Clust",
+   "View details for Rhodolite Garnet And White Diamond 14k Yellow Gold Ha",
+   "View details for Cruise Ship Collection Blue Tanzanite Rhodium Over 14",
+   "View details for Yellow Citrine 10k Yellow Gold Band Ring 1.57ctw, $36",
+   "View details for 14K Yellow Gold 9.7mm Rigato Cut Band Ring, $499.99.",
+   "View details for 14K Yellow Gold 6.5mm Lily Ricami Ring, $411.75.",
+   "View details for 14k Yellow Gold 9.5mm Cigar Band Ring, $799.99.",
+   "View details for 14k Yellow Gold 8.5mm Regina Crown Ring, $1,455.39.",
+   "View details for 14k Yellow Gold 10mm Riflessi Filigree Ring, $632.99.",
+   "View details for 14k Yellow Gold Diamond Cut Etruscan Band Ring, $455."
+  ],
+  "chips": [
+   "Band",
+   "Wedding Band",
+   "Eternity Band",
+   "Anniversary",
+   "Multi-Row",
+   "Set"
+  ],
+  "notices": [],
+  "reply": "",
+  "ms": 10103
+ },
+ {
+  "leg": 1,
+  "question": "Help me find an anniversary gift",
+  "index": 1,
+  "requirement": "ruby",
+  "turn": 3,
+  "ask": "chip:Band + follow-up",
+  "searches": [
+   {
+    "queries": [
+     "ruby band ring gold anniversary"
+    ],
+    "facetFilters": null
+   }
+  ],
+  "presents": [
+   {
+    "requirement": "rubies",
+    "enforced": {
+     "attribute": "Catalog_GemstoneInformationPrimary.GemstoneName",
+     "values": [
+      "Ruby",
+      "Ruby-Zoisite"
+     ]
+    },
+    "picked": 8,
+    "returned": [
+     "13B52B",
+     "17195D",
+     "17KMXB",
+     "12QYXB",
+     "1INDJA",
+     "1QOXHA",
+     "1YTSQA"
+    ],
+    "dropped": [
+     "17195H:variant_of_shown"
+    ]
+   }
+  ],
+  "tiles": [
+   "View details for London Blue Topaz With Moissanite 18K Yellow Gold Ove",
+   "View details for 14K Yellow Gold 10.6mm Diamond Cut \"Rinascimento\" Ban",
+   "View details for Green Moldavite 10k Yellow Gold Ring 2.70ctw, $499.99",
+   "View details for White Lab-Grown Diamond F VS-SI 18K Yellow Gold Over ",
+   "View details for Kunzite With Pink Sapphire And White Diamond 14k Yell",
+   "View details for Natural Yellow And White Diamond 14K White Gold Clust",
+   "View details for Rhodolite Garnet And White Diamond 14k Yellow Gold Ha",
+   "View details for Cruise Ship Collection Blue Tanzanite Rhodium Over 14",
+   "View details for White Cubic Zirconia 18k Yellow Gold Over Brass 8-Pie",
+   "View details for White Lab-Grown Diamond SI F-G 14K Yellow Gold Over S",
+   "View details for White Lab-Grown Diamond H SI1 14k White Gold Band Rin",
+   "View details for Yellow and Colorless Moissanite 14k Yellow Gold Over ",
+   "View details for 10k Yellow Gold Diamond-Cut Band Ring, $248.89.",
+   "View details for Pink and Multi Color Tourmaline 18K Yellow Gold Over ",
+   "View details for White Lab-Grown Diamond H SI2 10K White Gold Mens Ban",
+   "View details for Ruby and Diamond 14k White Gold Anniversary Band Ring",
+   "View details for 14K White Gold 5-Stone Ruby and Diamond Band Ring, 1.",
+   "View details for 10K Yellow Gold 0.40CTW Lab Created Ruby and Lab-Grow",
+   "View details for 10K Yellow Gold 0.50CTW Round Lab Created Ruby and La",
+   "View details for 10K Yellow Gold 0.40CTW Oval Lab Created Ruby and Lab",
+   "View details for 10K Yellow Gold 0.50CTW Rectangular Octagonal Lab Cre",
+   "View details for 0.55ctw Ruby and Diamond Band Ring in 14k White Gold,"
+  ],
+  "chips": [
+   "Band",
+   "Engagement",
+   "Halo",
+   "3-Stone",
+   "Anniversary",
+   "Solitaire",
+   "White",
+   "Yellow"
+  ],
+  "notices": [],
+  "reply": "",
+  "ms": 20211
+ }
+]

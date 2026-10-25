@@ -62,7 +62,7 @@ const presentDeclaration = {
   type: 'client_side',
   // 200-char client description cap; the semantics live in the system prompt.
   description:
-    "After a search, send your chosen objectIDs (max 8, best first), displayFacets (1-3 facet names), and requirement: the shopper's named material or stone, quoted. It checks pieces and returns what shows.".slice(0, 200),
+    "After a search, send 9-12 chosen objectIDs best first, displayFacets (1-3 facet names), and requirement: the shopper's named material or stone, quoted. It checks pieces and returns a full shelf.".slice(0, 200),
   inputSchema: {
     type: 'object',
     properties: {
