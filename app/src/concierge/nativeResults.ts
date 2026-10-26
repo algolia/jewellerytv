@@ -36,7 +36,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * message anchors nothing, matching the tiles-path suppression. Search
  * records are NOT collected here; the hydration layer collects them across
  * the transcript. */
-const MAX_ANCHOR_TILES = 4;
+const MAX_ANCHOR_TILES = 9;
 
 function readPresentInput(input: unknown): { displayFacets: string[] } | null {
   if (!isRecord(input)) return null;
@@ -97,6 +97,11 @@ export type FacetPick = {
   displayFacets: string[];
   facets: Record<string, Record<string, number>>;
   queryText: string;
+  /** The turn's own constraints, read from the search input's `facet_<Attribute>`
+   * keys (the model's only narrowing mechanism — the budget rides
+   * `facet_Pricing_PriceRange` band values). One OR-group per attribute, ready
+   * to re-apply in a chip refine so a tap never drops the turn's context. */
+  turnFilters: string[][];
 };
 
 /** Per-message variant for anchored chip rendering: each assistant message
@@ -145,13 +150,57 @@ export function deriveDisplayFacets(
     .map(([attribute]) => attribute);
 }
 
+/** Reads the search input's `facet_<Attribute>` keys — the model's per-query
+ * narrowing (ground truth: prod mission-d99113f8 expresses "under $1,000" as
+ * every Pricing_PriceRange band at or under the cap). Null and empty values
+ * are the model leaving an attribute unconstrained; malformed values skip.
+ * One OR-group per attribute, in key order. Later search parts in the same
+ * turn overwrite earlier groups of the same attribute. */
+function readTurnFilters(
+  queries: unknown[],
+  into: Record<string, string[]>,
+): Record<string, string[]> {
+  const first = queries[0];
+  if (!isRecord(first)) return into;
+  for (const [key, value] of Object.entries(first)) {
+    if (!key.startsWith('facet_') || !Array.isArray(value)) continue;
+    const attribute = key.slice('facet_'.length);
+    if (!attribute || !value.length) continue;
+    const values = value.filter((v): v is string => typeof v === 'string' && !!v);
+    if (values.length) into[attribute] = values;
+  }
+  return into;
+}
+
+/** The chip refine's search params: the turn's own query and constraints
+ * (one OR-group per constrained attribute, per Algolia's nested-array OR
+ * semantics), with the shopper's chip selections ANDed on top. Pure so the
+ * refine cannot silently diverge from the turn it refines again. */
+export function buildFacetRefineParams(
+  pick: Pick<FacetPick, 'queryText' | 'turnFilters'>,
+  selections: { attribute: string; value: string }[],
+): { query: string; facetFilters: (string | string[])[] } {
+  return {
+    query: pick.queryText,
+    facetFilters: [
+      ...pick.turnFilters,
+      ...selections.map((selection) => `${selection.attribute}:"${selection.value}"`),
+    ],
+  };
+}
+
 export function extractMessageFacetPicks(messages: readonly Message[]): MessageFacetPick[] {
   const out: MessageFacetPick[] = [];
-  const facets: Record<string, Record<string, number>> = {};
-  let queryText = '';
   for (const message of messages) {
     if (message.role !== 'assistant' || !message.parts || !message.id) continue;
     const hits: Record<string, unknown>[] = [];
+    /* Per-turn state (2026-10-26 bug): queryText, facet counts and constraints
+     * belong to THIS message's own search. They used to accumulate across the
+     * transcript, so a round-3 chip tap refined round 1's query text — the
+     * shopper's gold shelf re-searched platinum with no price cap. */
+    let facets: Record<string, Record<string, number>> = {};
+    let queryText = '';
+    let turnConstraints: Record<string, string[]> = {};
     /* A multi-query call is a multi-direction turn: its facet counts are
      * per-direction, so a single funnel over them mismatches the tiles.
      * Chips only apply to a single-scope discovery search. */
@@ -174,21 +223,28 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
       const first = queries[0];
       if (!queryText && isRecord(first) && typeof first.query === 'string')
         queryText = first.query;
+      readTurnFilters(queries, turnConstraints);
       if (!isRecord(part.output)) continue;
       const output = part.output as Record<string, unknown>;
       Object.assign(facets, readSearchPartFacets(output));
       if (Array.isArray(output.hits))
         for (const hitRecord of output.hits) if (isRecord(hitRecord)) hits.push(hitRecord);
     }
-    /* A message without its own search part never carries a pick, even though
-     * the accumulated counts stay live for the messages that do. The pills are
-     * the app's contract with the shopper, not the model's: when the model
+    /* A message without its own search part never carries a pick. The pills
+     * are the app's contract with the shopper, not the model's: when the model
      * omits its displayFacets pick, the search's own counts still render. */
     const displayFacets = !sawSearch || multiScope ? [] : (pick ?? deriveDisplayFacets(facets));
     if (displayFacets.length && queryText)
       out.push({
         messageId: message.id,
-        pick: { displayFacets, facets: { ...facets }, queryText },
+        pick: {
+          displayFacets,
+          facets: { ...facets },
+          queryText,
+          turnFilters: Object.entries(turnConstraints).map(([attribute, values]) =>
+            values.map((value) => `${attribute}:"${value}"`),
+          ),
+        },
         hits,
       });
   }
