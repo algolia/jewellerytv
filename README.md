@@ -2,7 +2,7 @@
 
 A public JTV-style shopping app for exploring jewelry through conversation. One Concierge in Algolia's Agent Studio learns the shopper's preferences, searches the read-only JTV catalogue and guidance, and helps them discover pieces. The shopper sees conversation beside a single product canvas; clicking a tile opens the product page.
 
-**Status:** This repository holds the 2026-10-22 baseline with the chips-native cut of 2026-10-24 applied: the application on `main` and the Concierge agent are the same in local development and in production ([the baseline](app/docs/BASELINE.md)), and all future work starts from it. The Concierge is live on the public [main Vercel URL](https://jewellerytv.vercel.app/) with no Vercel login. Full anniversary, replacement, guardrail and continuity acceptance (Plan 3.1) remains open; no checkout or purchase verification exists.
+**Status:** This repository holds the `baseline-2026-10-26` tag: the curation architecture — the agent searches, the browser-side `present_products` tool verifies every tile against the shopper's own words, and every surface renders the verified list in rows of three. The application on `main` and the Concierge agent are the same in local development and in production ([the baseline](app/docs/BASELINE.md)); all future work starts from it. The Concierge is live on the public [main Vercel URL](https://jewellerytv.vercel.app/) with no Vercel login. Full anniversary, replacement, guardrail and continuity acceptance (Plan 3.1) remains open; no checkout or purchase verification exists.
 
 **Public hosted app:** [jewellerytv.vercel.app](https://jewellerytv.vercel.app)
 
