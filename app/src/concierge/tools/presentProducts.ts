@@ -112,10 +112,46 @@ export type EnforcedRequirement = { attribute: string; values: string[] };
  * most discriminative check; OR over its matched values. Returns [] when the
  * vocabulary has no match — the caller then enforces nothing.
  *
- * Plated composites never satisfy a solid-metal ask: a shopper who says
- * "silver" means sterling-class silver, so "Gold Over Silver" and "Silver
- * Over Brass" are dropped from the enforced set unless the shopper's own
- * words said "over" (the measured silver-ask failure, battery 2026-10-26). */
+ * Negated clauses state no requirement (the measured mission-5b148c11
+ * failure, 2026-10-26): "no specific stone, but my budget is $200" enforced
+ * the gemstone value "Multi-Stone" and dropped every candidate, because the
+ * negators "no"/"not" sit below the token length floor and never reached the
+ * matcher. The message is split into clauses on punctuation and contrast
+ * conjunctions; a clause containing a negation word contributes nothing. The
+ * model's own search filters remain the channel for exclusions ("not gold"):
+ * this check only enforces what the shopper positively asked for. */
+const NEGATORS = new Set([
+  'no',
+  'not',
+  'none',
+  'nope',
+  'never',
+  'nothing',
+  'without',
+  'dont',
+  'cant',
+  'wont',
+  'isnt',
+  'arent',
+  'cannot',
+  'nor',
+]);
+
+function requirementTokens(requirement: string): string[] {
+  const normalized = requirement.toLowerCase().replace(/[''`]/g, '');
+  const clauses = normalized
+    .split(/(?:[,.;!?]|\b(?:but|though|however|except)\b)/)
+    .map((clause) => clause.trim())
+    .filter(Boolean);
+  const kept: string[] = [];
+  for (const clause of clauses) {
+    const words = clause.split(/[^a-z0-9]+/).filter(Boolean);
+    if (words.some((word) => NEGATORS.has(word))) continue;
+    kept.push(...words.filter((word) => word.length >= MIN_TOKEN_LENGTH).map(singularize));
+  }
+  return kept;
+}
+
 function singularize(token: string): string {
   if (token.endsWith('ies') && token.length > 4) return `${token.slice(0, -3)}y`;
   if (token.endsWith('s') && !token.endsWith('ss') && token.length > 4) return token.slice(0, -1);
@@ -128,11 +164,7 @@ export function matchRequirement(
   requirement: string,
   vocabulary: VocabularyLike,
 ): EnforcedRequirement[] {
-  const tokens = requirement
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter((token) => token.length >= MIN_TOKEN_LENGTH)
-    .map(singularize);
+  const tokens = requirementTokens(requirement);
   if (!tokens.length) return [];
   const shopperSaidOver = tokens.includes('over');
   const candidates: { concept: string; matches: EnforcedRequirement[]; total: number }[] = [];

@@ -371,6 +371,43 @@ describe('matchRequirement', () => {
   });
 });
 
+describe('matchRequirement negation', () => {
+  /* The measured failure (mission-5b148c11, 2026-10-26): "no specific stone,
+   * but my budget is $200" enforced the gemstone value "Multi-Stone" and
+   * dropped every candidate ring, because the negators "no" and "not" were
+   * shorter than the token length floor and never reached the matcher. A
+   * clause that contains a negation contributes no requirement at all: the
+   * shopper declined to state one. */
+  const vocabulary = {
+    values: {
+      'Catalog_GemstoneAndPearlNavigationName': ['Ruby', 'Sapphire', 'Multi-Stone'],
+      'Catalog_JewelryMaterialNavigationName': ['Gold', 'Silver'],
+    },
+  };
+
+  it('the measured failure: a declined requirement is not enforced', () => {
+    expect(matchRequirement('no specific stone, but my budget is $200', vocabulary)).toEqual([]);
+  });
+
+  it('a negated clause never becomes a requirement', () => {
+    expect(matchRequirement('not sure about stones, my budget is $200', vocabulary)).toEqual([]);
+    expect(matchRequirement('no preference on the stone', vocabulary)).toEqual([]);
+    expect(matchRequirement("I don't want gold", vocabulary)).toEqual([]);
+  });
+
+  it('a clause after a contrast conjunction still states its requirement', () => {
+    const matches = matchRequirement('not gold, show me silver', vocabulary);
+    expect(matches[0].attribute).toBe('Catalog_JewelryMaterialNavigationName');
+    expect(matches[0].values).toContain('Silver');
+    expect(matches[0].values).not.toContain('Gold');
+  });
+
+  it('positive requirements are untouched by the negation rule', () => {
+    const matches = matchRequirement('I only wear gold', vocabulary);
+    expect(matches[0].values).toContain('Gold');
+  });
+});
+
 describe('matchRequirement brand enforcement', () => {
   const vocabulary = {
     values: {
