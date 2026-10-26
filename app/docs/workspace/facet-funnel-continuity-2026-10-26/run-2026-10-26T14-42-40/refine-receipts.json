@@ -1,0 +1,121 @@
+{
+ "refineRequests": [
+  {
+   "url": "http://localhost:5173/api/search",
+   "body": {
+    "requests": [
+     {
+      "indexName": "prod_catalog",
+      "params": {
+       "query": "gold rings",
+       "facetFilters": [
+        [
+         "Catalog_JewelryMaterialNavigationName:\"Gold\""
+        ],
+        [
+         "Catalog_ProductType:\"Ring\""
+        ],
+        [
+         "Pricing_PriceRange:\"Under $25\"",
+         "Pricing_PriceRange:\"$25 - $50\"",
+         "Pricing_PriceRange:\"$50 - $100\"",
+         "Pricing_PriceRange:\"$100 - $200\"",
+         "Pricing_PriceRange:\"$200 - $500\"",
+         "Pricing_PriceRange:\"$500 - $1000\""
+        ],
+        "Catalog_GemstoneAndPearlNavigationName:\"Diamond\""
+       ],
+       "filters": "Inventory_InStock:true",
+       "hitsPerPage": 8
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "turns": [
+  {
+   "label": "t1-platinum",
+   "said": "I'd like to see platinum rings",
+   "funnels": [
+    [
+     "Engagement",
+     "Halo",
+     "3-Stone",
+     "Solitaire",
+     "Center Design",
+     "Band"
+    ]
+   ]
+  },
+  {
+   "label": "t2-budget",
+   "said": "I can spend up to 1000",
+   "funnels": [
+    [
+     "Engagement",
+     "Halo",
+     "3-Stone",
+     "Solitaire",
+     "Center Design",
+     "Band"
+    ],
+    [
+     "Diamond",
+     "Garnet",
+     "Morganite"
+    ]
+   ]
+  },
+  {
+   "label": "t3-gold",
+   "said": "let's go with gold then",
+   "funnels": [
+    [
+     "Engagement",
+     "Halo",
+     "3-Stone",
+     "Solitaire",
+     "Center Design",
+     "Band"
+    ],
+    [
+     "Diamond",
+     "Garnet",
+     "Morganite"
+    ],
+    [
+     "Diamond",
+     "Morganite",
+     "Topaz",
+     "Sapphire",
+     "Tsavorite",
+     "Ruby"
+    ]
+   ]
+  }
+ ],
+ "afterTap": {
+  "tiles": 0,
+  "lines": [
+   "Loading…"
+  ],
+  "chips": [
+   "Engagement",
+   "Halo",
+   "3-Stone",
+   "Solitaire",
+   "Center Design",
+   "Band",
+   "Diamond",
+   "Garnet",
+   "Morganite",
+   "Diamond",
+   "Morganite",
+   "Topaz",
+   "Sapphire",
+   "Tsavorite",
+   "Ruby"
+  ]
+ }
+}

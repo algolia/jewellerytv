@@ -27,7 +27,7 @@ import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from '.
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
 import { extractSearchPresentation, extractSearchHitObjectIDs, stripTrailingNote } from './nativeResults';
 import { buildClientTools } from './clientTools';
-import { extractMessageFacetPicks } from './nativeResults';
+import { extractMessageFacetPicks, buildFacetRefineParams } from './nativeResults';
 import { FacetChips, buildChipRows } from './FacetChips';
 import { normalizeProduct, type Product } from '../shared/catalog';
 import { searchClient } from '../shared/client';
@@ -831,8 +831,12 @@ export function ConnectedConcierge({
           {
             indexName: 'prod_catalog',
             params: {
-              query: entry.pick.queryText,
-              facetFilters: selections.map((s) => `${s.attribute}:"${s.value}"`),
+              /* The refine re-issues the turn's own search — its query text and
+               * its facet_<Attribute> constraints (price bands, material) — with
+               * the chip selections ANDed on top. Rebuilt from scratch here, a
+               * tap used to drop the turn's budget and material, and refine the
+               * transcript's FIRST turn's query (2026-10-26 platinum/gold bug). */
+              ...buildFacetRefineParams(entry.pick, selections),
               /* The agent's own search returns only in-stock pieces
                * (developer-set searchParameters.filters); the funnel refines
                * client-side, so it must carry the same filter or the deeper
