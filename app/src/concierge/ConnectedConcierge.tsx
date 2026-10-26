@@ -457,14 +457,19 @@ export function ConversationMessage({
   message,
   revealed,
   provisional = false,
+  deferProducts = false,
   verifiedBlogUrls,
-  knownProductIds = new Set<string>(),
+  knownProductIds = new Set(),
   onProductLink,
   children,
 }: {
   message: UIMessage;
   revealed: boolean;
   provisional?: boolean;
+  /** While the turn is still streaming, hold the product block until the
+   * reply text has begun: products-after-words, never words-after-products
+   * (the reverse-stream Arijit measured, 2026-10-26). */
+  deferProducts?: boolean;
   verifiedBlogUrls?: ReadonlySet<string>;
   knownProductIds?: ReadonlySet<string>;
   onProductLink?: (id: string, event: MouseEvent<HTMLAnchorElement>) => void;
@@ -479,6 +484,7 @@ export function ConversationMessage({
       </p>
     );
   if (!revealed && !provisional) return null;
+  const showProducts = !deferProducts || textParts.length > 1;
   return (
     <div
       className={`connected-message connected-assistant-message${provisional ? ' connected-provisional' : ' connected-markdown'}`}
@@ -533,7 +539,7 @@ export function ConversationMessage({
           )}
         </div>
       ))}
-      {children}
+      {showProducts ? children : null}
     </div>
   );
 }
@@ -1235,7 +1241,19 @@ export function ConnectedConcierge({
      * complete (pending cleared), land on the last assistant message so the
      * reply is read before its anchored cards, which render below it. */
     if (pending) {
-      viewport.scrollTop = viewport.scrollHeight;
+      /* Follow the streaming TEXT tail, not the content bottom: the product
+       * block mounts below the reply text mid-turn, and bottom-following made
+       * the view land on products while the words kept growing above (the
+       * reverse-stream). Anchoring to the last text part keeps the read where
+       * the words are; the shelf appears in place when the text lands. */
+      const tails = viewport.querySelectorAll<HTMLElement>('.connected-assistant-text-part');
+      const tail = tails.length ? tails[tails.length - 1] : null;
+      if (tail) {
+        const delta = tail.getBoundingClientRect().bottom - viewport.getBoundingClientRect().bottom;
+        viewport.scrollTop += delta + 8;
+      } else {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
       return;
     }
     const targets = viewport.querySelectorAll<HTMLElement>('[data-message-id]');
@@ -1318,6 +1336,7 @@ export function ConnectedConcierge({
                 message.role === 'assistant' &&
                 !revealed.has(message.id)
               }
+              deferProducts={!!pending && index === visibleMessages.length - 1}
               knownProductIds={knownProductIds}
               verifiedBlogUrls={verifiedBlogUrls}
               onProductLink={handleProductLink}

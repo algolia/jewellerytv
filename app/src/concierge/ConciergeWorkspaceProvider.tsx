@@ -186,6 +186,24 @@ export function createConciergeWorkspaceSession(options: {
       recordDisplayEvent('stage-empty', `search "${presentation.queryText.slice(0, 40)}" left no displayable tiles`);
       return null;
     }
+    /* Shelf floor at the staging layer (Arijit's law, 2026-10-26): when the
+     * model's verified picks stage under six tiles, top up from the streamed
+     * search's remaining hits through the identical checks — the shopper
+     * never sees 3, 4 or 5 when the search returned a bigger pool. */
+    if (tiles.length < 6) {
+      const staged = new Set(tiles.map((tile) => tile.product.id));
+      for (const [objectID, fresh] of presentation.records) {
+        if (tiles.length >= 6) break;
+        if (staged.has(objectID)) continue;
+        const checked = normalize(fresh);
+        if (!checked || checked.images.length === 0) continue;
+        if (checked.inStock === false || checked.price === null) continue;
+        verified.set(objectID, fresh);
+        tiles.push({ product: checked });
+        staged.add(objectID);
+      }
+      recordDisplayEvent('stage-backfill', `${tiles.length} tiles after top-up`);
+    }
     await registerVerifiedRecords(verified);
     recordDisplayEvent('stage-ok', `${tiles.length} tiles`);
     return [{ title: presentation.queryText, mode: 'search_results', items: tiles }];
