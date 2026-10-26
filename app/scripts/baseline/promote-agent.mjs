@@ -56,7 +56,7 @@ if(expProd!==hash3(prod))throw new Error(`Refusing: live production ${hash3(prod
 if(expTemp!==hash3(temp))throw new Error(`Refusing: live temp ${hash3(temp)} != --expect-temp ${expTemp}. The tested agent changed since the test.`);
 if(!editKey)throw new Error('Missing edit credential');
 const stamp=new Date().toISOString().replace(/[:.]/g,'-');
-const outDir=resolve(root,'storefront/evidence/baseline');mkdirSync(outDir,{recursive:true});
+const outDir=resolve(root,'app/evidence/baseline');mkdirSync(outDir,{recursive:true});
 const snapPath=resolve(outDir,`${stamp}-PRODUCTION-rollback.snapshot.json`);
 writeFileSync(snapPath,JSON.stringify({kind:'production-agent-snapshot',takenAt:new Date().toISOString(),agentId:PROD,hash3:hash3(prod),agent:prod},null,1)+'\n');
 console.log('production snapshot written:',snapPath);
