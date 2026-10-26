@@ -89,6 +89,19 @@ const prodIndex = searchTool?.indices?.find((i) => i.index === 'prod_catalog');
 if (prodIndex && !prodIndex.description?.includes('facet_Catalog_JewelryMaterialNavigationPurity with the exact vocabulary values')) {
   prodIndex.description = (prodIndex.description ?? '') + MATERIAL_FILTER_RULE;
 }
+/* Shelf floor plumbing (2026-10-25, Arijit: "at least 6 or 9, not 3, not 4"):
+ * the search window is the hard input ceiling, so it rises to the platform
+ * max of 12, and the streamed hits must carry the brand so verification and
+ * the model read the same facts. */
+if (prodIndex?.searchControls?.hitsPerPage && prodIndex.searchControls.hitsPerPage.default !== 12) {
+  prodIndex.searchControls.hitsPerPage = { ...prodIndex.searchControls.hitsPerPage, default: 12 };
+}
+if (prodIndex?.searchControls?.attributesToRetrieve?.default && !prodIndex.searchControls.attributesToRetrieve.default.includes('Catalog_BrandNavigationName')) {
+  prodIndex.searchControls.attributesToRetrieve = {
+    ...prodIndex.searchControls.attributesToRetrieve,
+    default: [...prodIndex.searchControls.attributesToRetrieve.default, 'Catalog_BrandNavigationName'],
+  };
+}
 /* Brand asks ride the same class: facet filter on the exact catalog value,
  * never bare query words (the Gems en Vogue failure class, probed 2026-10-25:
  * "Gems En Vogue" 864 via facet vs query words matching stray titles). */
