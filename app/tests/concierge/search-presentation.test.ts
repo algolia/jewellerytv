@@ -163,7 +163,7 @@ describe('extractMessageAnchors (curation restored)', () => {
     expect(anchors.map((anchor) => anchor.messageId)).toEqual(['a1', 'a2']);
     /* Anchors cap at four tiles per message. */
     expect(anchors[0].groups.map((g) => g.objectIDs)).toEqual([
-      ['WPG776', 'WPG777', 'WPG778', 'WPG779'],
+      ['WPG776', 'WPG777', 'WPG778', 'WPG779', 'WPG780'],
     ]);
     expect(anchors[1].groups.map((g) => g.objectIDs)).toEqual([['WPG781']]);
     expect(anchors[0].groups[0].title).toBe('tanzanite ring');

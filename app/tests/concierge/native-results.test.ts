@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   extractMessageFacetPicks,
   extractMessageAnchors,
+  buildFacetRefineParams,
   NOTE_ECHO_ENABLED,
   stripTrailingNote,
 } from '../../src/concierge/nativeResults';
@@ -113,7 +114,7 @@ describe('extractMessageAnchors (chips-native)', () => {
     expect(anchors.map((anchor) => anchor.messageId)).toEqual(['a1', 'a2']);
     /* Anchors cap at four tiles per message. */
     expect(anchors[0].groups.map((g) => g.objectIDs)).toEqual([
-      ['WPG776', 'WPG777', 'WPG778', 'WPG779'],
+      ['WPG776', 'WPG777', 'WPG778', 'WPG779', 'WPG780'],
     ]);
     expect(anchors[1].groups.map((g) => g.objectIDs)).toEqual([['WPG781']]);
     expect(anchors[0].groups[0].title).toBe('tanzanite ring');
@@ -221,6 +222,149 @@ describe('extractMessageFacetPicks', () => {
     /* Navigable attributes only: single-value facets cannot narrow anything,
      * so the brand (one value left) yields to the multi-value type facet. */
     expect(picks[0].pick.displayFacets).toEqual(['Catalog_RingType']);
+  });
+});
+
+/* Funnel continuity (2026-10-26 bug): the refine search a chip tap issues must
+ * carry the turn's own constraints. The model expresses budget and material as
+ * per-query `facet_<Attribute>` keys (ground truth, prod conversation
+ * mission-d99113f8: budget = all Pricing_PriceRange bands at or under the
+ * cap). The pick used to keep the transcript's FIRST query text and no
+ * constraints at all, so a purity tap on a round-3 gold shelf re-searched
+ * round 1's platinum query with no price cap. */
+
+describe('extractMessageFacetPicks turn continuity', () => {
+  const constrainedSearch = (
+    queryText: string,
+    facetKeys: Record<string, unknown>,
+    facets: Record<string, Record<string, number>>,
+    id: string,
+  ) => ({
+    type: 'tool-algolia_search_index_prod_catalog',
+    toolCallId: id,
+    state: 'output-available',
+    input: { queries: [{ query: queryText, ...facetKeys }] },
+    output: { hits: [hit(`${id}-a`)], nbHits: 3, facets },
+  });
+
+  it('uses each message’s own query text, not the transcript’s first', () => {
+    const messages = [
+      userMessage('show me platinum rings'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          constrainedSearch(
+            'platinum ring',
+            {},
+            { Catalog_RingType: { Solitaire: 4, Halo: 2 } },
+            'r1',
+          ),
+          presentPart(['r1-a'], ['Catalog_RingType']),
+        ],
+      },
+      userMessage('gold instead, under 1000'),
+      {
+        id: 'a2',
+        role: 'assistant',
+        parts: [
+          constrainedSearch(
+            'gold ring',
+            {},
+            { Catalog_JewelryMaterialNavigationPurity: { '14K': 3, '18K': 2 } },
+            'r2',
+          ),
+          presentPart(['r2-a'], ['Catalog_JewelryMaterialNavigationPurity']),
+        ],
+      },
+    ];
+    const picks = extractMessageFacetPicks(messages);
+    expect(picks).toHaveLength(2);
+    expect(picks[0].pick.queryText).toBe('platinum ring');
+    expect(picks[1].pick.queryText).toBe('gold ring');
+    expect(picks[1].pick.facets).toEqual({
+      Catalog_JewelryMaterialNavigationPurity: { '14K': 3, '18K': 2 },
+    });
+  });
+
+  it('captures the turn’s facet_<Attribute> constraints as OR-groups', () => {
+    const messages = [
+      userMessage('engagement rings under 1000'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          constrainedSearch(
+            'engagement ring',
+            {
+              facet_Catalog_RingType: ['Engagement'],
+              facet_Pricing_PriceRange: ['Under $25', '$500 - $1000'],
+              facet_Catalog_Condition: null,
+            },
+            { Catalog_GemstoneAndPearlNavigationName: { Diamond: 8, Sapphire: 4 } },
+            'r1',
+          ),
+          presentPart(['r1-a'], ['Catalog_GemstoneAndPearlNavigationName']),
+        ],
+      },
+    ];
+    const picks = extractMessageFacetPicks(messages);
+    expect(picks[0].pick.turnFilters).toEqual([
+      ['Catalog_RingType:"Engagement"'],
+      ['Pricing_PriceRange:"Under $25"', 'Pricing_PriceRange:"$500 - $1000"'],
+    ]);
+  });
+
+  it('leaves turnFilters empty when the search carried no facet keys', () => {
+    const picks = extractMessageFacetPicks([
+      userMessage('show me opal rings'),
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [
+          constrainedSearch('opal ring', {}, { Catalog_RingType: { Halo: 4, Band: 2 } }, 'r1'),
+          presentPart(['r1-a'], ['Catalog_RingType']),
+        ],
+      },
+    ]);
+    expect(picks[0].pick.turnFilters).toEqual([]);
+  });
+});
+
+describe('buildFacetRefineParams', () => {
+  const pick = {
+    displayFacets: ['Catalog_JewelryMaterialNavigationPurity'],
+    facets: { Catalog_JewelryMaterialNavigationPurity: { '14K': 3, '18K': 2 } },
+    queryText: 'gold ring',
+    turnFilters: [
+      ['Catalog_JewelryMaterialNavigationName:"Gold"'],
+      ['Pricing_PriceRange:"Under $25"', 'Pricing_PriceRange:"$500 - $1000"'],
+    ],
+  };
+
+  it('re-applies the turn’s constraints and layers the chip selections on top', () => {
+    const params = buildFacetRefineParams(pick, [
+      { attribute: 'Catalog_JewelryMaterialNavigationPurity', value: '14K' },
+    ]);
+    expect(params).toEqual({
+      query: 'gold ring',
+      facetFilters: [
+        ['Catalog_JewelryMaterialNavigationName:"Gold"'],
+        ['Pricing_PriceRange:"Under $25"', 'Pricing_PriceRange:"$500 - $1000"'],
+        'Catalog_JewelryMaterialNavigationPurity:"14K"',
+      ],
+    });
+  });
+
+  it('passes the chip selection as the only facet filter when the turn had none', () => {
+    const params = buildFacetRefineParams(
+      { ...pick, turnFilters: [] },
+      [{ attribute: 'Catalog_RingType', value: 'Halo' }],
+    );
+    expect(params).toEqual({
+      query: 'gold ring',
+      facetFilters: ['Catalog_RingType:"Halo"'],
+    });
   });
 });
 
