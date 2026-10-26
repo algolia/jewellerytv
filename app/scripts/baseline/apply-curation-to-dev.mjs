@@ -89,6 +89,14 @@ const prodIndex = searchTool?.indices?.find((i) => i.index === 'prod_catalog');
 if (prodIndex && !prodIndex.description?.includes('facet_Catalog_JewelryMaterialNavigationPurity with the exact vocabulary values')) {
   prodIndex.description = (prodIndex.description ?? '') + MATERIAL_FILTER_RULE;
 }
+/* Brand asks ride the same class: facet filter on the exact catalog value,
+ * never bare query words (the Gems en Vogue failure class, probed 2026-10-25:
+ * "Gems En Vogue" 864 via facet vs query words matching stray titles). */
+const BRAND_FILTER_RULE =
+  ' When the shopper names a brand or collection (Gems En Vogue, Judith Ripka, Bella Luce), add facet_Catalog_BrandNavigationName with the exact value from the facet counts in the catalog\'s own spelling, e.g. "Gems En Vogue"; brand words as query words match titles, not the brand.';
+if (prodIndex && !prodIndex.description?.includes('facet_Catalog_BrandNavigationName')) {
+  prodIndex.description = (prodIndex.description ?? '') + BRAND_FILTER_RULE;
+}
 /* Class-C note: exposing facetFilters/filters in searchControls was attempted
  * (2026-10-25) and the platform SILENTLY DROPS the keys on readback — the model
  * cannot send facet filters, period. The working enforcement is present_products'
