@@ -162,6 +162,7 @@ body {
 
 .page-head h1 {
   font-size: 34px;
+  font-weight: 600;
   line-height: 1.15;
   letter-spacing: -.015em;
   margin: 0 0 10px;
