@@ -384,9 +384,16 @@ export function createPresentProducts(
 
     if (!verified.length)
       return { status: 'empty', objectIDs: [], dropped, displayFacets: facets, enforced: enforced ?? undefined };
+    /* The shelf law (Arijit, standing rule, re-confirmed 2026-10-26): a shelf
+     * shows complete rows of three — 3, 6 or 9 pieces, never 4, 5, 7 or 8.
+     * The model writes its reply from exactly this list, so the trim happens
+     * here, before the model speaks. One and two pieces stay: an honest thin
+     * result is not a partial row pretending to be a full shelf. */
+    const shelf =
+      verified.length > 3 ? verified.slice(0, verified.length - (verified.length % 3)) : verified;
     return {
       status: 'ok',
-      objectIDs: verified,
+      objectIDs: shelf,
       dropped,
       displayFacets: facets,
       enforced: enforced ?? undefined,

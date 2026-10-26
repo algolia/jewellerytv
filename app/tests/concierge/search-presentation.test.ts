@@ -234,6 +234,26 @@ describe('present_products tool', () => {
     ]);
   });
 
+  it('the shelf law: shelves show complete rows of three — 3, 6 or 9, never 4, 5, 7 or 8', async () => {
+    /* Arijit's standing rule (repeated 2026-10-26): rows must complete. The
+     * model writes its reply from exactly this list, so the trim happens in
+     * the tool, before the model speaks. One and two pieces stay: an honest
+     * thin result is not a partial row pretending to be a full shelf. */
+    for (const [verified, expected] of [
+      [4, 3],
+      [5, 3],
+      [6, 6],
+      [7, 6],
+      [8, 6],
+      [9, 9],
+    ] as const) {
+      const ids = Array.from({ length: verified }, (_, i) => `v${i}`);
+      const result = await present({ objectIDs: ids });
+      expect(result.status).toBe('ok');
+      expect(result.objectIDs.map((i) => i.objectID)).toHaveLength(expected);
+    }
+  });
+
   it('collapses same-design variants and caps at nine', async () => {
     const catalog: Record<string, Record<string, unknown>> = {};
     const words = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
