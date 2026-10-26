@@ -1,37 +1,40 @@
 flowchart TB
   subgraph B["Shopper's browser"]
     direction LR
-    Shopper["Shopper"] -->|"types a request or taps a chip"| Page["JTV page: conversation with tiles and narrowing chips beside it"]
-    Page -->|"the message"| Chat["Chat client (InstantSearch, in the page)"]
-    Chat -->|"the streamed search result IS the display"| Tiles["Staging in the browser: tiles from the search hits, facet chips from the same response, variant dedupe, stock and image checks"]
-    Page -->|"shopping facts + active chip picks"| State[("Session state, per tab")]
+    Shopper["Shopper"] -->|"types, or taps a facet pill"| Page["JTV panel: conversation with the verified shelf beside it, rows of three"]
+    Page -->|"the message"| Chat["Chat client in the page"]
+    Chat -->|"words stream first; the shelf mounts after the reply begins"| Verify["present_products: the display gate. Reads the shopper's own words; checks every tile: exists, in stock, priced, photographed, no same-design twins, material/stone/brand match. Floor of six with three backfill layers (streamed pool, follow-up search, staging)"]
+    Page -->|"shopping facts + active facet picks"| State[("Session state, per tab")]
   end
 
-  subgraph S["JTV website server (Node)"]
+  subgraph S["JTV app server (Node)"]
     direction LR
-    ChatAPI["Chat API (/api/chat): forwards to the agent"] --> Guard{"Tool check: the agent may only offer tools this build can run"}
-    ReadOnly["Read-only APIs: exact-product refresh, search"]
+    ChatAPI["Chat API (/api/chat): forwards to the agent"] --> Guard{"Tool-sheet check: the agent may only offer tools this build can run"}
+    ReadOnly["Read-only APIs: /api/search, /api/facets, /api/products/:id"]
   end
 
   subgraph A["Algolia Agent Studio"]
     direction LR
-    Out["Output guardrail: reviews every reply against five rules; can withhold it"] -->|"approved reply"| Agent["Concierge agent: one definition; test and live identical"]
-    Agent -->|"one search per turn"| Search["Catalogue search, the agent's own tool"]
+    Out["Output guardrail: four categories (prompt injection, unavailable actions, confidential data, sizing safety). Honesty of product claims is enforced by the tool, not the guardrail"] -->|"approved reply"| Agent["Concierge agent: one definition; dev and production identical"]
+    Agent -->|"one search per turn, 12 candidates, in-stock"| Search["Catalogue search, the agent's own tool"]
+    Agent -->|"curates: objectIDs + facet picks"| Present["present_products (client tool, runs in the browser)"]
     Search --> Catalogue[("JTV catalogue: products, blog, help articles, read-only")]
+    Present -.->|"verified list: name, price, image"| Verify
   end
 
   Chat -->|"the message"| ChatAPI
   Guard -->|"tools match"| Agent
-  Guard -.->|"mismatch: the page shows a clear error, not a failure"| Chat
-  Tiles -->|"exact-product refresh, read-only"| ReadOnly
+  Guard -.->|"mismatch: a labelled error, not a failure"| Chat
+  Verify -->|"fresh facts for one exact product"| Refresh["refresh_products (client tool)"]
+  Refresh -->|"read-only exact fetch"| ReadOnly
   ReadOnly -->|"reads the same catalogue"| Catalogue
   Agent -->|"the reply, streamed"| Chat
-  Out -.->|"withheld: a fixed notice; the staged tiles stay"| Page
+  Out -.->|"withheld: a fixed notice"| Page
 
   subgraph Release["How a change reaches production"]
     direction LR
     Local["Change and test locally: npm run dev + dev agent"] --> Main["Merge to main: pull request, CI green"]
-    Main --> Promote["Promote: scripts/baseline, agent then app"]
+    Main --> Promote["Release: release-app.sh deploy + promote; agent via promote-agent.mjs (hash-guarded, snapshot first)"]
     Promote --> Prod["Production: Vercel app + production agent"]
-    Prod --> Verify["verify-baseline.mjs"]
+    Prod --> Prove["Prove on the live surface: real turns, battery or stories"]
   end
