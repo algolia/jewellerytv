@@ -152,19 +152,25 @@ async function tapChip(page, chipLabel) {
   await sleep(SETTLE_MS);
 }
 
-const browser = await chromium.launch({ headless: true });
-const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-const page = await context.newPage();
+const browser = await chromium.launch({ headless: false, args: ['--mute-audio', '--window-position=60,60', '--window-size=1440,960'] });
+const context = await browser.newContext({
+  viewport: { width: 1280, height: 900 },
+  /* A movie clip per conversation: every question's three turns record as one
+   * webm next to the per-turn screenshots. */
+  recordVideo: { dir: path.join(RUN_DIR, 'videos'), size: { width: 1280, height: 900 } },
+});
 const ledger = [];
 
 for (let leg = 1; leg <= LEGS; leg++) {
-  await newConversation(page);
   for (const q of POOL) {
     const file = (turn, tag) => path.join(RUN_DIR, 'screenshots', `leg${leg}-q${q.index + 1}-t${turn}-${tag}.png`);
     const base = { leg, question: q.label, index: q.index, requirement: q.requirement };
     const started = Date.now();
+    const page = await context.newPage();
+    let videoFile = null;
     try {
       /* T1: broad ask */
+      await newConversation(page);
       await send(page, LEG_WRAPS[leg - 1](q.label));
       const t1 = await captureTurn(page, { ...base, turn: 1, ask: q.label });
       t1.ms = Date.now() - started;
@@ -190,9 +196,12 @@ for (let leg = 1; leg <= LEGS; leg++) {
       ledger.push(t3);
     } catch (error) {
       ledger.push({ ...base, turn: 0, error: String(error).slice(0, 200), ms: Date.now() - started });
-      /* A broken turn must not cascade: fresh conversation, continue. */
-      await newConversation(page).catch(() => {});
     }
+    /* Close the page so its video finalizes, then give it a readable name. */
+    videoFile = await page.video()?.path().catch(() => null) ?? null;
+    await page.close().catch(() => {});
+    if (videoFile)
+      fs.renameSync(videoFile, path.join(RUN_DIR, 'videos', `leg${leg}-q${q.index + 1}-${q.label.slice(0, 30).replace(/[^a-z0-9]+/gi, '-')}.webm`));
     fs.writeFileSync(path.join(RUN_DIR, 'ledger.json'), JSON.stringify(ledger, null, 1));
   }
   console.log(`leg ${leg}/${LEGS} done: ${ledger.length} turns captured`);
