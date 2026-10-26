@@ -1,7 +1,15 @@
 import { z } from 'zod';
 import { BRIEF_FIELDS } from './shopping.js';
-import { MONEY_OPERATORS, moneyOperatorLabel } from './moneyBounds.js';
+import { MONEY_OPERATORS } from './moneyBounds.js';
+/* Brief schema, collapsed 2026-10-25 (Pass 2). The V2 writer machinery
+ * (patch/operation schemas, input schema, formatters) had no runtime caller:
+ * the only live V2 surface is the legacy reader in sessionPersistence, which
+ * parses a persisted V2 record and pipes it through migrateBriefStateV2ToV3.
+ * V3 is the one writer model. */
 const id = z.string().min(1).max(300);
+/* V2 remains the reader and authority for existing persisted records. V3 is the
+ * lossless callback model; it deliberately has its own schemas so old records
+ * cannot silently acquire new semantics. */
 export const briefValueSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('text'), text: z.string().min(1).max(500) }).strict(),
   z
@@ -43,9 +51,6 @@ const factShape = {
   origin: z.enum(['spoken', 'ui']),
   evidence: briefEvidenceSchema,
 };
-export const briefFactInputSchema = z
-  .object({ ...factShape, status: z.enum(['active', 'tentative']) })
-  .strict();
 export const briefFactSchema = z
   .object({
     ...factShape,
@@ -59,28 +64,6 @@ export const briefFactSchema = z
       ? { ...f, status: 'tentative' as const }
       : f,
   );
-export const briefOperationSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('reset-brief'), evidence: briefEvidenceSchema.optional() }).strict(),
-  z.object({ type: z.literal('add'), fact: briefFactInputSchema }).strict(),
-  z
-    .object({
-      type: z.literal('replace'),
-      factIds: z.array(id).min(1).max(40),
-      fact: briefFactInputSchema,
-    })
-    .strict(),
-  ...(['retract', 'confirm', 'mark-tentative'] as const).map((type) =>
-    z.object({ type: z.literal(type), factIds: z.array(id).min(1).max(40) }).strict(),
-  ),
-]);
-export const briefPatchSchema = z
-  .object({
-    missionId: id,
-    expectedRevision: z.number().int().nonnegative(),
-    turnId: id,
-    operations: z.array(briefOperationSchema).max(40),
-  })
-  .strict();
 const tombstoneSchema = z
   .object({
     factId: id,
@@ -110,9 +93,6 @@ export const briefStateSchema = z
   })
   .strict()
   .refine((s) => new Set(s.facts.map((f) => f.id)).size === s.facts.length, 'Duplicate fact IDs');
-// V2 remains the reader and authority for existing persisted records. V3 is the
-// lossless callback model; it deliberately has its own schemas so old records
-// cannot silently acquire new semantics.
 const materialAlternativesValueSchema = z
   .object({
     kind: z.literal('material_alternatives'),
@@ -273,21 +253,13 @@ export const briefV3FactSchema = z
       ? { ...f, status: 'tentative' as const }
       : f,
   );
-const v3Tombstone = z
-  .object({
-    factId: id,
-    messageId: id,
-    quote: z.string().max(2000),
-    revision: z.number().int().nonnegative(),
-  })
-  .strict();
 const v3Event = z
   .object({
     resetEvidence: briefEvidenceSchema.optional(),
     revision: z.number().int().nonnegative(),
     turnId: id,
     beforeFacts: z.array(briefV3FactSchema).max(200),
-    beforeTombstones: z.array(v3Tombstone).max(200),
+    beforeTombstones: z.array(tombstoneSchema).max(200),
   })
   .strict();
 export const briefStateV3Schema = z
@@ -297,50 +269,13 @@ export const briefStateV3Schema = z
     revision: z.number().int().nonnegative(),
     facts: z.array(briefV3FactSchema).max(200),
     processedTurns: z.array(id).max(200),
-    tombstones: z.array(v3Tombstone).max(200),
+    tombstones: z.array(tombstoneSchema).max(200),
     events: z.array(v3Event).max(20),
   })
   .strict()
   .refine((s) => new Set(s.facts.map((f) => f.id)).size === s.facts.length, 'Duplicate fact IDs');
-export type BriefFactInput = z.infer<typeof briefFactInputSchema>;
 export type BriefFactV2 = z.infer<typeof briefFactSchema>;
-export type BriefOperation = z.infer<typeof briefOperationSchema>;
-export type BriefPatch = z.infer<typeof briefPatchSchema>;
 export type BriefState = z.infer<typeof briefStateSchema>;
 export type BriefFactV3Input = z.infer<typeof briefV3FactInputSchema>;
 export type BriefFactV3 = z.infer<typeof briefV3FactSchema>;
 export type BriefStateV3 = z.infer<typeof briefStateV3Schema>;
-/** Legacy semantic verification and deterministic source correspondence are distinct. */
-export function hasAcceptedSourceEvidence(evidence: z.infer<typeof briefEvidenceSchema>) {
-  return evidence.verified || evidence.sourceValidation === 'exact_user_message_substring';
-}
-export function formatBriefValue(value: BriefFactV2['value']): string {
-  if (value.kind === 'text') return value.text;
-  if (value.kind === 'facet')
-    return `${value.operator === 'none' ? 'No ' : ''}${value.values.join(' or ')}`;
-  return `${moneyOperatorLabel(value.operator)} ${value.currency === 'USD' ? '$' : value.currency + ' '}${(value.cents / 100).toFixed(2)}${value.basis === 'total' ? ' total' : value.basis === 'per-item' ? ' per item' : ' (scope unclear)'}`;
-}
-export function formatBriefV3Value(value: BriefFactV3['value']): string {
-  if (value.kind === 'text') return value.text;
-  if (value.kind === 'facet')
-    return `${value.operator === 'none' ? 'No ' : ''}${value.values.join(' or ')}`;
-  if (value.kind === 'measurement') return `${value.value} ${value.unit}`;
-  if (value.kind === 'product_ref') return `${value.relationship} ${value.objectID}`;
-  if (value.kind === 'watch_band_family') return value.family;
-  if (value.kind === 'material_alternatives')
-    return value.alternatives
-      .map((a) =>
-        [
-          a.type,
-          a.color,
-          a.purity,
-          a.plating
-            ? `${a.plating.presence} plating${a.plating.purity ? ` ${a.plating.purity}` : ''}`
-            : null,
-        ]
-          .filter(Boolean)
-          .join(' '),
-      )
-      .join(' or ');
-  return `${value.operator === 'around' ? 'Around' : moneyOperatorLabel(value.operator)} ${value.currency === 'USD' ? '$' : value.currency + ' '}${(value.cents / 100).toFixed(2)}${value.basis === 'total' ? ' total' : value.basis === 'per-item' ? ' per item' : ' (scope unclear)'}`;
-}
