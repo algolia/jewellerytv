@@ -106,6 +106,20 @@ async function newConversation(page) {
 
 async function send(page, text) {
   const composer = page.getByRole('textbox', { name: 'Message the Concierge' });
+  /* One measured leg-1 failure (2026-10-26): the composer sat disabled for
+   * 30s on a fresh page and the question was lost. Wait out a disabled
+   * composer before typing instead of failing the question. */
+  try {
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('textarea, input[aria-label="Message the Concierge"]');
+        return !!el && !el.disabled;
+      },
+      { timeout: 45_000 },
+    );
+  } catch {
+    /* Fall through to the fill below; its own timeout reports the failure. */
+  }
   await composer.fill(text);
   await page.getByRole('button', { name: 'Send' }).click();
   await sleep(SETTLE_MS);

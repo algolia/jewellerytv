@@ -50,6 +50,10 @@ export type PresentProductsOutput = {
   /** How many tiles came from the backfill pool rather than the model's
    * pick — nonzero only when the model's verified list sat under the floor. */
   backfilled?: number;
+  /** The backfill pool's size at execution time. Zero when the streamed
+   * search had not reached the app's ref yet — that reading is how the race
+   * vs a real empty pool is told apart in the battery ledger. */
+  poolSize?: number;
 };
 
 export type PresentProducts = (input: PresentProductsInput) => Promise<PresentProductsOutput>;
@@ -106,12 +110,19 @@ export type EnforcedRequirement = { attribute: string; values: string[] };
  * winning concept — the one whose attributes matched anything, fewest total
  * matched values first — the attribute with the fewest matched values is the
  * most discriminative check; OR over its matched values. Returns [] when the
- * vocabulary has no match — the caller then enforces nothing. */
+ * vocabulary has no match — the caller then enforces nothing.
+ *
+ * Plated composites never satisfy a solid-metal ask: a shopper who says
+ * "silver" means sterling-class silver, so "Gold Over Silver" and "Silver
+ * Over Brass" are dropped from the enforced set unless the shopper's own
+ * words said "over" (the measured silver-ask failure, battery 2026-10-26). */
 function singularize(token: string): string {
   if (token.endsWith('ies') && token.length > 4) return `${token.slice(0, -3)}y`;
   if (token.endsWith('s') && !token.endsWith('ss') && token.length > 4) return token.slice(0, -1);
   return token;
 }
+
+const PLATED_VALUE = /\bover\b|\bplated\b|\bplating\b/i;
 
 export function matchRequirement(
   requirement: string,
@@ -123,6 +134,7 @@ export function matchRequirement(
     .filter((token) => token.length >= MIN_TOKEN_LENGTH)
     .map(singularize);
   if (!tokens.length) return [];
+  const shopperSaidOver = tokens.includes('over');
   const candidates: { concept: string; matches: EnforcedRequirement[]; total: number }[] = [];
   for (const [concept, attributes] of Object.entries(CONCEPT_ATTRIBUTES)) {
     const matches: EnforcedRequirement[] = [];
@@ -145,7 +157,24 @@ export function matchRequirement(
             significant.length === 1 ? 1 : Math.max(2, Math.ceil(significant.length / 2));
           return matched >= threshold;
         }
-        return words.some((word) => tokens.includes(word));
+        if (!words.some((word) => tokens.includes(word))) return false;
+        /* Plated composites are not the solid metal the shopper named. When
+         * the shopper asked for a combination ("gold over silver"), a plated
+         * value survives only when both its metals were said, in their
+         * roles: the plating metal before "over", the base after it. */
+        if (concept === 'material' && PLATED_VALUE.test(value)) {
+          if (!shopperSaidOver) return false;
+          const [plating, base] = value.split(PLATED_VALUE);
+          const saidAll = (part: string) =>
+            part
+              .toLowerCase()
+              .split(/[^a-z0-9]+/)
+              .filter((word) => word.length >= MIN_TOKEN_LENGTH)
+              .some((word) => tokens.includes(word));
+          if (!saidAll(plating)) return false;
+          if (base && base.trim() && !saidAll(base)) return false;
+        }
+        return true;
       });
       if (values.length) {
         matches.push({ attribute, values });
@@ -261,7 +290,8 @@ export function createPresentProducts(
      * the model's picks were verified. */
     let backfilled = 0;
     const pool = options?.searchPool?.() ?? null;
-    if (verified.length > 0 && verified.length < SHELF_FLOOR && pool && pool.length) {
+    const poolSize = pool ? pool.length : 0;
+    if (verified.length > 0 && verified.length < SHELF_FLOOR && pool && poolSize > 0) {
       const extra = pool.filter((id) => typeof id === 'string' && !!id && !seenIds.has(id));
       if (extra.length) {
         const extraRecords = await getRecords(extra);
@@ -293,6 +323,7 @@ export function createPresentProducts(
       displayFacets: facets,
       enforced: enforced ?? undefined,
       backfilled: backfilled || undefined,
+      poolSize,
     };
   };
 }
