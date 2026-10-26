@@ -44,6 +44,9 @@ export function buildClientTools(
     /** The shopper's own message text for the current turn (see
      * presentProducts — the requirement's only source). */
     shopperMessage?: () => string | null | undefined;
+    /** The streamed search's remaining hit objectIDs for the current turn
+     * (see presentProducts — the shelf floor's backfill pool). */
+    searchPool?: () => readonly string[] | null | undefined;
   },
 ): Record<string, ClientToolExecutor> {
   const getRecords: CatalogRecordFetcher = createCatalogRecordFetcher(fetchRawRecord);
@@ -51,6 +54,7 @@ export function buildClientTools(
   const presentProducts = createPresentProducts(getRecords, {
     vocabulary: options?.vocabulary,
     shopperMessage: options?.shopperMessage,
+    searchPool: options?.searchPool,
   });
   const executorFor =
     <I, O>(run: (input: I) => Promise<O>) =>
