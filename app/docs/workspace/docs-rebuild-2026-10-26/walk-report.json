@@ -16,7 +16,7 @@
       "cssApplied": true,
       "h1": "The package",
       "current": "1The package",
-      "navLinks": 7
+      "navLinks": 6
     },
     {
       "page": "experience.html",
@@ -42,7 +42,7 @@
       "cssApplied": true,
       "h1": "The experience",
       "current": "2The experience",
-      "navLinks": 7
+      "navLinks": 6
     },
     {
       "page": "architecture.html",
@@ -56,7 +56,7 @@
       "cssApplied": true,
       "h1": "Architecture and data flow",
       "current": "3Architecture and data flow",
-      "navLinks": 7
+      "navLinks": 6
     },
     {
       "page": "agent.html",
@@ -70,7 +70,7 @@
       "cssApplied": true,
       "h1": "The agent",
       "current": "4The agent",
-      "navLinks": 7
+      "navLinks": 6
     },
     {
       "page": "examples.html",
@@ -92,21 +92,7 @@
       "cssApplied": true,
       "h1": "Examples and walkthrough",
       "current": "5Examples and walkthrough",
-      "navLinks": 7
-    },
-    {
-      "page": "adopting.html",
-      "status": 200,
-      "imgs": [
-        {
-          "src": "/docs/assets/algolia-logo.svg",
-          "ok": true
-        }
-      ],
-      "cssApplied": true,
-      "h1": "Adopting it",
-      "current": "6Adopting it",
-      "navLinks": 7
+      "navLinks": 6
     },
     {
       "page": "appendix-prompts.html",
@@ -119,8 +105,8 @@
       ],
       "cssApplied": true,
       "h1": "Prompts and configuration",
-      "current": "7Prompts and configuration",
-      "navLinks": 7
+      "current": "6Prompts and configuration",
+      "navLinks": 6
     }
   ],
   "errors": []

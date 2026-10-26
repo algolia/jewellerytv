@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 const BASE = 'http://localhost:5199/docs/';
-const pages = ['index.html', 'experience.html', 'architecture.html', 'agent.html', 'examples.html', 'adopting.html', 'appendix-prompts.html'];
+const pages = ['index.html', 'experience.html', 'architecture.html', 'agent.html', 'examples.html', 'appendix-prompts.html'];
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 375, height: 720 } });
 for (const p of pages) {

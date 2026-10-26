@@ -43,11 +43,10 @@
         </ul>
         <h3>Adopt it</h3>
         <ul>
-          <li><a href="/docs/adopting.html"><span class="num">6</span>Adopting it</a></li>
         </ul>
         <h3>Reference</h3>
         <ul>
-          <li><a href="/docs/appendix-prompts.html"><span class="num">7</span>Prompts and configuration</a></li>
+          <li><a href="/docs/appendix-prompts.html"><span class="num">6</span>Prompts and configuration</a></li>
         </ul>
       </nav>
     </details>
@@ -286,9 +285,22 @@
       <p>When the prompts change, the whole prompt is read and rewritten as one: appended
       patches accrete contradictions, and the instructions and system prompt are versioned
       together with the tool sheet they describe. The complete current texts are in
-      <a href="/docs/appendix-prompts.html">Prompts and configuration</a>, and the promotion
-      path from a tested change to production is in <a href="/docs/adopting.html">Adopting
-      it</a>.</p>
+      <a href="/docs/appendix-prompts.html">Prompts and configuration</a>.</p>
+
+      <h2 id="shipping">How changes ship <a class="anchor" href="#shipping">#</a></h2>
+      <ul>
+        <li><strong>The catalog is read-only.</strong> No agent or application change ever
+        writes to index records or settings; everything the experience needs, it reads.</li>
+        <li><strong>One definition, two agents.</strong> A development agent for testing,
+        the production agent for the public site, identical definitions, promotion by
+        script with a recorded rollback snapshot.</li>
+        <li><strong>Verify on the real surface.</strong> A unit test or an API trace does
+        not establish shopper acceptance: capture the rendered screen, the network calls
+        and the tool receipts from a real browser turn.</li>
+        <li><strong>Watch the health route.</strong> It reports liveness and the tool-sheet
+        guard status; a mismatch there means the next chat turn would fail loudly, by
+        design.</li>
+      </ul>
 
     </div>
 

@@ -79,11 +79,10 @@ export function build() {
         </ul>
         <h3>Adopt it</h3>
         <ul>
-          <li><a href="/docs/adopting.html"${cur === 'adopting' ? ' aria-current="page"' : ''}><span class="num">6</span>Adopting it</a></li>
         </ul>
         <h3>Reference</h3>
         <ul>
-          <li><a href="/docs/appendix-prompts.html"${cur === 'appendix' ? ' aria-current="page"' : ''}><span class="num">7</span>Prompts and configuration</a></li>
+          <li><a href="/docs/appendix-prompts.html"${cur === 'appendix' ? ' aria-current="page"' : ''}><span class="num">6</span>Prompts and configuration</a></li>
         </ul>`;
   const chrome = (title, desc, inner, toc) => `<!doctype html>
 <html lang="en">
@@ -142,7 +141,7 @@ ${inner}
     <nav class="pager" aria-label="Page navigation">
       <div class="cell">
         <span class="dir">Previous</span>
-        <a href="/docs/adopting.html">Adopting it</a>
+        <a href="/docs/examples.html">Examples and walkthrough</a>
       </div>
       <div class="cell">
         <span class="dir">Start</span>
@@ -251,7 +250,7 @@ ${toc}
       <div class="callout warn">
         <p>These texts are configuration, not documentation to edit. A change to any of
         them is a tested, promoted agent change under the rules in
-        <a href="/docs/adopting.html#operating">chapter 6</a>, applied to the development
+        <a href="/docs/agent.html#shipping">chapter 4</a>, applied to the development
         agent first and verified by readback before it reaches production.</p>
       </div>`;
 

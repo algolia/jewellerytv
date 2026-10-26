@@ -6,7 +6,7 @@ import { resolve, dirname } from 'node:path';
 
 const root = resolve('/Users/arijitchowdhury/Dropbox/AI-Development/jewellerytv/app/public/docs');
 const run = resolve('/Users/arijitchowdhury/Dropbox/AI-Development/jewellerytv/app/docs/workspace/docs-rebuild-2026-10-26');
-const pages = ['index.html', 'experience.html', 'architecture.html', 'agent.html', 'examples.html', 'adopting.html', 'appendix-prompts.html'];
+const pages = ['index.html', 'experience.html', 'architecture.html', 'agent.html', 'examples.html', 'appendix-prompts.html'];
 let fails = 0;
 const fail = (m) => { fails += 1; console.log('FAIL', m); };
 
