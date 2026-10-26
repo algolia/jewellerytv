@@ -135,7 +135,7 @@ describe('simplified workspace session adapter', () => {
       'legacy_unbound',
     );
   });
-  it('stages the model-curated subset, not the full search result', async () => {
+  it('stages the model-curated subset when it meets the shelf floor', async () => {
     const storage = new MemoryStorage();
     storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
     const adapter = createConciergeWorkspaceSession({
@@ -143,9 +143,26 @@ describe('simplified workspace session adapter', () => {
       initialMissionId: 'unused',
       fetchProductRecord: async (id) => rawRecord(id),
     });
-    /* The search streamed three hits; the model chose two via present_products. */
-    const groups = await adapter.stageSearchPresentation(searchTurn(['a-1', 'a-2', 'a-3'], ['a-1', 'a-3']));
-    expect(groups?.[0].items.map((item) => item.product.id)).toEqual(['a-1', 'a-3']);
+    /* The search streamed eight hits; the model chose six — at the floor, so
+     * staging stays exactly the curated subset. */
+    const hits = ['a-1', 'a-2', 'a-3', 'a-4', 'a-5', 'a-6', 'a-7', 'a-8'];
+    const groups = await adapter.stageSearchPresentation(searchTurn(hits, ['a-1', 'a-2', 'a-3', 'a-4', 'a-5', 'a-6']));
+    expect(groups?.[0].items.map((item) => item.product.id)).toEqual(['a-1', 'a-2', 'a-3', 'a-4', 'a-5', 'a-6']);
+  });
+  it('tops the shelf up to the floor from the streamed search when the curated subset is short', async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(V3_SESSION_KEY, JSON.stringify(sessionWithoutRetiredFields()));
+    const adapter = createConciergeWorkspaceSession({
+      storage,
+      initialMissionId: 'unused',
+      fetchProductRecord: async (id) => rawRecord(id),
+    });
+    /* Two curated picks under the six-tile floor: staging backfills from the
+     * search's remaining hits (a-2 then a-4, in result order). The pool here
+     * only holds four candidates, so the shelf stops there — the floor never
+     * invents tiles the search did not return. */
+    const groups = await adapter.stageSearchPresentation(searchTurn(['a-1', 'a-2', 'a-3', 'a-4'], ['a-1', 'a-3']));
+    expect(groups?.[0].items.map((item) => item.product.id)).toEqual(['a-1', 'a-3', 'a-2', 'a-4']);
   });
   it('loads a pre-simplification session by stripping the retired fields', () => {
     const storage = new MemoryStorage();

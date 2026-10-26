@@ -55,6 +55,6 @@ export function recordTurnOutcome(turnId:string,requestId:string,patch:{finishFi
  * failures and empty displays surface here in every environment so prod
  * troubleshooting does not depend on dev-only console warns. Never payloads,
  * never shopper text; `detail` carries a short code, not an error message. */
-export type DisplayEventRecord={at:string;kind:'stage-failed'|'stage-empty'|'stage-ok';detail:string};
+export type DisplayEventRecord={at:string;kind:'stage-failed'|'stage-empty'|'stage-ok'|'stage-backfill';detail:string};
 export const displayEvents:DisplayEventRecord[]=[];
 export function recordDisplayEvent(kind:DisplayEventRecord['kind'],detail:string){const record:DisplayEventRecord={at:new Date().toISOString(),kind,detail:detail.slice(0,120)};displayEvents.push(record);if(displayEvents.length>50)displayEvents.shift();return record}
