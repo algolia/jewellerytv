@@ -416,6 +416,39 @@ describe('matchRequirement brand enforcement', () => {
     const matches = matchRequirement('sterling silver', mixed);
     expect(matches[0].attribute).toBe('Catalog_JewelryMaterialNavigationPurity');
   });
+
+  it('a silver ask never enforces gold-over-silver or plated composites', () => {
+    const matches = matchRequirement('show me silver ones', {
+      values: {
+        Catalog_JewelryMaterialNavigationName: [
+          'Silver',
+          'Gold Over Silver',
+          'Silver Over Brass',
+          'Palladium Silver',
+          'Rhodium Over Silver',
+        ],
+      },
+    });
+    expect(matches[0].values).toEqual(['Silver', 'Palladium Silver']);
+  });
+
+  it('a gold ask never enforces gold-over-silver either', () => {
+    const matches = matchRequirement('something in gold', {
+      values: {
+        Catalog_JewelryMaterialNavigationName: ['Gold', 'Gold Over Silver', 'Gold Over Brass', '14K White Gold'],
+      },
+    });
+    expect(matches[0].values).toEqual(['Gold', '14K White Gold']);
+  });
+
+  it('keeps plated values when the shopper asked for the combination', () => {
+    const matches = matchRequirement('gold over silver', {
+      values: {
+        Catalog_JewelryMaterialNavigationName: ['Gold', 'Gold Over Silver', 'Silver Over Brass'],
+      },
+    });
+    expect(matches[0].values).toEqual(['Gold', 'Gold Over Silver']);
+  });
 });
 
 describe('present_products brand enforcement', () => {
