@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta http-equiv="cache-control" content="no-cache">
-<title>How the Concierge works - JTV Concierge documentation</title>
-<meta name="description" content="The pieces of the JTV Concierge system, how a shopper exchange flows between them, and the rules that keep every answer honest.">
+<title>Architecture and data flow</title>
+<meta name="description" content="The components of the system, every route between them, and one shopping turn traced end to end in both directions, including failure behavior.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap">
 <link rel="stylesheet" href="./docs.css">
 </head>
 <body>
@@ -14,419 +17,255 @@
 
 <header class="docs-header">
   <div class="brand">
-    <span class="mark">JTV</span>
-    <span class="desc">Concierge documentation</span>
+    <img src="./assets/algolia-logo.svg" alt="Algolia">
+    <span class="divider"></span>
+    <span class="desc">Agentic commerce, a reference build</span>
   </div>
-  <a class="to-shop" href="/">Open the shop</a>
+  <a class="to-shop" href="/">Open the storefront</a>
 </header>
 
 <div class="docs-layout">
 
   <aside class="docs-sidebar" aria-label="Documentation navigation">
     <details open>
-      <summary class="side-summary">All pages</summary>
+      <summary class="side-summary">Chapters</summary>
       <nav class="docs-nav" id="docnav">
         <h3>Start here</h3>
         <ul>
-          <li><a href="./index.html">What is the Concierge?</a></li>
-          <li><a href="./architecture.html" aria-current="page">How the Concierge works</a></li>
+          <li><a href="./index.html"><span class="num">1</span>The package</a></li>
+          <li><a href="./experience.html"><span class="num">2</span>The experience</a></li>
         </ul>
-        <h3>For developers</h3>
+        <h3>How it works</h3>
         <ul>
-          <li><span class="soon">The three tools, explained <span class="pill">soon</span></span></li>
-          <li><span class="soon">The code, file by file <span class="pill">soon</span></span></li>
-          <li><span class="soon">Safety checks and error messages <span class="pill">soon</span></span></li>
-          <li><span class="soon">Running and changing the system <span class="pill">soon</span></span></li>
+          <li><a href="./architecture.html" aria-current="page"><span class="num">3</span>Architecture and data flow</a></li>
+          <li><a href="./agent.html"><span class="num">4</span>The agent</a></li>
+          <li><a href="./examples.html"><span class="num">5</span>Examples and walkthrough</a></li>
         </ul>
-        <h3>For merchandisers</h3>
+        <h3>Adopt it</h3>
         <ul>
-          <li><span class="soon">The catalogue behind the Concierge <span class="pill">soon</span></span></li>
-          <li><span class="soon">What it can and cannot filter <span class="pill">soon</span></span></li>
-        </ul>
-        <h3>For administrators</h3>
-        <ul>
-          <li><span class="soon">Who can do what <span class="pill">soon</span></span></li>
-          <li><span class="soon">Costs and speed <span class="pill">soon</span></span></li>
-          <li><span class="soon">Shopper data and privacy <span class="pill">soon</span></span></li>
-          <li><span class="soon">Approvals: who decides what <span class="pill">soon</span></span></li>
-          <li><span class="soon">The old system, now replaced <span class="pill">soon</span></span></li>
+          <li><a href="./adopting.html"><span class="num">6</span>Adopting it</a></li>
         </ul>
         <h3>Reference</h3>
         <ul>
-          <li><span class="soon">Words this guide uses <span class="pill">soon</span></span></li>
-          <li><span class="soon">Decisions already made, and why <span class="pill">soon</span></span></li>
+          <li><a href="./appendix-prompts.html"><span class="num">7</span>Prompts and configuration</a></li>
         </ul>
-        <p class="side-empty">No pages match that filter.</p>
       </nav>
     </details>
   </aside>
 
   <main id="main" class="docs-main">
     <nav class="crumbs" aria-label="Breadcrumb">
-      <a href="./index.html">Start here</a>
-      <span class="here">How the Concierge works</span>
+      <a href="./index.html">Docs</a><span class="sep">/</span><span class="here">Architecture and data flow</span>
     </nav>
 
     <header class="page-head">
-      <h1>How the Concierge works</h1>
-      <p class="lede">Four things make one shopper exchange: the shopper, the JTV website,
-      the Concierge agent, and the product catalogue. This page explains what each piece
-      does, how an answer is produced, and the rules that keep every answer honest.</p>
+      <h1>Architecture and data flow</h1>
+      <p class="lede">Four components and one rule: the agent owns every word the shopper
+      reads, the application owns every fact on the screen, and the two meet through three
+      tools with fixed contracts. This chapter names the components, traces one turn end to
+      end in both directions, and says what happens when each link fails.</p>
     </header>
 
     <div class="content">
 
-      <h2 id="pieces">The pieces of the system <a class="anchor" href="#pieces" aria-label="Link to this section">#</a></h2>
-      <p>Think of it as a small team:</p>
-      <ul>
-        <li><strong>The shopper</strong> visits the JTV website and describes what they
-            want, in their own words. They never see anything except the page in front
-            of them.</li>
-        <li><strong>The JTV website</strong> is the shop itself: the pages shoppers browse
-            and the chat window where they talk to the Concierge. It shows the products,
-            checks every piece before it is displayed, and remembers what the shopper has
-            saved or compared.</li>
-        <li><strong>The Concierge</strong> is the AI agent hosted by Algolia. It holds the
-            conversation: it understands what the shopper wants, decides when to ask a
-            question and when to search, chooses what to show, and writes every word the
-            shopper reads.</li>
-        <li><strong>The catalogue</strong> is the live product data, stored in Algolia.
-            It is the single source of truth for what JTV sells, at what price, in what
-            stock. The Concierge and the website can read it; neither can change it.</li>
-      </ul>
-      <p>For readers who will maintain the code, the same pieces look like this:</p>
-      <div class="table-wrap">
-      <table class="data">
-        <thead><tr><th>Piece</th><th>Where it lives</th><th>Main code locations</th></tr></thead>
-        <tbody>
-          <tr><td>The Concierge (AI agent)</td><td>Algolia Agent Studio, configured in a dashboard. Its instructions, description of its three tools and safety rules all live there, not in the website's code.</td><td>Not in this codebase; exported copies are kept under <code>docs/config/concierge-development/</code></td></tr>
-          <tr><td>The website's chat and product workspace</td><td>The React app shoppers see</td><td><code>src/Concierge.tsx</code>, <code>src/concierge/ConnectedConcierge.tsx</code>, <code>src/ProductWorkspace.tsx</code></td></tr>
-          <tr><td>Showing products the agent approved</td><td>Part of the chat workspace</td><td><code>src/concierge/nativeResults.ts</code></td></tr>
-          <tr><td>Checking and arranging pieces (the agent's helpers)</td><td>Small functions inside the app that the agent can call</td><td><code>src/concierge/clientTools.ts</code>, <code>src/concierge/tools/</code> (one file per helper)</td></tr>
-          <tr><td>Remembering the shopper's session</td><td>Browser storage plus app state</td><td><code>src/concierge/sessionPersistence.ts</code>, <code>sessionStore.ts</code>, <code>turnContext.ts</code></td></tr>
-          <tr><td>The website's server side</td><td>A small Node server: passes chat traffic to the agent and reads catalogue records</td><td><code>server/concierge/</code>, <code>server/api.ts</code>, <code>server/config.ts</code></td></tr>
-        </tbody>
-      </table>
-      </div>
-
-      <p>The same pieces, drawn where they run:</p>
+      <h2 id="components">The components <a class="anchor" href="#components">#</a></h2>
       <figure class="figure">
-      <div style="overflow-x:auto">
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 910" style="min-width:960px" font-family="Helvetica, Arial, sans-serif">
-  <title>JTV Concierge architecture: where everything runs, and how one message becomes checked product tiles and a streamed reply</title>
-  <defs>
-    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#33415c"/>
-    </marker>
-  </defs>
-  <rect width="1240" height="910" fill="#ffffff"/>
-
-  <rect x="30" y="40" width="1180" height="320" rx="10" fill="#f2f6fa" stroke="#b9c6d6" stroke-width="1.4"/>
-  <text x="46" y="66" font-size="13" font-weight="700" fill="#33415c">Shopper's browser</text>
-  <rect x="30" y="400" width="1180" height="160" rx="10" fill="#f7f7f5" stroke="#c4cbb8" stroke-width="1.4"/>
-  <text x="46" y="424" font-size="13" font-weight="700" fill="#33415c">JTV website server (Node)</text>
-  <rect x="30" y="600" width="1180" height="180" rx="10" fill="#f3f8f3" stroke="#aecdb0" stroke-width="1.4"/>
-  <text x="46" y="624" font-size="13" font-weight="700" fill="#33415c">Algolia Agent Studio</text>
-
-  <rect x="60" y="110" width="110" height="64" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
-  <text x="115" y="138" font-size="12.5" fill="#33415c" text-anchor="middle">Shopper</text>
-  <text x="115" y="156" font-size="10.5" fill="#6b7a90" text-anchor="middle">types a request</text>
-
-  <rect x="230" y="96" width="200" height="88" rx="8" fill="#ffffff" stroke="#0076a9" stroke-width="1.6"/>
-  <text x="330" y="122" font-size="13" font-weight="700" fill="#33415c" text-anchor="middle">JTV page</text>
-  <text x="330" y="142" font-size="11" fill="#33415c" text-anchor="middle">conversation left,</text>
-  <text x="330" y="158" font-size="11" fill="#33415c" text-anchor="middle">product tiles right</text>
-
-  <rect x="490" y="96" width="180" height="88" rx="8" fill="#ffffff" stroke="#0076a9" stroke-width="1.6"/>
-  <text x="580" y="122" font-size="13" font-weight="700" fill="#33415c" text-anchor="middle">Chat client</text>
-  <text x="580" y="142" font-size="11" fill="#33415c" text-anchor="middle">InstantSearch,</text>
-  <text x="580" y="158" font-size="11" fill="#33415c" text-anchor="middle">runs in the page</text>
-
-  <rect x="730" y="96" width="240" height="88" rx="8" fill="#ffffff" stroke="#0076a9" stroke-width="1.6"/>
-  <text x="850" y="122" font-size="13" font-weight="700" fill="#33415c" text-anchor="middle">Tiles and chips</text>
-  <text x="850" y="142" font-size="11" fill="#33415c" text-anchor="middle">tiles from the search results,</text>
-  <text x="850" y="158" font-size="11" fill="#33415c" text-anchor="middle">chips narrow the next search</text>
-
-  <path d="M 230 246 h 190 v 66 a 95 8 0 0 1 -190 0 z" fill="#eef2f7" stroke="#33415c" stroke-width="1.4"/>
-  <ellipse cx="325" cy="246" rx="95" ry="8" fill="#eef2f7" stroke="#33415c" stroke-width="1.4"/>
-  <text x="325" y="278" font-size="12" fill="#33415c" text-anchor="middle">Session state</text>
-  <text x="325" y="296" font-size="10.5" fill="#6b7a90" text-anchor="middle">shopping facts and chip picks, per tab</text>
-
-  <rect x="560" y="240" width="300" height="88" rx="8" fill="#f8faf5" stroke="#2e7d4f" stroke-width="1.6"/>
-  <text x="710" y="264" font-size="12.5" font-weight="700" fill="#33415c" text-anchor="middle">Display staging (in the browser)</text>
-  <text x="710" y="284" font-size="11" fill="#33415c" text-anchor="middle">tiles and chips from the streamed search</text>
-  <text x="710" y="302" font-size="10.5" fill="#6b7a90" text-anchor="middle">variant dedupe, stock and image checks</text>
-
-  <polyline points="170,142 230,142" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <polyline points="430,140 490,140" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="460" y="130" font-size="10.5" fill="#33415c" text-anchor="middle">message</text>
-  <polyline points="670,140 730,140" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="700" y="130" font-size="10.5" fill="#33415c" text-anchor="middle">streamed reply</text>
-  <polyline points="300,184 300,240" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="312" y="218" font-size="10.5" fill="#33415c" text-anchor="start">kept while the tab lives</text>
-  <polyline points="620,184 620,240" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="632" y="218" font-size="10.5" fill="#33415c" text-anchor="start">routes the agent's tool calls here</text>
-
-  <polyline points="490,160 430,160 430,480 450,480" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="418" y="310" font-size="10.5" fill="#33415c" text-anchor="end">the message</text>
-  <polyline points="530,440 530,184" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="542" y="310" font-size="10.5" fill="#33415c" text-anchor="start">the reply, streamed</text>
-
-  <rect x="450" y="440" width="160" height="80" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
-  <text x="530" y="466" font-size="12.5" fill="#33415c" text-anchor="middle">Chat API</text>
-  <text x="530" y="484" font-size="10.5" fill="#6b7a90" text-anchor="middle">/api/chat</text>
-  <text x="530" y="500" font-size="10.5" fill="#6b7a90" text-anchor="middle">forwards to the agent</text>
-
-  <polygon points="660,480 750,436 840,480 750,524" fill="#fff8ef" stroke="#33415c" stroke-width="1.4"/>
-  <text x="750" y="470" font-size="12" fill="#33415c" text-anchor="middle">Tool check</text>
-  <text x="750" y="488" font-size="10.5" fill="#6b7a90" text-anchor="middle">the agent may only offer</text>
-  <text x="750" y="502" font-size="10.5" fill="#6b7a90" text-anchor="middle">tools this build can run</text>
-
-  <rect x="880" y="440" width="200" height="80" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
-  <text x="980" y="470" font-size="12.5" fill="#33415c" text-anchor="middle">Read-only APIs</text>
-  <text x="980" y="490" font-size="11" fill="#33415c" text-anchor="middle">product lookups, search, refresh</text>
-  <text x="980" y="508" font-size="10.5" fill="#6b7a90" text-anchor="middle">the key can read, never write</text>
-
-  <polyline points="610,480 660,480" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <polyline points="820,328 820,380 980,380 980,440" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="906" y="372" font-size="10.5" fill="#33415c" text-anchor="middle">looks up each piece, read-only</text>
-
-  <rect x="60" y="628" width="240" height="88" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
-  <text x="180" y="654" font-size="12.5" font-weight="700" fill="#33415c" text-anchor="middle">Output guardrail</text>
-  <text x="180" y="674" font-size="11" fill="#33415c" text-anchor="middle">reviews every reply against five rules,</text>
-  <text x="180" y="690" font-size="11" fill="#33415c" text-anchor="middle">can withhold the text</text>
-
-  <rect x="400" y="620" width="240" height="96" rx="8" fill="#ffffff" stroke="#0076a9" stroke-width="1.6"/>
-  <text x="520" y="648" font-size="13" font-weight="700" fill="#33415c" text-anchor="middle">Concierge agent</text>
-  <text x="520" y="668" font-size="11" fill="#33415c" text-anchor="middle">one definition, in Agent Studio;</text>
-  <text x="520" y="684" font-size="11" fill="#33415c" text-anchor="middle">test copy and live copy identical</text>
-  <text x="520" y="702" font-size="10.5" fill="#6b7a90" text-anchor="middle">writes every word the shopper reads</text>
-
-  <rect x="690" y="636" width="150" height="64" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
-  <text x="765" y="662" font-size="12" fill="#33415c" text-anchor="middle">Catalogue search</text>
-  <text x="765" y="680" font-size="10.5" fill="#6b7a90" text-anchor="middle">the agent's own tool</text>
-
-  <path d="M 880 634 h 200 v 70 a 100 8 0 0 1 -200 0 z" fill="#eef2f7" stroke="#33415c" stroke-width="1.4"/>
-  <ellipse cx="980" cy="634" rx="100" ry="8" fill="#eef2f7" stroke="#33415c" stroke-width="1.4"/>
-  <text x="980" y="664" font-size="12" fill="#33415c" text-anchor="middle">JTV catalogue</text>
-  <text x="980" y="682" font-size="10.5" fill="#6b7a90" text-anchor="middle">products, blog, help articles</text>
-  <text x="980" y="698" font-size="10.5" fill="#6b7a90" text-anchor="middle">read-only to this system</text>
-
-  <polyline points="400,668 300,668" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="350" y="658" font-size="10.5" fill="#33415c" text-anchor="middle">writes every word</text>
-  <polyline points="640,668 690,668" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="665" y="654" font-size="10.5" fill="#33415c" text-anchor="middle">searches</text>
-  <polyline points="840,656 880,656" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <polyline points="880,692 840,692" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="860" y="710" font-size="10.5" fill="#33415c" text-anchor="middle">results</text>
-  <polyline points="980,520 980,628" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="992" y="580" font-size="10.5" fill="#33415c" text-anchor="start">reads the same catalogue</text>
-
-  <polyline points="750,524 750,570 520,570 520,620" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <polyline points="180,628 180,530 530,530 530,520" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <text x="355" y="522" font-size="10.5" fill="#33415c" text-anchor="middle">approved reply</text>
-  <polyline points="840,470 868,470 868,76 650,76 650,96" fill="none" stroke="#33415c" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
-  <text x="760" y="68" font-size="10.5" fill="#33415c" text-anchor="middle">mismatch: the page shows a clear error</text>
-  <polyline points="60,672 38,672 38,215 280,215 280,184" fill="none" stroke="#33415c" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
-  <text x="44" y="207" font-size="10.5" fill="#33415c" text-anchor="start">withheld: a fixed notice; the checked tiles stay</text>
-
-  <text x="60" y="806" font-size="13" font-weight="700" fill="#33415c">How a change reaches production</text>
-  <rect x="60" y="820" width="210" height="60" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
-  <text x="165" y="845" font-size="11" fill="#33415c" text-anchor="middle">Change and test locally:</text>
-  <text x="165" y="861" font-size="11" fill="#33415c" text-anchor="middle">npm run dev + dev agent</text>
-  <rect x="300" y="820" width="210" height="60" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
-  <text x="405" y="845" font-size="11" fill="#33415c" text-anchor="middle">Merge to main: pull request,</text>
-  <text x="405" y="861" font-size="11" fill="#33415c" text-anchor="middle">CI green</text>
-  <rect x="540" y="820" width="210" height="60" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
-  <text x="645" y="845" font-size="11" fill="#33415c" text-anchor="middle">Promote: scripts/baseline,</text>
-  <text x="645" y="861" font-size="11" fill="#33415c" text-anchor="middle">agent then app</text>
-  <rect x="780" y="820" width="210" height="60" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
-  <text x="885" y="845" font-size="11" fill="#33415c" text-anchor="middle">Production: Vercel app</text>
-  <text x="885" y="861" font-size="11" fill="#33415c" text-anchor="middle">+ production agent</text>
-  <rect x="1020" y="820" width="210" height="60" rx="8" fill="#ffffff" stroke="#33415c" stroke-width="1.4"/>
-  <text x="1125" y="853" font-size="11" fill="#33415c" text-anchor="middle">verify-baseline.mjs</text>
-  <polyline points="270,850 300,850" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <polyline points="510,850 540,850" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <polyline points="750,850 780,850" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-  <polyline points="990,850 1020,850" fill="none" stroke="#33415c" stroke-width="1.8" marker-end="url(#ah)"/>
-</svg>
-</div>
-      <figcaption class="figcap">The whole system in one picture. Solid arrows are the path of one
-      exchange: the message goes out, the agent searches the read-only catalogue and proposes pieces,
-      the browser checks every piece in code, and the approved reply streams back beside the checked
-      tiles. Dashed arrows are the two failure paths, in plain words: a tool mismatch shows a clear
-      error, and a reply the guardrail withholds is replaced by a fixed notice while the checked tiles
-      stay. The strip at the bottom shows how a change reaches production.</figcaption>
-      </figure>
-
-      <h2 id="turn">How an exchange flows <a class="anchor" href="#turn" aria-label="Link to this section">#</a></h2>
-      <p>The same eight steps from the overview, with the detail a developer needs:</p>
-      <figure class="figure">
-        <svg viewBox="0 0 960 500" role="img" aria-labelledby="seqtitle seqdesc" xmlns="http://www.w3.org/2000/svg">
-          <title id="seqtitle">One shopper exchange, step by step</title>
-          <desc id="seqdesc">A sequence diagram with four lanes: the Shopper, the JTV website, the Concierge agent, and the catalogue. Step 1: the shopper asks for something in the page. Step 2: the website passes the request to the Concierge. Step 3: the Concierge searches the live catalogue. Step 4: the Concierge asks the website to check its candidate pieces. Step 5: the website looks up each piece: price, stock, details. Step 6: the website returns only the pieces that pass. Step 7: the Concierge writes the answer and a safety check reviews it. Step 8: the shopper sees the reply and the product cards.</desc>
+        <svg viewBox="0 0 980 560" role="img" aria-labelledby="archtitle archdesc" xmlns="http://www.w3.org/2000/svg">
+          <title id="archtitle">One shopping turn through the four components</title>
+          <desc id="archdesc">A sequence diagram with four lanes: the Shopper, the storefront browser, the app server, the Concierge agent on Agent Studio, and the indices. The shopper's message goes to the browser connector, which adds session state and calls the server; the server validates and checks the tool sheet, then streams the turn to the agent; the agent searches the indices; the agent calls present_products, which the browser executes against the server's read-only routes; the verified list returns; the agent writes the reply from it; the reply and tiles stream to the shopper.</desc>
           <defs>
-            <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="#454545"/>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#45454d"/>
             </marker>
           </defs>
           <style>
-            .lane-h { fill: #fff; stroke: #454545; stroke-width: 1.2; }
-            .lane-app { fill: #eaf4f8; stroke: #0076a9; stroke-width: 1.4; }
-            .lane-agent { fill: #f3f3f3; stroke: #0076a9; stroke-width: 1.6; }
-            .lane-idx { fill: #fff; stroke: #454545; stroke-width: 1.2; stroke-dasharray: 5 4; }
-            .life { stroke: #bbb; stroke-width: 1; stroke-dasharray: 4 4; }
-            text { font-family: Lato, Arial, sans-serif; fill: #454545; }
-            .t { font-size: 13px; font-weight: 700; }
-            .sub { font-size: 10.5px; fill: #707070; }
-            .lbl { font-size: 12px; }
-            .num { font-weight: 700; fill: #0076a9; }
-            .flow { stroke: #454545; stroke-width: 1.4; marker-end: url(#arr2); }
+            .box { fill: #fff; stroke: #c9c9d4; stroke-width: 1.2; }
+            .box-app { fill: #eef2ff; stroke: #0067F7; stroke-width: 1.4; }
+            .box-agent { fill: #f7f8fa; stroke: #0067F7; stroke-width: 1.6; }
+            .box-data { fill: #fff; stroke: #c9c9d4; stroke-width: 1.2; stroke-dasharray: 5 4; }
+            .life { stroke: #d8d8e2; stroke-width: 1; stroke-dasharray: 4 4; }
+            text { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; fill: #1a1a1e; }
+            .t { font-size: 14px; font-weight: 600; }
+            .sub { font-size: 11px; fill: #707078; }
+            .lbl { font-size: 12.5px; }
+            .num { font-weight: 600; fill: #0067F7; }
+            .flow { stroke: #45454d; stroke-width: 1.4; marker-end: url(#arr); }
           </style>
-          <rect class="lane-h" x="20" y="16" width="130" height="52" rx="6"/>
-          <text class="t" x="85" y="38" text-anchor="middle">Shopper</text>
-          <text class="sub" x="85" y="56" text-anchor="middle">sees only the page</text>
-          <rect class="lane-app" x="210" y="16" width="220" height="52" rx="6"/>
-          <text class="t" x="320" y="38" text-anchor="middle">JTV website</text>
-          <text class="sub" x="320" y="56" text-anchor="middle">shows products, checks every piece</text>
-          <rect class="lane-agent" x="490" y="16" width="220" height="52" rx="6"/>
-          <text class="t" x="600" y="38" text-anchor="middle">The Concierge</text>
-          <text class="sub" x="600" y="56" text-anchor="middle">the AI agent that answers</text>
-          <rect class="lane-idx" x="770" y="16" width="170" height="52" rx="6"/>
-          <text class="t" x="855" y="38" text-anchor="middle">The catalogue</text>
-          <text class="sub" x="855" y="56" text-anchor="middle">live product data, read-only</text>
-          <line class="life" x1="85" y1="68" x2="85" y2="470"/>
-          <line class="life" x1="320" y1="68" x2="320" y2="470"/>
-          <line class="life" x1="600" y1="68" x2="600" y2="470"/>
-          <line class="life" x1="855" y1="68" x2="855" y2="470"/>
-          <line class="flow" x1="85" y1="104" x2="316" y2="104"/>
-          <text class="lbl" x="96" y="96"><tspan class="num">1</tspan>  The shopper asks for something</text>
-          <line class="flow" x1="320" y1="150" x2="596" y2="150"/>
-          <text class="lbl" x="348" y="142"><tspan class="num">2</tspan>  The website passes the request on</text>
-          <line class="flow" x1="600" y1="196" x2="851" y2="196"/>
-          <text class="lbl" x="612" y="188"><tspan class="num">3</tspan>  The Concierge searches the catalogue</text>
-          <line class="flow" x1="600" y1="242" x2="324" y2="242"/>
-          <text class="lbl" x="340" y="234"><tspan class="num">4</tspan>  It asks the website to check candidate pieces</text>
-          <line class="flow" x1="320" y1="288" x2="851" y2="288"/>
-          <text class="lbl" x="386" y="280"><tspan class="num">5</tspan>  The website looks up each piece</text>
-          <line class="flow" x1="320" y1="334" x2="596" y2="334"/>
-          <text class="lbl" x="388" y="326"><tspan class="num">6</tspan>  Only pieces that pass come back</text>
-          <line class="flow" x1="600" y1="380" x2="324" y2="380"/>
-          <text class="lbl" x="348" y="372"><tspan class="num">7</tspan>  The answer is written, then safety-checked</text>
-          <line class="flow" x1="320" y1="426" x2="89" y2="426"/>
-          <text class="lbl" x="124" y="418"><tspan class="num">8</tspan>  The shopper sees reply and cards</text>
+          <rect class="box" x="16" y="14" width="140" height="50" rx="8"/>
+          <text class="t" x="86" y="35" text-anchor="middle">Shopper</text>
+          <text class="sub" x="86" y="52" text-anchor="middle">types, taps</text>
+          <rect class="box-app" x="196" y="14" width="220" height="50" rx="8"/>
+          <text class="t" x="306" y="35" text-anchor="middle">Storefront browser</text>
+          <text class="sub" x="306" y="52" text-anchor="middle">connector + client tools</text>
+          <rect class="box" x="456" y="14" width="200" height="50" rx="8"/>
+          <text class="t" x="556" y="35" text-anchor="middle">App server</text>
+          <text class="sub" x="556" y="52" text-anchor="middle">validating proxy</text>
+          <rect class="box-agent" x="696" y="14" width="130" height="50" rx="8"/>
+          <text class="t" x="761" y="35" text-anchor="middle">Agent</text>
+          <text class="sub" x="761" y="52" text-anchor="middle">Agent Studio</text>
+          <rect class="box-data" x="846" y="14" width="120" height="50" rx="8"/>
+          <text class="t" x="906" y="35" text-anchor="middle">Indices</text>
+          <text class="sub" x="906" y="52" text-anchor="middle">read-only</text>
+          <line class="life" x1="86" y1="64" x2="86" y2="540"/>
+          <line class="life" x1="306" y1="64" x2="306" y2="540"/>
+          <line class="life" x1="556" y1="64" x2="556" y2="540"/>
+          <line class="life" x1="761" y1="64" x2="761" y2="540"/>
+          <line class="life" x1="906" y1="64" x2="906" y2="540"/>
+          <line class="flow" x1="86" y1="96" x2="300" y2="96"/>
+          <text class="lbl" x="98" y="89"><tspan class="num">1</tspan> message + session state</text>
+          <line class="flow" x1="306" y1="140" x2="550" y2="140"/>
+          <text class="lbl" x="330" y="133"><tspan class="num">2</tspan> POST /api/chat (validated)</text>
+          <line class="flow" x1="556" y1="184" x2="755" y2="184"/>
+          <text class="lbl" x="568" y="177"><tspan class="num">3</tspan> stream the turn</text>
+          <line class="flow" x1="761" y1="228" x2="900" y2="228"/>
+          <text class="lbl" x="773" y="221"><tspan class="num">4</tspan> one search</text>
+          <line class="flow" x1="900" y1="270" x2="767" y2="270"/>
+          <text class="lbl" x="775" y="263"><tspan class="num">5</tspan> hits + facet counts</text>
+          <line class="flow" x1="761" y1="314" x2="312" y2="314"/>
+          <text class="lbl" x="410" y="307"><tspan class="num">6</tspan> present_products (runs in the browser)</text>
+          <line class="flow" x1="306" y1="358" x2="550" y2="358"/>
+          <text class="lbl" x="340" y="351"><tspan class="num">7</tspan> record reads, vocabulary</text>
+          <line class="flow" x1="556" y1="400" x2="900" y2="400"/>
+          <text class="lbl" x="600" y="393"><tspan class="num">8</tspan> read-only lookups</text>
+          <line class="flow" x1="556" y1="442" x2="312" y2="442"/>
+          <text class="lbl" x="360" y="435"><tspan class="num">9</tspan> verified list back to the agent</text>
+          <line class="flow" x1="761" y1="484" x2="312" y2="484"/>
+          <text class="lbl" x="392" y="477"><tspan class="num">10</tspan> reply + tiles + chips, streamed</text>
+          <line class="flow" x1="306" y1="524" x2="92" y2="524"/>
+          <text class="lbl" x="112" y="517"><tspan class="num">11</tspan> the shopper sees it</text>
         </svg>
-        <figcaption class="figcap">The shopper's lane has one arrow in and one arrow out.
-        Everything between is handled by the website and the Concierge talking to each
-        other, usually within a few seconds.</figcaption>
+        <figcaption class="figcap">One turn, both directions. The shopper touches only the
+        page; every product fact the page shows was read from the indices, and every word
+        was written by the agent.</figcaption>
       </figure>
-      <p>What each step really does:</p>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Component</th><th>Responsibility</th><th>Key fact</th></tr></thead>
+          <tbody>
+            <tr><td>Browser connector</td><td>Owns the conversation panel, executes the two client tools, renders only verified output.</td><td>Client tools run in the shopper's browser over same-origin, search-only routes.</td></tr>
+            <tr><td>App server</td><td>One validating proxy: schema-checks every request, pins credentials server-side, forwards to the agent and the indices.</td><td>Search-only credentials never reach the browser.</td></tr>
+            <tr><td>Concierge agent</td><td>Interprets the request, decides each turn, writes every shopper-facing word.</td><td>Hosted by Agent Studio; model <code>claude-sonnet-5</code>.</td></tr>
+            <tr><td>Indices</td><td>Products (<code>prod_catalog</code> + a newest-first replica), education (<code>blog</code>), policy (<code>help_content</code>).</td><td>Strictly read-only to this system.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="routes">The server routes <a class="anchor" href="#routes">#</a></h2>
+      <p>The storefront talks to exactly one origin. The server accepts seven routes,
+      validates every body against a strict schema, and forwards to Algolia with the
+      search-only key:</p>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Route</th><th>Used by</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>POST /api/chat</code></td><td>Conversation</td><td>Streams one agent turn; enforces the tool-sheet guard first.</td></tr>
+            <tr><td><code>POST /api/search</code></td><td>Agent search tool, chip refinement</td><td>Multi-query read-only search across the six catalog views.</td></tr>
+            <tr><td><code>POST /api/facets</code></td><td>Vocabulary tooling</td><td>Search-within-facet queries on eight whitelisted facets.</td></tr>
+            <tr><td><code>GET /api/products/{id}</code></td><td>Both client tools</td><td>One exact catalog record; the identity is validated, the fetch is exact-ID.</td></tr>
+            <tr><td><code>GET /api/catalog-vocabulary</code></td><td>Requirement enforcement</td><td>The live facet vocabulary, derived from the index on a 12-hour TTL.</td></tr>
+            <tr><td><code>POST /api/agent-product-refresh</code></td><td>Exact refresh</td><td>Read-only exact-ID product facts for a set of object IDs.</td></tr>
+            <tr><td><code>GET /api/health</code></td><td>Operations</td><td>Liveness plus the tool-sheet guard status.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Search requests disable analytics, click analytics and A/B testing at the proxy,
+      so a demo turn leaves no analytics trail. Bodies are capped at 2 MB, requests carry a
+      correlation ID, and the upstream waits at most 15 seconds for response headers and 30
+      seconds between stream chunks before the turn fails honestly.</p>
+
+      <h2 id="turn">One turn, end to end <a class="anchor" href="#turn">#</a></h2>
       <ol>
-        <li>The shopper types a message such as "show me gold hoop earrings" into the
-            chat.</li>
-        <li>The website sends the message to the Concierge. The reply streams back as it
-            is written, so the shopper sees words appear rather than waiting for a
-            finished page.</li>
-        <li>The Concierge decides what to do: ask a question, explain something, or
-            search. Searching uses a product search that runs inside Algolia and looks
-            only at <code>prod_catalog</code>, the product catalogue.</li>
-        <li>The Concierge searches once per turn. The search results themselves are
-            the display: the pieces the search returned become the product tiles,
-            and the ways to narrow become the selectable options beneath them. One
-            helper lives in the website: it fetches fresh details for a specific
-            piece, through a key that can read but never write.</li>
-        <li>Before a tile shows, the website re-checks the record: in stock, priced,
-            photographed, and not a same-design twin of a tile already showing. A
-            piece that fails a check can never appear on screen.</li>
-        <li>The Concierge writes its reply from those results. A safety layer then
-            reviews the finished text against JTV's rules; if it breaks one, the text is
-            replaced before it stays on screen.</li>
-        <li>The website shows the reply beside the approved product cards.</li>
+        <li><strong>The send.</strong> The browser captures the shopper's message and builds
+        the turn's metadata: the mission and turn identifiers, the accepted shopping facts
+        (a compact JSON of requirement, preference and context facts with scope, strength,
+        certainty and status codes, split into 900-byte chunks) and the chip selections the
+        shopper has live on screen.</li>
+        <li><strong>The gate.</strong> The server validates the request, then compares the
+        tools the agent declares with the tools this build answers. On a mismatch it returns
+        a labelled error instead of an agent that appears to fail.</li>
+        <li><strong>The search.</strong> The agent builds one search: every named material,
+        purity or gemstone becomes a facet filter with its verbatim vocabulary value from
+        the search tool's own description, alongside the query words. The platform executes
+        it against <code>prod_catalog</code> (already filtered to in-stock pieces) and
+        streams the hits and facet counts back.</li>
+        <li><strong>The curation.</strong> The agent picks 9 to 12 pieces from the streamed
+        result, best first, plus up to three facet attributes worth showing as chips, and
+        calls <code>present_products</code>. That tool runs in the shopper's browser: it
+        reads the requirement from the shopper's own message (never from a model-quoted
+        field), resolves it against the live vocabulary, and checks every pick against the
+        piece's actual record.</li>
+        <li><strong>The floor.</strong> If fewer than six verified pieces survive, the tool
+        backfills from the streamed search's remaining hits with the identical checks; if
+        the pool is exhausted, it runs one more facet-filtered search itself. Nothing
+        enters the shelf without passing.</li>
+        <li><strong>The reply.</strong> The agent writes its answer from the verified list
+        the tool returned, and the whole turn streams to the page: text, tiles, chips. The
+        panel renders the tool's verified list, never the raw search stream, so a piece the
+        tool dropped can never appear.</li>
+        <li><strong>The refinement.</strong> A chip tap filters within the turn through the
+        same-origin search proxy; the next level's values come from the refinement's own
+        facet counts. A follow-up question about one specific piece sends
+        <code>refresh_products</code> for its exact record, so fresh facts replace cached
+        ones.</li>
       </ol>
 
-      <h2 id="rules">Rules that keep it honest <a class="anchor" href="#rules" aria-label="Link to this section">#</a></h2>
-      <p>Four rules decide how the pieces behave, and they are binding:</p>
-      <ul>
-        <li><strong>The Concierge does all the talking.</strong> Its instructions decide
-            how it interprets, asks, searches and phrases. The website never writes
-            shopper-facing speech and never fakes a Concierge reply, not even for error
-            messages: transport problems show an honest system notice instead.</li>
-        <li><strong>The website does all the checking.</strong> Anything deterministic,
-            such as stock, price arithmetic, what may be displayed and what is saved,
-            is validated in code. The Concierge cannot talk its way past a failed check.</li>
-        <li><strong>The catalogue is read-only.</strong> Nothing in this system changes a
-            product record, a search rule or any catalogue setting. Merchandising changes
-            to the catalogue are made by the merchandising team through their own tools.</li>
-        <li><strong>No scripts, no canned replies.</strong> The Concierge is taught by
-            instructions and worked examples, never by hardcoded answers or keyword
-            matching. That is why its behavior improves by editing its instructions,
-            never by adding code.</li>
-      </ul>
+      <h2 id="state">Session state <a class="anchor" href="#state">#</a></h2>
+      <p>Continuity rides in the turn metadata, not in a server-side session. The accepted
+      facts travel as a compact JSON: each fact is an ID, a field, a value, a scope (mission,
+      item, recipient or component), a strength (requirement, preference or context), a
+      certainty (explicit or tentative) and a status. The agent reads it as state, never as
+      product evidence, and the chip selections ride beside it so a later search applies
+      what the shopper already narrowed on screen.</p>
 
-      <h2 id="settings">Where the Concierge's settings live <a class="anchor" href="#settings" aria-label="Link to this section">#</a></h2>
-      <p>The Concierge is configured in Algolia's Agent Studio dashboard: its instructions,
-      the description of its three tools (the tool sheet) and its safety rules. The
-      website holds only connection settings, read by <code>server/config.ts</code> from
-      the server environment. Their names, not their values:</p>
+      <h2 id="failure">How each link fails <a class="anchor" href="#failure">#</a></h2>
       <div class="table-wrap">
-      <table class="data">
-        <thead><tr><th>Setting</th><th>What it chooses</th></tr></thead>
-        <tbody>
-          <tr><td><code>ALGOLIA_APP_ID</code></td><td>Which Algolia account holds the catalogue (required)</td></tr>
-          <tr><td><code>ALGOLIA_SEARCH_API_KEY</code></td><td>The read-only key the website uses to look up pieces (required)</td></tr>
-          <tr><td><code>JTV_CONCIERGE_DEVELOPMENT_AGENT_ID</code></td><td>Which Concierge configuration test runs talk to</td></tr>
-          <tr><td><code>JTV_CONCIERGE_PRODUCTION_AGENT_ID</code></td><td>Which Concierge configuration real shoppers talk to</td></tr>
-        </tbody>
-      </table>
+        <table class="data">
+          <thead><tr><th>Failure</th><th>Behavior</th></tr></thead>
+          <tbody>
+            <tr><td>Agent declares an unknown tool</td><td>The tool-sheet guard returns a labelled <code>tool_sheet_mismatch</code> error on the chat route; the health route shows it. No silent fallback.</td></tr>
+            <tr><td>Upstream silent or slow</td><td>The headers and stall deadlines end the turn as an honest transport notice inside the shopper's reasonable wait.</td></tr>
+            <tr><td>Search returns nothing useful</td><td>The agent says what the catalog does not have and offers the nearest in-scope action; the shelf never pads with wrong pieces.</td></tr>
+            <tr><td>A client tool cannot complete</td><td>The tool returns a structured error outcome; the agent decides what to tell the shopper. The application never authors agent speech.</td></tr>
+            <tr><td>A guardrail category trips</td><td>The category's fallback notice replaces the content; the agent's instructions forbid claiming a guardrail pass as proof of anything.</td></tr>
+          </tbody>
+        </table>
       </div>
-      <div class="caution"><b>The one mismatch to know about</b>
-      The website can only run the tools its build knows about, and the Concierge only
-      knows the tools its configuration declares. If those two disagree, the website
-      refuses the turn with a labelled <code>tool_sheet_mismatch</code> error and an
-      honest system notice, rather than an agent that appears to fail; the same check
-      reports on the health endpoint. Whenever something odd happens, first confirm which
-      Concierge configuration the running website is pointed at.</div>
-
-      <h2 id="old">The old system, now replaced <a class="anchor" href="#old" aria-label="Link to this section">#</a></h2>
-      <p>Until October 22, 2026 the public website was served by the previous generation
-      of the Concierge: more moving parts, three client-side helper tools, and an
-      outdated product-filter list baked into its configuration. On that date the
-      rebuilt system described on this page was promoted to production and the old
-      configuration was retired. The website and the agent now both run the baseline:
-      one Concierge definition, the native catalogue search tool, and the two helpers
-      this website executes. The record of the swap is kept in Running and changing
-      the system (soon).</p>
+      <div class="callout">
+        <p>The dividing line runs through everything: <strong>the agent generates the
+        language; the application enforces the facts.</strong> Tool outputs are structured
+        data, validation never writes shopper-facing text, and fixed notices exist only for
+        genuinely fixed things like transport failures and guardrail fallbacks.</p>
+      </div>
 
     </div>
 
     <nav class="pager" aria-label="Page navigation">
       <div class="cell">
-        <span class="dir">Previous page</span>
-        <a href="./index.html">What is the Concierge?</a>
+        <span class="dir">Previous</span>
+        <a href="./experience.html">The experience</a>
       </div>
       <div class="cell">
-        <span class="dir">Next page</span>
-        <span class="none">The three tools, explained (being written)</span>
+        <span class="dir">Next</span>
+        <a href="./agent.html">The agent</a>
       </div>
     </nav>
 
-    <p class="footer-note">About this page: updated 2026-10-22 against the system as it
-    stands today (website source on branch <code>main</code>, Concierge agent
-    <code>8129ad66</code>, instruction text <code>b54ffc95</code>). These identifiers let
-    future readers match this page to the exact version it described. Facts about the
-    tools and settings were checked against the live configuration on that date.
-    Served from <code>app/public/docs/</code>; not indexed by search engines until
-    the deploy decision; contains no keys or secrets.</p>
+    <p class="footer-note">About this page: written 2026-10-26 against the system as it
+    runs today (storefront <code>main</code>, Concierge agent <code>0bdf59fe</code>,
+    model <code>claude-sonnet-5</code>). Route and deadline facts are read from the server
+    source at <code>app/server/api.ts</code>. Served from <code>app/public/docs/</code>;
+    contains no keys or secrets.</p>
   </main>
 
   <aside class="toc-rail" aria-label="On this page">
     <h3>On this page</h3>
     <ul id="toc">
-      <li><a href="#pieces">The pieces of the system</a></li>
-      <li><a href="#turn">How an exchange flows</a></li>
-      <li><a href="#rules">Rules that keep it honest</a></li>
-      <li><a href="#settings">Where the Concierge's settings live</a></li>
-      <li><a href="#old">The old system, now replaced</a></li>
+      <li><a href="#components">The components</a></li>
+      <li><a href="#routes">The server routes</a></li>
+      <li><a href="#turn">One turn, end to end</a></li>
+      <li><a href="#state">Session state</a></li>
+      <li><a href="#failure">How each link fails</a></li>
     </ul>
   </aside>
 

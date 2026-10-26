@@ -1,0 +1,30 @@
+{
+  "name": "present_products",
+  "type": "client_side",
+  "description": "After a search, send 9-12 chosen objectIDs best first, displayFacets (1-3 facet names). It checks pieces \u2014 stock, price, image, twins, and the shopper's named material \u2014 and returns a full shelf.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "objectIDs": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 24
+      },
+      "displayFacets": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 3
+      }
+    },
+    "required": [
+      "objectIDs"
+    ]
+  },
+  "isTerminal": false
+}

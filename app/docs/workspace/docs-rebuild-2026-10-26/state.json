@@ -1,0 +1,12 @@
+{
+  "mode": "LIGHT",
+  "run_id": "2026-10-26-001",
+  "project": "jewellerytv",
+  "feature": "docs-rebuild",
+  "status": "IN_PROGRESS",
+  "current_stage": "INTAKE",
+  "builder": "inline",
+  "retry_counts": {},
+  "strike_log": [],
+  "gates": {}
+}

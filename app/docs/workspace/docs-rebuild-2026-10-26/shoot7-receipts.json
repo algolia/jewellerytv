@@ -1,0 +1,19 @@
+{
+  "ask": "Show me opal earrings",
+  "turn": {
+    "tiles": 9,
+    "chips": [
+      "Sterling",
+      "14K",
+      "10K",
+      "18K",
+      "24K"
+    ],
+    "panelText": "Move window\nJTV Concierge\nNew\n\nShow me opal earrings\n\nCONCIERGE\nOpals are such a fun stone to shop, every piece shows its own play of color, so no two look quite alike.\n\nThese run deep in color, white and black opal, blues, purples, even fire opal, set mostly in gold over sterling silver with some solid gold and solid silver pieces too.\n\nThat play-of-color is the whole appeal, each stone flashes differently in the light, so pictures only tell part of the story.\n\nIs there a color or a metal tone you're drawn to, or a budget I should work within?\n\nSterling\n14K\n10K\n18K\n24K\n$139.99\n$161.55\n$101.97\n$59.99\n$73.60\n$192.99\n$221.99\n$154.99\n$84.99\nSend"
+  },
+  "chipTap": "Sterling",
+  "afterTap": {
+    "tiles": 8,
+    "panelText": "Move window\nJTV Concierge\nNew\n\nShow me opal earrings\n\nCONCIERGE\nOpals are such a fun stone to shop, every piece shows its own play of color, so no two look quite alike.\n\nThese run deep in color, white and black opal, blues, purples, even fire opal, set mostly in gold over sterling silver with some solid gold and solid silver pieces too.\n\nThat play-of-color is the whole appeal, each stone flashes differently in the light, so pictures only tell part of the story.\n\nIs there a color or a metal tone you're drawn to, or a budget I should work within?\n\n‹ All facets\n\nSterling\n\n$98.67\n$44.99\n$187.19\n$169.99\n$80.97\n$81.72\n$127.99\n$111.10\nSend"
+  }
+}

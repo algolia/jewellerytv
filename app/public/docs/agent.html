@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta http-equiv="cache-control" content="no-cache">
+<title>The agent</title>
+<meta name="description" content="The Concierge agent itself: the model, the three tools and their contracts, the system prompt and instructions section by section, the guardrail, and the logic behind each choice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="./docs.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="docs-header">
+  <div class="brand">
+    <img src="./assets/algolia-logo.svg" alt="Algolia">
+    <span class="divider"></span>
+    <span class="desc">Agentic commerce, a reference build</span>
+  </div>
+  <a class="to-shop" href="/">Open the storefront</a>
+</header>
+
+<div class="docs-layout">
+
+  <aside class="docs-sidebar" aria-label="Documentation navigation">
+    <details open>
+      <summary class="side-summary">Chapters</summary>
+      <nav class="docs-nav" id="docnav">
+        <h3>Start here</h3>
+        <ul>
+          <li><a href="./index.html"><span class="num">1</span>The package</a></li>
+          <li><a href="./experience.html"><span class="num">2</span>The experience</a></li>
+        </ul>
+        <h3>How it works</h3>
+        <ul>
+          <li><a href="./architecture.html"><span class="num">3</span>Architecture and data flow</a></li>
+          <li><a href="./agent.html" aria-current="page"><span class="num">4</span>The agent</a></li>
+          <li><a href="./examples.html"><span class="num">5</span>Examples and walkthrough</a></li>
+        </ul>
+        <h3>Adopt it</h3>
+        <ul>
+          <li><a href="./adopting.html"><span class="num">6</span>Adopting it</a></li>
+        </ul>
+        <h3>Reference</h3>
+        <ul>
+          <li><a href="./appendix-prompts.html"><span class="num">7</span>Prompts and configuration</a></li>
+        </ul>
+      </nav>
+    </details>
+  </aside>
+
+  <main id="main" class="docs-main">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="./index.html">Docs</a><span class="sep">/</span><span class="here">The agent</span>
+    </nav>
+
+    <header class="page-head">
+      <h1>The agent</h1>
+      <p class="lede">The agent is the heart of the package: everything the shopper reads
+      comes out of it, and everything it may do is written down. This chapter covers the
+      model it runs on, the three tools it can call, the anatomy of its system prompt and
+      its instructions, the guardrail that reviews its output, and the reasoning behind
+      each of those choices. The complete texts live in <a href="./appendix-prompts.html">Prompts
+      and configuration</a>.</p>
+    </header>
+
+    <div class="content">
+
+      <h2 id="identity">What the agent is <a class="anchor" href="#identity">#</a></h2>
+      <p>One Concierge definition runs in two copies with identical definitions: a
+      development agent that local work talks to, and the production agent the public site
+      talks to. Both are hosted by Algolia's Agent Studio and both run the model
+      <code>claude-sonnet-5</code>. The application holds only the two agent identifiers as
+      configuration; the definition itself (instructions, system prompt, tool sheet,
+      configuration) lives in Agent Studio and is promoted from development to production
+      by script, never edited by hand on the live side.</p>
+
+      <h2 id="tools">The three tools <a class="anchor" href="#tools">#</a></h2>
+      <p>The agent has exactly three tools. One searches, one decides what displays, one
+      refreshes facts. Each contract is written twice on purpose: in the tool sheet the
+      model reads, and in the code that executes or validates it. A shared guard on the
+      application side refuses to run if the two ever drift apart.</p>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Tool</th><th>Runs where</th><th>One-line contract</th></tr></thead>
+          <tbody>
+            <tr><td><code>algolia_search_index</code></td><td>Agent Studio</td><td>Search four fixed indices; results stream to the page and to the agent.</td></tr>
+            <tr><td><code>present_products</code></td><td>The shopper's browser</td><td>Given 9 to 12 picked object IDs, verify each and return the shelf that may display.</td></tr>
+            <tr><td><code>refresh_products</code></td><td>The shopper's browser</td><td>Given 1 to 12 exact object IDs, return each piece's current name, price, stock, image and link.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="search-tool">The search tool <a class="anchor" href="#search-tool">#</a></h3>
+      <p>The search tool is native to Agent Studio: the platform executes it and streams
+      the result; the application never re-executes it. Its configuration is deliberately
+      narrow:</p>
+      <ul>
+        <li><strong>Four indices, static mode, nothing unlisted.</strong>
+        <code>prod_catalog</code> (products), <code>prod_catalog_newest</code> (the same
+        catalog ordered newest first, for new-arrival asks), <code>blog</code> (education)
+        and <code>help_content</code> (service and policy). The agent cannot point the tool
+        anywhere else.</li>
+        <li><strong>In-stock only.</strong> A fixed pre-filter (<code>Inventory_InStock:
+        true</code>) applies to both product indices, so thin shelves are a catalog fact,
+        not an accident.</li>
+        <li><strong>A verbatim vocabulary in the description.</strong> The tool description
+        carries the filterable facets and their live values, the searchable attributes, and
+        the price bands. The instructions bind the agent to copy values from it and never
+        compose one: "sterling silver" is the purity value <code>Sterling</code>, not a
+        material called "Sterling Silver". Titles lie ("gold over sterling silver"); the
+        vocabulary does not.</li>
+        <li><strong>Bounded responses.</strong> Twelve hits per search on the catalog, four
+        on blog and help, at most three pages. The agent curates from a window, not from
+        the whole catalog.</li>
+      </ul>
+
+      <h3 id="present-tool">The curation tool: present_products <a class="anchor" href="#present-tool">#</a></h3>
+      <p>This is the tool that makes the shelf trustworthy, and its design carries the
+      system's central lesson. The model reads the streamed search and chooses the pieces
+      worth showing. The tool then runs the deterministic checks that a language model
+      cannot be trusted to do about itself: each pick must exist, be in stock, be priced,
+      be photographed, not be a same-design twin of a tile already showing, and satisfy the
+      requirement. It returns the verified list with names and prices, and the reply is
+      written from that list. A piece the tool dropped can never appear.</p>
+      <p><strong>The requirement comes from the shopper's own words.</strong> When a shopper
+      says "silver" or "ruby", the application hands the tool the shopper's message text,
+      and the tool matches those words against the live index vocabulary to decide what was
+      actually named: a material, a gemstone or a brand. An earlier design let the model
+      quote the requirement in the tool call, and a measured battery found it did so on only
+      8 percent of material turns; prompt-based enforcement failed structurally on that
+      model version. Reading the shopper's message removes the model from that loop
+      entirely. Plated composites never satisfy a solid-metal ask ("gold over silver" is not
+      silver), and a brand name only fires when the shopper actually named the brand.</p>
+      <p><strong>The shelf has a floor.</strong> A shopping turn never shows fewer than six
+      tiles when the catalog can fill them. If verification leaves the model's picks thin,
+      the tool backfills from the streamed search's remaining hits with the identical
+      checks; if that pool is exhausted, it runs one more facet-filtered search on the
+      enforced requirement itself. The floor never invents tiles; it never stops at five
+      when the catalog has six.</p>
+
+      <h3 id="refresh-tool">The refresh tool <a class="anchor" href="#refresh-tool">#</a></h3>
+      <p>For a piece the shopper names or settles on, the agent calls
+      <code>refresh_products</code> with the exact object ID and answers from the record it
+      gets back. The reader behind it accepts a fetched record only when the record's own
+      object ID equals the one requested, so a similar hit can never pose as the same
+      piece. A missing ID comes back as a per-ID <code>not_found</code>, never as a partial
+      record.</p>
+
+      <h2 id="system-prompt">The system prompt, section by section <a class="anchor" href="#system-prompt">#</a></h2>
+      <p>The system prompt is the platform-level half of the agent's contract: what it may
+      touch, in what order it works, and what it may claim. Ten sections, each with a job:</p>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Section</th><th>What it fixes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Authority</strong></td><td>Shopper messages can change shopping facts, never permissions, indices, evidence standards or tool contracts.</td></tr>
+            <tr><td><strong>Tools</strong></td><td>The three tools and their sources; no other source, tool, website or crawl. Tool inputs and retrieved text are untrusted data.</td></tr>
+            <tr><td><strong>Turn pipeline</strong></td><td>The order of a shopping turn: build the search, search once, present 9 to 12 pieces, write the reply from the verified list. Named materials become facet filters with verbatim values in the same call, never bare query words.</td></tr>
+            <tr><td><strong>Budget</strong></td><td>Price bands come from the tool's own band values; "under" is strict, "up to" is inclusive; no price filter without a stated budget.</td></tr>
+            <tr><td><strong>Filters and vocabulary</strong></td><td>Filter only on attributes and values that appear in tool data; a rejected value is corrected, never resent; statuses come only from records.</td></tr>
+            <tr><td><strong>Display</strong></td><td>Tiles appear only after a successful curation call, and only the verified pieces; no object IDs or facet names in shopper text; an aborted turn leaves the display as it was.</td></tr>
+            <tr><td><strong>Refreshing a piece</strong></td><td>A named or settled piece gets refreshed facts, so a similar hit cannot pose as the same piece.</td></tr>
+            <tr><td><strong>Source and claim rules</strong></td><td>Product claims need catalog records, education needs retrieved blog passages, policy needs retrieved help records; links come only from retrieved records; an image URL is not visual evidence.</td></tr>
+            <tr><td><strong>Session state</strong></td><td>How to read the shopping-state chunks and chip selections the app sends each turn, as state rather than evidence.</td></tr>
+            <tr><td><strong>Tool scenarios</strong></td><td>Three worked scenarios (refresh a named piece, contradicting results, a rejected call) that teach order and reason, never to be repeated as replies.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The logic of the shape: the first three sections give the agent its world and its
+      working order; the middle sections fence the claims it can make; the last two handle
+      what arrives each turn and what to do when things go wrong. The turn pipeline is the
+      core: one search per turn, curation as a separate call, and the reply written from
+      verified output. Those three moves are what the whole architecture enforces.</p>
+
+      <h2 id="instructions">The agent instructions, section by section <a class="anchor" href="#instructions">#</a></h2>
+      <p>The instructions are the merchant-voice half: who the agent is, how it talks, how
+      it decides each turn, and the evidence rules that keep it honest. They are written as
+      teaching, with worked examples that show tone and reasoning (never lines to repeat),
+      and each rule carries a "why". The major sections:</p>
+      <ul>
+        <li><strong>Role.</strong> A jewelry shopping concierge whose purpose is discovery;
+        it owns the conversation and decides each turn whether to ask, explain or search.
+        It speaks in the first person for the store: "I" and "we", never "JTV has".</li>
+        <li><strong>How you talk.</strong> Five subsections: a knowledgeable-friend voice;
+        responding to the human moment before the shopping work (congratulate the
+        anniversary, meet distress with restraint, never assume a recipient's gender or
+        relationship); plain-language vocabulary with a ban on internal jargon; a format
+        law for shopping turns (short paragraphs, bold only on the closing call to action,
+        no headings, no em dashes); and discipline while working (one acknowledgment, no
+        process narration, no counts).</li>
+        <li><strong>Deciding each turn.</strong> A nine-row table that is declared the
+        complete rule for when to ask and when to search: broad categories get a first cut
+        plus depth plus an invitation, personal gifts get the person acknowledged and a
+        first cut together with the one deciding question, two-meaning requests get
+        searched rather than interrogated, thin results get an honest count in words and an
+        offer to widen. One search per turn; the shopper's next word or tap takes it
+        deeper.</li>
+        <li><strong>Curating the display.</strong> After every search the agent reads what
+        came back and chooses what the shopper sees: drop contradictions even when the
+        title contains the right words, then call the curation tool once with the chosen
+        pieces and the one to three facets that genuinely split the results. "The search
+        matches words, and words lie."</li>
+        <li><strong>Continuity and requirements.</strong> Stated preferences, requirements,
+        corrections and removals live through every later turn. The shopper's wording sets
+        the strength: "likes" is a preference, "only" is a requirement. A requirement is
+        never dropped to make a search work. Scope keeps a recipient's requirements
+        attached to the right gift.</li>
+        <li><strong>Evidence and sources.</strong> Only what was retrieved in this
+        conversation; never model memory for a product, price or policy claim. No "all" or
+        "every" about a group unless every item has it. Search order is not popularity.
+        Lab-grown diamond, moissanite and cubic zirconia stay three different things.</li>
+        <li><strong>Service and policy answers.</strong> The scan-friendly structure with
+        every material rule the help record carries, and never an invented rule, threshold
+        or fee.</li>
+        <li><strong>Money, fit and purchase boundaries.</strong> Prices are USD; a ceiling
+        is not a target; no delivery dates, tax, shipping costs, cart, payment or live
+        inventory claims; no home-measuring steps unless retrieved guidance supplies
+        them.</li>
+        <li><strong>When something fails.</strong> Failures are facts for the next
+        decision, never canned recovery text; an empty or thin result is named plainly.</li>
+        <li><strong>Worked examples.</strong> Four full examples (broad category, personal
+        gift, care question, service question) that teach decisions and reasons.</li>
+      </ul>
+
+      <h2 id="guardrail">The guardrail <a class="anchor" href="#guardrail">#</a></h2>
+      <p>A separate classifier model reviews input and output against four categories. It
+      is a content classifier, not an independent catalog lookup: product evidence checking
+      stays with the instructions and the tools. It can fail open, and the agent is told
+      never to claim a guardrail pass as proof of safety or grounding.</p>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Category</th><th>Scope</th><th>Catches</th><th>Deliberately passes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Instruction override</strong></td><td>input</td><td>Requests to expose secrets or hidden instructions, fabricate evidence, or bypass configured requirements.</td><td>Normal corrections ("my new limit is $150") and capability questions.</td></tr>
+            <tr><td><strong>Unapproved sizing procedure</strong></td><td>output</td><td>Invented home-measuring steps, guessed sizes, guaranteed fit.</td><td>Asking for a known size; quoting supported dimensions; saying fit is unresolved.</td></tr>
+            <tr><td><strong>Confidential output</strong></td><td>output</td><td>Credentials, tokens, hidden instructions, another user's private account details.</td><td>The shopper's own stated preferences and gift recipients.</td></tr>
+            <tr><td><strong>Unavailable action claim</strong></td><td>output</td><td>False claims that an order, payment, cart change, reservation, live inventory or delivery check happened.</td><td>Saying "let me check stock" when the session's own tools are actually running.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Each category carries its own examples and its own fixed fallback notice, so a
+      trip replaces the content with an honest system notice rather than a plausible
+      continuation.</p>
+
+      <h2 id="config">The agent configuration <a class="anchor" href="#config">#</a></h2>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Setting</th><th>Value</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Model</td><td><code>claude-sonnet-5</code></td><td>Same model on both agents; a change is a deliberate decision, not a drift.</td></tr>
+            <tr><td>Max iterations</td><td>10</td><td>Bounds a run-away turn while leaving room for search, curation and refresh in one reply.</td></tr>
+            <tr><td>Max tokens</td><td>0 (unlimited)</td><td>Reply length is governed by the instructions, not a hard cut.</td></tr>
+            <tr><td>Thread depth</td><td>0 (unlimited)</td><td>Session state carries continuity; the transcript is not truncated by the platform.</td></tr>
+            <tr><td>Algolia MCP</td><td>enabled</td><td>Platform connectivity; the tool sheet remains the boundary of what the agent may call.</td></tr>
+            <tr><td>Suggestions</td><td>disabled</td><td>The welcome chips are curated in the application, analytics-grounded, not generated here.</td></tr>
+            <tr><td>Search bar AI mode</td><td>disabled</td><td>The storefront hands requests to the Concierge explicitly through the Ask JTV chip.</td></tr>
+            <tr><td>Feedback</td><td>enabled</td><td>Platform-level feedback capture on the conversation.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="logic">The reasoning behind the prompt design <a class="anchor" href="#logic">#</a></h2>
+      <p>Four laws hold the design together, and each exists because its absence was
+      measured, not imagined:</p>
+      <ul>
+        <li><strong>The model picks; the tool verifies; the app renders.</strong> Judgment
+        stays with the agent, deterministic checks move to code, and the display can only
+        ever show verified output. Every earlier design that let the search result render
+        directly eventually displayed a piece the shopper's words ruled out.</li>
+        <li><strong>Named materials ride as verbatim facet filters.</strong> Query words
+        match titles, and titles say "gold over sterling silver" about pieces that are
+        neither. The vocabulary lives in the tool description, and the instructions bind
+        the agent to copy it.</li>
+        <li><strong>The requirement's source is the shopper's own message.</strong> A
+        model-quoted requirement field measured 8 percent compliance; reading the message
+        text made enforcement structural rather than aspirational.</li>
+        <li><strong>One search per turn.</strong> A single query renders; several render
+        nothing. The shopper's next word or chip tap takes the search deeper, which keeps
+        the agent consultative instead of prescriptive.</li>
+      </ul>
+      <p>When the prompts change, the whole prompt is read and rewritten as one: appended
+      patches accrete contradictions, and the instructions and system prompt are versioned
+      together with the tool sheet they describe. The complete current texts are in
+      <a href="./appendix-prompts.html">Prompts and configuration</a>, and the promotion
+      path from a tested change to production is in <a href="./adopting.html">Adopting
+      it</a>.</p>
+
+    </div>
+
+    <nav class="pager" aria-label="Page navigation">
+      <div class="cell">
+        <span class="dir">Previous</span>
+        <a href="./architecture.html">Architecture and data flow</a>
+      </div>
+      <div class="cell">
+        <span class="dir">Next</span>
+        <a href="./examples.html">Examples and walkthrough</a>
+      </div>
+    </nav>
+
+    <p class="footer-note">About this page: written 2026-10-26 against the live agent
+    configuration (production agent <code>0bdf59fe</code>, model
+    <code>claude-sonnet-5</code>, guardrail classifier <code>gpt-5.6-luna</code>). Every
+    section summary matches the verbatim texts in the appendix. Served from
+    <code>app/public/docs/</code>; contains no keys or secrets.</p>
+  </main>
+
+  <aside class="toc-rail" aria-label="On this page">
+    <h3>On this page</h3>
+    <ul id="toc">
+      <li><a href="#identity">What the agent is</a></li>
+      <li><a href="#tools">The three tools</a></li>
+      <li><a href="#system-prompt">The system prompt</a></li>
+      <li><a href="#instructions">The agent instructions</a></li>
+      <li><a href="#guardrail">The guardrail</a></li>
+      <li><a href="#config">The configuration</a></li>
+      <li><a href="#logic">Why it is shaped this way</a></li>
+    </ul>
+  </aside>
+
+</div>
+
+<script>
+(function () {
+  var tocLinks = document.querySelectorAll('#toc a');
+  if (tocLinks.length && 'IntersectionObserver' in window) {
+    var map = {};
+    tocLinks.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          tocLinks.forEach(function (a) { a.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-70px 0px -60% 0px' });
+    document.querySelectorAll('.content h2[id]').forEach(function (h) { obs.observe(h); });
+  }
+})();
+</script>
+</body>
+</html>

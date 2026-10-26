@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta http-equiv="cache-control" content="no-cache">
-<title>JTV Concierge documentation</title>
-<meta name="description" content="What the JTV Concierge is, how it works, and how to look after it. Written for the JTV development, merchandising and admin teams.">
+<title>The package</title>
+<meta name="description" content="An agentic commerce experience for jewelry retail, built on Algolia: what is in the package, what it does, and how this documentation is organized.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap">
 <link rel="stylesheet" href="./docs.css">
 </head>
 <body>
@@ -14,262 +17,189 @@
 
 <header class="docs-header">
   <div class="brand">
-    <span class="mark">JTV</span>
-    <span class="desc">Concierge documentation</span>
+    <img src="./assets/algolia-logo.svg" alt="Algolia">
+    <span class="divider"></span>
+    <span class="desc">Agentic commerce, a reference build</span>
   </div>
-  <a class="to-shop" href="/">Open the shop</a>
+  <a class="to-shop" href="/">Open the storefront</a>
 </header>
 
 <div class="docs-layout">
 
   <aside class="docs-sidebar" aria-label="Documentation navigation">
     <details open>
-      <summary class="side-summary">All pages</summary>
+      <summary class="side-summary">Chapters</summary>
       <nav class="docs-nav" id="docnav">
         <h3>Start here</h3>
         <ul>
-          <li><a href="./index.html" aria-current="page">What is the Concierge?</a></li>
-          <li><a href="./architecture.html">How the Concierge works</a></li>
+          <li><a href="./index.html" aria-current="page"><span class="num">1</span>The package</a></li>
+          <li><a href="./experience.html"><span class="num">2</span>The experience</a></li>
         </ul>
-        <h3>For developers</h3>
+        <h3>How it works</h3>
         <ul>
-          <li><span class="soon">The three tools, explained <span class="pill">soon</span></span></li>
-          <li><span class="soon">The code, file by file <span class="pill">soon</span></span></li>
-          <li><span class="soon">Safety checks and error messages <span class="pill">soon</span></span></li>
-          <li><span class="soon">Running and changing the system <span class="pill">soon</span></span></li>
+          <li><a href="./architecture.html"><span class="num">3</span>Architecture and data flow</a></li>
+          <li><a href="./agent.html"><span class="num">4</span>The agent</a></li>
+          <li><a href="./examples.html"><span class="num">5</span>Examples and walkthrough</a></li>
         </ul>
-        <h3>For merchandisers</h3>
+        <h3>Adopt it</h3>
         <ul>
-          <li><span class="soon">The catalogue behind the Concierge <span class="pill">soon</span></span></li>
-          <li><span class="soon">What it can and cannot filter <span class="pill">soon</span></span></li>
-        </ul>
-        <h3>For administrators</h3>
-        <ul>
-          <li><span class="soon">Who can do what <span class="pill">soon</span></span></li>
-          <li><span class="soon">Costs and speed <span class="pill">soon</span></span></li>
-          <li><span class="soon">Shopper data and privacy <span class="pill">soon</span></span></li>
-          <li><span class="soon">Approvals: who decides what <span class="pill">soon</span></span></li>
-          <li><span class="soon">The old system, now replaced <span class="pill">soon</span></span></li>
+          <li><a href="./adopting.html"><span class="num">6</span>Adopting it</a></li>
         </ul>
         <h3>Reference</h3>
         <ul>
-          <li><span class="soon">Words this guide uses <span class="pill">soon</span></span></li>
-          <li><span class="soon">Decisions already made, and why <span class="pill">soon</span></span></li>
+          <li><a href="./appendix-prompts.html"><span class="num">7</span>Prompts and configuration</a></li>
         </ul>
-        <p class="side-empty">No pages match that filter.</p>
       </nav>
     </details>
   </aside>
 
   <main id="main" class="docs-main">
     <nav class="crumbs" aria-label="Breadcrumb">
-      <span class="here">Start here</span>
+      <a href="./index.html">Docs</a><span class="sep">/</span><span class="here">The package</span>
     </nav>
 
-    <header class="land-head page-head">
-      <h1>JTV Concierge documentation</h1>
-      <p class="lede">This guide explains the Concierge, the shopping assistant built into
-      the JTV website: what it is, how it works, and how your team looks after it. Start
-      with who it is for and what it covers, then meet the Concierge itself.</p>
+    <header class="page-head">
+      <h1>The package</h1>
+      <p class="lede">This is documentation for an agentic commerce experience for jewelry
+      retail: a conversational shopping assistant that discovers, verifies and explains real
+      products from a live catalog. It is built on Algolia and shown end to end on a working
+      storefront, so every claim in these chapters can be checked against a running system.</p>
     </header>
 
     <div class="content">
 
-      <h2 id="who">Who this guide is for <a class="anchor" href="#who" aria-label="Link to this section">#</a></h2>
-      <div class="tracks">
-        <section class="track" aria-labelledby="track-dev">
-          <h3 id="track-dev">Developers</h3>
-          <p class="who">Build, change, deploy and diagnose the system.</p>
-          <ul>
-            <li>How the pieces fit together</li>
-            <li>What each tool does and where its code lives</li>
-            <li>What the safety checks are and what they catch</li>
-            <li>How to change things without breaking them</li>
-          </ul>
-          <p class="first">Start with: <a href="./architecture.html">How the Concierge works</a></p>
-        </section>
-        <section class="track" aria-labelledby="track-merch">
-          <h3 id="track-merch">Merchandisers</h3>
-          <p class="who">Run the catalogue the Concierge sells from.</p>
-          <ul>
-            <li>What the Concierge can and cannot filter</li>
-            <li>How product data reaches the screen</li>
-            <li>Why the catalogue is read-only from this system</li>
-          </ul>
-          <p class="first">Start with: The catalogue behind the Concierge (soon)</p>
-        </section>
-        <section class="track" aria-labelledby="track-admin">
-          <h3 id="track-admin">Administrators</h3>
-          <p class="who">Own access, cost, data and decisions.</p>
-          <ul>
-            <li>Who can change what, and who approves it</li>
-            <li>What the system costs to run</li>
-            <li>Where shopper conversations are kept</li>
-          </ul>
-          <p class="first">Start with: Who can do what (soon)</p>
-        </section>
-      </div>
-
-      <h2 id="contents">What is in this guide <a class="anchor" href="#contents" aria-label="Link to this section">#</a></h2>
-      <p>This guide is being written now, page by page. Two pages are ready; the rest
-      follow in the order listed. Pages about how the Concierge talks are written last,
-      because its instructions are being improved at the same time.</p>
-      <div class="table-wrap page-index">
+      <h2 id="looking-at">What you are looking at <a class="anchor" href="#looking-at">#</a></h2>
+      <p>A shopper opens the storefront, taps <strong>Ask JTV</strong> in the search bar, and
+      describes what they want in ordinary words. A conversational agent interprets the
+      request, searches a live product catalog, chooses the pieces worth showing, verifies
+      every one of them, and replies beside a shelf of real product tiles with real prices.
+      The shopper narrows with a tap, asks care and policy questions, and links through to
+      product pages. Nothing in that sentence is scripted: the agent composes every reply,
+      and the application enforces every fact.</p>
+      <p>The package has four parts:</p>
+      <div class="table-wrap">
         <table class="data">
-          <thead><tr><th>Page</th><th>For</th><th>Status</th></tr></thead>
+          <thead><tr><th>Part</th><th>What it is</th><th>Where it runs</th></tr></thead>
           <tbody>
-            <tr><td><a href="./index.html">What is the Concierge?</a></td><td>Everyone</td><td>Ready</td></tr>
-            <tr><td><a href="./architecture.html">How the Concierge works</a></td><td>Everyone, then developers</td><td>Ready</td></tr>
-            <tr><td>The three tools, explained</td><td>Developers</td><td>Next</td></tr>
-            <tr><td>The code, file by file</td><td>Developers</td><td>Planned</td></tr>
-            <tr><td>Safety checks and error messages</td><td>Developers</td><td>Planned</td></tr>
-            <tr><td>Running and changing the system</td><td>Developers, admins</td><td>Planned</td></tr>
-            <tr><td>The catalogue behind the Concierge</td><td>Merchandisers</td><td>Planned</td></tr>
-            <tr><td>What it can and cannot filter</td><td>Merchandisers</td><td>Planned</td></tr>
-            <tr><td>Who can do what</td><td>Administrators</td><td>Planned</td></tr>
-            <tr><td>Costs and speed</td><td>Administrators</td><td>Planned</td></tr>
-            <tr><td>Shopper data and privacy</td><td>Administrators</td><td>Planned</td></tr>
-            <tr><td>Approvals: who decides what</td><td>Administrators</td><td>Planned</td></tr>
-            <tr><td>The old system, now replaced</td><td>Administrators</td><td>Planned</td></tr>
-            <tr><td>How the Concierge should talk</td><td>Everyone</td><td>Waits for the new instructions</td></tr>
-            <tr><td>Words this guide uses (glossary)</td><td>Everyone</td><td>Planned</td></tr>
-            <tr><td>Decisions already made, and why</td><td>Everyone</td><td>Planned</td></tr>
+            <tr><td><strong>The Concierge agent</strong></td><td>An AI agent with its instructions, guardrail and tool declarations, hosted by Algolia's Agent Studio. It owns every word the shopper reads.</td><td>Agent Studio</td></tr>
+            <tr><td><strong>The storefront</strong></td><td>The shopping site with the conversation panel, product tiles, narrowing chips and product pages.</td><td>The merchant's website</td></tr>
+            <tr><td><strong>The data</strong></td><td>A product catalog, a jewelry-education blog corpus and a help-content corpus, each a separate search index with its own contract.</td><td>The Algolia platform</td></tr>
+            <tr><td><strong>The tool layer</strong></td><td>Three tools that connect the agent to the data: a native search tool, plus two client tools the storefront executes to verify products and read fresh facts.</td><td>Platform and browser</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h2 id="what">What is the Concierge? <a class="anchor" href="#what" aria-label="Link to this section">#</a></h2>
-      <p>The Concierge is the shopping assistant built into the JTV website. A shopper
-      describes what they are looking for in their own words. The Concierge asks a helpful
-      question when that makes sense, searches the live JTV catalogue, and shows real
-      pieces with their prices and stock.</p>
-      <p>It is an AI agent hosted by Algolia. That means it is not a menu and not a set of
-      canned answers: it reads each shopper's request, decides what to do next, and writes
-      its own replies in JTV's voice. Everything it is allowed to say and do is written in
-      its instructions, which live in Algolia's Agent Studio dashboard.</p>
-
-      <h2 id="promise">What it does for a shopper <a class="anchor" href="#promise" aria-label="Link to this section">#</a></h2>
-      <p>A shopper can say things like "I'm looking for an anniversary gift for my wife"
-      or "show me gold hoop earrings". The Concierge talks it through: it asks who the
-      gift is for when that matters, explains jewellery terms in plain language, and
-      shows a first set of real pieces rather than asking question after question. Shoppers
-      can save pieces they like, compare them side by side, and ask for education, such as
-      what a pavé setting is, drawn from JTV's own help and blog content.</p>
-      <p>Two promises sit underneath everything it says. First, every product, price and
-      stock claim comes from the live catalogue; the Concierge does not invent pieces or
-      make up availability. Second, the Concierge is honest about limits: if it cannot do
-      something, such as place an order or check today's TV schedule, it says so and
-      points the shopper to what it can do.</p>
-
-      <h2 id="turn">How a question becomes an answer <a class="anchor" href="#turn" aria-label="Link to this section">#</a></h2>
-      <p>Three things work together: the shopper, the JTV website, and the Concierge
-      itself. Behind the Concierge sits the catalogue, the live product data every answer
-      is grounded in. One exchange flows like this:</p>
       <figure class="figure">
-        <svg viewBox="0 0 960 500" role="img" aria-labelledby="maptitle mapdesc" xmlns="http://www.w3.org/2000/svg">
-          <title id="maptitle">One shopper exchange, step by step</title>
-          <desc id="mapdesc">A sequence diagram with four lanes: the Shopper, the JTV website, the Concierge agent, and the catalogue. Step 1: the shopper asks for something in the page. Step 2: the website passes the request to the Concierge. Step 3: the Concierge searches the live catalogue. Step 4: the Concierge asks the website to check its candidate pieces. Step 5: the website looks up each piece: price, stock, details. Step 6: the website returns only the pieces that pass. Step 7: the Concierge writes the answer and a safety check reviews it. Step 8: the shopper sees the reply and the product cards.</desc>
-          <defs>
-            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="#454545"/>
-            </marker>
-          </defs>
-          <style>
-            .lane-h { fill: #fff; stroke: #454545; stroke-width: 1.2; }
-            .lane-app { fill: #eaf4f8; stroke: #0076a9; stroke-width: 1.4; }
-            .lane-agent { fill: #f3f3f3; stroke: #0076a9; stroke-width: 1.6; }
-            .lane-idx { fill: #fff; stroke: #454545; stroke-width: 1.2; stroke-dasharray: 5 4; }
-            .life { stroke: #bbb; stroke-width: 1; stroke-dasharray: 4 4; }
-            text { font-family: Lato, Arial, sans-serif; fill: #454545; }
-            .t { font-size: 13px; font-weight: 700; }
-            .sub { font-size: 10.5px; fill: #707070; }
-            .lbl { font-size: 12px; }
-            .num { font-weight: 700; fill: #0076a9; }
-            .flow { stroke: #454545; stroke-width: 1.4; marker-end: url(#arr); }
-          </style>
-          <rect class="lane-h" x="20" y="16" width="130" height="52" rx="6"/>
-          <text class="t" x="85" y="38" text-anchor="middle">Shopper</text>
-          <text class="sub" x="85" y="56" text-anchor="middle">sees only the page</text>
-          <rect class="lane-app" x="210" y="16" width="220" height="52" rx="6"/>
-          <text class="t" x="320" y="38" text-anchor="middle">JTV website</text>
-          <text class="sub" x="320" y="56" text-anchor="middle">shows products, checks every piece</text>
-          <rect class="lane-agent" x="490" y="16" width="220" height="52" rx="6"/>
-          <text class="t" x="600" y="38" text-anchor="middle">The Concierge</text>
-          <text class="sub" x="600" y="56" text-anchor="middle">the AI agent that answers</text>
-          <rect class="lane-idx" x="770" y="16" width="170" height="52" rx="6"/>
-          <text class="t" x="855" y="38" text-anchor="middle">The catalogue</text>
-          <text class="sub" x="855" y="56" text-anchor="middle">live product data, read-only</text>
-          <line class="life" x1="85" y1="68" x2="85" y2="470"/>
-          <line class="life" x1="320" y1="68" x2="320" y2="470"/>
-          <line class="life" x1="600" y1="68" x2="600" y2="470"/>
-          <line class="life" x1="855" y1="68" x2="855" y2="470"/>
-          <line class="flow" x1="85" y1="104" x2="316" y2="104"/>
-          <text class="lbl" x="96" y="96"><tspan class="num">1</tspan>  The shopper asks for something</text>
-          <line class="flow" x1="320" y1="150" x2="596" y2="150"/>
-          <text class="lbl" x="348" y="142"><tspan class="num">2</tspan>  The website passes the request on</text>
-          <line class="flow" x1="600" y1="196" x2="851" y2="196"/>
-          <text class="lbl" x="612" y="188"><tspan class="num">3</tspan>  The Concierge searches the catalogue</text>
-          <line class="flow" x1="600" y1="242" x2="324" y2="242"/>
-          <text class="lbl" x="340" y="234"><tspan class="num">4</tspan>  It asks the website to check candidate pieces</text>
-          <line class="flow" x1="320" y1="288" x2="851" y2="288"/>
-          <text class="lbl" x="386" y="280"><tspan class="num">5</tspan>  The website looks up each piece</text>
-          <line class="flow" x1="320" y1="334" x2="596" y2="334"/>
-          <text class="lbl" x="388" y="326"><tspan class="num">6</tspan>  Only pieces that pass come back</text>
-          <line class="flow" x1="600" y1="380" x2="324" y2="380"/>
-          <text class="lbl" x="348" y="372"><tspan class="num">7</tspan>  The answer is written, then safety-checked</text>
-          <line class="flow" x1="320" y1="426" x2="89" y2="426"/>
-          <text class="lbl" x="124" y="418"><tspan class="num">8</tspan>  The shopper sees reply and cards</text>
-        </svg>
-        <figcaption class="figcap">The shopper only ever touches the page. Everything else
-        is a conversation between the website and the Concierge, and the catalogue is
-        read, never changed.</figcaption>
+        <img src="./assets/home.jpg" alt="The storefront home page with the Ask JTV entry point in the search bar and the Concierge product shelf" class="shot">
+        <figcaption class="figcap">The storefront. The Concierge opens from the
+        <strong>Ask JTV</strong> chip in the search bar; the shelf below is the same
+        catalog the agent searches, read-only.</figcaption>
       </figure>
-      <p>The same eight steps, in words:</p>
-      <ol>
-        <li>The shopper types what they want into the chat on the JTV website.</li>
-        <li>The website passes the message to the Concierge, and the reply starts
-            streaming back while it is still being written.</li>
-        <li>When the Concierge needs products, it searches the live catalogue. It can
-            narrow by price band, category, material and more.</li>
-        <li>The search results themselves become the display: the pieces the search
-            returned are the product tiles, and the catalogue's facet counts become
-            the selectable narrowing options.</li>
-        <li>Before a tile shows, the website re-checks its record: in stock, priced,
-            photographed, and not a same-design twin of a tile already showing.</li>
-        <li>The Concierge writes its reply from those results in JTV's voice. A safety
-            check then reviews what it wrote; anything that breaks the rules is replaced
-            before it stays on screen.</li>
-        <li>The shopper sees the answer next to the approved product cards.</li>
-      </ol>
+
+      <h2 id="who">Who each chapter is for <a class="anchor" href="#who">#</a></h2>
+      <div class="tracks">
+        <section class="track">
+          <h3>Business readers</h3>
+          <p class="who">Evaluating what this experience does for shoppers.</p>
+          <ul>
+            <li>What the agent can and cannot do</li>
+            <li>How a shopping conversation actually flows</li>
+            <li>What adopting the package involves</li>
+          </ul>
+          <p class="first">Start with: <a href="./experience.html">The experience</a></p>
+        </section>
+        <section class="track">
+          <h3>Engineers</h3>
+          <p class="who">Building, changing or integrating the system.</p>
+          <ul>
+            <li>The architecture and every data flow</li>
+            <li>Each tool's contract and executor</li>
+            <li>The full prompts and configuration</li>
+          </ul>
+          <p class="first">Start with: <a href="./architecture.html">Architecture and data flow</a></p>
+        </section>
+        <section class="track">
+          <h3>Operators</h3>
+          <p class="who">Running the agent and the catalog day to day.</p>
+          <ul>
+            <li>How the prompts are organized and why</li>
+            <li>What the guardrail catches and misses</li>
+            <li>How changes ship safely</li>
+          </ul>
+          <p class="first">Start with: <a href="./agent.html">The agent</a></p>
+        </section>
+      </div>
+
+      <h2 id="capabilities">What the experience does <a class="anchor" href="#capabilities">#</a></h2>
+      <ul>
+        <li><strong>Conversational discovery.</strong> The shopper describes what they want;
+        the agent searches the live catalog and shows a first cut of real pieces, then narrows
+        through conversation rather than forms.</li>
+        <li><strong>Curated, verified shelves.</strong> The agent picks the pieces to show;
+        the application re-checks every pick against the actual catalog record (exists, in
+        stock, priced, photographed, not a duplicate design, matches the named material or
+        stone) before anything renders. A piece that fails a check can never appear.</li>
+        <li><strong>Tap-to-narrow chips.</strong> After a search, the agent chooses the
+        narrowing options worth showing; each chip tap refines the results in place, one
+        level at a time.</li>
+        <li><strong>Education and policy answers.</strong> Care and how-to questions draw on
+        a reviewed blog corpus; returns, shipping and account questions draw on a reviewed
+        help corpus. Both cite their source page.</li>
+        <li><strong>Honest boundaries.</strong> The agent never claims an order, a cart
+        change, a delivery date or a live inventory check, and says plainly what it cannot
+        do.</li>
+      </ul>
+
+      <h2 id="boundaries">What it deliberately does not do <a class="anchor" href="#boundaries">#</a></h2>
+      <p>The catalog is read-only to this system: no record or index setting can be changed
+      by the agent or the application. There is no cart, checkout, order or account access
+      in the agent's tool set, and the instructions forbid claiming any. When the catalog
+      lacks something the shopper asked for, the agent says so rather than showing
+      something close.</p>
+
+      <h2 id="map">How this documentation is organized <a class="anchor" href="#map">#</a></h2>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Chapter</th><th>Covers</th></tr></thead>
+          <tbody>
+            <tr><td><a href="./experience.html">2. The experience</a></td><td>The UI: the welcome, a shopping turn, tiles, chips, refinement, with screenshots.</td></tr>
+            <tr><td><a href="./architecture.html">3. Architecture and data flow</a></td><td>The components, the server routes, and one turn traced end to end in both directions.</td></tr>
+            <tr><td><a href="./agent.html">4. The agent</a></td><td>The model, the three tools, the system prompt and instructions section by section, the guardrail, the configuration.</td></tr>
+            <tr><td><a href="./examples.html">5. Examples and walkthrough</a></td><td>A real turn stepped through, chip refinement, and the worked scenarios the prompts teach.</td></tr>
+            <tr><td><a href="./adopting.html">6. Adopting it</a></td><td>What another site needs: the components, the data contracts, the integration steps, what is reusable.</td></tr>
+            <tr><td><a href="./appendix-prompts.html">7. Prompts and configuration</a></td><td>The complete system prompt, agent instructions, tool descriptions and guardrail configuration, verbatim.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
 
     <nav class="pager" aria-label="Page navigation">
       <div class="cell">
-        <span class="dir">Next page</span>
-        <a href="./architecture.html">How the Concierge works</a>
+        <span class="dir">Next chapter</span>
+        <a href="./experience.html">The experience</a>
       </div>
       <div class="cell">
-        <span class="dir">Also useful</span>
-        <a href="./architecture.html#pieces">The pieces of the system</a>
+        <span class="dir">Deepest chapter</span>
+        <a href="./agent.html">The agent</a>
       </div>
     </nav>
 
-    <p class="footer-note">About this page: updated 2026-10-22 against the system as it
-    stands today (website source on branch <code>main</code>, Concierge agent
-    <code>8129ad66</code>, instruction text <code>b54ffc95</code>). These identifiers are
-    recorded so future readers can match this page to the exact version it described.
-    Served from <code>app/public/docs/</code>; not indexed by search engines until
-    the deploy decision; contains no keys or secrets.</p>
+    <p class="footer-note">About this page: written 2026-10-26 against the system as it
+    runs today (storefront <code>main</code>, Concierge agent <code>0bdf59fe</code>,
+    model <code>claude-sonnet-5</code>). Identifiers are recorded so future readers can
+    match this page to the exact version it described. Served from
+    <code>app/public/docs/</code>; contains no keys or secrets.</p>
   </main>
 
   <aside class="toc-rail" aria-label="On this page">
     <h3>On this page</h3>
     <ul id="toc">
-      <li><a href="#who">Who this guide is for</a></li>
-      <li><a href="#contents">What is in this guide</a></li>
-      <li><a href="#what">What is the Concierge?</a></li>
-      <li><a href="#promise">What it does for a shopper</a></li>
-      <li><a href="#turn">How a question becomes an answer</a></li>
+      <li><a href="#looking-at">What you are looking at</a></li>
+      <li><a href="#who">Who each chapter is for</a></li>
+      <li><a href="#capabilities">What the experience does</a></li>
+      <li><a href="#boundaries">What it does not do</a></li>
+      <li><a href="#map">How this is organized</a></li>
     </ul>
   </aside>
 

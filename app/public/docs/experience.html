@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta http-equiv="cache-control" content="no-cache">
+<title>The experience</title>
+<meta name="description" content="The shopper-facing experience: the welcome, a shopping turn from the shopper's own words to verified tiles, the narrowing chips, and the honest boundaries.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="./docs.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="docs-header">
+  <div class="brand">
+    <img src="./assets/algolia-logo.svg" alt="Algolia">
+    <span class="divider"></span>
+    <span class="desc">Agentic commerce, a reference build</span>
+  </div>
+  <a class="to-shop" href="/">Open the storefront</a>
+</header>
+
+<div class="docs-layout">
+
+  <aside class="docs-sidebar" aria-label="Documentation navigation">
+    <details open>
+      <summary class="side-summary">Chapters</summary>
+      <nav class="docs-nav" id="docnav">
+        <h3>Start here</h3>
+        <ul>
+          <li><a href="./index.html"><span class="num">1</span>The package</a></li>
+          <li><a href="./experience.html" aria-current="page"><span class="num">2</span>The experience</a></li>
+        </ul>
+        <h3>How it works</h3>
+        <ul>
+          <li><a href="./architecture.html"><span class="num">3</span>Architecture and data flow</a></li>
+          <li><a href="./agent.html"><span class="num">4</span>The agent</a></li>
+          <li><a href="./examples.html"><span class="num">5</span>Examples and walkthrough</a></li>
+        </ul>
+        <h3>Adopt it</h3>
+        <ul>
+          <li><a href="./adopting.html"><span class="num">6</span>Adopting it</a></li>
+        </ul>
+        <h3>Reference</h3>
+        <ul>
+          <li><a href="./appendix-prompts.html"><span class="num">7</span>Prompts and configuration</a></li>
+        </ul>
+      </nav>
+    </details>
+  </aside>
+
+  <main id="main" class="docs-main">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="./index.html">Docs</a><span class="sep">/</span><span class="here">The experience</span>
+    </nav>
+
+    <header class="page-head">
+      <h1>The experience</h1>
+      <p class="lede">What a shopper actually touches: the way in, the welcome, a shopping
+      turn from the shopper's own words to a verified shelf of pieces, and the narrowing
+      chips that take the search deeper. Everything on this page is shown on the live
+      storefront.</p>
+    </header>
+
+    <div class="content">
+
+      <h2 id="entry">How a shopper starts <a class="anchor" href="#entry">#</a></h2>
+      <p>The Concierge opens from the <strong>Ask JTV</strong> chip inside the site search
+      bar. A shopper can type a site search as usual, or tap the chip to hand their words to
+      the Concierge instead. There is no separate app, no login and no install.</p>
+
+      <h2 id="welcome">The welcome <a class="anchor" href="#welcome">#</a></h2>
+      <p>The first view offers starter questions as tappable chips. The pool behind them is
+      grounded in aggregate search demand from the storefront's own analytics, and the set
+      is rebuilt on purpose: nine chips per set, never fewer than six, mixed across gift and
+      occasion asks, discovery, brands, budget and service so consecutive sets read
+      differently. Tapping a chip sends the question as if the shopper had typed it.</p>
+
+      <figure class="figure">
+        <img src="./assets/welcome.png" alt="The Concierge panel open on the storefront with starter question chips" class="shot">
+        <figcaption class="figcap">The welcome view. The chips open conversations, not
+        just searches: gift asks sit next to discovery and service asks.</figcaption>
+      </figure>
+
+      <h2 id="turn">A shopping turn <a class="anchor" href="#turn">#</a></h2>
+      <p>A shopper says what they want in their own words. The agent answers in three moves:
+      an opening line that acknowledges the request, one line that carries what the tiles
+      cannot (how it read the request, what the category runs deep in), and one question
+      that moves the search forward. Beside the text sit the product tiles and the narrowing
+      chips. The tiles carry every name and price; the reply itself names no piece and
+      quotes no count.</p>
+
+      <figure class="figure">
+        <img src="./assets/shopping-turn.png" alt="A completed shopping turn: the reply beside nine opal earring tiles and metal purity chips" class="shot">
+        <figcaption class="figcap">A real turn. The shopper asked for opal earrings; the
+        reply reads the request, describes the spread in plain words, and closes with one
+        question. Nine verified tiles and five purity chips render beside it.</figcaption>
+      </figure>
+
+      <h3 id="tiles">The tiles <a class="anchor" href="#tiles">#</a></h3>
+      <p>Every tile is a real catalog record: image, name and price. Three guarantees sit
+      under the shelf. First, the agent chose these pieces; the search result alone never
+      renders. Second, the application verified each pick against the piece's actual record
+      before it rendered: it exists, it is in stock, it is priced, it is photographed, and
+      it is not a same-design twin of a tile already showing. Third, a full shelf never
+      dips below six tiles when the catalog can fill it: if verification leaves the shelf
+      thin, the application backfills from the same search, and if that is still thin, it
+      runs one more facet-filtered search itself. The shopper sees only pieces that passed,
+      and never a tile the agent described but that did not render.</p>
+
+      <h3 id="chips">The narrowing chips <a class="anchor" href="#chips">#</a></h3>
+      <p>Under the reply sit the narrowing options the agent chose for this search: the
+      facets that genuinely split the results, shown with their verbatim catalog values,
+      most results first, at most six to a row. The first level needs no label; its values
+      are self-evident. A tap refines the search inside the same turn: the next level's
+      values come from the refinement's own counts, computed within the selection, exactly
+      like guided navigation. A back control returns to the previous level.</p>
+
+      <figure class="figure">
+        <img src="./assets/chip-refine.png" alt="The same turn after tapping the Sterling chip, showing the refined tile set" class="shot">
+        <figcaption class="figcap">The same turn after tapping <strong>Sterling</strong>.
+        The shelf re-rendered to the pieces that match, computed within the
+        selection.</figcaption>
+      </figure>
+
+      <h2 id="answers">Education and policy answers <a class="anchor" href="#answers">#</a></h2>
+      <p>Care questions ("how do I clean my gold chain?") are answered from a reviewed blog
+      corpus, in short plain paragraphs, with a link to the article the answer came from.
+      Service questions ("how do returns work?") are answered from a reviewed help corpus
+      and are formatted for a quick scan: the key rule with a short label, the steps as a
+      numbered list, the caveats, and the link. Every mechanic comes from the retrieved
+      page; where the page is silent, the agent says so rather than filling the gap from
+      general knowledge.</p>
+
+      <h2 id="limits">The boundaries the shopper feels <a class="anchor" href="#limits">#</a></h2>
+      <p>The agent speaks as the store, in the first person, and never hides the system
+      from the shopper in the other direction: it will not pretend to place an order, check
+      a delivery date, read today's TV schedule or guarantee a ring size. It explains what
+      it cannot do and offers the nearest thing it can. If a search comes back thin, it
+      says how few and offers to widen rather than padding the shelf. Prices are USD, and a
+      stated budget is a ceiling, never a target.</p>
+
+    </div>
+
+    <nav class="pager" aria-label="Page navigation">
+      <div class="cell">
+        <span class="dir">Previous</span>
+        <a href="./index.html">The package</a>
+      </div>
+      <div class="cell">
+        <span class="dir">Next</span>
+        <a href="./architecture.html">Architecture and data flow</a>
+      </div>
+    </nav>
+
+    <p class="footer-note">About this page: written 2026-10-26 against the system as it
+    runs today (storefront <code>main</code>, Concierge agent <code>0bdf59fe</code>,
+    model <code>claude-sonnet-5</code>). The screenshots are captured from the production
+    storefront; identifiers are recorded so future readers can match this page to the
+    exact version it described. Served from <code>app/public/docs/</code>; contains no
+    keys or secrets.</p>
+  </main>
+
+  <aside class="toc-rail" aria-label="On this page">
+    <h3>On this page</h3>
+    <ul id="toc">
+      <li><a href="#entry">How a shopper starts</a></li>
+      <li><a href="#welcome">The welcome</a></li>
+      <li><a href="#turn">A shopping turn</a></li>
+      <li><a href="#answers">Education and policy answers</a></li>
+      <li><a href="#limits">The boundaries the shopper feels</a></li>
+    </ul>
+  </aside>
+
+</div>
+
+<script>
+(function () {
+  var tocLinks = document.querySelectorAll('#toc a');
+  if (tocLinks.length && 'IntersectionObserver' in window) {
+    var map = {};
+    tocLinks.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          tocLinks.forEach(function (a) { a.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-70px 0px -60% 0px' });
+    document.querySelectorAll('.content h2[id]').forEach(function (h) { obs.observe(h); });
+  }
+})();
+</script>
+</body>
+</html>

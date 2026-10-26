@@ -1,0 +1,22 @@
+{
+  "name": "refresh_products",
+  "type": "client_side",
+  "description": "Read current catalog records for objectIDs: name, price, stock, image URL, link. Input: objectIDs (1-12). Output per ID: the fields, or not_found. Only an exact objectID match counts.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "objectIDs": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 12
+      }
+    },
+    "required": [
+      "objectIDs"
+    ]
+  },
+  "isTerminal": false
+}

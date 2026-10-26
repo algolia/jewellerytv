@@ -1,0 +1,19 @@
+{
+  "ask": "I'm shopping for a birthday gift for my mom who loves pearls",
+  "welcomeChips": [
+    "Vintage or modern?",
+    "Show me Christmas gift ideas",
+    "How do I clean my jewelry?",
+    "How do auctions work?",
+    "A watch for dad",
+    "Show me clearance jewelry",
+    "Surprise me",
+    "Help me find an anniversary gift",
+    "Show me engagement rings under $1,000"
+  ],
+  "turn": {
+    "tiles": 0,
+    "chips": [],
+    "panelText": "Move window\nJTV Concierge\nNew\n\nI'm shopping for a birthday gift for my mom who loves pearls\n\nCONCIERGE\nWhat a sweet gesture for her birthday. Pearls are such a timeless choice, they suit almost any style, from classic to modern.\nThe tool is telling me it wants the material facet to read \"Pearl\" itself, not the metal setting. Let me correct that and re-run the search with the right gemstone/material pairing.\nThis search only pulled bracelets. Since the shopper wants pearls broadly (necklaces, earrings, sets too), let me present a good spread from these verified pearl-material bracelets plus check if I should widen. Actually, I have solid in-stock pearl pieces across price points and styles. Let me present the best mix.\nWorking with JTV information\n15s\nSend"
+  }
+}

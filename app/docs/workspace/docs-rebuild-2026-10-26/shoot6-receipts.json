@@ -1,0 +1,8 @@
+{
+  "ask": "Show me opal earrings",
+  "turn": {
+    "tiles": 0,
+    "chips": [],
+    "panelText": "Move window\nJTV Concierge\nNew\n\nShow me opal earrings\n\nConcierge is working\n8s\nSend"
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "report": [
+    {
+      "page": "index.html",
+      "status": 200,
+      "imgs": [
+        {
+          "src": "./assets/algolia-logo.svg",
+          "ok": true
+        },
+        {
+          "src": "./assets/home.jpg",
+          "ok": true
+        }
+      ],
+      "cssApplied": true,
+      "h1": "The package",
+      "current": "1The package",
+      "navLinks": 7
+    },
+    {
+      "page": "experience.html",
+      "status": 200,
+      "imgs": [
+        {
+          "src": "./assets/algolia-logo.svg",
+          "ok": true
+        },
+        {
+          "src": "./assets/welcome.png",
+          "ok": true
+        },
+        {
+          "src": "./assets/shopping-turn.png",
+          "ok": true
+        },
+        {
+          "src": "./assets/chip-refine.png",
+          "ok": true
+        }
+      ],
+      "cssApplied": true,
+      "h1": "The experience",
+      "current": "2The experience",
+      "navLinks": 7
+    },
+    {
+      "page": "architecture.html",
+      "status": 200,
+      "imgs": [
+        {
+          "src": "./assets/algolia-logo.svg",
+          "ok": true
+        }
+      ],
+      "cssApplied": true,
+      "h1": "Architecture and data flow",
+      "current": "3Architecture and data flow",
+      "navLinks": 7
+    },
+    {
+      "page": "agent.html",
+      "status": 200,
+      "imgs": [
+        {
+          "src": "./assets/algolia-logo.svg",
+          "ok": true
+        }
+      ],
+      "cssApplied": true,
+      "h1": "The agent",
+      "current": "4The agent",
+      "navLinks": 7
+    },
+    {
+      "page": "examples.html",
+      "status": 200,
+      "imgs": [
+        {
+          "src": "./assets/algolia-logo.svg",
+          "ok": true
+        },
+        {
+          "src": "./assets/shopping-turn.png",
+          "ok": true
+        },
+        {
+          "src": "./assets/chip-refine.png",
+          "ok": true
+        }
+      ],
+      "cssApplied": true,
+      "h1": "Examples and walkthrough",
+      "current": "5Examples and walkthrough",
+      "navLinks": 7
+    },
+    {
+      "page": "adopting.html",
+      "status": 200,
+      "imgs": [
+        {
+          "src": "./assets/algolia-logo.svg",
+          "ok": true
+        }
+      ],
+      "cssApplied": true,
+      "h1": "Adopting it",
+      "current": "6Adopting it",
+      "navLinks": 7
+    },
+    {
+      "page": "appendix-prompts.html",
+      "status": 200,
+      "imgs": [
+        {
+          "src": "./assets/algolia-logo.svg",
+          "ok": true
+        }
+      ],
+      "cssApplied": true,
+      "h1": "Prompts and configuration",
+      "current": "7Prompts and configuration",
+      "navLinks": 7
+    }
+  ],
+  "errors": []
+}

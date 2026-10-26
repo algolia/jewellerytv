@@ -1,0 +1,30 @@
+import { chromium } from 'playwright';
+import { resolve } from 'node:path';
+const out = resolve('/Users/arijitchowdhury/Dropbox/AI-Development/jewellerytv/app/public/docs/assets');
+const SITE = 'https://jewellerytv.vercel.app';
+const ASK = 'I need a graduation gift for my niece under $300';
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+await page.route('**/*.mp4**', r => r.abort());
+await page.route('**/*.webm**', r => r.abort());
+await page.goto(SITE, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+await page.getByRole('button', { name: 'Ask JTV' }).click();
+await page.waitForTimeout(3500);
+await page.screenshot({ path: resolve(out, 'welcome.png') });
+console.log('shot welcome');
+await page.locator('#connected-concierge-input').fill(ASK);
+await page.locator('#connected-concierge-input').press('Enter');
+await page.waitForSelector('.connected-inline-card img, .connected-facet-chip', { timeout: 90000 });
+await page.waitForTimeout(4000);
+await page.screenshot({ path: resolve(out, 'shopping-turn.png') });
+console.log('shot shopping-turn');
+const chip = page.locator('.connected-facet-chip').first();
+if (await chip.count()) {
+  console.log('chip tapped:', (await chip.textContent() ?? '').trim());
+  await chip.click();
+  await page.waitForTimeout(6000);
+  await page.screenshot({ path: resolve(out, 'chip-refine.png') });
+  console.log('shot chip-refine');
+} else { console.log('NO CHIPS RENDERED'); }
+await browser.close();

@@ -6,7 +6,8 @@
 > [baseline](BASELINE.md) replaced it. Today's system is one Concierge definition in
 > development and production (development agent `8129ad66`, production agent
 > `0bdf59fe`), the native `algolia_search_index` tool plus two client tools
-> (`refresh_products`, `arrange_groups`), model `claude-sonnet-5`, and releases
+> (`present_products`, `refresh_products`; `arrange_groups` was removed on
+> 2026-10-24), model `claude-sonnet-5`, and releases
 > through `scripts/baseline/` as described in [BASELINE.md](BASELINE.md) and
 > [deployment.md](deployment.md). The repository is
 > [algolia/jewellerytv](https://github.com/algolia/jewellerytv). Agent names, agent

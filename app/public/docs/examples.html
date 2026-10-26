@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta http-equiv="cache-control" content="no-cache">
+<title>Examples and walkthrough</title>
+<meta name="description" content="A real shopping turn stepped through stage by stage, the chip refinement that follows it, and the failure scenarios the prompts teach.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="./docs.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="docs-header">
+  <div class="brand">
+    <img src="./assets/algolia-logo.svg" alt="Algolia">
+    <span class="divider"></span>
+    <span class="desc">Agentic commerce, a reference build</span>
+  </div>
+  <a class="to-shop" href="/">Open the storefront</a>
+</header>
+
+<div class="docs-layout">
+
+  <aside class="docs-sidebar" aria-label="Documentation navigation">
+    <details open>
+      <summary class="side-summary">Chapters</summary>
+      <nav class="docs-nav" id="docnav">
+        <h3>Start here</h3>
+        <ul>
+          <li><a href="./index.html"><span class="num">1</span>The package</a></li>
+          <li><a href="./experience.html"><span class="num">2</span>The experience</a></li>
+        </ul>
+        <h3>How it works</h3>
+        <ul>
+          <li><a href="./architecture.html"><span class="num">3</span>Architecture and data flow</a></li>
+          <li><a href="./agent.html"><span class="num">4</span>The agent</a></li>
+          <li><a href="./examples.html" aria-current="page"><span class="num">5</span>Examples and walkthrough</a></li>
+        </ul>
+        <h3>Adopt it</h3>
+        <ul>
+          <li><a href="./adopting.html"><span class="num">6</span>Adopting it</a></li>
+        </ul>
+        <h3>Reference</h3>
+        <ul>
+          <li><a href="./appendix-prompts.html"><span class="num">7</span>Prompts and configuration</a></li>
+        </ul>
+      </nav>
+    </details>
+  </aside>
+
+  <main id="main" class="docs-main">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="./index.html">Docs</a><span class="sep">/</span><span class="here">Examples and walkthrough</span>
+    </nav>
+
+    <header class="page-head">
+      <h1>Examples and walkthrough</h1>
+      <p class="lede">One real turn, captured from the production storefront, stepped
+      through stage by stage: what the shopper sent, what the agent built, what the tool
+      verified, and why the reply reads the way it does. Then the chip refinement that
+      followed it, and the failure scenarios the prompts teach.</p>
+    </header>
+
+    <div class="content">
+
+      <h2 id="turn">The turn: "Show me opal earrings" <a class="anchor" href="#turn">#</a></h2>
+      <p>The shopper typed five words. Here is the whole turn, with what happened at each
+      stage and which rule produced it.</p>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Stage</th><th>What happened</th><th>Which rule</th></tr></thead>
+        <tbody>
+          <tr><td>1. Send</td><td>The browser posts the message with the turn's session state: accepted facts and the chip selections live on screen (none yet, first turn).</td><td>Session state rides in turn metadata; the agent reads it as state, not evidence.</td></tr>
+          <tr><td>2. Search</td><td>The agent builds one search: query "opal earrings", no facet filters, because the shopper named a stone but no metal. The platform executes it against the in-stock product index and streams hits plus facet counts.</td><td>One search per turn; named stones ride as facet filters when a vocabulary value matches the words.</td></tr>
+          <tr><td>3. Pick</td><td>The agent chooses 12 candidate pieces from the streamed result, best first, and picks the facets worth showing as chips (metal purity split this result meaningfully).</td><td>The model curates; the search result alone never renders.</td></tr>
+          <tr><td>4. Verify</td><td><code>present_products</code> runs in the browser: requirement check (the shopper named no material, so none enforced), then per piece: exists, in stock, priced, photographed, no same-design twin. Nine pieces survive; three drop.</td><td>The tool verifies deterministically; a dropped piece can never appear.</td></tr>
+          <tr><td>5. Reply</td><td>The agent writes its answer from the verified list. Nine tiles and five purity chips render beside the text.</td><td>The reply is written from verified output only.</td></tr>
+        </tbody>
+        </table>
+      </div>
+
+      <figure class="figure">
+        <img src="./assets/shopping-turn.png" alt="The completed opal earrings turn with nine tiles and five purity chips" class="shot">
+        <figcaption class="figcap">The turn as the shopper sees it.</figcaption>
+      </figure>
+
+      <h3 id="reply">Reading the reply <a class="anchor" href="#reply">#</a></h3>
+      <p>The agent replied (verbatim, from the captured turn):</p>
+      <div class="callout">
+        <p>Opals are such a fun stone to shop, every piece shows its own play of color, so
+        no two look quite alike.</p>
+        <p>These run deep in color, white and black opal, blues, purples, even fire opal,
+        set mostly in gold over sterling silver with some solid gold and solid silver
+        pieces too.</p>
+        <p>That play-of-color is the whole appeal, each stone flashes differently in the
+        light, so pictures only tell part of the story.</p>
+        <p><strong>Is there a color or a metal tone you're drawn to, or a budget I should
+        work within?</strong></p>
+      </div>
+      <p>Every sentence demonstrates a rule from <a href="./agent.html#instructions">the
+      instructions</a>: the opening line reacts to the stone rather than announcing a
+      search; the second line carries what the tiles cannot (the breadth of the category,
+      in plain words, with no counts); the third adds the expertise a search box lacks; the
+      close is the only bold text on the screen and asks exactly one question that would
+      most change the next search. No piece is named in prose, because the tiles carry the
+      names and prices; no count is quoted; no jargon appears.</p>
+
+      <h2 id="refine">The chips, tap by tap <a class="anchor" href="#refine">#</a></h2>
+      <p>The reply's chips read <strong>Sterling, 14K, 10K, 18K, 24K</strong>: the metal
+      purity values present in this result, verbatim from the catalog, most results first,
+      five to the row. No label heads the row, because the values are self-evident.</p>
+      <p>Tapping <strong>Sterling</strong> refined the search inside the same turn: the
+      results were recomputed within the selection, the shelf re-rendered to the eight
+      pieces that matched, and the next level's options came from the refinement's own
+      counts. The conversation did not restart and the agent was not re-asked; the
+      narrowing is navigation, not a new question. A back control returns to the previous
+      level at any point.</p>
+
+      <figure class="figure">
+        <img src="./assets/chip-refine.png" alt="The turn after tapping Sterling: the refined eight-tile shelf" class="shot">
+        <figcaption class="figcap">After the Sterling tap: eight verified pieces remain,
+        computed within the selection.</figcaption>
+      </figure>
+
+      <h2 id="scenarios">The scenarios the prompts teach <a class="anchor" href="#scenarios">#</a></h2>
+      <p>The system prompt ends with three worked scenarios. They teach order and reason;
+      the agent never repeats one as a reply.</p>
+
+      <h3>A piece the shopper named</h3>
+      <p>"Is the sapphire pendant I saved still in stock?" The right move is
+      <code>refresh_products</code> with that piece's exact object ID, answered from the
+      record it returns. Searching again and presenting a similar piece as if it were the
+      same one is the failure this scenario exists to prevent: the refresh tool accepts a
+      record only when its own object ID matches the request.</p>
+
+      <h3>Results that contradict the request</h3>
+      <p>A search for a stone can return a perfume whose name contains it; a metal ask can
+      return plated pieces whose titles contain the words. The taught move is to search
+      again with the facet filter for what the shopper actually named, using the exact
+      attribute and value from the tool's vocabulary, and curate the new result. Curating a
+      contradicting piece into the display because the search returned it is the failure.
+      If the catalog has no such value, the agent says what it could not match.</p>
+
+      <h3>A rejected call</h3>
+      <p>A call can be rejected for an invented facet value or an oversized query. The
+      taught move is to correct it (the exact value the tool offered, or shorter terms) and
+      carry on silently. Resending the same failing call, or telling the shopper about the
+      retry, are both failures: the shopper sees only a working store.</p>
+
+      <h2 id="more-shapes">Shapes for other asks <a class="anchor" href="#more-shapes">#</a></h2>
+      <p>The instructions carry four full worked examples that set the shape of the other
+      conversation kinds:</p>
+      <ul>
+        <li><strong>A broad category</strong> gets one search, the tiles and chips as the
+        first cut, one line on what the category runs deep in, and an invitation to
+        narrow. Never a questionnaire, never an empty shelf, never a count.</li>
+        <li><strong>A personal gift</strong> gets the human moment first (congratulate the
+        milestone, acknowledge the reason), a first cut of classic gift pieces, and the one
+        deciding question, with the tiles and the question arriving together.</li>
+        <li><strong>A care question</strong> gets an answer in short plain paragraphs from
+        the retrieved guide, a link to it, and a close that moves shopping forward. No
+        advice the guide does not contain.</li>
+        <li><strong>A service question</strong> gets the scan-friendly structure: warm
+        opening, key rule with a short label, numbered steps with conditions, caveats, the
+        help link, one honest line about what the agent cannot do, and a forward
+        question.</li>
+      </ul>
+
+    </div>
+
+    <nav class="pager" aria-label="Page navigation">
+      <div class="cell">
+        <span class="dir">Previous</span>
+        <a href="./agent.html">The agent</a>
+      </div>
+      <div class="cell">
+        <span class="dir">Next</span>
+        <a href="./adopting.html">Adopting it</a>
+      </div>
+    </nav>
+
+    <p class="footer-note">About this page: written 2026-10-26. The walkthrough turn and
+    both screenshots were captured from the production storefront that day (agent
+    <code>0bdf59fe</code>); the quoted reply is verbatim from the captured turn. Served
+    from <code>app/public/docs/</code>; contains no keys or secrets.</p>
+  </main>
+
+  <aside class="toc-rail" aria-label="On this page">
+    <h3>On this page</h3>
+    <ul id="toc">
+      <li><a href="#turn">The turn</a></li>
+      <li><a href="#reply">Reading the reply</a></li>
+      <li><a href="#refine">The chips, tap by tap</a></li>
+      <li><a href="#scenarios">The scenarios the prompts teach</a></li>
+      <li><a href="#more-shapes">Shapes for other asks</a></li>
+    </ul>
+  </aside>
+
+</div>
+
+<script>
+(function () {
+  var tocLinks = document.querySelectorAll('#toc a');
+  if (tocLinks.length && 'IntersectionObserver' in window) {
+    var map = {};
+    tocLinks.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          tocLinks.forEach(function (a) { a.classList.remove('active'); });
+          var a = map[e.target.id];
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-70px 0px -60% 0px' });
+    document.querySelectorAll('.content h2[id]').forEach(function (h) { obs.observe(h); });
+  }
+})();
+</script>
+</body>
+</html>
