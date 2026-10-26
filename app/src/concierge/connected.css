@@ -590,7 +590,10 @@
 }
 .connected-inline-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  /* Arijit's layout law (2026-10-26): the shelf is rows of exactly three —
+   * six tiles is two rows, nine is three. Auto-fit produced 2-4 columns
+   * depending on panel width, so the floor read as a stray 4. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 .connected-inline-card {

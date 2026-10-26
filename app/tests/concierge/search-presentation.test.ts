@@ -94,11 +94,11 @@ describe('extractSearchPresentation (curation restored)', () => {
     expect(extractSearchPresentation(messages as never)).toBeNull();
   });
 
-  it('caps the tiles at eight', () => {
+  it('caps the tiles at nine (two rows of three minimum, three maximum)', () => {
     const hits = Array.from({ length: 14 }, (_, index) => hit(`h${index}`));
     const chosen = hits.map((h) => (h as { objectID: string }).objectID);
     const messages = [userMessage('q'), message('a1', [searchPart(hits), presentPart(chosen)])];
-    expect(extractSearchPresentation(messages as never)?.objectIDs).toHaveLength(8);
+    expect(extractSearchPresentation(messages as never)?.objectIDs).toHaveLength(9);
   });
 
   it('reads only the latest turn: an earlier presentation stays staged', () => {
