@@ -191,7 +191,14 @@ ${toc}
 
   const sysHtml = renderDoc(sys, { headingLevel: 3 });
   const insHtml = renderDoc(ins, { headingLevel: 3 });
-  const toolHtml = searchOverview.map(([name, desc]) => `<div class="tool-card"><h4>Index <code>${name}</code></h4><p>${esc(desc)}</p></div>`).join('\n');
+  /* Sentence bullets: the live descriptions are single paragraphs; the same
+   words, one sentence per line. "e.g." is protected from splitting. */
+const sentenceBullets = (desc) => {
+  const guarded = desc.replace(/e\.g\./g, 'e\u2026g\u2026');
+  const parts = guarded.split(/(?<=[.])\s+(?=[A-Z"('])/).map((p2) => p2.replace(/e\u2026g\u2026/g, 'e.g.').trim());
+  return `<ul>${parts.map((p2) => `<li>${esc(p2)}</li>`).join('')}</ul>`;
+};
+const toolHtml = searchOverview.map(([name, desc]) => `<div class="tool-card"><h4>Index <code>${name}</code></h4>${sentenceBullets(desc)}</div>`).join('\n');
   const guardrailHtml = guardrail.map((c) => `<div class="tool-card"><h4><code>${c.name}</code> <span class="scope-pill">${c.scope}</span></h4>
 <dl class="gr"><dt>Description</dt><dd>${esc(c.desc)}</dd><dt>Examples</dt><dd>${esc(c.ex)}</dd><dt>Fallback notice</dt><dd>${esc(c.fb)}</dd></dl></div>`).join('\n');
   const inner = `

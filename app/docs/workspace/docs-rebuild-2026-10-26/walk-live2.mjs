@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 const BASE = 'https://jewellerytv.vercel.app/docs';
-const pages = ['', '/index.html', '/experience.html', '/architecture.html', '/agent.html', '/examples.html', '/adopting.html', '/appendix-prompts.html'];
+const pages = ['', '/index.html', '/experience.html', '/architecture.html', '/agent.html', '/examples.html', '/appendix-prompts.html'];
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1419, height: 900 } });
 const bad = [];
