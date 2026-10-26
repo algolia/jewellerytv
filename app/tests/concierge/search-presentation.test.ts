@@ -370,3 +370,95 @@ describe('matchRequirement', () => {
     expect(matchRequirement('unobtainium', vocabulary)).toEqual([]);
   });
 });
+
+describe('matchRequirement brand enforcement', () => {
+  const vocabulary = {
+    values: {
+      Catalog_BrandNavigationName: [
+        'Gems En Vogue',
+        'Southwest Style by JTV',
+        'Prazana',
+        'Gold Collection Jewelers',
+      ],
+      Catalog_JewelryMaterialNavigationName: ['Gold'],
+    },
+  };
+
+  it('enforces the brand when the shopper names it', () => {
+    const matches = matchRequirement('show me Southwest style jewelry', vocabulary);
+    expect(matches[0].attribute).toBe('Catalog_BrandNavigationName');
+    expect(matches[0].values).toContain('Southwest Style by JTV');
+  });
+
+  it('matches Gems En Vogue across its own small words', () => {
+    const matches = matchRequirement('gems en vogue pieces', vocabulary);
+    expect(matches[0].attribute).toBe('Catalog_BrandNavigationName');
+    expect(matches[0].values).toContain('Gems En Vogue');
+  });
+
+  it('matches a single-word brand by its exact word', () => {
+    const matches = matchRequirement('show me prazana rings', vocabulary);
+    expect(matches[0].values).toContain('Prazana');
+  });
+
+  it('never fires a brand on one shared word like gold', () => {
+    const matches = matchRequirement('gold necklace', vocabulary);
+    expect(matches[0].attribute).toBe('Catalog_JewelryMaterialNavigationName');
+  });
+
+  it('material wins the equal-total tie over brand', () => {
+    const mixed = {
+      values: {
+        Catalog_BrandNavigationName: ['Sterling Silver Studio'],
+        Catalog_JewelryMaterialNavigationPurity: ['Sterling'],
+      },
+    };
+    const matches = matchRequirement('sterling silver', mixed);
+    expect(matches[0].attribute).toBe('Catalog_JewelryMaterialNavigationPurity');
+  });
+});
+
+describe('present_products brand enforcement', () => {
+  const vocabulary = { values: { Catalog_BrandNavigationName: ['Southwest Style by JTV'] } };
+  const record = (objectID: string, brand: string[]) => ({
+    objectID,
+    name: `Product ${objectID}`,
+    price: 125,
+    inStock: true,
+    imageUrl: 'https://example.com/a.jpg',
+    link: `/product/${objectID}`,
+    materialFields: { Catalog_BrandNavigationName: brand },
+  });
+  const fetcher = async (ids: readonly string[]) => {
+    const map = new Map();
+    for (const id of ids) {
+      if (id === 'sw') map.set(id, record(id, ['Southwest Style by JTV']));
+      else map.set(id, record(id, ['Other Line']));
+    }
+    return map;
+  };
+
+  it('drops pieces whose brand contradicts the shopper-named brand', async () => {
+    const present = createPresentProducts(fetcher, {
+      vocabulary: async () => vocabulary,
+      shopperMessage: () => 'show me Southwest style jewelry',
+    });
+    const result = await present({ objectIDs: ['sw', 'x1', 'x2'] });
+    expect(result.status).toBe('ok');
+    expect(result.objectIDs.map((i) => i.objectID)).toEqual(['sw']);
+    expect(result.dropped.map((d) => d.reason)).toEqual(['requirement_mismatch', 'requirement_mismatch']);
+    expect(result.enforced?.attribute).toBe('Catalog_BrandNavigationName');
+  });
+
+  it('skips the brand check without a shopper message', async () => {
+    const sparse = async (ids: readonly string[]) => {
+      const map = new Map();
+      for (const id of ids) map.set(id, record(id, ['Other Line']));
+      return map;
+    };
+    const present = createPresentProducts(sparse, { vocabulary: async () => vocabulary });
+    const result = await present({ objectIDs: ['x1'] });
+    expect(result.status).toBe('ok');
+    expect(result.enforced).toBeUndefined();
+  });
+});
