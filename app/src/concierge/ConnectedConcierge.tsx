@@ -1374,19 +1374,30 @@ export function ConnectedConcierge({
                     /* The preview renders the tool's VERIFIED list when it
                      * exists — never the raw stream, which bypassed every
                      * check the tool ran (the aquamarine-in-an-emerald-ask
-                     * leak). Raw hits render only before verification lands,
-                     * and deferProducts holds the block until then. */
+                     * leak). Follow-up tiles carry their raw record on the
+                     * item; streamed tiles resolve through the hit map. */
                     const hitById = new Map(entry.hits.map((raw) => {
                       const id = (raw as { objectID?: unknown }).objectID;
                       return [typeof id === 'string' ? id : '', raw] as const;
                     }));
-                    const sourceIds = entry.verified ?? entry.hits
-                      .map((raw) => (raw as { objectID?: unknown }).objectID)
-                      .filter((id): id is string => typeof id === 'string')
-                      .slice(0, 9);
+                    const sourceIds: string[] = [];
+                    const rawById = new Map<string, Record<string, unknown>>();
+                    if (entry.verified) {
+                      for (const item of entry.verified) {
+                        sourceIds.push(item.objectID);
+                        const streamed = hitById.get(item.objectID);
+                        if (streamed) rawById.set(item.objectID, streamed);
+                        else if (item.raw) rawById.set(item.objectID, item.raw);
+                      }
+                    } else {
+                      for (const raw of entry.hits) {
+                        const id = (raw as { objectID?: unknown }).objectID;
+                        if (typeof id === 'string' && !!id) sourceIds.push(id);
+                      }
+                    }
                     const preview = sourceIds
                       .slice(0, 9)
-                      .map((id) => hitById.get(id) ?? null)
+                      .map((id) => rawById.get(id) ?? null)
                       .filter((raw): raw is Record<string, unknown> => raw !== null)
                       .map((raw) => {
                         try {

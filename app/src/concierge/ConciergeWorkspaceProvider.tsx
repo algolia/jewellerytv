@@ -1,7 +1,7 @@
 import { normalizeProduct, type Product } from '../shared/catalog';
 import type { WorkspaceViewModel } from '../shared/ProductWorkspace';
 import type { WorkspaceGroup } from './workspaceResults';
-import { extractMessageAnchors, extractSearchPresentation } from './nativeResults';
+import { collectPresentRaws, extractMessageAnchors, extractSearchPresentation } from './nativeResults';
 import { createSessionStore } from './sessionStore.js';
 import { createConciergeToolRuntime } from './toolRuntime';
 import type { StorageLike } from './sessionPersistence.js';
@@ -225,6 +225,11 @@ export function createConciergeWorkspaceSession(options: {
     );
     if (!anchors.length) return new Map();
     const records = collectSearchRecords(messages);
+    /* Follow-up tiles (the shelf floor's own search) were never streamed:
+     * their raw records ride the present_products output. */
+    for (const [objectID, raw] of collectPresentRaws(messages as never)) {
+      if (!records.has(objectID)) records.set(objectID, raw);
+    }
     const staged = new Map<string, WorkspaceGroup[]>();
     for (const anchor of anchors) {
       const hydrated = await hydrateGroups(anchor.groups, records);

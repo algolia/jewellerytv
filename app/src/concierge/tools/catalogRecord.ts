@@ -22,6 +22,10 @@ export type CatalogRecord = {
    * attributes that carry values appear; this is the app's language layer
    * naming which raw fields count as product facts, not a facet whitelist. */
   materialFields: Record<string, string[]>;
+  /** The original index record, kept so a tile fetched outside the streamed
+   * search (the shelf floor's follow-up search) can still render everywhere
+   * the streamed records render. */
+  raw: Record<string, unknown>;
 };
 
 /** Which raw fields count as material, gemstone and brand facts. Our naming
@@ -85,6 +89,7 @@ export function toCatalogRecord(raw: unknown): CatalogRecord | null {
     imageUrl,
     link: `/product/${objectID}`,
     materialFields,
+    raw,
   };
 }
 

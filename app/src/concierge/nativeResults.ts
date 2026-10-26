@@ -111,13 +111,59 @@ export type MessageFacetPick = {
   messageId: string;
   pick: FacetPick;
   hits: Record<string, unknown>[];
-  /** The present_products output's verified ids for this message, in the
+  /** The present_products output's verified items for this message, in the
    * tool's order, when the tool has completed. The preview renders THESE —
    * never raw hits: raw hits bypass the requirement, twin and stock checks
    * the tool ran (measured live 2026-10-26: an aquamarine rendered in an
-   * emerald ask because the preview read the unverified stream). */
-  verified: string[] | null;
+   * emerald ask because the preview read the unverified stream). Items
+   * admitted by the floor's follow-up search carry their raw record, since
+   * they were never part of the streamed hits. */
+  verified: PresentItem[] | null;
 };
+
+/** One verified piece from the present_products output. */
+export type PresentItem = {
+  objectID: string;
+  name?: string;
+  price?: number;
+  image?: string;
+  raw?: Record<string, unknown>;
+};
+
+function readPresentItems(output: unknown): PresentItem[] | null {
+  if (!isRecord(output) || output.status !== 'ok' || !Array.isArray(output.objectIDs)) return null;
+  const items: PresentItem[] = [];
+  for (const item of output.objectIDs) {
+    if (!isRecord(item) || typeof item.objectID !== 'string' || !item.objectID) continue;
+    if (items.some((existing) => existing.objectID === item.objectID)) continue;
+    items.push({
+      objectID: item.objectID,
+      ...(typeof item.name === 'string' ? { name: item.name } : {}),
+      ...(typeof item.price === 'number' ? { price: item.price } : {}),
+      ...(typeof item.image === 'string' ? { image: item.image } : {}),
+      ...(isRecord(item.raw) ? { raw: item.raw } : {}),
+    });
+  }
+  return items;
+}
+
+/** Raw index records carried by present_products outputs — the shelf floor's
+ * follow-up tiles, which were never part of any streamed search. Merge these
+ * into a streamed records map so hydration sees one complete record set. */
+export function collectPresentRaws(messages: readonly Message[]): Map<string, Record<string, unknown>> {
+  const raws = new Map<string, Record<string, unknown>>();
+  for (const message of messages) {
+    if (message.role !== 'assistant' || !message.parts) continue;
+    for (const part of message.parts as Part[]) {
+      if (part.type !== PRESENT_TOOL) continue;
+      const items = readPresentItems(part.output);
+      for (const item of items ?? []) {
+        if (item.raw && !raws.has(item.objectID)) raws.set(item.objectID, item.raw);
+      }
+    }
+  }
+  return raws;
+}
 
 function readSearchPartFacets(
   output: Record<string, unknown>,
@@ -213,14 +259,14 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
     let multiScope = false;
     let sawSearch = false;
     let pick: string[] | null = null;
-    let verified: string[] | null = null;
+    let verified: PresentItem[] | null = null;
     for (const part of message.parts as Part[]) {
       if (typeof part.type !== 'string') continue;
       if (part.type === PRESENT_TOOL) {
         const present = readPresentInput(part.input);
         if (present?.displayFacets.length) pick = present.displayFacets;
-        const output = readPresentOutput(part.output);
-        if (output?.length) verified = output;
+        const items = readPresentItems(part.output);
+        if (items?.length) verified = items;
         continue;
       }
       if (!part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
@@ -295,8 +341,15 @@ export function extractSearchPresentation(messages: readonly Message[]): SearchP
     for (const part of assistant.parts as Part[]) {
       if (typeof part.type !== 'string') continue;
       if (part.type === PRESENT_TOOL) {
-        const present = readPresentOutput(part.output);
-        if (present?.length) chosen = present;
+        const items = readPresentItems(part.output);
+        if (items?.length) {
+          chosen = items.map((item) => item.objectID);
+          /* Follow-up tiles were never streamed: their raw record rides the
+           * output, so the cross-check below admits them like streamed ones. */
+          for (const item of items) {
+            if (item.raw && !records.has(item.objectID)) records.set(item.objectID, item.raw);
+          }
+        }
         continue;
       }
       if (!part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
@@ -317,7 +370,8 @@ export function extractSearchPresentation(messages: readonly Message[]): SearchP
       }
     }
   }
-  /* Cross-check: only pieces the streamed search actually returned may render. */
+  /* Cross-check: only pieces the tool verified — streamed, or carried whole
+   * in the verified output — may render. */
   const objectIDs = (chosen ?? []).filter((id) => records.has(id)).slice(0, MAX_SEARCH_TILES);
   if (!objectIDs.length || !queryText) return null;
   return { queryText, objectIDs, records };

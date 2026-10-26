@@ -41,7 +41,7 @@ export type PresentProductsOutput = {
   status: 'ok' | 'invalid_input' | 'empty';
   reason?: string;
   /** Verified pieces in the model's order, capped at eight. */
-  objectIDs: { objectID: string; name: string; price: number }[];
+  objectIDs: { objectID: string; name: string; price: number; image: string; raw?: Record<string, unknown> }[];
   dropped: PresentDrop[];
   displayFacets: string[];
   /** The requirement check the tool enforced, so the model and the logs can
@@ -247,14 +247,14 @@ export function createPresentProducts(
 
     const needs = [...new Set(objectIDs)];
     const records = await getRecords(needs);
-    const verified: { objectID: string; name: string; price: number }[] = [];
+    const verified: { objectID: string; name: string; price: number; image: string; raw?: Record<string, unknown> }[] = [];
     const dropped: PresentDrop[] = [];
     const seenIds = new Set<string>();
     const seenDesigns = new Set<string>();
     /* One admission path for every source — the model's picks, the streamed
      * pool, and the follow-up search all pass the identical checks in the
      * same order: requirement, stock, price, image, same-design twin. */
-    const admit = (objectID: string, record: CatalogRecord): boolean => {
+    const admit = (objectID: string, record: CatalogRecord, attachRaw = false): boolean => {
       if (enforced && !satisfies(record.materialFields, enforced)) {
         dropped.push({ objectID, reason: 'requirement_mismatch' });
         return false;
@@ -277,7 +277,16 @@ export function createPresentProducts(
         return false;
       }
       if (signature) seenDesigns.add(signature);
-      verified.push({ objectID, name: record.name, price: record.price });
+      /* The raw record rides only on follow-up tiles: they were never part of
+       * the streamed search, so the render layer needs their full record to
+       * display them beside the streamed ones. */
+      verified.push({
+        objectID,
+        name: record.name,
+        price: record.price,
+        image: record.imageUrl,
+        ...(attachRaw ? { raw: record.raw } : {}),
+      });
       return true;
     };
     for (const objectID of objectIDs) {
@@ -333,7 +342,7 @@ export function createPresentProducts(
             const record = extraRecords.get(objectID);
             if (!record) continue;
             seenIds.add(objectID);
-            if (admit(objectID, record)) backfilled += 1;
+            if (admit(objectID, record, true)) backfilled += 1;
           }
         }
       } catch {
