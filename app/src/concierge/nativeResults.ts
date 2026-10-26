@@ -111,6 +111,12 @@ export type MessageFacetPick = {
   messageId: string;
   pick: FacetPick;
   hits: Record<string, unknown>[];
+  /** The present_products output's verified ids for this message, in the
+   * tool's order, when the tool has completed. The preview renders THESE —
+   * never raw hits: raw hits bypass the requirement, twin and stock checks
+   * the tool ran (measured live 2026-10-26: an aquamarine rendered in an
+   * emerald ask because the preview read the unverified stream). */
+  verified: string[] | null;
 };
 
 function readSearchPartFacets(
@@ -207,11 +213,14 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
     let multiScope = false;
     let sawSearch = false;
     let pick: string[] | null = null;
+    let verified: string[] | null = null;
     for (const part of message.parts as Part[]) {
       if (typeof part.type !== 'string') continue;
       if (part.type === PRESENT_TOOL) {
         const present = readPresentInput(part.input);
         if (present?.displayFacets.length) pick = present.displayFacets;
+        const output = readPresentOutput(part.output);
+        if (output?.length) verified = output;
         continue;
       }
       if (!part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
@@ -246,6 +255,7 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
           ),
         },
         hits,
+        verified,
       });
   }
   return out;

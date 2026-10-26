@@ -1371,12 +1371,23 @@ export function ConnectedConcierge({
                 (facetPicks.some((p) => p.messageId === message.id) ? (
                   (() => {
                     const entry = facetPicks.find((p) => p.messageId === message.id)!;
-                    const preview = entry.hits
-                      /* The shelf floor is Arijit's standing law: at least six
-                       * tiles, nine best, in multiples of three. Four was the
-                       * chips-era preview cap and it read as a starved shelf
-                       * (measured all night, 2026-10-26). */
+                    /* The preview renders the tool's VERIFIED list when it
+                     * exists — never the raw stream, which bypassed every
+                     * check the tool ran (the aquamarine-in-an-emerald-ask
+                     * leak). Raw hits render only before verification lands,
+                     * and deferProducts holds the block until then. */
+                    const hitById = new Map(entry.hits.map((raw) => {
+                      const id = (raw as { objectID?: unknown }).objectID;
+                      return [typeof id === 'string' ? id : '', raw] as const;
+                    }));
+                    const sourceIds = entry.verified ?? entry.hits
+                      .map((raw) => (raw as { objectID?: unknown }).objectID)
+                      .filter((id): id is string => typeof id === 'string')
+                      .slice(0, 9);
+                    const preview = sourceIds
                       .slice(0, 9)
+                      .map((id) => hitById.get(id) ?? null)
+                      .filter((raw): raw is Record<string, unknown> => raw !== null)
                       .map((raw) => {
                         try {
                           return normalizeProduct(raw);
