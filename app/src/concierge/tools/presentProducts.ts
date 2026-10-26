@@ -47,6 +47,9 @@ export type PresentProductsOutput = {
   /** The requirement check the tool enforced, so the model and the logs can
    * see what was verified. */
   enforced?: EnforcedRequirement;
+  /** How many tiles came from the backfill pool rather than the model's
+   * pick — nonzero only when the model's verified list sat under the floor. */
+  backfilled?: number;
 };
 
 export type PresentProducts = (input: PresentProductsInput) => Promise<PresentProductsOutput>;
@@ -57,6 +60,11 @@ export type VocabularyLike = { values: Record<string, string[]> };
 
 const MAX_TILES = 9;
 const MIN_TOKEN_LENGTH = 4;
+/** The shelf floor Arijit set (2026-10-25): a shopping turn never shows fewer
+ * than six tiles when the search returned enough candidates to fill it —
+ * not 3, not 4. Backfill runs the same verification over the streamed
+ * search's remaining hits until the floor or the cap is met. */
+const SHELF_FLOOR = 6;
 
 const invalid = (reason: string): PresentProductsOutput => ({
   status: 'invalid_input',
@@ -173,6 +181,10 @@ export function createPresentProducts(
      * path. The tool extracts the named material/stone words itself — the
      * model is never the source of the requirement. */
     shopperMessage?: () => string | null | undefined;
+    /** The streamed search's remaining hit objectIDs for this turn, held by
+     * the app. When verification leaves the shelf under the floor, the tool
+     * backfills from here — the same checks, model never involved. */
+    searchPool?: () => readonly string[] | null | undefined;
   },
 ): PresentProducts {
   return async ({ objectIDs, displayFacets }) => {
@@ -242,8 +254,45 @@ export function createPresentProducts(
       verified.push({ objectID, name: record.name, price: record.price });
       if (verified.length >= MAX_TILES) break;
     }
+
+    /* Shelf floor: the shopper never sees 3 or 4 tiles when the search
+     * returned a bigger pool. Backfill verifies remaining streamed hits —
+     * stock, price, image, twins, and the enforced requirement — exactly as
+     * the model's picks were verified. */
+    let backfilled = 0;
+    const pool = options?.searchPool?.() ?? null;
+    if (verified.length > 0 && verified.length < SHELF_FLOOR && pool && pool.length) {
+      const extra = pool.filter((id) => typeof id === 'string' && !!id && !seenIds.has(id));
+      if (extra.length) {
+        const extraRecords = await getRecords(extra);
+        for (const objectID of extra) {
+          if (verified.length >= Math.min(SHELF_FLOOR, MAX_TILES)) break;
+          const record = extraRecords.get(objectID);
+          if (!record) continue;
+          seenIds.add(objectID);
+          if (enforced && !satisfies(record.materialFields, enforced)) {
+            dropped.push({ objectID, reason: 'requirement_mismatch' });
+            continue;
+          }
+          if (record.inStock === false || record.price === null || !record.imageUrl) continue;
+          const signature = designSignature(record.name);
+          if (signature && seenDesigns.has(signature)) continue;
+          if (signature) seenDesigns.add(signature);
+          verified.push({ objectID, name: record.name, price: record.price });
+          backfilled += 1;
+        }
+      }
+    }
+
     if (!verified.length)
       return { status: 'empty', objectIDs: [], dropped, displayFacets: facets, enforced: enforced ?? undefined };
-    return { status: 'ok', objectIDs: verified, dropped, displayFacets: facets, enforced: enforced ?? undefined };
+    return {
+      status: 'ok',
+      objectIDs: verified,
+      dropped,
+      displayFacets: facets,
+      enforced: enforced ?? undefined,
+      backfilled: backfilled || undefined,
+    };
   };
 }

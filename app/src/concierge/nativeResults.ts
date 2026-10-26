@@ -257,6 +257,39 @@ export function extractSearchPresentation(messages: readonly Message[]): SearchP
   return { queryText, objectIDs, records };
 }
 
+/** Every streamed search hit of the current turn, in result order — the
+ * present_products backfill pool (the shelf floor). Unlike
+ * extractSearchPresentation this does not depend on the model having picked
+ * pieces yet, so it is valid at the moment the display tool executes. */
+export function extractSearchHitObjectIDs(messages: readonly Message[]): string[] {
+  let lastUser = -1;
+  for (let index = messages.length - 1; index >= 0; index--) {
+    if (messages[index].role === 'user') {
+      lastUser = index;
+      break;
+    }
+  }
+  if (lastUser < 0) return [];
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const message of messages.slice(lastUser + 1)) {
+    if (message?.role !== 'assistant' || !message.parts) continue;
+    for (const part of message.parts as Part[]) {
+      if (typeof part?.type !== 'string' || !part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
+      if (!isRecord(part.output)) continue;
+      const hits = part.output.hits;
+      if (!Array.isArray(hits)) continue;
+      for (const hit of hits) {
+        if (!isRecord(hit) || typeof hit.objectID !== 'string' || !hit.objectID) continue;
+        if (seen.has(hit.objectID)) continue;
+        seen.add(hit.objectID);
+        ids.push(hit.objectID);
+      }
+    }
+  }
+  return ids;
+}
+
 /**
  * Strips a trailing NOTE line (`NOTE: …` or `**NOTE:** …`) from DISPLAYED
  * reply text. The conversation state keeps the raw text; this runs only on the

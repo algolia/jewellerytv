@@ -461,4 +461,47 @@ describe('present_products brand enforcement', () => {
     expect(result.status).toBe('ok');
     expect(result.enforced).toBeUndefined();
   });
+
+  it('backfills from the search pool to the shelf floor of six', async () => {
+    const fetcher = async (ids: readonly string[]) => {
+      const map = new Map();
+      for (const id of ids) map.set(id, record(id, ['Southwest Style by JTV']));
+      return map;
+    };
+    const present = createPresentProducts(fetcher, {
+      vocabulary: async () => vocabulary,
+      shopperMessage: () => 'show me Southwest style jewelry',
+      searchPool: () => ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'sw1'],
+    });
+    const result = await present({ objectIDs: ['sw'] });
+    expect(result.status).toBe('ok');
+    expect(result.objectIDs.map((i) => i.objectID)).toEqual(['sw', 'p1', 'p2', 'p3', 'p4', 'p5']);
+    expect(result.backfilled).toBe(5);
+  });
+
+  it('never backfills past the nine-tile cap or above the floor', async () => {
+    const fetcher = async (ids: readonly string[]) => {
+      const map = new Map();
+      for (const id of ids) map.set(id, record(id, ['Southwest Style by JTV']));
+      return map;
+    };
+    const present = createPresentProducts(fetcher, {
+      searchPool: () => ['p1', 'p2', 'p3', 'p4'],
+    });
+    const result = await present({ objectIDs: ['a', 'b', 'c', 'd', 'e', 'f'] });
+    expect(result.objectIDs).toHaveLength(6);
+    expect(result.backfilled).toBeUndefined();
+  });
+
+  it('leaves a starved shelf untouched when there is no pool', async () => {
+    const fetcher = async (ids: readonly string[]) => {
+      const map = new Map();
+      for (const id of ids) map.set(id, record(id, ['Southwest Style by JTV']));
+      return map;
+    };
+    const present = createPresentProducts(fetcher, {});
+    const result = await present({ objectIDs: ['a', 'b'] });
+    expect(result.objectIDs).toHaveLength(2);
+    expect(result.backfilled).toBeUndefined();
+  });
 });

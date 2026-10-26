@@ -25,7 +25,7 @@ import { ResponsiveAnswerTable } from './ResponsiveAnswerTable';
 import { ConnectedWelcome, composerSendText, shouldShowEntryGuidance } from './EntryGuidance';
 import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from './starterQuestions';
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
-import { extractSearchPresentation, stripTrailingNote } from './nativeResults';
+import { extractSearchPresentation, extractSearchHitObjectIDs, stripTrailingNote } from './nativeResults';
 import { buildClientTools } from './clientTools';
 import { extractMessageFacetPicks } from './nativeResults';
 import { FacetChips, buildChipRows } from './FacetChips';
@@ -737,6 +737,7 @@ export function ConnectedConcierge({
         {
           vocabulary: loadCatalogVocabulary,
           shopperMessage: () => shopperMessageRef.current,
+          searchPool: () => searchPoolRef.current,
         },
       ),
     [],
@@ -949,6 +950,18 @@ export function ConnectedConcierge({
   useEffect(() => {
     if (!chat.messages.length) return;
     if (extractSearchPresentation(chat.messages as never)) arrangeSnapshotRef.current = chat.messages;
+  }, [chat.messages]);
+
+  /* The present_products backfill pool: the streamed search's full hit list
+   * for the current turn, refreshed as the turn streams. Kept in a ref so the
+   * executor (built once) always reads the latest turn's pool. */
+  const searchPoolRef = useRef<readonly string[]>([]);
+  useEffect(() => {
+    if (!chat.messages.length) {
+      searchPoolRef.current = [];
+      return;
+    }
+    searchPoolRef.current = extractSearchHitObjectIDs(chat.messages as never);
   }, [chat.messages]);
 
   const onSystemNotice = useCallback((text: string) => {
