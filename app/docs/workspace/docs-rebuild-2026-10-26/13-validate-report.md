@@ -31,3 +31,17 @@ screenshots (welcome, shopping turn, chip refinement); receipts in shoot*-receip
 
 **Live finding (not docs scope):** one capture run caught the production agent streaming
 internal tool-reasoning text mid-turn before completion; flagged to Arijit separately.
+
+## Post-deploy defect (reported by Arijit, fixed same hour)
+
+**Symptom:** /docs chapter rendered unstyled with broken images. **Root cause:**
+`/docs` (no trailing slash) serves the HTML without redirecting, so relative URLs
+(`./docs.css`, `./assets/…`) resolved against the site root and 404'd. My verification
+had only ever entered via `/docs/…` file paths — the no-slash directory entry was
+untested. **Class fix:** every internal URL is now root-relative (`/docs/…`) and
+`check-docs.mjs` rejects relative internal URLs, so the class cannot regress.
+Committed 0b49ab5, deployed dpl_Gh1sU1Wi8yap34wJug6rvYLpBJtB, promoted. **Verified
+live on the exact broken path:** entry `/docs` (no slash) now renders styled with all
+images, as do all seven file-path entries; zero 4xx/5xx. Lesson: directory-style
+entries may serve without normalization — always test the no-slash entry and prefer
+root-relative URLs in static sites.

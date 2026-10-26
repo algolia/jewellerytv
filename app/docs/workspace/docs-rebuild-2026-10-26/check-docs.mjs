@@ -37,27 +37,17 @@ for (const page of pages) {
   }
 }
 
-/* Verbatim diff: appendix prompt-blocks vs live extracts. */
-const html = readFileSync(resolve(root, 'appendix-prompts.html'), 'utf8');
-const unescape = (s) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
-const blocks = [...html.matchAll(/<div class="prompt-block">([\s\S]*?)<\/div>/g)].map((m) => unescape(m[1]));
-const byHeading = (marker) => blocks.find((b) => b.startsWith(marker));
-const sysLive = readFileSync(resolve(run, 'extracted-system-prompt.md'), 'utf8').replace(/\n$/, '');
-const insLive = readFileSync(resolve(run, 'extracted-instructions.md'), 'utf8').replace(/\n$/, '');
-const sysDoc = byHeading('# Authority');
-const insDoc = byHeading('# Role');
-if (sysDoc === undefined) fail('system prompt block not found in appendix');
-else if (sysDoc.trim() !== sysLive.trim()) {
-  const a = sysLive.trim().split('\n'); const b = sysDoc.trim().split('\n');
+/* Verbatim verification: the committed appendix must be byte-identical to the
+ * output the generator produces from the live-agent extracts. If the prompts
+ * change, re-run gen-appendix.mjs; if someone hand-edits the page, this fails. */
+const { build } = await import('./gen-appendix.mjs');
+const generated = build();
+const committed = readFileSync(resolve(root, 'appendix-prompts.html'), 'utf8');
+if (generated !== committed) {
+  const a = committed.split('\n'); const b = generated.split('\n');
   let first = 0; while (first < Math.min(a.length, b.length) && a[first] === b[first]) first += 1;
-  fail(`system prompt verbatim mismatch at line ${first + 1}:\n  live: ${JSON.stringify((a[first] ?? '').slice(0, 120))}\n  doc:  ${JSON.stringify((b[first] ?? '').slice(0, 120))}`);
-} else console.log('PASS system prompt verbatim (', sysLive.length, 'chars )');
-if (insDoc === undefined) fail('instructions block not found in appendix');
-else if (insDoc.trim() !== insLive.trim()) {
-  const a = insLive.trim().split('\n'); const b = insDoc.trim().split('\n');
-  let first = 0; while (first < Math.min(a.length, b.length) && a[first] === b[first]) first += 1;
-  fail(`instructions verbatim mismatch at line ${first + 1}:\n  live: ${JSON.stringify((a[first] ?? '').slice(0, 120))}\n  doc:  ${JSON.stringify((b[first] ?? '').slice(0, 120))}`);
-} else console.log('PASS instructions verbatim (', insLive.length, 'chars )');
+  fail(`appendix drifts from the generator output at line ${first + 1}:\n  committed: ${JSON.stringify((a[first] ?? '').slice(0, 110))}\n  generated: ${JSON.stringify((b[first] ?? '').slice(0, 110))}`);
+} else console.log('PASS appendix verbatim (generated from live-agent extracts:', committed.length, 'chars )');
 
 console.log(fails ? `\n${fails} FAILURE(S)` : 'ALL CLEAN');
 process.exit(fails ? 1 : 0);

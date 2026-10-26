@@ -174,6 +174,7 @@ body {
   max-width: 46em;
 }
 
+.content { overflow-wrap: anywhere; }
 .content h2 {
   font-size: 24px;
   letter-spacing: -.01em;
@@ -375,3 +376,15 @@ table.data td code { white-space: nowrap; }
   .docs-header { padding: 0 16px; }
   .docs-layout { padding: 0 16px; }
 }
+
+/* Structured verbatim docs (appendix, generated) */
+.vdoc h3 { margin-top: 34px; }
+.why { color: var(--ink-faint); font-size: 14.5px; border-left: 3px solid var(--line); padding-left: 12px; }
+.ex, .do, .dont { font-size: 15px; border: 1px solid var(--line-soft); border-radius: 8px; padding: 8px 12px; background: var(--bg-soft); max-width: 46em; }
+.ex code, .do code, .dont code { white-space: normal; }
+.tool-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; margin: 0 0 14px; }
+.tool-card h4 { margin: 0 0 8px; }
+.tool-card p { margin-bottom: 0; }
+.scope-pill { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--blue); background: var(--blue-wash); border-radius: 999px; padding: 2px 8px; vertical-align: 2px; }
+.gr dt { font-weight: 600; font-size: 13px; color: var(--ink-faint); margin-top: 8px; }
+.gr dd { margin: 2px 0 0 0; font-size: 14.5px; }
