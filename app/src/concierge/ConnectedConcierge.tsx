@@ -744,6 +744,28 @@ export function ConnectedConcierge({
           vocabulary: loadCatalogVocabulary,
           shopperMessage: () => shopperMessageRef.current,
           searchPool: () => searchPoolRef.current,
+          appSearch: async (facetFilters) => {
+            /* The shelf floor's last resort: a read-only search through the
+             * same-origin proxy, facet-filtered on the enforced requirement.
+             * Search-only credentials stay server-side. */
+            const response = await fetch('/api/search', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                requests: [
+                  {
+                    indexName: 'prod_catalog',
+                    params: { query: '', hitsPerPage: 12, filters: 'Inventory_InStock:true', facetFilters: [...facetFilters] },
+                  },
+                ],
+              }),
+            });
+            if (!response.ok) return [];
+            const data = await response.json();
+            return (data?.results?.[0]?.hits ?? [])
+              .map((hit: { objectID?: string }) => hit.objectID)
+              .filter((id: unknown): id is string => typeof id === 'string' && !!id);
+          },
         },
       ),
     [],

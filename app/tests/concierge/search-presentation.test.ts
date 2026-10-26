@@ -537,4 +537,45 @@ describe('present_products brand enforcement', () => {
     expect(result.objectIDs).toHaveLength(2);
     expect(result.backfilled).toBeUndefined();
   });
+
+  it('runs the follow-up search when the pool is exhausted under the floor', async () => {
+    const fetcher = async (ids: readonly string[]) => {
+      const map = new Map();
+      for (const id of ids) map.set(id, record(id, ['Southwest Style by JTV']));
+      return map;
+    };
+    const searched: string[][] = [];
+    const present = createPresentProducts(fetcher, {
+      vocabulary: async () => vocabulary,
+      shopperMessage: () => 'show me Southwest style jewelry',
+      searchPool: () => [],
+      appSearch: async (facetFilters) => {
+        searched.push([...facetFilters]);
+        return ['f1', 'f2', 'f3', 'f4', 'f5'];
+      },
+    });
+    const result = await present({ objectIDs: ['sw'] });
+    expect(result.objectIDs.map((i) => i.objectID)).toEqual(['sw', 'f1', 'f2', 'f3', 'f4', 'f5']);
+    expect(result.backfilled).toBe(5);
+    expect(searched[0]).toEqual(['Catalog_BrandNavigationName:"Southwest Style by JTV"']);
+  });
+
+  it('does not run the follow-up search without an enforced requirement', async () => {
+    const fetcher = async (ids: readonly string[]) => {
+      const map = new Map();
+      for (const id of ids) map.set(id, record(id, ['Other Line']));
+      return map;
+    };
+    let searched = 0;
+    const present = createPresentProducts(fetcher, {
+      searchPool: () => [],
+      appSearch: async () => {
+        searched += 1;
+        return [];
+      },
+    });
+    const result = await present({ objectIDs: ['a', 'b'] });
+    expect(result.objectIDs).toHaveLength(2);
+    expect(searched).toBe(0);
+  });
 });

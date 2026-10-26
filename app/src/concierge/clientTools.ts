@@ -47,6 +47,9 @@ export function buildClientTools(
     /** The streamed search's remaining hit objectIDs for the current turn
      * (see presentProducts — the shelf floor's backfill pool). */
     searchPool?: () => readonly string[] | null | undefined;
+    /** The app's read-only search proxy (see presentProducts — the shelf
+     * floor's last resort when the streamed pool is exhausted). */
+    appSearch?: (facetFilters: readonly string[]) => Promise<readonly string[]>;
   },
 ): Record<string, ClientToolExecutor> {
   const getRecords: CatalogRecordFetcher = createCatalogRecordFetcher(fetchRawRecord);
@@ -55,6 +58,7 @@ export function buildClientTools(
     vocabulary: options?.vocabulary,
     shopperMessage: options?.shopperMessage,
     searchPool: options?.searchPool,
+    appSearch: options?.appSearch,
   });
   const executorFor =
     <I, O>(run: (input: I) => Promise<O>) =>

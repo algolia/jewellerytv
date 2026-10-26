@@ -15,7 +15,7 @@
  * the shopper's words removes the model from the loop entirely. No grouping,
  * no bounds: the chips-era shelf is one flat list capped at nine. */
 
-import type { CatalogRecordFetcher } from './catalogRecord';
+import type { CatalogRecord, CatalogRecordFetcher } from './catalogRecord';
 import { designSignature } from './designVariant';
 export { designSignature };
 
@@ -214,6 +214,11 @@ export function createPresentProducts(
      * the app. When verification leaves the shelf under the floor, the tool
      * backfills from here — the same checks, model never involved. */
     searchPool?: () => readonly string[] | null | undefined;
+    /** The app's read-only search proxy. The last resort of the shelf floor:
+     * when the streamed pool is exhausted under six tiles, the tool searches
+     * again itself, facet-filtered on the enforced requirement, and admits
+     * survivors through the identical checks. */
+    appSearch?: (facetFilters: readonly string[]) => Promise<readonly string[]>;
   },
 ): PresentProducts {
   return async ({ objectIDs, displayFacets }) => {
@@ -246,6 +251,35 @@ export function createPresentProducts(
     const dropped: PresentDrop[] = [];
     const seenIds = new Set<string>();
     const seenDesigns = new Set<string>();
+    /* One admission path for every source — the model's picks, the streamed
+     * pool, and the follow-up search all pass the identical checks in the
+     * same order: requirement, stock, price, image, same-design twin. */
+    const admit = (objectID: string, record: CatalogRecord): boolean => {
+      if (enforced && !satisfies(record.materialFields, enforced)) {
+        dropped.push({ objectID, reason: 'requirement_mismatch' });
+        return false;
+      }
+      if (record.inStock === false) {
+        dropped.push({ objectID, reason: 'out_of_stock' });
+        return false;
+      }
+      if (record.price === null) {
+        dropped.push({ objectID, reason: 'unpriced' });
+        return false;
+      }
+      if (!record.imageUrl) {
+        dropped.push({ objectID, reason: 'no_image' });
+        return false;
+      }
+      const signature = designSignature(record.name);
+      if (signature && seenDesigns.has(signature)) {
+        dropped.push({ objectID, reason: 'variant_of_shown' });
+        return false;
+      }
+      if (signature) seenDesigns.add(signature);
+      verified.push({ objectID, name: record.name, price: record.price });
+      return true;
+    };
     for (const objectID of objectIDs) {
       if (typeof objectID !== 'string' || !objectID) continue;
       if (seenIds.has(objectID)) {
@@ -258,59 +292,52 @@ export function createPresentProducts(
         dropped.push({ objectID, reason: 'not_found' });
         continue;
       }
-      if (enforced && !satisfies(record.materialFields, enforced)) {
-        dropped.push({ objectID, reason: 'requirement_mismatch' });
-        continue;
-      }
-      if (record.inStock === false) {
-        dropped.push({ objectID, reason: 'out_of_stock' });
-        continue;
-      }
-      if (record.price === null) {
-        dropped.push({ objectID, reason: 'unpriced' });
-        continue;
-      }
-      if (!record.imageUrl) {
-        dropped.push({ objectID, reason: 'no_image' });
-        continue;
-      }
-      const signature = designSignature(record.name);
-      if (signature && seenDesigns.has(signature)) {
-        dropped.push({ objectID, reason: 'variant_of_shown' });
-        continue;
-      }
-      if (signature) seenDesigns.add(signature);
-      verified.push({ objectID, name: record.name, price: record.price });
-      if (verified.length >= MAX_TILES) break;
+      if (admit(objectID, record) && verified.length >= MAX_TILES) break;
     }
 
-    /* Shelf floor: the shopper never sees 3 or 4 tiles when the search
-     * returned a bigger pool. Backfill verifies remaining streamed hits —
-     * stock, price, image, twins, and the enforced requirement — exactly as
-     * the model's picks were verified. */
+    /* Shelf floor, layer one: the streamed pool. */
     let backfilled = 0;
     const pool = options?.searchPool?.() ?? null;
     const poolSize = pool ? pool.length : 0;
-    if (verified.length > 0 && verified.length < SHELF_FLOOR && pool && poolSize > 0) {
+    const floorTarget = Math.min(SHELF_FLOOR, MAX_TILES);
+    if (verified.length > 0 && verified.length < floorTarget && pool && poolSize > 0) {
       const extra = pool.filter((id) => typeof id === 'string' && !!id && !seenIds.has(id));
       if (extra.length) {
         const extraRecords = await getRecords(extra);
         for (const objectID of extra) {
-          if (verified.length >= Math.min(SHELF_FLOOR, MAX_TILES)) break;
+          if (verified.length >= floorTarget) break;
           const record = extraRecords.get(objectID);
           if (!record) continue;
           seenIds.add(objectID);
-          if (enforced && !satisfies(record.materialFields, enforced)) {
-            dropped.push({ objectID, reason: 'requirement_mismatch' });
-            continue;
-          }
-          if (record.inStock === false || record.price === null || !record.imageUrl) continue;
-          const signature = designSignature(record.name);
-          if (signature && seenDesigns.has(signature)) continue;
-          if (signature) seenDesigns.add(signature);
-          verified.push({ objectID, name: record.name, price: record.price });
-          backfilled += 1;
+          if (admit(objectID, record)) backfilled += 1;
         }
+      }
+    }
+    /* Shelf floor, layer two: the follow-up search. The streamed pool is
+     * exhausted and the shelf still sits under the floor — the tool asks the
+     * app for the next candidates matching the enforced requirement itself,
+     * facet-filtered, and admits survivors identically. The floor never
+     * invents tiles, but it never stops at five when the catalog has them. */
+    if (verified.length > 0 && verified.length < floorTarget && enforced && options?.appSearch) {
+      try {
+        const facetFilters = enforced.values.map(
+          (value) => `${enforced!.attribute}:"${value.replace(/"/g, '\\"')}"`,
+        );
+        const extra = (await options.appSearch(facetFilters)).filter(
+          (id) => typeof id === 'string' && !!id && !seenIds.has(id),
+        );
+        if (extra.length) {
+          const extraRecords = await getRecords(extra);
+          for (const objectID of extra) {
+            if (verified.length >= floorTarget) break;
+            const record = extraRecords.get(objectID);
+            if (!record) continue;
+            seenIds.add(objectID);
+            if (admit(objectID, record)) backfilled += 1;
+          }
+        }
+      } catch {
+        /* The floor degrades honestly when the follow-up search fails. */
       }
     }
 
