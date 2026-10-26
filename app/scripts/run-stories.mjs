@@ -18,6 +18,10 @@ const { chromium } = await import(path.join(here, '..', 'node_modules', 'playwri
 const BASE = process.env.JTV_STORY_BASE ?? 'https://jewellerytv.vercel.app';
 const SETTLE_MS = 10_000;
 const TURN_WAIT = SETTLE_MS + 26_000;
+/* The first turn of a story rides a cold start (stream, vocabulary, first
+ * search): the measured empty-first-turn in run-07-53 was this wait, not
+ * the system. First turn gets double. */
+const FIRST_TURN_WAIT = TURN_WAIT + 30_000;
 
 const stamp = () => new Date().toISOString().replace(/[:.]/g, '-');
 const ONLY = process.argv.find((a) => a.startsWith('--story='))?.split('=')[1] ?? null;
@@ -194,7 +198,7 @@ for (const story of STORIES_FILTERED) {
       }
       await composer.fill(step.send);
       await page.getByRole('button', { name: 'Send' }).click();
-      await sleep(TURN_WAIT);
+      await sleep(index === 0 ? FIRST_TURN_WAIT : TURN_WAIT);
       const turn = await captureTurn(page, { index, send: step.send });
       turn.ms = Date.now() - started;
       turn.screenshot = path.join(RUN_DIR, 'screenshots', `${story.id}-t${index + 1}.png`);
