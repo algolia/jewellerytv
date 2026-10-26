@@ -1327,7 +1327,11 @@ export function ConnectedConcierge({
                   (() => {
                     const entry = facetPicks.find((p) => p.messageId === message.id)!;
                     const preview = entry.hits
-                      .slice(0, 4)
+                      /* The shelf floor is Arijit's standing law: at least six
+                       * tiles, nine best, in multiples of three. Four was the
+                       * chips-era preview cap and it read as a starved shelf
+                       * (measured all night, 2026-10-26). */
+                      .slice(0, 9)
                       .map((raw) => {
                         try {
                           return normalizeProduct(raw);

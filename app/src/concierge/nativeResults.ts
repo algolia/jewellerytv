@@ -200,8 +200,8 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
  * cross-checks every chosen id against the streamed search hits of the same
  * turn, so a piece the search never returned can never render. One search
  * per turn is the rule: a multi-query search part suppresses the whole
- * presentation. */
-const MAX_SEARCH_TILES = 8;
+ * presentation. Nine: the tool's shelf cap, and Arijit's 3x3 target. */
+const MAX_SEARCH_TILES = 9;
 
 export type SearchPresentation = {
   queryText: string;
