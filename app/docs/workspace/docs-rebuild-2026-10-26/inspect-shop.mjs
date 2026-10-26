@@ -1,0 +1,23 @@
+import { chromium } from 'playwright';
+import { writeFileSync } from 'node:fs';
+const here = '/Users/arijitchowdhury/Dropbox/AI-Development/jewellerytv/app/docs/workspace/docs-rebuild-2026-10-26';
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage({ viewport: { width: 1419, height: 1307 } });
+const bad = [];
+page.on('response', (r) => { if (r.status() >= 400) bad.push(r.status() + ' ' + r.url().slice(-90)); });
+page.on('console', (m) => { if (m.type() === 'error') bad.push('console: ' + m.text().slice(0, 200)); });
+page.on('pageerror', (e) => bad.push('pageerror: ' + String(e).slice(0, 200)));
+await page.goto('https://jewellerytv.vercel.app/', { waitUntil: 'networkidle' });
+await page.waitForTimeout(4000);
+const d = await page.evaluate(() => {
+  const sections = [...document.querySelectorAll('body section, body > div > section, [class*="-split"], [class*="strip"], [class*="feature"], [class*="shelf"]')].map((s) => s.className.toString().slice(0, 40));
+  const brokenImgs = [...document.querySelectorAll('img')].filter((i) => !i.naturalWidth).map((i) => i.getAttribute('src')?.slice(-60));
+  const videos = [...document.querySelectorAll('video')].map((v) => ({ src: (v.currentSrc || v.src || '').slice(-50), ready: v.readyState, paused: v.paused }));
+  const h = document.body.scrollHeight;
+  const text = document.body.innerText.slice(0, 400);
+  return { sections: sections.slice(0, 10), brokenImgs, videos, height: h, text };
+});
+await page.screenshot({ path: here + '/shop-live.png', fullPage: true });
+writeFileSync(here + '/shop-live-report.json', JSON.stringify({ bad, ...d }, null, 2));
+console.log(JSON.stringify({ bad: bad.slice(0, 8), brokenImgs: d.brokenImgs, videos: d.videos, height: d.height, sections: d.sections }, null, 2));
+await browser.close();

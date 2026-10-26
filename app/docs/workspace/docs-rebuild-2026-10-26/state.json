@@ -3,10 +3,18 @@
   "run_id": "2026-10-26-001",
   "project": "jewellerytv",
   "feature": "docs-rebuild",
-  "status": "IN_PROGRESS",
-  "current_stage": "INTAKE",
+  "status": "FINISHED",
+  "current_stage": "FINISH",
   "builder": "inline",
   "retry_counts": {},
   "strike_log": [],
-  "gates": {}
+  "gates": {
+    "intake": "written",
+    "plan": "written",
+    "build": "complete",
+    "validate": "PASS",
+    "brand-check": "PASS 9/10",
+    "deploy": "dpl_FvErAaJ5WK2KPgz6oVFwWW9AHfFE promoted",
+    "live-verify": "7/7 pages 200, 0 errors"
+  }
 }

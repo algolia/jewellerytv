@@ -1,0 +1,34 @@
+{
+  "bad": [],
+  "sections": [
+    "shopping-strip",
+    "gg-split",
+    "gg-split-media",
+    "gg-split-copy",
+    "video-strip",
+    "video-feature",
+    "video-feature-copy",
+    "home-shelf",
+    "home-products"
+  ],
+  "brokenImgs": [],
+  "videos": [
+    {
+      "src": "https://jewellerytv.vercel.app/assets/gg-intro.mp4",
+      "ready": 4,
+      "paused": false
+    },
+    {
+      "src": "ellerytv.vercel.app/assets/freeshipping-banner.mp4",
+      "ready": 4,
+      "paused": false
+    },
+    {
+      "src": "s://jewellerytv.vercel.app/assets/just-reduced.mp4",
+      "ready": 1,
+      "paused": false
+    }
+  ],
+  "height": 2690,
+  "text": "Skip to content\nNew customers get $25 off your first order of $50+ with code NEWJTV25\nLocal demo\nSearch jewelry\nAsk JTV\nHello, Guest\nMy Account\nLists\nBag\nShop\nWatch\nNew\nBest Sellers\nExclusively Online\nHoliday Gift Guide\nBig Holiday Deals\nLooks You'll Love\nClearance\nAuctions\nFind your next favorite. Explore the collection or ask your jewelry concierge.\nHoliday Gift Guide\n\nPacked with sparkly finds "
+}

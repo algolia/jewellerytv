@@ -14,11 +14,14 @@ for (const page of pages) {
   const path = resolve(root, page);
   if (!existsSync(path)) { fail(`missing page ${page}`); continue; }
   const html = readFileSync(path, 'utf8');
-  /* Local hrefs and srcs (skip http, mailto, /, #). */
+  /* Local hrefs and srcs (root-relative /docs/… or same-dir ./…; skip http, mailto, pure #). */
   for (const m of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
     const target = m[1];
-    if (/^(https?:|mailto:|\/|#)/.test(target)) continue;
-    const file = target.split('#')[0];
+    if (/^(https?:|mailto:)/.test(target)) continue;
+    if (target === '/') continue; /* the storefront root link */
+    let file = target.split('#')[0];
+    if (file.startsWith('/docs/')) file = file.slice('/docs/'.length);
+    else if (file.startsWith('/')) fail(`${page}: absolute non-/docs path ${target}`);
     if (file && !existsSync(resolve(root, file))) fail(`${page}: broken link ${target}`);
   }
   /* Same-page anchors. */
@@ -26,8 +29,8 @@ for (const page of pages) {
   for (const m of html.matchAll(/href="#([^"]+)"/g)) {
     if (!ids.has(m[1])) fail(`${page}: missing anchor #${m[1]}`);
   }
-  /* Cross-page anchors: ./page.html#id */
-  for (const m of html.matchAll(/href="\.\/([a-z-]+\.html)#([^"]+)"/g)) {
+  /* Cross-page anchors: /docs/page.html#id (or ./page.html#id). */
+  for (const m of html.matchAll(/href="(?:\.\/|\/docs\/)([a-z-]+\.html)#([^"]+)"/g)) {
     const other = readFileSync(resolve(root, m[1]), 'utf8');
     const otherIds = new Set([...other.matchAll(/id="([^"]+)"/g)].map((x) => x[1]));
     if (!otherIds.has(m[2])) fail(`${page}: missing anchor ${m[1]}#${m[2]}`);

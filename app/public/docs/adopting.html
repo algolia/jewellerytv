@@ -10,14 +10,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="./docs.css">
+<link rel="stylesheet" href="/docs/docs.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
 
 <header class="docs-header">
   <div class="brand">
-    <img src="./assets/algolia-logo.svg" alt="Algolia">
+    <img src="/docs/assets/algolia-logo.svg" alt="Algolia">
     <span class="divider"></span>
     <span class="desc">Agentic commerce, a reference build</span>
   </div>
@@ -32,22 +32,22 @@
       <nav class="docs-nav" id="docnav">
         <h3>Start here</h3>
         <ul>
-          <li><a href="./index.html"><span class="num">1</span>The package</a></li>
-          <li><a href="./experience.html"><span class="num">2</span>The experience</a></li>
+          <li><a href="/docs/index.html"><span class="num">1</span>The package</a></li>
+          <li><a href="/docs/experience.html"><span class="num">2</span>The experience</a></li>
         </ul>
         <h3>How it works</h3>
         <ul>
-          <li><a href="./architecture.html"><span class="num">3</span>Architecture and data flow</a></li>
-          <li><a href="./agent.html"><span class="num">4</span>The agent</a></li>
-          <li><a href="./examples.html"><span class="num">5</span>Examples and walkthrough</a></li>
+          <li><a href="/docs/architecture.html"><span class="num">3</span>Architecture and data flow</a></li>
+          <li><a href="/docs/agent.html"><span class="num">4</span>The agent</a></li>
+          <li><a href="/docs/examples.html"><span class="num">5</span>Examples and walkthrough</a></li>
         </ul>
         <h3>Adopt it</h3>
         <ul>
-          <li><a href="./adopting.html" aria-current="page"><span class="num">6</span>Adopting it</a></li>
+          <li><a href="/docs/adopting.html" aria-current="page"><span class="num">6</span>Adopting it</a></li>
         </ul>
         <h3>Reference</h3>
         <ul>
-          <li><a href="./appendix-prompts.html"><span class="num">7</span>Prompts and configuration</a></li>
+          <li><a href="/docs/appendix-prompts.html"><span class="num">7</span>Prompts and configuration</a></li>
         </ul>
       </nav>
     </details>
@@ -55,7 +55,7 @@
 
   <main id="main" class="docs-main">
     <nav class="crumbs" aria-label="Breadcrumb">
-      <a href="./index.html">Docs</a><span class="sep">/</span><span class="here">Adopting it</span>
+      <a href="/docs/index.html">Docs</a><span class="sep">/</span><span class="here">Adopting it</span>
     </nav>
 
     <header class="page-head">
@@ -91,10 +91,10 @@
         <table class="data">
           <thead><tr><th>Component</th><th>What it takes</th></tr></thead>
           <tbody>
-            <tr><td>The agent</td><td>An Agent Studio agent: system prompt, instructions, tool sheet, guardrail. The reference texts (<a href="./appendix-prompts.html">chapter 7</a>) are the starting pattern; the voice, evidence classes and worked examples should be rewritten for your store's voice and your catalog's vocabulary.</td></tr>
+            <tr><td>The agent</td><td>An Agent Studio agent: system prompt, instructions, tool sheet, guardrail. The reference texts (<a href="/docs/appendix-prompts.html">chapter 7</a>) are the starting pattern; the voice, evidence classes and worked examples should be rewritten for your store's voice and your catalog's vocabulary.</td></tr>
             <tr><td>The search tool</td><td>Static tool-sheet entries for your indices, with the verbatim facet vocabulary written into the tool descriptions. This is what makes "copy values, never compose them" enforceable.</td></tr>
-            <tr><td>The client tools</td><td>Browser executors for <code>present_products</code> and <code>refresh_products</code> against the contracts in <a href="./agent.html#tools">chapter 4</a>. The reference implementation is the pattern: shared record reader, per-tool checks, structured outcomes.</td></tr>
-            <tr><td>The proxy</td><td>One same-origin server with the validating routes of <a href="./architecture.html#routes">chapter 3</a>, holding your search-only key server-side and enforcing the tool-sheet guard.</td></tr>
+            <tr><td>The client tools</td><td>Browser executors for <code>present_products</code> and <code>refresh_products</code> against the contracts in <a href="/docs/agent.html#tools">chapter 4</a>. The reference implementation is the pattern: shared record reader, per-tool checks, structured outcomes.</td></tr>
+            <tr><td>The proxy</td><td>One same-origin server with the validating routes of <a href="/docs/architecture.html#routes">chapter 3</a>, holding your search-only key server-side and enforcing the tool-sheet guard.</td></tr>
           </tbody>
         </table>
       </div>
@@ -107,7 +107,7 @@
         bounded page sizes, verbatim vocabulary in the descriptions. Nothing unlisted.</li>
         <li><strong>Adapt the prompts.</strong> Start from the reference texts; replace the
         voice rules, the worked examples and the evidence classes with your own; keep the
-        four laws of <a href="./agent.html#logic">chapter 4</a>, which are architecture,
+        four laws of <a href="/docs/agent.html#logic">chapter 4</a>, which are architecture,
         not style.</li>
         <li><strong>Build the client tools and the proxy.</strong> Port the two executors
         and the seven routes; keep validation strict and credentials server-side.</li>
@@ -155,11 +155,11 @@
     <nav class="pager" aria-label="Page navigation">
       <div class="cell">
         <span class="dir">Previous</span>
-        <a href="./examples.html">Examples and walkthrough</a>
+        <a href="/docs/examples.html">Examples and walkthrough</a>
       </div>
       <div class="cell">
         <span class="dir">Reference</span>
-        <a href="./appendix-prompts.html">Prompts and configuration</a>
+        <a href="/docs/appendix-prompts.html">Prompts and configuration</a>
       </div>
     </nav>
 

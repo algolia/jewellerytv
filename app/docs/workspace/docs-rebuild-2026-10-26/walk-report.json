@@ -5,11 +5,11 @@
       "status": 200,
       "imgs": [
         {
-          "src": "./assets/algolia-logo.svg",
+          "src": "/docs/assets/algolia-logo.svg",
           "ok": true
         },
         {
-          "src": "./assets/home.jpg",
+          "src": "/docs/assets/home.jpg",
           "ok": true
         }
       ],
@@ -23,19 +23,19 @@
       "status": 200,
       "imgs": [
         {
-          "src": "./assets/algolia-logo.svg",
+          "src": "/docs/assets/algolia-logo.svg",
           "ok": true
         },
         {
-          "src": "./assets/welcome.png",
+          "src": "/docs/assets/welcome.png",
           "ok": true
         },
         {
-          "src": "./assets/shopping-turn.png",
+          "src": "/docs/assets/shopping-turn.png",
           "ok": true
         },
         {
-          "src": "./assets/chip-refine.png",
+          "src": "/docs/assets/chip-refine.png",
           "ok": true
         }
       ],
@@ -49,7 +49,7 @@
       "status": 200,
       "imgs": [
         {
-          "src": "./assets/algolia-logo.svg",
+          "src": "/docs/assets/algolia-logo.svg",
           "ok": true
         }
       ],
@@ -63,7 +63,7 @@
       "status": 200,
       "imgs": [
         {
-          "src": "./assets/algolia-logo.svg",
+          "src": "/docs/assets/algolia-logo.svg",
           "ok": true
         }
       ],
@@ -77,15 +77,15 @@
       "status": 200,
       "imgs": [
         {
-          "src": "./assets/algolia-logo.svg",
+          "src": "/docs/assets/algolia-logo.svg",
           "ok": true
         },
         {
-          "src": "./assets/shopping-turn.png",
+          "src": "/docs/assets/shopping-turn.png",
           "ok": true
         },
         {
-          "src": "./assets/chip-refine.png",
+          "src": "/docs/assets/chip-refine.png",
           "ok": true
         }
       ],
@@ -99,7 +99,7 @@
       "status": 200,
       "imgs": [
         {
-          "src": "./assets/algolia-logo.svg",
+          "src": "/docs/assets/algolia-logo.svg",
           "ok": true
         }
       ],
@@ -113,7 +113,7 @@
       "status": 200,
       "imgs": [
         {
-          "src": "./assets/algolia-logo.svg",
+          "src": "/docs/assets/algolia-logo.svg",
           "ok": true
         }
       ],
