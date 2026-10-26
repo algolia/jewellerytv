@@ -16,21 +16,22 @@ export type CatalogRecord = {
   imageUrl: string | null;
   /** Shopper-facing destination path for the tile. */
   link: string;
-  /** Material and gemstone facts per attribute, for requirement enforcement
-   * (the present_products tool checks the shopper's named material or stone
-   * against what the piece is actually made of). Only attributes that carry
-   * values appear; this is the app's language layer naming which raw fields
-   * count as material data, not a facet whitelist. */
+  /** Material, gemstone and brand facts per attribute, for requirement
+   * enforcement (the present_products tool checks the shopper's named
+   * material, stone or brand against what the piece actually is). Only
+   * attributes that carry values appear; this is the app's language layer
+   * naming which raw fields count as product facts, not a facet whitelist. */
   materialFields: Record<string, string[]>;
 };
 
-/** Which raw fields count as material and gemstone facts. Our naming map, not
- * the index's: the values themselves always come from the live record. */
+/** Which raw fields count as material, gemstone and brand facts. Our naming
+ * map, not the index's: the values themselves always come from the live record. */
 const MATERIAL_FIELD_PATHS = [
   'Catalog_JewelryMaterialNavigationName',
   'Catalog_JewelryMaterialNavigationPurity',
   'Catalog_GemstoneAndPearlNavigationName',
   'Catalog_GemstoneInformationPrimary.GemstoneName',
+  'Catalog_BrandNavigationName',
 ] as const;
 
 function readStringField(raw: Record<string, unknown>, path: string): string[] {

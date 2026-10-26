@@ -1,11 +1,12 @@
 /* Curation tool (2026-10-24, requirement enforcement 2026-10-25, structural
- * source change 2026-10-25): one call after the search decides what displays.
- * The model reads the streamed search result and chooses the pieces; this tool
- * runs the deterministic checks — exists, in stock, priced, photographed, not
- * a same-design twin, and the requirement enforced against the piece's actual
- * material fields via the runtime vocabulary — and returns the verified list
- * with names and prices so the model writes its reply from exactly what will
- * show. A piece it dropped can never appear.
+ * source change 2026-10-25, brand enforcement 2026-10-25): one call after the
+ * search decides what displays. The model reads the streamed search result and
+ * chooses the pieces; this tool runs the deterministic checks — exists, in
+ * stock, priced, photographed, not a same-design twin, and the requirement
+ * (material, gemstone or brand) enforced against the piece's actual record
+ * fields via the runtime vocabulary — and returns the verified list with names
+ * and prices so the model writes its reply from exactly what will show. A
+ * piece it dropped can never appear.
  *
  * The requirement's SOURCE is the shopper's own message text, supplied by the
  * app through the send path — never a model-quoted field. The model quoted
@@ -65,11 +66,15 @@ const invalid = (reason: string): PresentProductsOutput => ({
   displayFacets: [],
 });
 
-/* The app's naming map: which attributes carry material facts and which carry
- * gemstone facts (our language layer — the VALUES always come from the live
- * vocabulary). The requirement's words decide the concept; within it, the most
- * discriminative attribute (fewest vocabulary values sharing a requirement
- * word) is enforced, with OR over its matched values. */
+/* The app's naming map: which attributes carry material facts, which carry
+ * gemstone facts and which carries the brand (our language layer — the VALUES
+ * always come from the live vocabulary). The requirement's words decide the
+ * concept; within it, the most discriminative attribute (fewest vocabulary
+ * values sharing a requirement word) is enforced, with OR over its matched
+ * values. Brand is deliberately the hardest concept to trigger and the last
+ * tie-break: its values are multi-word marketing names, so a stray shared word
+ * ("gold") must never turn into a brand claim (the Southwest Style / Gems en
+ * Vogue failure class, measured live 2026-10-25). */
 const CONCEPT_ATTRIBUTES: Record<string, readonly string[]> = {
   material: [
     'Catalog_JewelryMaterialNavigationName',
@@ -79,7 +84,12 @@ const CONCEPT_ATTRIBUTES: Record<string, readonly string[]> = {
     'Catalog_GemstoneAndPearlNavigationName',
     'Catalog_GemstoneInformationPrimary.GemstoneName',
   ],
+  brand: ['Catalog_BrandNavigationName'],
 };
+
+/* Non-brand concepts win equal-total ties; brand only enforces when it is the
+ * concept the shopper actually named. */
+const CONCEPT_PRIORITY: Record<string, number> = { material: 0, gemstone: 1, brand: 2 };
 
 export type EnforcedRequirement = { attribute: string; values: string[] };
 
@@ -110,13 +120,25 @@ export function matchRequirement(
     const matches: EnforcedRequirement[] = [];
     let total = 0;
     for (const attribute of attributes) {
-      const values = (vocabulary.values[attribute] ?? []).filter((value) =>
-        value
+      const values = (vocabulary.values[attribute] ?? []).filter((value) => {
+        const words = value
           .toLowerCase()
           .split(/[^a-z0-9]+/)
-          .filter(Boolean)
-          .some((word) => tokens.includes(word)),
-      );
+          .filter(Boolean);
+        /* A brand value only fires when the shopper named enough of it: at
+         * least two significant words (or the whole single-word brand). This
+         * keeps "gold" from matching a brand that merely contains the word,
+         * while "southwest style" and "gems en vogue" match their lines. */
+        if (concept === 'brand') {
+          const significant = words.filter((word) => word.length >= MIN_TOKEN_LENGTH);
+          if (!significant.length) return false;
+          const matched = significant.filter((word) => tokens.includes(word)).length;
+          const threshold =
+            significant.length === 1 ? 1 : Math.max(2, Math.ceil(significant.length / 2));
+          return matched >= threshold;
+        }
+        return words.some((word) => tokens.includes(word));
+      });
       if (values.length) {
         matches.push({ attribute, values });
         total += values.length;
@@ -125,7 +147,12 @@ export function matchRequirement(
     if (matches.length) candidates.push({ concept, matches, total });
   }
   if (!candidates.length) return [];
-  candidates.sort((a, b) => a.total - b.total || a.concept.localeCompare(b.concept));
+  candidates.sort(
+    (a, b) =>
+      a.total - b.total ||
+      (CONCEPT_PRIORITY[a.concept] ?? 9) - (CONCEPT_PRIORITY[b.concept] ?? 9) ||
+      a.concept.localeCompare(b.concept),
+  );
   const winner = candidates[0].matches.sort(
     (a, b) => a.values.length - b.values.length || a.attribute.localeCompare(b.attribute),
   )[0];
