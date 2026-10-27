@@ -11,7 +11,7 @@
 
 import { createCatalogRecordFetcher, type CatalogRecordFetcher } from './tools/catalogRecord';
 import { createRefreshProducts } from './tools/refreshProducts';
-import { createPresentProducts } from './tools/presentProducts';
+import { createPresentProducts, type PresentProductsOutput } from './tools/presentProducts';
 import { APP_ANSWERED_TOOL_NAMES, SEARCH_TOOL_PREFIX } from '../../shared/concierge/toolSheetGuard';
 
 export type ClientToolExecutor = {
@@ -90,6 +90,77 @@ export function buildClientTools(
       matchesToolName: (toolName: string) => toolName.startsWith(SEARCH_TOOL_PREFIX),
     },
     refresh_products: { onToolCall: executorFor(refreshProducts), timeout: 20000 },
-    present_products: { onToolCall: executorFor(presentProducts), timeout: 20000 },
+    present_products: { onToolCall: (params) => presentProductsExecutor(presentProducts, params), timeout: 20000 },
   };
+}
+
+/* The model's own words, twice on 2026-10-27: "the display tool is telling me
+ * these don't read as pearl by its material-name check… so the pieces the
+ * shopper actually wants can pass through." The forensics in the tool result
+ * (`enforced`, `dropped`, the declaration fields) were the fuel — the model
+ * paraphrased them to the shopper. The model now sees the shelf only; the
+ * shadow diagnostics ride a side channel the model never reads, so the gate
+ * keeps its measurement while the shopper keeps the persona. */
+export type ModelVisiblePresentOutput = Pick<
+  PresentProductsOutput,
+  'status' | 'objectIDs' | 'displayFacets'
+>;
+
+export function modelVisiblePresentOutput(output: PresentProductsOutput): ModelVisiblePresentOutput {
+  return {
+    status: output.status,
+    objectIDs: output.objectIDs,
+    displayFacets: output.displayFacets,
+  };
+}
+
+export function presentShadowReceipt(input: unknown, output: PresentProductsOutput) {
+  const understood =
+    input && typeof input === 'object' && !Array.isArray(input)
+      ? (input as { understood?: unknown }).understood ?? null
+      : null;
+  return {
+    at: new Date().toISOString(),
+    status: output.status,
+    understood,
+    declared: output.declared ?? null,
+    declaredVerbatim: output.declaredVerbatim ?? null,
+    priceOverBudget: output.priceOverBudget ?? null,
+    enforced: output.enforced ?? null,
+    dropped: output.dropped,
+    returned: output.objectIDs.length,
+  };
+}
+
+const SHADOW_KEY = 'jtv-present-shadow';
+const SHADOW_CAP = 50;
+type StorageLike = { getItem: (key: string) => string | null; setItem: (key: string, value: string) => void };
+
+export function stashPresentShadowReceipt(receipt: unknown, storage: StorageLike) {
+  try {
+    const existing = JSON.parse(storage.getItem(SHADOW_KEY) ?? '[]') as unknown[];
+    const next = [...existing, receipt].slice(-SHADOW_CAP);
+    storage.setItem(SHADOW_KEY, JSON.stringify(next));
+  } catch {
+    /* The shadow log is diagnostic only; a blocked storage never breaks the
+     * tool call. */
+  }
+}
+
+function stashShadowFromSession(input: unknown, output: PresentProductsOutput) {
+  if (typeof sessionStorage === 'undefined') return;
+  stashPresentShadowReceipt(presentShadowReceipt(input, output), sessionStorage);
+}
+
+async function presentProductsExecutor(
+  run: (input: never) => Promise<PresentProductsOutput>,
+  params: { toolCallId: string; toolName: string; input: unknown; addToolResult: (r: { state: 'output-available'; output: unknown } | { state: 'output-error'; errorText: string }) => Promise<unknown>; signal: AbortSignal },
+) {
+  try {
+    const output = await run(params.input as never);
+    stashShadowFromSession(params.input, output);
+    await params.addToolResult({ state: 'output-available', output: modelVisiblePresentOutput(output) });
+  } catch {
+    await params.addToolResult({ state: 'output-error', errorText: 'The tool call could not be completed.' });
+  }
 }
