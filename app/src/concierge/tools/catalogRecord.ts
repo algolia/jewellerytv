@@ -22,6 +22,12 @@ export type CatalogRecord = {
    * attributes that carry values appear; this is the app's language layer
    * naming which raw fields count as product facts, not a facet whitelist. */
   materialFields: Record<string, string[]>;
+  /** Whether the record carries any pearl information — the generic-pearl
+   * check. Pearl types live in their own fields, not in the gemstone name
+   * values, so "pearl" can never be verified against a navigation value
+   * (the Craig Task 01 conclusion; the 2026-10-27 matcher misfires re-proved
+   * it by emptying every pearl shelf). */
+  hasPearls: boolean;
   /** The original index record, kept so a tile fetched outside the streamed
    * search (the shelf floor's follow-up search) can still render everywhere
    * the streamed records render. */
@@ -81,6 +87,9 @@ export function toCatalogRecord(raw: unknown): CatalogRecord | null {
     const values = readStringField(raw, path);
     if (values.length) materialFields[path] = values;
   }
+  const hasPearls =
+    (Array.isArray(raw.Catalog_PearlInformationPrimary) && raw.Catalog_PearlInformationPrimary.length > 0) ||
+    (Array.isArray(raw.Catalog_PearlInformation) && raw.Catalog_PearlInformation.length > 0);
   return {
     objectID,
     name,
@@ -89,6 +98,7 @@ export function toCatalogRecord(raw: unknown): CatalogRecord | null {
     imageUrl,
     link: `/product/${objectID}`,
     materialFields,
+    hasPearls,
     raw,
   };
 }

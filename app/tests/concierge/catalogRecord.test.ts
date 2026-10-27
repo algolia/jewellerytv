@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCatalogRecordFetcher } from '../../src/concierge/tools/catalogRecord';
+import { createCatalogRecordFetcher, toCatalogRecord } from '../../src/concierge/tools/catalogRecord';
 
 const record = (objectID: string) => ({
   objectID,
@@ -62,5 +62,32 @@ describe('catalog record fetcher batch path', () => {
     const records = await fetcher(['a', 'b']);
     expect(perId).toHaveBeenCalledTimes(2);
     expect([...records.keys()].sort()).toEqual(['a', 'b']);
+  });
+});
+
+describe('toCatalogRecord pearl fact', () => {
+  /* The generic-pearl ask ("no specific type") verifies against the record's
+   * pearl fields, never against a gemstone navigation value — the Craig Task
+   * 01 conclusion (pearl must not be forced into a gemstone name), re-proven
+   * by the 2026-10-27 matcher misfires that emptied every pearl shelf. */
+  it('a record with pearl information has pearls regardless of its navigation name', () => {
+    const parsed = toCatalogRecord({
+      ...record('P1'),
+      Catalog_PearlInformationPrimary: [{ PearlFullName: 'Freshwater Pearl' }],
+    });
+    expect(parsed?.hasPearls).toBe(true);
+  });
+
+  it('a record without pearl information does not', () => {
+    const parsed = toCatalogRecord({ ...record('S1') });
+    expect(parsed?.hasPearls).toBe(false);
+  });
+
+  it('a record with only accent pearls still has pearls', () => {
+    const parsed = toCatalogRecord({
+      ...record('A1'),
+      Catalog_PearlInformation: [{ PearlFullName: 'Akoya Pearl' }],
+    });
+    expect(parsed?.hasPearls).toBe(true);
   });
 });
