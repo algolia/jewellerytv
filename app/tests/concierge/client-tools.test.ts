@@ -18,7 +18,7 @@ const fullOutput: PresentProductsOutput = {
   objectIDs: [{ objectID: 'a', name: 'Pearl strand', price: 500, image: 'https://x/a.jpg' }],
   dropped: [{ objectID: 'b', reason: 'requirement_mismatch' }],
   displayFacets: ['Catalog_ProductType'],
-  enforced: { attribute: 'Catalog_GemstoneAndPearlNavigationName', values: ['Pearl'] },
+  matcherWouldEnforce: { attribute: 'Catalog_GemstoneAndPearlNavigationName', values: ['Pearl'] },
   declared: { material: [], gemstone: ['pearl'], brand: [], priceMax: 1000 },
   declaredVerbatim: false,
   priceOverBudget: [],
@@ -63,7 +63,7 @@ describe('present_products model-visible output split', () => {
     expect(receipt.status).toBe('ok');
     expect(receipt.declared).toEqual({ material: [], gemstone: ['pearl'], brand: [], priceMax: 1000 });
     expect(receipt.declaredVerbatim).toBe(false);
-    expect(receipt.enforced).toEqual({ attribute: 'Catalog_GemstoneAndPearlNavigationName', values: ['Pearl'] });
+    expect(receipt.matcherWouldEnforce).toEqual({ attribute: 'Catalog_GemstoneAndPearlNavigationName', values: ['Pearl'] });
     expect(receipt.dropped).toEqual([{ objectID: 'b', reason: 'requirement_mismatch' }]);
   });
 

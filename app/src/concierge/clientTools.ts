@@ -49,7 +49,7 @@ export function buildClientTools(
     searchPool?: () => readonly string[] | null | undefined;
     /** The app's read-only search proxy (see presentProducts — the shelf
      * floor's last resort when the streamed pool is exhausted). */
-    appSearch?: (facetFilters: readonly string[]) => Promise<readonly string[]>;
+    appSearch?: (facetFilters: readonly (readonly string[])[]) => Promise<readonly string[]>;
     /** One multi-get for N records (the /api/products/batch route) — the
      * curation tool's latency fix for the platform's client-tool wait
      * budget (the cancelled present_products events, 2026-10-26). */
@@ -126,7 +126,7 @@ export function presentShadowReceipt(input: unknown, output: PresentProductsOutp
     declared: output.declared ?? null,
     declaredVerbatim: output.declaredVerbatim ?? null,
     priceOverBudget: output.priceOverBudget ?? null,
-    enforced: output.enforced ?? null,
+    matcherWouldEnforce: output.matcherWouldEnforce ?? null,
     dropped: output.dropped,
     returned: output.objectIDs.length,
   };

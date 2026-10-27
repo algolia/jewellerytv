@@ -309,17 +309,18 @@ describe('present_products tool', () => {
     };
     const result = await createPresentProducts(materialAware, {
       vocabulary: async () => vocabulary,
-      shopperMessage: () => 'show me sterling silver rings',
     })({
       objectIDs: ['silver', 'goldplated'],
-    });
+      understood: { material: ['Sterling'], gemstone: [], brand: [] },
+    } as never);
     expect(result.status).toBe('ok');
     expect(result.objectIDs.map((i) => i.objectID)).toEqual(['silver']);
     expect(result.dropped).toContainEqual(expect.objectContaining({ objectID: 'goldplated', reason: 'requirement_mismatch' }));
-    /* Purity "Sterling" is the most discriminative material check: real silver
-     * carries it, gold-over-silver carries "18K". */
-    expect(result.enforced?.attribute).toBe('Catalog_JewelryMaterialNavigationPurity');
-    expect(result.enforced?.values).toEqual(['Sterling']);
+    /* The declaration names the verbatim value; the record check reads the
+     * purity field real silver carries and gold-over-silver does not. */
+    expect(result.enforcedByDeclaration).toEqual([
+      { concept: 'material', values: ['Sterling'] },
+    ]);
   });
 
   it('enforces nothing when the shopper message matches no vocabulary value', async () => {
@@ -330,7 +331,7 @@ describe('present_products tool', () => {
       objectIDs: ['a'],
     });
     expect(result.status).toBe('ok');
-    expect(result.enforced).toBeUndefined();
+    expect(result.enforcedByDeclaration).toEqual([]);
   });
 
   it('ignores a model-quoted requirement — only the shopper\'s message enforces', async () => {
@@ -346,24 +347,87 @@ describe('present_products tool', () => {
       objectIDs: ['a'],
       requirement: 'sterling silver',
     } as never);
-    expect(result.enforced).toBeUndefined();
+    expect(result.enforcedByDeclaration).toEqual([]);
   });
 
-  it('enforces nothing when no shopper message is available', async () => {
+  it('enforces nothing when no declaration is sent', async () => {
     const result = await createPresentProducts(fetcher, { vocabulary: async () => ({ values: { Metal: ['Gold'] } }) })({
       objectIDs: ['a'],
     });
-    expect(result.enforced).toBeUndefined();
+    expect(result.enforcedByDeclaration).toEqual([]);
+  });
+});
+
+describe('present_products declaration enforcement (Option B cutover)', () => {
+  /* The measured end of the word-matcher (2026-10-27, three runs): it read
+   * "pearl" as the literal navigation value "Pearl" and emptied every pearl
+   * shelf — Craig's canonical journey, six empty presents in one turn. The
+   * model's declaration is the enforcement source; code fact-checks it
+   * against the records. Code never reads the sentence. */
+  const tile = (objectID: string, fields: Record<string, string[]>, extra: Record<string, unknown> = {}) => ({
+    objectID,
+    name: `Product ${objectID}`,
+    price: 500,
+    inStock: true,
+    imageUrl: 'https://example.com/a.jpg',
+    link: `/product/${objectID}`,
+    materialFields: fields,
+    hasPearls: false,
+    ...extra,
+  });
+  const fetcher = async (ids: readonly string[]) => {
+    const map = new Map();
+    for (const id of ids) {
+      if (id === 'gold') map.set(id, tile(id, { Catalog_JewelryMaterialNavigationName: ['Gold'] }));
+      else if (id === 'pearlstrands')
+        map.set(id, tile(id, { Catalog_GemstoneAndPearlNavigationName: ['Freshwater Pearl'] }, { hasPearls: true }));
+      else if (id === 'pricetag') map.set(id, tile(id, {}, { price: 250 }));
+      else map.set(id, tile(id, { Catalog_JewelryMaterialNavigationName: ['Silver'] }));
+    }
+    return map;
+  };
+  const vocabulary = {
+    values: {
+      Catalog_JewelryMaterialNavigationName: ['Gold', 'Silver'],
+      Catalog_GemstoneAndPearlNavigationName: ['Freshwater Pearl', 'Akoya Pearl'],
+    },
+  };
+  const run = (understood: unknown) =>
+    createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
+      objectIDs: ['gold', 'pearlstrands', 'plain', 'pricetag'],
+      understood,
+    } as never);
+
+  it('enforces the declared material against the record, case-insensitively', async () => {
+    const result = await run({ material: ['gold'], gemstone: [], brand: [] });
+    expect(result.objectIDs.map((i) => i.objectID)).toEqual(['gold']);
+    expect(result.dropped.every((d) => d.reason === 'requirement_mismatch')).toBe(true);
   });
 
-  it('enforces nothing when the shopper message names no material or stone', async () => {
-    const result = await createPresentProducts(fetcher, {
-      vocabulary: async () => ({ values: { Metal: ['Gold'] } }),
-      shopperMessage: () => 'gift ideas for a friend',
-    })({
-      objectIDs: ['a'],
-    });
-    expect(result.enforced).toBeUndefined();
+  it('a generic pearl ask verifies against the pearl fields, not navigation values', async () => {
+    const result = await run({ material: [], gemstone: ['pearl'], brand: [] });
+    expect(result.objectIDs.map((i) => i.objectID)).toContain('pearlstrands');
+    expect(result.objectIDs.map((i) => i.objectID)).not.toContain('plain');
+  });
+
+  it('no declaration enforces nothing, even when the matcher would have', async () => {
+    const result = await run(undefined);
+    /* The shelf law trims four verified tiles to one complete row of three;
+     * the point is that nothing was requirement-dropped. */
+    expect(result.dropped.filter((d) => d.reason === 'requirement_mismatch')).toHaveLength(0);
+    expect(result.enforcedByDeclaration).toEqual([]);
+  });
+
+  it('an invented declared value is skipped, never nukes the shelf', async () => {
+    const result = await run({ material: ['Unobtainium'], gemstone: [], brand: [] });
+    expect(result.dropped.filter((d) => d.reason === 'requirement_mismatch')).toHaveLength(0);
+    expect(result.enforcedByDeclaration).toEqual([]);
+  });
+
+  it('a declared price ceiling drops over-budget tiles', async () => {
+    const result = await run({ material: [], gemstone: [], brand: [], priceMax: 200 });
+    expect(result.objectIDs.map((i) => i.objectID)).not.toContain('pricetag');
+    expect(result.dropped).toContainEqual(expect.objectContaining({ objectID: 'pricetag', reason: 'over_budget' }));
   });
 });
 
@@ -394,15 +458,16 @@ describe('present_products declaration shadow (Option B stage 1)', () => {
     },
   };
 
-  it('records the model declaration without enforcing it', async () => {
+  it('the declared material enforces against the record and stays out of the matcher', async () => {
     const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
       objectIDs: ['a'],
       understood: { material: ['Gold'], gemstone: [], brand: [] },
     } as never);
     expect(result.declared).toEqual({ material: ['Gold'], gemstone: [], brand: [] });
     expect(result.declaredVerbatim).toBe(true);
-    expect(result.enforced).toBeUndefined();
-    expect(result.status).toBe('ok');
+    /* The record carries no material, so the declared value drops it — and
+     * the matcher's own reading stays diagnostics-only. */
+    expect(result.enforcedByDeclaration).toEqual([{ concept: 'material', values: ['Gold'] }]);
   });
 
   it('a declined requirement is a valid declaration of empty arrays', async () => {
@@ -441,15 +506,16 @@ describe('present_products declaration shadow (Option B stage 1)', () => {
       understood: { material: [], gemstone: [], brand: [], priceMax: 200 },
     } as never);
     expect(result.declared).toEqual({ material: [], gemstone: [], brand: [], priceMax: 200 });
-    expect(result.priceOverBudget).toEqual(['over']);
+    expect(result.dropped).toContainEqual(expect.objectContaining({ objectID: 'over', reason: 'over_budget' }));
+    expect(result.objectIDs.map((i) => i.objectID)).toEqual(['under']);
   });
 
-  it('no declared ceiling adds no price field', async () => {
+  it('no declared ceiling drops nothing for price', async () => {
     const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
       objectIDs: ['a'],
       understood: { material: [], gemstone: [], brand: [] },
     } as never);
-    expect(result.priceOverBudget).toBeUndefined();
+    expect(result.dropped).toEqual([]);
   });
 
   it('a non-numeric ceiling is ignored, not coerced', async () => {
@@ -458,7 +524,7 @@ describe('present_products declaration shadow (Option B stage 1)', () => {
       understood: { material: [], gemstone: [], brand: [], priceMax: '200' },
     } as never);
     expect(result.declared).toEqual({ material: [], gemstone: [], brand: [] });
-    expect(result.priceOverBudget).toBeUndefined();
+    expect(result.dropped).toEqual([]);
   });
 
   it('flags invented values as not verbatim', async () => {
@@ -649,19 +715,23 @@ describe('present_products brand enforcement', () => {
     return map;
   };
 
-  it('drops pieces whose brand contradicts the shopper-named brand', async () => {
+  it('drops pieces whose brand contradicts the declared brand', async () => {
     const present = createPresentProducts(fetcher, {
       vocabulary: async () => vocabulary,
-      shopperMessage: () => 'show me Southwest style jewelry',
     });
-    const result = await present({ objectIDs: ['sw', 'x1', 'x2'] });
+    const result = await present({
+      objectIDs: ['sw', 'x1', 'x2'],
+      understood: { material: [], gemstone: [], brand: ['Southwest Style by JTV'] },
+    } as never);
     expect(result.status).toBe('ok');
     expect(result.objectIDs.map((i) => i.objectID)).toEqual(['sw']);
     expect(result.dropped.map((d) => d.reason)).toEqual(['requirement_mismatch', 'requirement_mismatch']);
-    expect(result.enforced?.attribute).toBe('Catalog_BrandNavigationName');
+    expect(result.enforcedByDeclaration).toEqual([
+      { concept: 'brand', values: ['Southwest Style by JTV'] },
+    ]);
   });
 
-  it('skips the brand check without a shopper message', async () => {
+  it('skips the brand check without a declaration', async () => {
     const sparse = async (ids: readonly string[]) => {
       const map = new Map();
       for (const id of ids) map.set(id, record(id, ['Other Line']));
@@ -670,7 +740,7 @@ describe('present_products brand enforcement', () => {
     const present = createPresentProducts(sparse, { vocabulary: async () => vocabulary });
     const result = await present({ objectIDs: ['x1'] });
     expect(result.status).toBe('ok');
-    expect(result.enforced).toBeUndefined();
+    expect(result.enforcedByDeclaration).toEqual([]);
   });
 
   it('backfills from the search pool to the shelf floor of six', async () => {
@@ -681,10 +751,12 @@ describe('present_products brand enforcement', () => {
     };
     const present = createPresentProducts(fetcher, {
       vocabulary: async () => vocabulary,
-      shopperMessage: () => 'show me Southwest style jewelry',
       searchPool: () => ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'sw1'],
     });
-    const result = await present({ objectIDs: ['sw'] });
+    const result = await present({
+      objectIDs: ['sw'],
+      understood: { material: [], gemstone: [], brand: ['Southwest Style by JTV'] },
+    } as never);
     expect(result.status).toBe('ok');
     expect(result.objectIDs.map((i) => i.objectID)).toEqual(['sw', 'p1', 'p2', 'p3', 'p4', 'p5']);
     expect(result.backfilled).toBe(5);
@@ -725,20 +797,22 @@ describe('present_products brand enforcement', () => {
     const searched: string[][] = [];
     const present = createPresentProducts(fetcher, {
       vocabulary: async () => vocabulary,
-      shopperMessage: () => 'show me Southwest style jewelry',
       searchPool: () => [],
       appSearch: async (facetFilters) => {
-        searched.push([...facetFilters]);
+        searched.push(...facetFilters.map((group) => [...group]));
         return ['f1', 'f2', 'f3', 'f4', 'f5'];
       },
     });
-    const result = await present({ objectIDs: ['sw'] });
+    const result = await present({
+      objectIDs: ['sw'],
+      understood: { material: [], gemstone: [], brand: ['Southwest Style by JTV'] },
+    } as never);
     expect(result.objectIDs.map((i) => i.objectID)).toEqual(['sw', 'f1', 'f2', 'f3', 'f4', 'f5']);
     expect(result.backfilled).toBe(5);
     expect(searched[0]).toEqual(['Catalog_BrandNavigationName:"Southwest Style by JTV"']);
   });
 
-  it('does not run the follow-up search without an enforced requirement', async () => {
+  it('does not run the follow-up search without a declared requirement', async () => {
     const fetcher = async (ids: readonly string[]) => {
       const map = new Map();
       for (const id of ids) map.set(id, record(id, ['Other Line']));

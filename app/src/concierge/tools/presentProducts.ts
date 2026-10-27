@@ -8,12 +8,14 @@
  * and prices so the model writes its reply from exactly what will show. A
  * piece it dropped can never appear.
  *
- * The requirement's SOURCE is the shopper's own message text, supplied by the
- * app through the send path — never a model-quoted field. The model quoted
- * `requirement` on only 8% of material turns (battery 2026-10-25), so
- * prompt-based enforcement fails structurally on this model version; reading
- * the shopper's words removes the model from the loop entirely. No grouping,
- * no bounds: the chips-era shelf is one flat list capped at nine. */
+ * The requirement's SOURCE is the model's declaration (`understood`) — its
+ * reading of the shopper's own words — fact-checked against the records here.
+ * The 2026-10-27 cutover: the word-matcher that read the sentence directly
+ * misfired on generic words ("pearl", "no specific stone" → "Multi-Stone")
+ * and emptied real shelves, so it retired to shadow diagnostics
+ * (`matcherWouldEnforce`). Code never reads the sentence: the model
+ * interprets, the code verifies. No grouping, no bounds: the chips-era shelf
+ * is one flat list capped at nine. */
 
 import type { CatalogRecord, CatalogRecordFetcher } from './catalogRecord';
 import { designSignature } from './designVariant';
@@ -49,7 +51,8 @@ export type PresentDropReason =
   | 'no_image'
   | 'variant_of_shown'
   | 'duplicate'
-  | 'requirement_mismatch';
+  | 'requirement_mismatch'
+  | 'over_budget';
 
 export type PresentDrop = { objectID: string; reason: PresentDropReason };
 
@@ -62,9 +65,14 @@ export type PresentProductsOutput = {
   displayFacets: string[];
   /** The requirement check the tool enforced, so the model and the logs can
    * see what was verified. */
-  enforced?: EnforcedRequirement;
+  /** The constraints the declaration placed on the shelf, after the
+   * verbatim guard. Empty when the model declared nothing usable. */
+  enforcedByDeclaration?: DeclarationCheck[];
+  /** What the retired word-matcher WOULD have enforced from the shopper's
+   * sentence — shadow diagnostics only, never enforcement. */
+  matcherWouldEnforce?: EnforcedRequirement;
   /** The model's declaration of its understanding, normalized. Absent when
-   * the model sent none. Shadow stage: never drives enforcement. */
+   * the model sent none. */
   declared?: UnderstoodConstraints;
   /** Whether every declared value exists in the live vocabulary — the
    * invented-value check. Undefined when no declaration or no vocabulary. */
@@ -306,10 +314,55 @@ function declaredValuesAreVerbatim(
   return true;
 }
 
-function satisfies(recordMaterial: Record<string, string[]>, enforced: EnforcedRequirement) {
-  return (recordMaterial[enforced.attribute] ?? []).some((value) =>
-    enforced.values.includes(value),
-  );
+export type DeclarationCheck = {
+  concept: 'material' | 'gemstone' | 'brand';
+  values: readonly string[];
+};
+
+/** Turn the model's declaration into record checks. Each declared value must
+ * exist in the live vocabulary (case-insensitive — the model lowercases)
+ * before it constrains anything; a value the catalog does not carry is
+ * skipped, so an invented constraint can never empty a shelf. The generic
+ * pearl ask is the one deliberate exception: "pearl" is not a navigation
+ * value, it verifies against the record's pearl fields (hasPearls). */
+function declarationChecksFor(
+  declared: UnderstoodConstraints,
+  vocabulary: VocabularyLike | null,
+): DeclarationCheck[] {
+  const concepts = ['material', 'gemstone', 'brand'] as const;
+  const checks: DeclarationCheck[] = [];
+  for (const concept of concepts) {
+    const values = declared[concept];
+    if (!values.length) continue;
+    let kept = values;
+    if (vocabulary) {
+      const attributes = CONCEPT_ATTRIBUTES[concept] ?? [];
+      const known = new Set(
+        attributes.flatMap((attribute) => (vocabulary.values[attribute] ?? []).map((v) => v.toLowerCase())),
+      );
+      kept = values.filter(
+        (value) => known.has(value.toLowerCase()) || (concept === 'gemstone' && value.toLowerCase() === 'pearl'),
+      );
+    }
+    if (kept.length) checks.push({ concept, values: kept });
+  }
+  return checks;
+}
+
+/** Does the record actually carry what was declared? Case-insensitive value
+ * match over the concept's attributes; the generic pearl ask verifies against
+ * the record's pearl fields. */
+function satisfiesDeclaration(record: CatalogRecord, check: DeclarationCheck): boolean {
+  const attributes = CONCEPT_ATTRIBUTES[check.concept] ?? [];
+  for (const value of check.values) {
+    const wanted = value.toLowerCase();
+    for (const attribute of attributes) {
+      const actual = (record.materialFields[attribute] ?? []).map((v) => v.toLowerCase());
+      if (actual.includes(wanted)) return true;
+    }
+    if (check.concept === 'gemstone' && wanted === 'pearl' && record.hasPearls) return true;
+  }
+  return false;
 }
 
 export function createPresentProducts(
@@ -328,7 +381,7 @@ export function createPresentProducts(
      * when the streamed pool is exhausted under six tiles, the tool searches
      * again itself, facet-filtered on the enforced requirement, and admits
      * survivors through the identical checks. */
-    appSearch?: (facetFilters: readonly string[]) => Promise<readonly string[]>;
+    appSearch?: (facetFilters: readonly (readonly string[])[]) => Promise<readonly string[]>;
   },
 ): PresentProducts {
   return async ({ objectIDs, displayFacets, understood }) => {
@@ -351,22 +404,27 @@ export function createPresentProducts(
     const needs = [...new Set(objectIDs)];
     const recordsPromise = getRecords(needs);
     const declared = normalizeUnderstood(understood);
-    let enforced: EnforcedRequirement | null = null;
+    let matcherWouldEnforce: EnforcedRequirement | undefined;
     let declaredVerbatim: boolean | undefined;
+    let vocabulary: VocabularyLike | null = null;
     const shopperMessage = options?.shopperMessage?.();
     if ((typeof shopperMessage === 'string' && shopperMessage.trim()) || declared) {
       try {
-        const vocabulary = (await options?.vocabulary?.()) ?? null;
+        vocabulary = (await options?.vocabulary?.()) ?? null;
         if (vocabulary) {
           if (typeof shopperMessage === 'string' && shopperMessage.trim())
-            enforced = matchRequirement(shopperMessage, vocabulary)[0] ?? null;
+            matcherWouldEnforce = matchRequirement(shopperMessage, vocabulary)[0] ?? undefined;
           if (declared) declaredVerbatim = declaredValuesAreVerbatim(declared, vocabulary);
         }
       } catch {
-        enforced = null;
+        matcherWouldEnforce = undefined;
       }
     }
     const records = await recordsPromise;
+    /* Enforcement is the declaration, fact-checked against the records —
+     * never the matcher, and never the sentence (2026-10-27 cutover). */
+    const enforcedByDeclaration = declared ? declarationChecksFor(declared, vocabulary) : [];
+    const ceiling = declared?.priceMax;
     const verified: { objectID: string; name: string; price: number; image: string; raw?: Record<string, unknown> }[] = [];
     const dropped: PresentDrop[] = [];
     const seenIds = new Set<string>();
@@ -375,8 +433,14 @@ export function createPresentProducts(
      * pool, and the follow-up search all pass the identical checks in the
      * same order: requirement, stock, price, image, same-design twin. */
     const admit = (objectID: string, record: CatalogRecord, attachRaw = false): boolean => {
-      if (enforced && !satisfies(record.materialFields, enforced)) {
-        dropped.push({ objectID, reason: 'requirement_mismatch' });
+      for (const check of enforcedByDeclaration) {
+        if (!satisfiesDeclaration(record, check)) {
+          dropped.push({ objectID, reason: 'requirement_mismatch' });
+          return false;
+        }
+      }
+      if (ceiling != null && record.price !== null && record.price > ceiling) {
+        dropped.push({ objectID, reason: 'over_budget' });
         return false;
       }
       if (record.inStock === false) {
@@ -444,14 +508,18 @@ export function createPresentProducts(
     }
     /* Shelf floor, layer two: the follow-up search. The streamed pool is
      * exhausted and the shelf still sits under the floor — the tool asks the
-     * app for the next candidates matching the enforced requirement itself,
-     * facet-filtered, and admits survivors identically. The floor never
-     * invents tiles, but it never stops at five when the catalog has them. */
-    if (verified.length > 0 && verified.length < floorTarget && enforced && options?.appSearch) {
+     * app for the next candidates matching the declared constraints itself,
+     * facet-filtered (one OR-group per concept over its attributes), and
+     * admits survivors identically. The floor never invents tiles, but it
+     * never stops at five when the catalog has them. */
+    if (verified.length > 0 && verified.length < floorTarget && enforcedByDeclaration.length > 0 && options?.appSearch) {
       try {
-        const facetFilters = enforced.values.map(
-          (value) => `${enforced!.attribute}:"${value.replace(/"/g, '\\"')}"`,
-        );
+        const facetFilters = enforcedByDeclaration.map((check) => {
+          const attributes = CONCEPT_ATTRIBUTES[check.concept] ?? [];
+          return check.values.flatMap((value) =>
+            attributes.map((attribute) => `${attribute}:"${value.replace(/"/g, '\\"')}"`),
+          );
+        });
         const extra = (await options.appSearch(facetFilters)).filter(
           (id) => typeof id === 'string' && !!id && !seenIds.has(id),
         );
@@ -476,7 +544,8 @@ export function createPresentProducts(
         objectIDs: [],
         dropped,
         displayFacets: facets,
-        enforced: enforced ?? undefined,
+        enforcedByDeclaration,
+        matcherWouldEnforce,
         declared: declared ?? undefined,
         declaredVerbatim,
       };
@@ -487,24 +556,15 @@ export function createPresentProducts(
      * result is not a partial row pretending to be a full shelf. */
     const shelf =
       verified.length > 3 ? verified.slice(0, verified.length - (verified.length % 3)) : verified;
-    /* Shadow stage of the price ceiling: report which shelf tiles exceed the
-     * declared budget instead of dropping them — the declaration's compliance
-     * rate is unmeasured, so a wrong ceiling must not cost good tiles. The
-     * boundary itself (inclusive or not) stays the model's reading; the
-     * measured leak was grossly over, which a strict-greater check catches. */
-    const ceiling = declared?.priceMax;
-    const overBudget = ceiling != null
-      ? shelf.filter((tile) => tile.price > ceiling).map((tile) => tile.objectID)
-      : undefined;
     return {
       status: 'ok',
       objectIDs: shelf,
       dropped,
       displayFacets: facets,
-      enforced: enforced ?? undefined,
+      enforcedByDeclaration,
+      matcherWouldEnforce,
       declared: declared ?? undefined,
       declaredVerbatim,
-      priceOverBudget: overBudget,
       backfilled: backfilled || undefined,
       poolSize,
     };
