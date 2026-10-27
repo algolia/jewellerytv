@@ -5,6 +5,8 @@ import {
   extractSearchPresentation,
 } from '../../src/concierge/nativeResults';
 import { createPresentProducts, matchRequirement } from '../../src/concierge/tools/presentProducts';
+import { latestCanvasGroups } from '../../src/concierge/ConnectedConcierge';
+import type { WorkspaceGroup } from '../../src/concierge/workspaceResults';
 
 /* Curation restored (2026-10-24): the model picks pieces + facets via
  * `present_products`; the extractors read that call and cross-check every
@@ -428,6 +430,27 @@ describe('present_products declaration enforcement (Option B cutover)', () => {
     const result = await run({ material: [], gemstone: [], brand: [], priceMax: 200 });
     expect(result.objectIDs.map((i) => i.objectID)).not.toContain('pricetag');
     expect(result.dropped).toContainEqual(expect.objectContaining({ objectID: 'pricetag', reason: 'over_budget' }));
+  });
+});
+
+describe('latestCanvasGroups (tile law on the canvas column)', () => {
+  /* Measured on prod (2026-10-27): the canvas painted the RAW streamed hits
+   * (~8, unverified, untrimmed) beside the curated 9-tile shelf — 17-21
+   * product links in broken rows. The canvas mirrors the latest verified
+   * shelf instead; raw staging stays the reload-restore fallback only. */
+  const g = (title: string, ids: string[]) =>
+    ({ title, items: ids.map((id) => ({ product: { id } })) }) as unknown as WorkspaceGroup;
+  it('prefers the latest message with a verified shelf', () => {
+    const anchored: Record<string, WorkspaceGroup[]> = {
+      m1: [g('first', ['a', 'b', 'c'])],
+      m3: [g('latest', ['x', 'y', 'z'])],
+    };
+    expect(latestCanvasGroups(anchored)).toEqual([g('latest', ['x', 'y', 'z'])]);
+  });
+
+  it('returns null when no message carries a verified shelf', () => {
+    expect(latestCanvasGroups({})).toBeNull();
+    expect(latestCanvasGroups({ m1: [] })).toBeNull();
   });
 });
 

@@ -403,6 +403,19 @@ export function parseVerifiedProductLink(href: string | undefined, knownIds: Rea
  * that finished cleanly but committed a failed tool part is not a transport
  * failure: the request went through and a product step did not, so it gets
  * its own honest notice instead of the transport copy. */
+
+/** The canvas column mirrors the latest VERIFIED shelf (present_products
+ * output, already law-trimmed) — never the raw streamed hits, which bypassed
+ * every check and broke the rows-of-three law on prod (17-21 links measured,
+ * 2026-10-27). Raw staging remains the reload-restore fallback only. */
+export function latestCanvasGroups(
+  anchoredCards: Record<string, WorkspaceGroup[]>,
+): WorkspaceGroup[] | null {
+  const ids = Object.keys(anchoredCards).filter((id) => anchoredCards[id]?.length);
+  if (!ids.length) return null;
+  return anchoredCards[ids[ids.length - 1]];
+}
+
 export function getConnectedTurnSystemNotice(
   messages: readonly UIMessage[],
   finish: TurnOutcome,
@@ -629,7 +642,7 @@ export function ConnectedConcierge({
    * the same hydration through `nativeGroups` and ignores this state. */
   const [anchoredCards, setAnchoredCards] = useState<Record<string, WorkspaceGroup[]>>({});
   const stagedAnchorIdsRef = useRef<Set<string>>(new Set());
-  const model = session.getModel(nativeGroups ?? undefined);
+  const model = session.getModel(latestCanvasGroups(anchoredCards) ?? nativeGroups ?? undefined);
   const runtime = session.runtime;
   /* Product link guard, simplified 2026-10-22: a chat link opens the PDP only
    * when the id is a product this session actually holds. Every record in the
