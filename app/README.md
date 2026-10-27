@@ -19,14 +19,16 @@ has three steps, and every rendered tile has passed all of them:
    filtered server-side. The streamed result carries the hits and the live facet
    counts.
 2. **Verify.** The agent curates via the client-side `present_products` tool
-   (`src/concierge/tools/presentProducts.ts`). The tool reads the shopper's own
-   message — never a model-quoted field — matches it against the index-derived
-   vocabulary, and admits a tile only if it exists, is in stock, is priced, is
-   photographed, is not a same-design twin of one already showing, and actually
-   matches the named material, stone or brand. Plated composites ("gold over
-   silver") never satisfy a solid-metal ask; brand asks ("Gems En Vogue",
-   "Southwest Style by JTV") ride as verbatim facet filters and are enforced
-   against every tile's brand field.
+   (`src/concierge/tools/presentProducts.ts`). The model declares what it
+   understood from the shopper's words — material, gemstone, brand as verbatim
+   catalog values, a price ceiling when a budget was named — and the tool
+   fact-checks that declaration against every candidate's actual record:
+   exists, in stock, priced, photographed, not a same-design twin of one
+   already showing, and actually carrying the declared material, stone, brand
+   and budget. The generic pearl ask verifies against the record's pearl
+   fields rather than a name; a declared value the catalog does not carry is
+   skipped, so an invented constraint can never empty a shelf. The model
+   never sees the tool's diagnostics, only the verified shelf.
 3. **Render.** Every surface — the conversation preview, the staged shelf, the
    history anchor cards — renders the tool's verified list, in the tool's order,
    in rows of exactly three columns. A piece the tool dropped can never appear.
