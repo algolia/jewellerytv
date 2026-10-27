@@ -61,7 +61,7 @@ const UNDERSTOOD_SCHEMA = {
   required: ['material', 'gemstone', 'brand'],
 };
 
-const url = `https://${S.appId}.algolia.net/agent-studio/1/agents/${S.devAgentId}`;
+const url = `https://${S.appId}.algolia.net/agent-studio/1/agents/${process.env.JTV_TARGET_AGENT_ID ?? S.devAgentId}`;
 const get = async () => {
   const r = await fetch(url, { headers: { 'x-algolia-application-id': S.appId, 'x-algolia-api-key': S.searchKey } });
   if (!r.ok) throw new Error(`GET ${r.status}`);
