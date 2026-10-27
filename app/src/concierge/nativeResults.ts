@@ -250,9 +250,9 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
      * belong to THIS message's own search. They used to accumulate across the
      * transcript, so a round-3 chip tap refined round 1's query text — the
      * shopper's gold shelf re-searched platinum with no price cap. */
-    let facets: Record<string, Record<string, number>> = {};
+    const facets: Record<string, Record<string, number>> = {};
     let queryText = '';
-    let turnConstraints: Record<string, string[]> = {};
+    const turnConstraints: Record<string, string[]> = {};
     /* A multi-query call is a multi-direction turn: its facet counts are
      * per-direction, so a single funnel over them mismatches the tiles.
      * Chips only apply to a single-scope discovery search. */

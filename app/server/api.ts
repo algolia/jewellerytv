@@ -76,6 +76,16 @@ const facetSchema = z
     params: paramsSchema.default({}),
   })
   .strict();
+const productIdentitySchema = z.string().regex(/^[A-Za-z0-9_.-]{1,150}$/);
+const productsBatchSchema = z
+  .object({
+    ids: z
+      .array(productIdentitySchema)
+      .min(1)
+      .max(50)
+      .refine((ids) => new Set(ids).size === ids.length, 'Duplicate product identities'),
+  })
+  .strict();
 const contextSchema = z
   .record(
     z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/),
@@ -315,6 +325,15 @@ export function createApiHandler(options: ApiOptions) {
         }
         path = `/1/indexes/prod_catalog/${encodeURIComponent(id)}`;
         method = 'GET';
+      } else if (req.method === 'POST' && url.pathname === '/api/products/batch') {
+        /* One multi-get for the curation tool's record reads: per-ID requests
+         * lose the platform's client-tool wait budget (the cancelled
+         * present_products class, 2026-10-26). Read-only, search-only key. */
+        const input = productsBatchSchema.parse(await body(req));
+        payload = {
+          requests: input.ids.map((objectID) => ({ indexName: 'prod_catalog', objectID })),
+        };
+        path = '/1/indexes/*/objects';
       } else if (req.method === 'POST' && url.pathname === '/api/chat') {
         if (!validIdentity(conciergeId)) {
           reply(res, 503, { error: 'Concierge is not configured' });

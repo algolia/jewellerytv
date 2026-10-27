@@ -50,9 +50,15 @@ export function buildClientTools(
     /** The app's read-only search proxy (see presentProducts — the shelf
      * floor's last resort when the streamed pool is exhausted). */
     appSearch?: (facetFilters: readonly string[]) => Promise<readonly string[]>;
+    /** One multi-get for N records (the /api/products/batch route) — the
+     * curation tool's latency fix for the platform's client-tool wait
+     * budget (the cancelled present_products events, 2026-10-26). */
+    batchFetchRawRecords?: (objectIDs: readonly string[]) => Promise<unknown[]>;
   },
 ): Record<string, ClientToolExecutor> {
-  const getRecords: CatalogRecordFetcher = createCatalogRecordFetcher(fetchRawRecord);
+  const getRecords: CatalogRecordFetcher = createCatalogRecordFetcher(fetchRawRecord, {
+    batchFetchRawRecords: options?.batchFetchRawRecords,
+  });
   const refreshProducts = createRefreshProducts(getRecords);
   const presentProducts = createPresentProducts(getRecords, {
     vocabulary: options?.vocabulary,

@@ -265,7 +265,12 @@ export function createPresentProducts(
     /* Requirement enforcement reads the shopper's own message, not a
      * model-quoted field. Without the live vocabulary, the supplier, or any
      * matching words, the check is skipped and behavior matches the
-     * pre-enforcement build. */
+     * pre-enforcement build. The record read starts immediately and runs
+     * alongside the vocabulary fetch — the platform's client-tool wait
+     * budget cancelled slow present_products calls (2026-10-26), so the
+     * independent reads never run one after the other. */
+    const needs = [...new Set(objectIDs)];
+    const recordsPromise = getRecords(needs);
     let enforced: EnforcedRequirement | null = null;
     const shopperMessage = options?.shopperMessage?.();
     if (typeof shopperMessage === 'string' && shopperMessage.trim()) {
@@ -276,9 +281,7 @@ export function createPresentProducts(
         enforced = null;
       }
     }
-
-    const needs = [...new Set(objectIDs)];
-    const records = await getRecords(needs);
+    const records = await recordsPromise;
     const verified: { objectID: string; name: string; price: number; image: string; raw?: Record<string, unknown> }[] = [];
     const dropped: PresentDrop[] = [];
     const seenIds = new Set<string>();

@@ -574,7 +574,7 @@ export function ConnectedConcierge({
   // sets, so the welcome reacts to the shopper's own selections. UI label
   // rotation only; no shopper data, no tracking.
   const usedStarterLabelsRef = useRef<Set<string>>(new Set());
-  const nextStarterSet = useCallback((current: readonly StarterQuestion[]) => {
+  const nextStarterSet = useCallback((_current: readonly StarterQuestion[]) => {
     const set = selectStarterSet(STARTER_QUESTION_POOL, [...usedStarterLabelsRef.current]);
     for (const question of set) usedStarterLabelsRef.current.add(question.label);
     return set;
@@ -744,6 +744,22 @@ export function ConnectedConcierge({
           vocabulary: loadCatalogVocabulary,
           shopperMessage: () => shopperMessageRef.current,
           searchPool: () => searchPoolRef.current,
+          batchFetchRawRecords: async (ids) => {
+            /* One multi-get covers the curation tool's record reads; per-ID
+             * requests lost the platform's client-tool wait budget (the
+             * cancelled present_products events, 2026-10-26). */
+            const response = await fetch('/api/products/batch', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids: [...ids] }),
+            });
+            if (!response.ok) throw new Error('Product records could not be loaded.');
+            const data = await response.json();
+            const results = Array.isArray(data?.results) ? data.results : [];
+            return results.map((raw: { objectID?: unknown }) =>
+              typeof raw?.objectID === 'string' ? raw : {},
+            );
+          },
           appSearch: async (facetFilters) => {
             /* The shelf floor's last resort: a read-only search through the
              * same-origin proxy, facet-filtered on the enforced requirement.

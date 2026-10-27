@@ -95,23 +95,59 @@ export function toCatalogRecord(raw: unknown): CatalogRecord | null {
 
 /** Builds the shared fetcher over an injected per-ID read. A fetched record
  * only counts when its own objectID equals the requested ID (the same identity
- * rule the exact-product refresh path applies). */
+ * rule the exact-product refresh path applies).
+ *
+ * With a batch reader (the /api/products/batch multi-get), one request covers
+ * every id — per-ID requests lose the platform's client-tool wait budget (the
+ * cancelled present_products events, 2026-10-26). A failed chunk falls back to
+ * the per-ID reader, so a batch-endpoint outage degrades to today's behavior
+ * instead of an empty shelf. */
 export function createCatalogRecordFetcher(
   fetchRawRecord: (objectID: string) => Promise<unknown>,
+  options?: {
+    batchFetchRawRecords?: (objectIDs: readonly string[]) => Promise<unknown[]>;
+    batchSize?: number;
+  },
 ): CatalogRecordFetcher {
+  const batchSize = options?.batchSize ?? 50;
+  const collect = (objectID: string, raw: unknown, records: Map<string, CatalogRecord>) => {
+    const record = toCatalogRecord(raw);
+    if (record && record.objectID === objectID) records.set(objectID, record);
+  };
   return async (objectIDs) => {
+    const ids = [...new Set(objectIDs)];
     const records = new Map<string, CatalogRecord>();
-    await Promise.all(
-      [...new Set(objectIDs)].map(async (objectID) => {
-        try {
-          const raw = await fetchRawRecord(objectID);
-          const record = toCatalogRecord(raw);
-          if (record && record.objectID === objectID) records.set(objectID, record);
-        } catch {
-          // A record that will not load is reported as not_found by the caller.
-        }
-      }),
-    );
+    if (!options?.batchFetchRawRecords) {
+      await Promise.all(
+        ids.map(async (objectID) => {
+          try {
+            collect(objectID, await fetchRawRecord(objectID), records);
+          } catch {
+            // A record that will not load is reported as not_found by the caller.
+          }
+        }),
+      );
+      return records;
+    }
+    for (let start = 0; start < ids.length; start += batchSize) {
+      const chunk = ids.slice(start, start + batchSize);
+      try {
+        const raws = await options.batchFetchRawRecords(chunk);
+        chunk.forEach((objectID, index) => {
+          collect(objectID, raws[index], records);
+        });
+      } catch {
+        await Promise.all(
+          chunk.map(async (objectID) => {
+            try {
+              collect(objectID, await fetchRawRecord(objectID), records);
+            } catch {
+              // A record that will not load is reported as not_found by the caller.
+            }
+          }),
+        );
+      }
+    }
     return records;
   };
 }

@@ -220,6 +220,32 @@ describe('protected local API', () => {
     expect((await request('/api/products/%00')).status).toBe(400);
     expect(upstream).not.toHaveBeenCalled();
   });
+  it('batches product record reads into one upstream multi-get', async () => {
+    /* The curation tool fetches every candidate record; per-ID requests lose
+     * the platform's client-tool wait budget (the cancelled present_products
+     * class, 2026-10-26). One batched multi-get replaces N round trips. */
+    const { request, upstream } = await setup();
+    const response = await request('/api/products/batch', { ids: ['MFP256C', 'ZNS22'] });
+    expect(response.status).toBe(200);
+    expect(upstream).toHaveBeenCalledTimes(1);
+    const [callUrl, init] = upstream.mock.calls[0] as unknown as [string, RequestInit];
+    expect(String(callUrl)).toContain('/1/indexes/*/objects');
+    expect(JSON.parse(init.body as string)).toEqual({
+      requests: [
+        { indexName: 'prod_catalog', objectID: 'MFP256C' },
+        { indexName: 'prod_catalog', objectID: 'ZNS22' },
+      ],
+    });
+  });
+  it('rejects batch identities and oversize batches without calling upstream', async () => {
+    const { request, upstream } = await setup();
+    expect((await request('/api/products/batch', { ids: ['bad/id'] })).status).toBe(400);
+    expect((await request('/api/products/batch', { ids: [] })).status).toBe(400);
+    expect(
+      (await request('/api/products/batch', { ids: Array.from({ length: 51 }, () => 'A1') })).status,
+    ).toBe(400);
+    expect(upstream).not.toHaveBeenCalled();
+  });
   it('rejects unknown content types and oversized batch payloads', async () => {
     const { request, upstream } = await setup();
     expect((await request('/api/search', {}, { 'content-type': 'text/plain' })).status).toBe(415);
