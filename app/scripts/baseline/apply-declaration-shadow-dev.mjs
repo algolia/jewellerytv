@@ -10,7 +10,7 @@
  *                 preflight, READ-ONLY
  *   NODE_USE_SYSTEM_CA=1 node apply-declaration-shadow-dev.mjs --execute --expect=<hash3>
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -52,6 +52,11 @@ const UNDERSTOOD_SCHEMA = {
     material: { type: 'array', items: { type: 'string' } },
     gemstone: { type: 'array', items: { type: 'string' } },
     brand: { type: 'array', items: { type: 'string' } },
+    priceMax: {
+      type: 'number',
+      minimum: 0,
+      description: 'Dollars the shopper will not go over, when they named a budget. Omit when they named none.',
+    },
   },
   required: ['material', 'gemstone', 'brand'],
 };

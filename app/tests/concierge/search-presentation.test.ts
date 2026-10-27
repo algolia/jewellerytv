@@ -422,6 +422,45 @@ describe('present_products declaration shadow (Option B stage 1)', () => {
     expect(result.declaredVerbatim).toBe(true);
   });
 
+  it('a declared price ceiling is recorded with the tiles that exceed it', async () => {
+    /* The measured leak (the platinum-over-budget shelf, 2026-10-26): the
+     * model filters price at search, but a declared ceiling lets code CHECK
+     * each tile's actual price. Shadow stage: recorded, not enforced. */
+    const priced = async (ids: readonly string[]) => {
+      const map = new Map();
+      for (const id of ids)
+        map.set(id, {
+          ...record(id),
+          price: id === 'over' ? 250 : 66,
+          materialFields: {},
+        });
+      return map;
+    };
+    const result = await createPresentProducts(priced, { vocabulary: async () => vocabulary })({
+      objectIDs: ['over', 'under'],
+      understood: { material: [], gemstone: [], brand: [], priceMax: 200 },
+    } as never);
+    expect(result.declared).toEqual({ material: [], gemstone: [], brand: [], priceMax: 200 });
+    expect(result.priceOverBudget).toEqual(['over']);
+  });
+
+  it('no declared ceiling adds no price field', async () => {
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
+      objectIDs: ['a'],
+      understood: { material: [], gemstone: [], brand: [] },
+    } as never);
+    expect(result.priceOverBudget).toBeUndefined();
+  });
+
+  it('a non-numeric ceiling is ignored, not coerced', async () => {
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
+      objectIDs: ['a'],
+      understood: { material: [], gemstone: [], brand: [], priceMax: '200' },
+    } as never);
+    expect(result.declared).toEqual({ material: [], gemstone: [], brand: [] });
+    expect(result.priceOverBudget).toBeUndefined();
+  });
+
   it('flags invented values as not verbatim', async () => {
     const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
       objectIDs: ['a'],

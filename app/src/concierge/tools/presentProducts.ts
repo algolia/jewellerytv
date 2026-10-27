@@ -36,6 +36,10 @@ export type UnderstoodConstraints = {
   material: readonly string[];
   gemstone: readonly string[];
   brand: readonly string[];
+  /** Dollars the shopper will not go over, declared by the model when the
+   * shopper named a budget. Shadow stage: the tiles that exceed it are
+   * reported, not dropped. */
+  priceMax?: number;
 };
 
 export type PresentDropReason =
@@ -65,6 +69,10 @@ export type PresentProductsOutput = {
   /** Whether every declared value exists in the live vocabulary — the
    * invented-value check. Undefined when no declaration or no vocabulary. */
   declaredVerbatim?: boolean;
+  /** Tiles on the shelf whose actual price exceeds a declared priceMax —
+   * the over-budget leak, measured 2026-10-26. Shadow stage: reported,
+   * not dropped. */
+  priceOverBudget?: readonly string[];
   /** How many tiles came from the backfill pool rather than the model's
    * pick — nonzero only when the model's verified list sat under the floor. */
   backfilled?: number;
@@ -261,11 +269,19 @@ function normalizeUnderstood(input: unknown): UnderstoodConstraints | null {
         .map((entry) => entry.trim()),
     )].slice(0, 4);
   };
-  return {
+  /* A ceiling must be a real number the model read off the sentence; a
+   * string or anything else is ignored, never coerced. */
+  const priceMax =
+    typeof source.priceMax === 'number' && Number.isFinite(source.priceMax) && source.priceMax >= 0
+      ? source.priceMax
+      : undefined;
+  const declared: UnderstoodConstraints = {
     material: list(source.material),
     gemstone: list(source.gemstone),
     brand: list(source.brand),
+    ...(priceMax !== undefined ? { priceMax } : {}),
   };
+  return declared;
 }
 
 /** Every declared value must exist in the live vocabulary for its concept —
@@ -277,7 +293,7 @@ function declaredValuesAreVerbatim(
   declared: UnderstoodConstraints,
   vocabulary: VocabularyLike,
 ): boolean {
-  const concepts: (keyof UnderstoodConstraints)[] = ['material', 'gemstone', 'brand'];
+  const concepts = ['material', 'gemstone', 'brand'] as const;
   for (const concept of concepts) {
     const attributes = CONCEPT_ATTRIBUTES[concept] ?? [];
     const known = new Set(
@@ -471,6 +487,15 @@ export function createPresentProducts(
      * result is not a partial row pretending to be a full shelf. */
     const shelf =
       verified.length > 3 ? verified.slice(0, verified.length - (verified.length % 3)) : verified;
+    /* Shadow stage of the price ceiling: report which shelf tiles exceed the
+     * declared budget instead of dropping them — the declaration's compliance
+     * rate is unmeasured, so a wrong ceiling must not cost good tiles. The
+     * boundary itself (inclusive or not) stays the model's reading; the
+     * measured leak was grossly over, which a strict-greater check catches. */
+    const ceiling = declared?.priceMax;
+    const overBudget = ceiling != null
+      ? shelf.filter((tile) => tile.price > ceiling).map((tile) => tile.objectID)
+      : undefined;
     return {
       status: 'ok',
       objectIDs: shelf,
@@ -479,6 +504,7 @@ export function createPresentProducts(
       enforced: enforced ?? undefined,
       declared: declared ?? undefined,
       declaredVerbatim,
+      priceOverBudget: overBudget,
       backfilled: backfilled || undefined,
       poolSize,
     };
