@@ -38,7 +38,7 @@ const patchBody = (src) => ({
 const ANCHOR = "Don't: tell the shopper about system internals: retries, what the system accepts, evidence, verification, how the display is built, where the narrowing options came from.";
 const ADDITION = "- Don't: explain a tool's verdict or an empty first attempt (\"The display tool is telling me these pieces don't read as pearl by its material-name check\"). When a first shelf comes back empty or thin, search again with different facet values and show what you found; the shopper hears about what we hold, never about how the checking works.";
 
-const url = `https://${S.appId}.algolia.net/agent-studio/1/agents/${S.devAgentId}`;
+const url = `https://${S.appId}.algolia.net/agent-studio/1/agents/${process.env.JTV_TARGET_AGENT_ID ?? S.devAgentId}`;
 const get = async () => {
   const r = await fetch(url, { headers: { 'x-algolia-application-id': S.appId, 'x-algolia-api-key': S.searchKey } });
   if (!r.ok) throw new Error(`GET ${r.status}`);
