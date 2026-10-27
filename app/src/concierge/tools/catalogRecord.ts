@@ -28,6 +28,11 @@ export type CatalogRecord = {
    * (the Craig Task 01 conclusion; the 2026-10-27 matcher misfires re-proved
    * it by emptying every pearl shelf). */
   hasPearls: boolean;
+  /** JTV's CDO set the agent's business scope: pre-owned is excluded. The
+   * platform cannot filter the numeric flag at search time (tool sheet),
+   * so the curation tool drops flagged records — deterministic, not
+   * model-dependent. */
+  previouslyOwned: boolean;
   /** The original index record, kept so a tile fetched outside the streamed
    * search (the shelf floor's follow-up search) can still render everywhere
    * the streamed records render. */
@@ -90,6 +95,11 @@ export function toCatalogRecord(raw: unknown): CatalogRecord | null {
   const hasPearls =
     (Array.isArray(raw.Catalog_PearlInformationPrimary) && raw.Catalog_PearlInformationPrimary.length > 0) ||
     (Array.isArray(raw.Catalog_PearlInformation) && raw.Catalog_PearlInformation.length > 0);
+  const condition = typeof raw.Catalog_Condition === 'string' ? raw.Catalog_Condition.toLowerCase() : '';
+  const previouslyOwned =
+    raw.Catalog_PreviouslyOwned === 1 ||
+    raw.Catalog_PreviouslyOwned === true ||
+    condition.includes('pre-owned');
   return {
     objectID,
     name,
@@ -99,6 +109,7 @@ export function toCatalogRecord(raw: unknown): CatalogRecord | null {
     link: `/product/${objectID}`,
     materialFields,
     hasPearls,
+    previouslyOwned,
     raw,
   };
 }

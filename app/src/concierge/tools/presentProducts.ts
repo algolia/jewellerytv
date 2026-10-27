@@ -52,7 +52,8 @@ export type PresentDropReason =
   | 'variant_of_shown'
   | 'duplicate'
   | 'requirement_mismatch'
-  | 'over_budget';
+  | 'over_budget'
+  | 'pre_owned';
 
 export type PresentDrop = { objectID: string; reason: PresentDropReason };
 
@@ -433,6 +434,12 @@ export function createPresentProducts(
      * pool, and the follow-up search all pass the identical checks in the
      * same order: requirement, stock, price, image, same-design twin. */
     const admit = (objectID: string, record: CatalogRecord, attachRaw = false): boolean => {
+      /* Business scope before everything else (JTV's CDO): pre-owned never
+       * displays, whatever the model picked or the search returned. */
+      if (record.previouslyOwned) {
+        dropped.push({ objectID, reason: 'pre_owned' });
+        return false;
+      }
       for (const check of enforcedByDeclaration) {
         if (!satisfiesDeclaration(record, check)) {
           dropped.push({ objectID, reason: 'requirement_mismatch' });

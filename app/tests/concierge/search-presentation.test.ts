@@ -431,6 +431,41 @@ describe('present_products declaration enforcement (Option B cutover)', () => {
   });
 });
 
+describe('present_products pre-owned scope (Craig, CDO)', () => {
+  /* JTV's CDO set the business scope: pre-owned is out of the agent entirely.
+   * The platform cannot filter the numeric flag at search time (measured,
+   * tool sheet), so the curation tool drops flagged records — deterministic,
+   * independent of model compliance. */
+  const record = (objectID: string, extra: Record<string, unknown> = {}) => ({
+    objectID,
+    name: `Product ${objectID}`,
+    price: 500,
+    inStock: true,
+    imageUrl: 'https://example.com/a.jpg',
+    link: `/product/${objectID}`,
+    materialFields: {},
+    hasPearls: false,
+    ...extra,
+  });
+  const fetcher = async (ids: readonly string[]) => {
+    const map = new Map();
+    for (const id of ids) {
+      if (id === 'preowned' || id === 'preowned2') map.set(id, record(id, { previouslyOwned: true }));
+      else map.set(id, record(id));
+    }
+    return map;
+  };
+
+  it('never admits a pre-owned piece, whatever the model picked', async () => {
+    const result = await createPresentProducts(fetcher)({
+      objectIDs: ['preowned', 'fresh', 'preowned2'],
+    });
+    const pre = result.dropped.filter((d) => d.reason === 'pre_owned');
+    expect(pre.map((d) => d.objectID).sort()).toEqual(['preowned', 'preowned2']);
+    expect(result.objectIDs.map((i) => i.objectID)).toEqual(['fresh']);
+  });
+});
+
 describe('present_products declaration shadow (Option B stage 1)', () => {
   /* The model declares what it understood from the shopper's own words; the
    * tool records it for the shadow gate and enforces nothing from it yet —
