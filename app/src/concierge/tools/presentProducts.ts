@@ -24,6 +24,18 @@ export type PresentProductsInput = {
   /** One to three facet attribute names from the search's facet counts, the
    * narrowing options the app renders as chips, first shown first. */
   displayFacets?: readonly string[];
+  /** The model's declaration of what it understood from the shopper's own
+   * words this turn (Option B, 2026-10-26): material, gemstone and brand as
+   * verbatim catalog values, empty arrays when the shopper named none or
+   * declined one. Shadow stage: recorded for the gate, never enforced —
+   * the word-matcher stays the enforcement source until the cutover. */
+  understood?: UnderstoodConstraints;
+};
+
+export type UnderstoodConstraints = {
+  material: readonly string[];
+  gemstone: readonly string[];
+  brand: readonly string[];
 };
 
 export type PresentDropReason =
@@ -47,6 +59,12 @@ export type PresentProductsOutput = {
   /** The requirement check the tool enforced, so the model and the logs can
    * see what was verified. */
   enforced?: EnforcedRequirement;
+  /** The model's declaration of its understanding, normalized. Absent when
+   * the model sent none. Shadow stage: never drives enforcement. */
+  declared?: UnderstoodConstraints;
+  /** Whether every declared value exists in the live vocabulary — the
+   * invented-value check. Undefined when no declaration or no vocabulary. */
+  declaredVerbatim?: boolean;
   /** How many tiles came from the backfill pool rather than the model's
    * pick — nonzero only when the model's verified list sat under the floor. */
   backfilled?: number;
@@ -228,6 +246,46 @@ export function matchRequirement(
   return [winner];
 }
 
+/** Normalize the model's declaration: three arrays of trimmed, deduped,
+ * capped values. Null for anything that is not a declaration object — the
+ * field is advisory, so invalid input degrades to "no declaration", never a
+ * failed call. */
+function normalizeUnderstood(input: unknown): UnderstoodConstraints | null {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) return null;
+  const source = input as Record<string, unknown>;
+  const list = (value: unknown): readonly string[] => {
+    if (!Array.isArray(value)) return [];
+    return [...new Set(
+      value
+        .filter((entry): entry is string => typeof entry === 'string' && !!entry.trim())
+        .map((entry) => entry.trim()),
+    )].slice(0, 4);
+  };
+  return {
+    material: list(source.material),
+    gemstone: list(source.gemstone),
+    brand: list(source.brand),
+  };
+}
+
+/** Every declared value must exist in the live vocabulary for its concept —
+ * the model uses verbatim values or the declaration is flagged. An empty
+ * declaration (the shopper declined) is vacuously verbatim. */
+function declaredValuesAreVerbatim(
+  declared: UnderstoodConstraints,
+  vocabulary: VocabularyLike,
+): boolean {
+  const concepts: (keyof UnderstoodConstraints)[] = ['material', 'gemstone', 'brand'];
+  for (const concept of concepts) {
+    const attributes = CONCEPT_ATTRIBUTES[concept] ?? [];
+    const known = new Set(attributes.flatMap((attribute) => vocabulary.values[attribute] ?? []));
+    for (const value of declared[concept]) {
+      if (!known.has(value)) return false;
+    }
+  }
+  return true;
+}
+
 function satisfies(recordMaterial: Record<string, string[]>, enforced: EnforcedRequirement) {
   return (recordMaterial[enforced.attribute] ?? []).some((value) =>
     enforced.values.includes(value),
@@ -253,7 +311,7 @@ export function createPresentProducts(
     appSearch?: (facetFilters: readonly string[]) => Promise<readonly string[]>;
   },
 ): PresentProducts {
-  return async ({ objectIDs, displayFacets }) => {
+  return async ({ objectIDs, displayFacets, understood }) => {
     if (!Array.isArray(objectIDs) || objectIDs.length === 0)
       return invalid('objectIDs must be a non-empty array');
     if (objectIDs.length > 24) return invalid(`${objectIDs.length} objectIDs exceeds the maximum of 24`);
@@ -268,15 +326,22 @@ export function createPresentProducts(
      * pre-enforcement build. The record read starts immediately and runs
      * alongside the vocabulary fetch — the platform's client-tool wait
      * budget cancelled slow present_products calls (2026-10-26), so the
-     * independent reads never run one after the other. */
+     * independent reads never run one after the other. The model's
+     * declaration (shadow stage) shares the same single vocabulary read. */
     const needs = [...new Set(objectIDs)];
     const recordsPromise = getRecords(needs);
+    const declared = normalizeUnderstood(understood);
     let enforced: EnforcedRequirement | null = null;
+    let declaredVerbatim: boolean | undefined;
     const shopperMessage = options?.shopperMessage?.();
-    if (typeof shopperMessage === 'string' && shopperMessage.trim()) {
+    if ((typeof shopperMessage === 'string' && shopperMessage.trim()) || declared) {
       try {
         const vocabulary = (await options?.vocabulary?.()) ?? null;
-        if (vocabulary) enforced = matchRequirement(shopperMessage, vocabulary)[0] ?? null;
+        if (vocabulary) {
+          if (typeof shopperMessage === 'string' && shopperMessage.trim())
+            enforced = matchRequirement(shopperMessage, vocabulary)[0] ?? null;
+          if (declared) declaredVerbatim = declaredValuesAreVerbatim(declared, vocabulary);
+        }
       } catch {
         enforced = null;
       }
@@ -386,7 +451,15 @@ export function createPresentProducts(
     }
 
     if (!verified.length)
-      return { status: 'empty', objectIDs: [], dropped, displayFacets: facets, enforced: enforced ?? undefined };
+      return {
+        status: 'empty',
+        objectIDs: [],
+        dropped,
+        displayFacets: facets,
+        enforced: enforced ?? undefined,
+        declared: declared ?? undefined,
+        declaredVerbatim,
+      };
     /* The shelf law (Arijit, standing rule, re-confirmed 2026-10-26): a shelf
      * shows complete rows of three — 3, 6 or 9 pieces, never 4, 5, 7 or 8.
      * The model writes its reply from exactly this list, so the trim happens
@@ -400,6 +473,8 @@ export function createPresentProducts(
       dropped,
       displayFacets: facets,
       enforced: enforced ?? undefined,
+      declared: declared ?? undefined,
+      declaredVerbatim,
       backfilled: backfilled || undefined,
       poolSize,
     };

@@ -367,6 +367,80 @@ describe('present_products tool', () => {
   });
 });
 
+describe('present_products declaration shadow (Option B stage 1)', () => {
+  /* The model declares what it understood from the shopper's own words; the
+   * tool records it for the shadow gate and enforces nothing from it yet —
+   * the word-matcher stays the enforcement source until Arijit's cutover.
+   * Code never reads the sentence: interpretation is the model's job. */
+  const record = (objectID: string) => ({
+    objectID,
+    name: `Product ${objectID}`,
+    price: 125,
+    inStock: true,
+    imageUrl: 'https://example.com/a.jpg',
+    link: `/product/${objectID}`,
+    materialFields: {},
+  });
+  const fetcher = async (ids: readonly string[]) => {
+    const map = new Map();
+    for (const id of ids) map.set(id, record(id));
+    return map;
+  };
+  const vocabulary = {
+    values: {
+      'Catalog_JewelryMaterialNavigationName': ['Gold', 'Silver'],
+      'Catalog_GemstoneAndPearlNavigationName': ['Ruby', 'Multi-Stone'],
+      'Catalog_BrandNavigationName': ['Gems En Vogue'],
+    },
+  };
+
+  it('records the model declaration without enforcing it', async () => {
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
+      objectIDs: ['a'],
+      understood: { material: ['Gold'], gemstone: [], brand: [] },
+    } as never);
+    expect(result.declared).toEqual({ material: ['Gold'], gemstone: [], brand: [] });
+    expect(result.declaredVerbatim).toBe(true);
+    expect(result.enforced).toBeUndefined();
+    expect(result.status).toBe('ok');
+  });
+
+  it('a declined requirement is a valid declaration of empty arrays', async () => {
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
+      objectIDs: ['a'],
+      understood: { material: [], gemstone: [], brand: [] },
+    } as never);
+    expect(result.declared).toEqual({ material: [], gemstone: [], brand: [] });
+    expect(result.declaredVerbatim).toBe(true);
+  });
+
+  it('flags invented values as not verbatim', async () => {
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
+      objectIDs: ['a'],
+      understood: { material: ['Unobtainium'], gemstone: ['Ruby'], brand: [] },
+    } as never);
+    expect(result.declared).toEqual({ material: ['Unobtainium'], gemstone: ['Ruby'], brand: [] });
+    expect(result.declaredVerbatim).toBe(false);
+  });
+
+  it('an absent declaration adds no declared field', async () => {
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
+      objectIDs: ['a'],
+    });
+    expect(result.declared).toBeUndefined();
+    expect(result.declaredVerbatim).toBeUndefined();
+  });
+
+  it('an invalid declaration is ignored without failing the call', async () => {
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
+      objectIDs: ['a'],
+      understood: 'gold',
+    } as never);
+    expect(result.declared).toBeUndefined();
+    expect(result.status).toBe('ok');
+  });
+});
+
 describe('matchRequirement', () => {
   const vocabulary = {
     values: {
