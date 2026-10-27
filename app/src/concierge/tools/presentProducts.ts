@@ -269,7 +269,9 @@ function normalizeUnderstood(input: unknown): UnderstoodConstraints | null {
 }
 
 /** Every declared value must exist in the live vocabulary for its concept —
- * the model uses verbatim values or the declaration is flagged. An empty
+ * the model uses verbatim values or the declaration is flagged. Compared
+ * case-insensitively: the live model declares "gold" for the catalog value
+ * "Gold" (measured first turn of the shadow, 2026-10-26). An empty
  * declaration (the shopper declined) is vacuously verbatim. */
 function declaredValuesAreVerbatim(
   declared: UnderstoodConstraints,
@@ -278,9 +280,11 @@ function declaredValuesAreVerbatim(
   const concepts: (keyof UnderstoodConstraints)[] = ['material', 'gemstone', 'brand'];
   for (const concept of concepts) {
     const attributes = CONCEPT_ATTRIBUTES[concept] ?? [];
-    const known = new Set(attributes.flatMap((attribute) => vocabulary.values[attribute] ?? []));
+    const known = new Set(
+      attributes.flatMap((attribute) => (vocabulary.values[attribute] ?? []).map((v) => v.toLowerCase())),
+    );
     for (const value of declared[concept]) {
-      if (!known.has(value)) return false;
+      if (!known.has(value.toLowerCase())) return false;
     }
   }
   return true;

@@ -414,6 +414,14 @@ describe('present_products declaration shadow (Option B stage 1)', () => {
     expect(result.declaredVerbatim).toBe(true);
   });
 
+  it('verbatim matching is case-insensitive: the live model declares "gold" for "Gold"', async () => {
+    const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
+      objectIDs: ['a'],
+      understood: { material: ['gold'], gemstone: [], brand: [] },
+    } as never);
+    expect(result.declaredVerbatim).toBe(true);
+  });
+
   it('flags invented values as not verbatim', async () => {
     const result = await createPresentProducts(fetcher, { vocabulary: async () => vocabulary })({
       objectIDs: ['a'],
