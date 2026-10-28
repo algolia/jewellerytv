@@ -1,0 +1,44 @@
+/* Minimal tile styling only. Everything else comes from
+ * instantsearch.css/components/chat.css, imported by the host app. */
+.jtv-chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 24rem;
+}
+
+.jtv-chat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 10rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.jtv-chat-card-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: #f4f4f5;
+  font-size: 0.75rem;
+  color: #71717a;
+}
+
+.jtv-chat-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.jtv-chat-card-title {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

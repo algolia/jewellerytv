@@ -10,6 +10,13 @@
  * from the search result, the tool verifies them). */
 export const APP_ANSWERED_TOOL_NAMES = ['refresh_products', 'present_products'] as const;
 
+/* Answered by the rebuilt panel's own library tools, never by this registry,
+ * so it is deliberately absent from APP_ANSWERED_TOOL_NAMES: that list is the
+ * registry's contract and a test holds it to it. Listed here only so the guard
+ * does not 503 the old panel while both run side by side. Leaves with the
+ * server. */
+export const LIBRARY_ANSWERED_TOOL_NAMES = ['algolia_grouped_results'] as const;
+
 /** The native search tool is answered by Agent Studio itself; the app only
  * claims the name. The runtime name carries an index suffix. */
 export const SEARCH_TOOL_PREFIX = 'algolia_search_index';
@@ -17,6 +24,7 @@ export const SEARCH_TOOL_PREFIX = 'algolia_search_index';
 export function appAnswersTool(toolName: string): boolean {
   return (
     (APP_ANSWERED_TOOL_NAMES as readonly string[]).includes(toolName) ||
+    (LIBRARY_ANSWERED_TOOL_NAMES as readonly string[]).includes(toolName) ||
     toolName.startsWith(SEARCH_TOOL_PREFIX)
   );
 }
