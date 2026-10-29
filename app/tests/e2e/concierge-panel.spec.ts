@@ -100,9 +100,10 @@ test('a grouped-results call renders one tile per piece, imaged, titled and link
 
   const cards = panel.locator(CARD);
   await expect(cards).toHaveCount(2);
-  await expect(panel.locator('.ais-ChatToolGroupedResults-intro')).toHaveText(
-    'Here is what fits the brief.',
-  );
+  /* The tool's intro is deliberately dropped by the display gate: the model
+   * writes its reply in the message and then says the same thing again above
+   * the shelves. The message is the only voice the shopper reads. */
+  await expect(panel.locator('.ais-ChatToolGroupedResults-intro')).toHaveCount(0);
 
   const ring = panel.locator(`${CARD}[href="/product/${RING.objectID}"]`);
   await expect(ring).toHaveCount(1);
@@ -134,6 +135,29 @@ test('no price reaches the panel even though the records carry one', async ({ pa
   expect(text).not.toContain(String(EARRINGS.Pricing_ActivePrice));
   expect(text).not.toMatch(/[$£€]\s?\d/);
   expect(text).not.toMatch(/\d+\.\d{2}/);
+});
+
+test('the new-conversation control clears the turn and keeps the panel open', async ({ page }) => {
+  await stubAgentTurn(page, { text: 'A short reply.' });
+  const panel = await openPanel(page);
+
+  /* The control lives in the widget's header slot, not the shell: only the
+   * widget can reach `clearMessages`. It is dead until there is something to
+   * clear, which is the library's `canClear`. */
+  const newConversation = panel.getByRole('button', { name: 'Start a new conversation' });
+  await expect(newConversation).toBeDisabled();
+
+  const composer = panel.locator(COMPOSER);
+  await composer.fill('hello');
+  await composer.press('Enter');
+  await expect(panel.locator('.ais-ChatMessage')).toHaveCount(2);
+  await expect(newConversation).toBeEnabled();
+
+  await newConversation.click();
+  await expect(panel.locator('.ais-ChatMessage')).toHaveCount(0);
+  // Clearing is not closing: the shopper is still in the conversation.
+  await expect(panel).toHaveAttribute('data-open', 'true');
+  await expect(newConversation).toBeDisabled();
 });
 
 test('the display gate refuses a repeat and an unphotographed piece', async ({ page }) => {

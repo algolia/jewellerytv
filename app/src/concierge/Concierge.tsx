@@ -1,5 +1,4 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { X } from 'lucide-react';
 import type { ChatHandle } from 'react-instantsearch';
 import { JtvChat } from './chat/JtvChat';
 import { trackConciergeVisibility } from '../website/analytics';
@@ -87,23 +86,18 @@ export const Concierge = forwardRef<
   }, [context]);
   return (
     <div className="jtv-concierge" data-open={open} hidden={!open}>
-      <div className="jtv-concierge-header">
-        <h2>Jewelry concierge</h2>
-        <button
-          type="button"
-          className="jtv-concierge-close"
-          aria-label="Close the jewelry concierge"
-          onClick={() => {
-            setOpen(false);
-            onClose?.();
-          }}
-        >
-          <X size={18} />
-        </button>
-      </div>
-      {/* Kept mounted while closed so reopening the panel returns to the same
-       * conversation instead of restarting the stream. */}
-      <JtvChat ref={chat} context={turnContext} />
+      {/* The header lives inside the widget: only the widget can reach
+        * `clearMessages`, which is what the new-conversation control needs.
+        * Kept mounted while closed so reopening returns to the same
+        * conversation instead of restarting the stream. */}
+      <JtvChat
+        ref={chat}
+        context={turnContext}
+        onClose={() => {
+          setOpen(false);
+          onClose?.();
+        }}
+      />
     </div>
   );
 });

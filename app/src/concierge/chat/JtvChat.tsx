@@ -1,4 +1,5 @@
 import { forwardRef, useMemo } from 'react';
+import { Plus, X } from 'lucide-react';
 import { liteClient } from 'algoliasearch/lite';
 import { Chat, ChatInlineLayout, InstantSearch } from 'react-instantsearch';
 import type { ChatHandle } from 'react-instantsearch';
@@ -33,15 +34,59 @@ function readConfig() {
   return { appId, apiKey, agentId };
 }
 
+type HeaderProps = {
+  onClose: () => void;
+  onClear?: () => void;
+  canClear?: boolean;
+};
+
+/* The widget owns `clearMessages` and hands it to whatever header it is given,
+ * so the panel header lives inside the widget rather than beside it. A second
+ * header outside would have had no way to reach it. */
+function createHeader(onPanelClose?: () => void) {
+  return function JtvChatHeader({ onClose, onClear, canClear }: HeaderProps) {
+    return (
+      <div className="jtv-concierge-header">
+        <h2>Jewelry concierge</h2>
+        <div className="jtv-concierge-header-actions">
+          <button
+            type="button"
+            className="jtv-concierge-header-button"
+            aria-label="Start a new conversation"
+            title="New conversation"
+            disabled={!canClear}
+            onClick={onClear}
+          >
+            <Plus size={18} />
+          </button>
+          <button
+            type="button"
+            className="jtv-concierge-header-button jtv-concierge-close"
+            aria-label="Close the jewelry concierge"
+            onClick={() => {
+              onClose();
+              onPanelClose?.();
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+}
+
 export type JtvChatProps = {
   /** Ambient page facts attached to the user turn (Agent Studio grounding). */
   context?: Record<string, string> | (() => Record<string, string>);
+  /** Lets the header's close control dismiss the panel shell around it. */
+  onClose?: () => void;
 };
 
 /* The ref exposes the widget's own handle (`setOpen`, `setInput`,
  * `sendMessage`), which is how the storefront's "Ask JTV" chip hands the
  * current search text to the panel. */
-export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ context }, ref) {
+export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ context, onClose }, ref) {
   const { appId, apiKey, agentId } = useMemo(readConfig, []);
 
   /* One instance per mount. Recreating it on every render would drop the
@@ -76,6 +121,7 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ c
           itemComponent={ProductCard}
           tools={createGatedTools()}
           layoutComponent={ChatInlineLayout}
+          headerComponent={useMemo(() => createHeader(onClose), [onClose])}
           requiresSearch={false}
           translations={{ prompt: { textareaPlaceholder: 'Ask about jewellery' } }}
         />

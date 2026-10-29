@@ -1,5 +1,7 @@
+import { createElement, Fragment, useEffect, useRef } from 'react';
 import { createDefaultTools, GroupedResultsToolType } from 'react-instantsearch';
 import type { Tool, Tools } from 'react-instantsearch';
+import { createGroupedResultsToolComponent } from 'instantsearch-ui-components';
 import { recordDisplayEvent } from '../../shared/telemetry';
 import { ProductCard, type JtvHit } from './ProductCard';
 
@@ -64,25 +66,49 @@ export function gateGroups(input: ToolInput, records?: RecordsStore) {
   return { input: { ...input, intro: undefined, groups: kept }, dropped };
 }
 
-/* Wraps the library's own grouped-results layout rather than reimplementing
- * it: the carousel, streaming caption and group headers stay the library's
- * problem, and only the item list passing through is ours. */
+/* The library lays out the intro, the per-group headers and the streaming
+ * caption; we supply the group body. Its default is a horizontal carousel,
+ * which hides most of a shelf behind arrows in a panel this narrow. A grid
+ * shows the whole group at once and reflows with the panel width. */
+/* The renderer type in instantsearch-ui-components is framework-agnostic and
+ * its `Pragma` does not line up with React's `createElement` overloads. The
+ * library's own React wrapper passes exactly these four the same way. */
+const GroupedResultsUI = createGroupedResultsToolComponent<JtvHit>({
+  createElement,
+  Fragment,
+  useEffect,
+  useRef,
+} as never);
+
+function GroupGrid({ items }: { items: JtvHit[] }) {
+  return (
+    <div className="jtv-chat-grid">
+      {items.map((item) => (
+        <ProductCard key={item.objectID} item={item} sendEvent={() => undefined} />
+      ))}
+    </div>
+  );
+}
+
 export function createGatedTools(): Tools {
   const defaults = createDefaultTools<JtvHit>(ProductCard);
   const grouped = defaults[GroupedResultsToolType] as Tool;
-  const Inner = grouped.layoutComponent;
-  if (!Inner) return defaults;
-  const Gated: typeof Inner = (props) => {
+  const Gated: NonNullable<Tool['layoutComponent']> = (props) => {
     const message = props.context?.message ?? props.message;
     const raw = (message?.input ?? {}) as ToolInput;
     const { input, dropped } = gateGroups(raw, props.context?.records as RecordsStore | undefined);
     if (dropped.length) recordDisplayEvent('stage-ok', `gate dropped ${dropped.join(', ')}`);
     const gatedMessage = { ...message, input };
-    return Inner({
-      ...props,
-      message: gatedMessage,
-      context: { ...props.context, message: gatedMessage },
-    });
+    return (
+      <GroupedResultsUI
+        toolProps={{
+          ...props,
+          message: gatedMessage,
+          context: { ...props.context, message: gatedMessage },
+        }}
+        groupCarouselComponent={({ items }) => <GroupGrid items={items as JtvHit[]} />}
+      />
+    );
   };
   return { ...defaults, [GroupedResultsToolType]: { ...grouped, layoutComponent: Gated } };
 }
