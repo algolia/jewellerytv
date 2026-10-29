@@ -132,7 +132,12 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ c
           emptyComponent={StarterChips}
           headerComponent={useMemo(() => createHeader(onClose), [onClose])}
           requiresSearch={false}
-          translations={{ prompt: { textareaPlaceholder: 'Ask about jewellery' } }}
+          /* Positions the chips as optional rather than as the only way in.
+           * "Ask about jewellery" competed with them; this invites the
+           * shopper past them. */
+          translations={{
+            prompt: { textareaPlaceholder: 'Or enter your own special request here' },
+          }}
         />
       </div>
     </InstantSearch>

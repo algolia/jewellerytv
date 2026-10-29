@@ -211,23 +211,53 @@
   list-style: none;
 }
 
+/* Filled rather than ghost-outlined: a white pill with a grey rule reads as
+ * disabled until hover, and these are the one thing on an empty panel the
+ * shopper is meant to touch. The fill is the header blue at low alpha, which
+ * is also what JTV's own mock used. */
 .jtv-chat-starter {
-  padding: 0.4375rem 0.75rem;
-  border: 1px solid var(--line, #ddd);
+  padding: 0.4375rem 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--blue, #0076a9) 35%, #fff);
   border-radius: 999px;
-  background: #fff;
-  color: var(--text, #454545);
+  background: color-mix(in srgb, var(--blue, #0076a9) 10%, #fff);
+  color: var(--blue, #0076a9);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.jtv-chat-starter:hover:not(:disabled) {
+  border-color: var(--blue, #0076a9);
+  background: color-mix(in srgb, var(--blue, #0076a9) 18%, #fff);
+}
+
+.jtv-chat-starter:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Deals another set from the pool. Solid, so it reads as the one action on
+ * the panel that is ours rather than a thing the shopper might say. */
+.jtv-chat-starters-more {
+  align-self: flex-start;
+  padding: 0.4375rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--blue, #0076a9);
+  color: #fff;
   font: inherit;
   font-size: 0.8125rem;
   cursor: pointer;
 }
 
-.jtv-chat-starter:hover:not(:disabled) {
-  border-color: var(--blue, #0076a9);
-  color: var(--blue, #0076a9);
+.jtv-chat-starters-more:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--blue, #0076a9) 85%, #000);
 }
 
-.jtv-chat-starter:disabled {
+.jtv-chat-starters-more:disabled {
   opacity: 0.5;
   cursor: default;
 }
