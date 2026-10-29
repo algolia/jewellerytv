@@ -47,18 +47,6 @@ describe('the starter set', () => {
     expect(repeated).toEqual([]);
   });
 
-  /* "View more" accumulates: the second re-roll must avoid both prior sets,
-   * not just the one on screen, or the shopper is handed back chips they
-   * already declined. */
-  it('accumulates across re-rolls', () => {
-    const first = selectStarterSet(STARTER_QUESTION_POOL, [], seeded([0.3, 0.6, 0.9]));
-    const seenAfterFirst = first.map((q) => q.label);
-    const second = selectStarterSet(STARTER_QUESTION_POOL, seenAfterFirst, seeded([0.15, 0.85]));
-    const seenAfterSecond = [...seenAfterFirst, ...second.map((q) => q.label)];
-    const third = selectStarterSet(STARTER_QUESTION_POOL, seenAfterSecond, seeded([0.45, 0.05]));
-    expect(third.filter((q) => seenAfterSecond.includes(q.label))).toEqual([]);
-  });
-
   /* The pool is bigger than one set, but a caller asking for more than it
    * holds must still get a usable set rather than an exception. */
   it('still returns a set when the pool is smaller than the request', () => {
@@ -74,21 +62,16 @@ describe('the empty state', () => {
     expect(html).toContain('Ask about a piece, an occasion, or how we work.');
   });
 
-  /* Mid-turn everything goes down, the re-roll included: dealing a new set
-   * under a streaming answer would move the panel while it is being read. */
-  it('disables the chips and the re-roll mid-turn', () => {
+  it('disables the chips mid-turn so a second question cannot stack', () => {
     const html = renderToStaticMarkup(
       <StarterChips sendMessage={() => undefined} status="streaming" />,
     );
-    expect(html.match(/disabled=""/g)).toHaveLength(10);
+    expect(html.match(/disabled=""/g)).toHaveLength(9);
   });
 
-  /* Without a sender the chips cannot do anything, but the re-roll still can:
-   * it only deals from the local pool. */
   it('disables the chips when the widget hands over no sender', () => {
     const html = renderToStaticMarkup(<StarterChips />);
     expect(html.match(/disabled=""/g)).toHaveLength(9);
-    expect(html).toContain('jtv-chat-starters-more');
   });
 });
 

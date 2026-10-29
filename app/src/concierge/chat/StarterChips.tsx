@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { STARTER_QUESTION_POOL, selectStarterSet } from './starterQuestions';
 import { readStarterSignals, signalsToLabels } from './starterSignals';
 
@@ -25,10 +25,11 @@ const LIVE_SLOTS = 2;
 const SET_SIZE = 9;
 
 export function StarterChips({ sendMessage, status }: StarterChipsProps) {
-  /* One set per mount, re-rolled only on request. Reshuffling on every render
-   * would move a chip out from under the pointer. */
-  const [curated, setCurated] = useState(() =>
-    selectStarterSet(STARTER_QUESTION_POOL, [], Math.random, SET_SIZE),
+  /* One set per mount. Reshuffling on every render would move a chip out from
+   * under the pointer. */
+  const curated = useMemo(
+    () => selectStarterSet(STARTER_QUESTION_POOL, [], Math.random, SET_SIZE),
+    [],
   );
   const [live, setLive] = useState<string[]>([]);
 
@@ -42,20 +43,6 @@ export function StarterChips({ sendMessage, status }: StarterChipsProps) {
     };
   }, []);
 
-  /* Deals a fresh curated set, excluding everything already offered this
-   * session so a shopper who asks for more gets more rather than a reshuffle
-   * of the same nine. The pool holds four sets' worth; past that
-   * `selectStarterSet` falls back to the whole pool and recycles.
-   *
-   * The live chips are deliberately not re-rolled: there is only one top
-   * series and one top host in the broadcast window, so there is nothing to
-   * roll to, and they are the truest thing on the panel. */
-  const shown = useRef<string[]>([]);
-  const showMore = useCallback(() => {
-    shown.current = [...shown.current, ...curated.map((question) => question.label)];
-    setCurated(selectStarterSet(STARTER_QUESTION_POOL, shown.current, Math.random, SET_SIZE));
-  }, [curated]);
-
   const labels = useMemo(() => {
     const curatedLabels = curated.map((question) => question.label);
     /* A live chip can restate a curated one (the pool carries a Jewel School
@@ -65,7 +52,6 @@ export function StarterChips({ sendMessage, status }: StarterChipsProps) {
   }, [curated, live]);
 
   const busy = status === 'submitted' || status === 'streaming';
-  const disabled = busy || !sendMessage;
   return (
     <div className="jtv-chat-starters">
       <p className="jtv-chat-starters-lead">Ask about a piece, an occasion, or how we work.</p>
@@ -75,7 +61,7 @@ export function StarterChips({ sendMessage, status }: StarterChipsProps) {
             <button
               type="button"
               className="jtv-chat-starter"
-              disabled={disabled}
+              disabled={busy || !sendMessage}
               onClick={() => sendMessage?.({ text: label })}
             >
               {label}
@@ -83,14 +69,6 @@ export function StarterChips({ sendMessage, status }: StarterChipsProps) {
           </li>
         ))}
       </ul>
-      <button
-        type="button"
-        className="jtv-chat-starters-more"
-        disabled={busy}
-        onClick={showMore}
-      >
-        View more
-      </button>
     </div>
   );
 }

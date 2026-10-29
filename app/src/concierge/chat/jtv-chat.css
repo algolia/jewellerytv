@@ -187,13 +187,33 @@
   }
 }
 
-/* Empty state: the curated starters. Sized to read as a list of things the
- * shopper could say, not a toolbar of buttons. */
+/* Empty state: the curated starters.
+ *
+ * The panel is a full-height rail, so a wrap-flow cluster of content-width
+ * pills left most of the column empty: a ragged right edge, nine rows of
+ * chips at the top, and the rest of the rail blank above a pinned prompt.
+ *
+ * Two changes fill it. The rows run full width, so the horizontal void and
+ * the ragged edge both go, and each label gets a line of its own at a bigger
+ * tap target. The block then centres in whatever height is left, so the
+ * remaining space splits above and below and reads as placement rather than
+ * as something unfinished. */
 .jtv-chat-starters {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  justify-content: center;
+  flex: 1;
+  gap: 1rem;
   padding-block: 0.5rem;
+}
+
+/* The widget wraps whatever the scroll area holds in a content-sized flex
+ * column, so the starters could not grow into the rail no matter what height
+ * they asked for. Stretch that wrapper, but only when it is the empty state
+ * inside it: a short conversation's messages should stay packed at the top
+ * rather than spreading down the column. */
+.jtv-concierge .ais-ChatMessages-content:has(> .jtv-chat-starters) {
+  min-height: 100%;
 }
 
 .jtv-chat-starters-lead {
@@ -204,7 +224,7 @@
 
 .jtv-chat-starters-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.5rem;
   margin: 0;
   padding: 0;
@@ -216,13 +236,15 @@
  * shopper is meant to touch. The fill is the header blue at low alpha, which
  * is also what JTV's own mock used. */
 .jtv-chat-starter {
-  padding: 0.4375rem 0.875rem;
+  width: 100%;
+  padding: 0.5625rem 1rem;
   border: 1px solid color-mix(in srgb, var(--blue, #0076a9) 35%, #fff);
   border-radius: 999px;
   background: color-mix(in srgb, var(--blue, #0076a9) 10%, #fff);
   color: var(--blue, #0076a9);
   font: inherit;
   font-size: 0.8125rem;
+  text-align: left;
   cursor: pointer;
   transition:
     background-color 120ms ease,
@@ -235,29 +257,6 @@
 }
 
 .jtv-chat-starter:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-/* Deals another set from the pool. Solid, so it reads as the one action on
- * the panel that is ours rather than a thing the shopper might say. */
-.jtv-chat-starters-more {
-  align-self: flex-start;
-  padding: 0.4375rem 1rem;
-  border: 0;
-  border-radius: 999px;
-  background: var(--blue, #0076a9);
-  color: #fff;
-  font: inherit;
-  font-size: 0.8125rem;
-  cursor: pointer;
-}
-
-.jtv-chat-starters-more:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--blue, #0076a9) 85%, #000);
-}
-
-.jtv-chat-starters-more:disabled {
   opacity: 0.5;
   cursor: default;
 }
