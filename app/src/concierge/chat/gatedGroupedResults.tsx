@@ -29,7 +29,11 @@ function hasImage(record: Record<string, unknown> | undefined): boolean {
   return typeof record.imageLarge === 'string' || typeof record.image === 'string';
 }
 
-/** Returns the input with ineligible pieces and emptied groups removed. */
+/** Returns the input with ineligible pieces, emptied groups and the tool's
+ * own intro removed. The intro is a second voice: the model writes its reply
+ * in the message and then says the same thing again above the shelves
+ * (measured 2026-10-29, three near-identical sentences in one turn). The
+ * message is the reply; this field is dropped rather than rendered. */
 export function gateGroups(input: ToolInput, records?: RecordsStore) {
   const groups = Array.isArray(input.groups) ? input.groups : [];
   const seen = new Set<string>();
@@ -57,7 +61,7 @@ export function gateGroups(input: ToolInput, records?: RecordsStore) {
     /* A group whose pieces were all refused renders as a bare heading. */
     if (items.length) kept.push({ ...group, results: items });
   }
-  return { input: { ...input, groups: kept }, dropped };
+  return { input: { ...input, intro: undefined, groups: kept }, dropped };
 }
 
 /* Wraps the library's own grouped-results layout rather than reimplementing

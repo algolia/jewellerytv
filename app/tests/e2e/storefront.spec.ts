@@ -1,15 +1,23 @@
 import { test, expect, type Page } from '@playwright/test';
 import fixtures from '../../src/shared/catalog/fixtures.json' with { type: 'json' };
+import { installManualAgentStream, stubAgentTurn } from './fixtures/agentStream';
+
+/* The retired `/api/search` proxy is gone: `src/shared/client.ts` queries
+ * Algolia straight from the browser, so the fixture intercepts the multi-query
+ * endpoint the lite client posts to. */
+const QUERIES = '/1/indexes/*/queries';
 
 const record = fixtures.records.find((item) => item.objectID === 'MFP256C')!;
 const size = record.Inventory_AvailableSkuSizes![0];
 const sizes = record.Inventory_AvailableSkuSizes!;
 const noResults = 'zzzz-no-jewelry-fixture-49381';
 async function fixtureApi(page: Page) {
-  await page.route('**/api/search', async (route) => {
+  await page.route((url) => url.pathname === QUERIES, async (route) => {
     const body = route.request().postDataJSON();
-    const results = body.requests.map((request: { params?: Record<string, unknown> }) => {
-      const params = request.params || {};
+    const results = body.requests.map((request: Record<string, unknown>) => {
+      /* The lite client flattens `params` into the request; older callers
+       * still nest it. Read whichever arrived. */
+      const params = (request.params as Record<string, unknown>) || request;
       const empty = String(params.query || '').includes(noResults);
       return {
         hits: empty ? [] : [record],
@@ -32,13 +40,9 @@ async function fixtureApi(page: Page) {
     await route.fulfill({ json: { results } });
   });
   await page.route('**/api/products/*', (route) => route.fulfill({ json: record }));
-  // Any accidental model submission fails visibly and never reaches the live service.
-  await page.route('**/api/chat', (route) =>
-    route.fulfill({
-      status: 500,
-      json: { error: 'Live model calls disabled in fixture browser tests' },
-    }),
-  );
+  // Any accidental turn fails visibly and never reaches the live agent. The
+  // panel posts straight to Agent Studio now, so that is what we intercept.
+  await stubAgentTurn(page, { errorText: 'Live model calls disabled in fixture browser tests' });
 }
 async function openFacet(page: Page, name: string) {
   if (await page.getByRole('button', { name: 'Filter & Sort', exact: true }).isVisible())
@@ -67,7 +71,7 @@ test('demo diagnostics stay hidden unless explicitly requested', async ({ page }
 test('price and available size survive refresh and exact product return', async ({ page }) => {
   const requests: Array<Record<string, unknown>> = [];
   page.on('request', (request) => {
-    if (request.url().endsWith('/api/search')) requests.push(request.postDataJSON());
+    if (request.url().includes(QUERIES)) requests.push(request.postDataJSON());
   });
   await page.goto('/category/rings');
   await expect(page.locator('.results .product-card')).toHaveCount(1);
@@ -139,127 +143,66 @@ test('no results is explicit and search can recover', async ({ page }) => {
   await assertNoOverflow(page);
 });
 
-test('concierge opens and resets without making a live model call', async ({ page }) => {
+test('concierge opens without making a live model call', async ({ page }) => {
   let calls = 0;
   page.on('request', (request) => {
-    if (request.url().endsWith('/api/chat')) calls++;
+    if (request.url().includes('/agent-studio/')) calls++;
   });
   await page.goto('/category/rings');
   await expect(page.locator('.results .product-card')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Open jewelry concierge' }).click();
-  const panel = page.getByRole('complementary', { name: 'Jewelry buying concierge' });
-  await expect(panel).toBeVisible();
-  await panel.getByRole('button', { name: 'Start a new conversation', exact: true }).click();
-  await expect(
-    panel.getByRole('img', { name: 'JTV — Jewelry Television' }),
-  ).toBeVisible();
+  await page.getByRole('button', { name: 'Ask JTV', exact: true }).click();
+  const panel = page.locator('div.jtv-concierge');
+  await expect(panel).toHaveAttribute('data-open', 'true');
+  await expect(panel.locator('.ais-ChatPrompt-textarea')).toBeVisible();
+  // Closing keeps the conversation mounted, so reopening resumes it rather
+  // than restarting a stream (src/concierge/Concierge.tsx).
+  await panel.getByRole('button', { name: 'Close the jewelry concierge' }).click();
+  await expect(panel).toHaveAttribute('data-open', 'false');
+  await page.getByRole('button', { name: 'Ask JTV', exact: true }).click();
+  await expect(panel).toHaveAttribute('data-open', 'true');
   expect(calls).toBe(0);
   await assertNoOverflow(page);
 });
 
-test('pending Concierge status animates inside the composer without a Stop control', async ({
-  page,
-}) => {
-  await page.clock.install();
-  let releaseRequest!: () => void;
-  await page.route('**/api/chat', async (route) => {
-    await new Promise<void>((resolve) => {
-      releaseRequest = resolve;
-    });
-    await route.fulfill({ status: 500, json: { error: 'Fixture request completed' } });
-  });
+test('a pending turn shows the widget loader until the reply arrives', async ({ page }) => {
+  // Replaces the old `.connected-progress-*` assertions: the custom pending
+  // strip was deleted with the old panel, and the widget reports a turn in
+  // flight with its own loader and the composer's submit status.
+  const stream = await installManualAgentStream(page);
   await page.goto('/category/rings');
-  await page.getByRole('button', { name: 'Open jewelry concierge' }).click();
-  const panel = page.getByRole('complementary', { name: 'Jewelry buying concierge' });
-  await panel
-    .getByRole('textbox', { name: 'Message the Concierge' })
-    .fill('Find a simple necklace');
-  await panel.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(panel.locator('.connected-progress-label')).toHaveText('Sending to Concierge');
-  await expect(panel.locator('.connected-progress-dot')).toHaveCount(3);
-  expect(
-    await panel
-      .locator('.connected-progress-dot')
-      .first()
-      .evaluate((el) => getComputedStyle(el).animationName),
-  ).toBe('concierge-status-pulse');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  expect(
-    await panel
-      .locator('.connected-progress-dot')
-      .first()
-      .evaluate((el) => getComputedStyle(el).animationName),
-  ).toBe('none');
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(panel.getByRole('textbox', { name: 'Message the Concierge' })).toHaveAttribute(
-    'placeholder',
-    '',
-  );
-  await expect(panel.locator('.connected-status')).toHaveCount(0);
-  await expect(panel.getByRole('button', { name: 'Stop', exact: true })).toHaveCount(0);
-  await expect(panel.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
-  await page.clock.fastForward(11_000);
-  await expect(panel.locator('.connected-progress-label')).toHaveText('Sending to Concierge');
-  await expect(panel.locator('.connected-progress-time')).toHaveText('11s');
-  await page.clock.fastForward(20_000);
-  await expect(panel.locator('.connected-progress-label')).toHaveText('Sending to Concierge');
-  await expect(panel.locator('.connected-progress-time')).toHaveText('31s');
-  releaseRequest();
-  await expect(panel.locator('.connected-progress')).toHaveCount(0);
-  await expect(panel.getByRole('textbox', { name: 'Message the Concierge' })).toBeEnabled();
-  await expect(panel.getByRole('textbox', { name: 'Message the Concierge' })).toHaveAttribute(
-    'placeholder',
-    'Shall we find something delighting?',
-  );
-});
+  await page.getByRole('button', { name: 'Ask JTV', exact: true }).click();
+  const panel = page.locator('div.jtv-concierge');
+  const composer = panel.locator('.ais-ChatPrompt-textarea');
+  await composer.fill('Find a simple necklace');
+  await composer.press('Enter');
 
-test('Concierge progress follows streamed tool and reply events', async ({ page }) => {
-  type ProgressWindow = Window & {
-    emitProgress?: (event: unknown) => void;
-    closeProgress?: () => void;
-  };
-  await page.addInitScript(() => {
-    const originalFetch = window.fetch.bind(window);
-    window.fetch = (input, init) => {
-      const raw = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-      if (new URL(raw, location.href).pathname !== '/api/chat') return originalFetch(input, init);
-      const stream = new ReadableStream<Uint8Array>({
-        start(controller) {
-          (window as ProgressWindow).emitProgress = (event) =>
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`));
-          (window as ProgressWindow).closeProgress = () => controller.close();
-        },
-      });
-      return Promise.resolve(
-        new Response(stream, {
-          headers: { 'content-type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1' },
-        }),
-      );
-    };
-  });
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Open jewelry concierge' }).click();
-  const panel = page.getByRole('complementary', { name: 'Jewelry buying concierge' });
-  await panel.getByRole('textbox', { name: 'Message the Concierge' }).fill('Find earrings');
-  await panel.getByRole('button', { name: 'Send', exact: true }).click();
-  await page.evaluate(() => {
-    (window as ProgressWindow).emitProgress?.({ type: 'start', messageId: 'assistant-progress' });
-  });
-  await expect(panel.locator('.connected-progress-label')).toHaveText('Concierge is working');
-  await page.evaluate(() => {
-    (window as ProgressWindow).emitProgress?.({
-      type: 'tool-input-start',
-      toolName: 'update_shopping_state',
-      toolCallId: 'call-progress',
-    });
-  });
-  await expect(panel.locator('.connected-progress-label')).toHaveText('Updating preferences');
-  await page.evaluate(() => {
-    const emit = (window as ProgressWindow).emitProgress;
-    emit?.({ type: 'text-start', id: 'text-progress' });
-    emit?.({ type: 'text-delta', id: 'text-progress', delta: 'A useful thought.' });
-  });
-  await expect(panel.locator('.connected-progress-label')).toHaveText('Concierge is replying');
-  await expect(panel.locator('.connected-status')).toHaveCount(0);
-  await page.evaluate(() => (window as ProgressWindow).closeProgress?.());
+  await expect(panel.locator('.ais-ChatMessageLoader')).toBeVisible();
+  /* `submitted` is a single frame before the connection opens, so asserting it
+   * exactly is a race. What matters to the shopper is that the turn reads as
+   * in flight and the submit button offers to stop it. */
+  await expect(panel.locator('.ais-ChatPrompt-submit')).toHaveAttribute(
+    'data-status',
+    /submitted|streaming/,
+  );
+  await expect(panel.locator('.ais-ChatPrompt-submit')).toHaveAttribute(
+    'aria-label',
+    'Stop response',
+  );
+
+  await stream.emit(
+    { type: 'start', messageId: 'alg_msg_pending' },
+    { type: 'start-step' },
+    { type: 'text-start', id: 'text_pending' },
+    { type: 'text-delta', id: 'text_pending', delta: 'A useful thought.' },
+  );
+  await expect(panel.locator('.ais-ChatMessages-content')).toContainText('A useful thought.');
+
+  await stream.emit(
+    { type: 'text-end', id: 'text_pending' },
+    { type: 'finish-step' },
+    { type: 'finish' },
+  );
+  await stream.close();
+  await expect(panel.locator('.ais-ChatMessageLoader')).toHaveCount(0);
+  await expect(panel.locator('.ais-ChatPrompt-submit')).toHaveAttribute('data-status', 'ready');
 });

@@ -25,11 +25,14 @@ test.describe('simplified entry and canvas', () => {
     await page.goto('/');
     await page.locator('#site-search').fill('tanzanite ring');
     await page.getByRole('button', { name: 'Ask JTV', exact: true }).click();
-    const composer = page.locator('#connected-concierge-input');
+    // The panel is the library's Chat widget (src/concierge/chat/JtvChat.tsx).
+    const panel = page.locator('div.jtv-concierge');
+    await expect(panel).toHaveAttribute('data-open', 'true');
+    const composer = panel.locator('.ais-ChatPrompt-textarea');
     await expect(composer).toBeVisible();
     await expect(composer).toHaveValue('tanzanite ring');
-    // The draft is not sent: no assistant turn appears.
-    await expect(page.locator('.connected-conversation [data-role]')).toHaveCount(0);
+    // The draft is not sent: no turn appears.
+    await expect(panel.locator('.ais-ChatMessage')).toHaveCount(0);
   });
 
   test('keyword search still navigates to results on submit', async ({ page }) => {

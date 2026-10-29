@@ -4,18 +4,22 @@ import { dirname, resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 
 /*
- * Embed contract acceptance (simplification plan 5, 2026-10-22), run against
- * the dev server on 5295 per the risk artifact 03-risk-embed.md: a fake host
+ * Embed contract acceptance (simplification plan 5, 2026-10-22): a fake host
  * page on a foreign origin includes the one-line script tag; the chip opens
  * the panel with the host search text as a draft; a product click resolves
  * the PDP template on the host side and navigates the host page. Screenshots
  * land in the run folder receipts.
+ *
+ * The panel body is now the library's Chat widget
+ * (`src/concierge/chat/JtvChat.tsx`), mounted by `src/embed/frame.tsx`, so the
+ * selectors below are the widget's own. Point `JTV_EMBED_PANEL_URL` and
+ * `JTV_EMBED_ORIGIN` at wherever the dev server is actually listening.
  */
 
 const HOST = 'http://host.local';
-const PANEL =
-  process.env.JTV_EMBED_PANEL_URL ?? 'http://localhost:5295/src/embed/frame.html';
-const LOADER = 'http://localhost:5295/concierge/loader.js';
+const ORIGIN = process.env.JTV_EMBED_ORIGIN ?? 'http://localhost:5173';
+const PANEL = process.env.JTV_EMBED_PANEL_URL ?? `${ORIGIN}/src/embed/frame.html`;
+const LOADER = `${ORIGIN}/concierge/loader.js`;
 // Real host pages load the loader with a plain no-cors script tag; Playwright
 // interception re-issues it as a CORS request, so the test serves the loader
 // from disk and adds the header to proxied panel assets itself.
@@ -47,8 +51,17 @@ test.describe('Ask JTV embed contract', () => {
     await context.route(/concierge\/loader\.js$/, (route) =>
       route.fulfill({ contentType: 'text/javascript', body: LOADER_JS }),
     );
+    // No turn is ever sent here, but an accidental one must not reach the
+    // live agent: the panel posts straight to Agent Studio from the browser.
+    await context.route(/\/agent-studio\//, (route) =>
+      route.fulfill({
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+        body: 'data: {"type":"error","errorText":"no agent in embed tests"}\n\n',
+      }),
+    );
     // Panel assets proxy to the dev server with a CORS header added.
-    await context.route(/^http:\/\/localhost:5295\//, async (route) => {
+    await context.route((url) => url.href.startsWith(`${ORIGIN}/`), async (route) => {
       const response = await route.fetch();
       await route.fulfill({
         response,
@@ -75,19 +88,22 @@ test.describe('Ask JTV embed contract', () => {
     await page.locator('#siteSearchForm input[type=search]').fill('tanzanite ring');
     await page.locator('#siteSearchForm .jtv-ask-chip').click();
     const panel = page.frameLocator('.jtv-embed-frame');
-    const composer = panel.locator('#connected-concierge-input');
+    await expect(panel.locator('div.jtv-concierge')).toHaveAttribute('data-open', 'true');
+    const composer = panel.locator('.ais-ChatPrompt-textarea');
     await expect(composer).toBeVisible();
     await expect(composer).toHaveValue('tanzanite ring');
-    await expect(panel.locator('.connected-conversation [data-role]')).toHaveCount(0);
+    await expect(panel.locator('.ais-ChatMessage')).toHaveCount(0);
   });
 
-  test('an empty host search opens the panel on the starter prompts', async ({ page }) => {
+  test('an empty host search opens the panel on an empty composer', async ({ page }) => {
     await page.goto(HOST);
     await page.locator('#siteSearchForm .jtv-ask-chip').click();
     const panel = page.frameLocator('.jtv-embed-frame');
-    await expect(panel.locator('#connected-concierge-input')).toHaveValue('');
-    // Starter sets rotate daily; assert the group, not one question.
-    await expect(panel.locator('.connected-starters-list .connected-starter-chip').first()).toBeVisible();
+    // The rebuilt panel ships no starter prompts: `JtvChat` passes no
+    // `emptyComponent`, so an untouched conversation is composer only.
+    await expect(panel.locator('div.jtv-concierge')).toHaveAttribute('data-open', 'true');
+    await expect(panel.locator('.ais-ChatPrompt-textarea')).toHaveValue('');
+    await expect(panel.locator('.ais-ChatMessage')).toHaveCount(0);
   });
 
   test('a product click in the panel resolves the PDP template and navigates the host', async ({
@@ -96,7 +112,7 @@ test.describe('Ask JTV embed contract', () => {
     await page.goto(HOST);
     await page.locator('#siteSearchForm .jtv-ask-chip').click();
     const panel = page.frameLocator('.jtv-embed-frame');
-    await expect(panel.locator('#connected-concierge-input')).toBeVisible();
+    await expect(panel.locator('.ais-ChatPrompt-textarea')).toBeVisible();
     // The panel posts the product identity; the loader owns template + navigation.
     const frame = page
       .frames()

@@ -41,16 +41,20 @@ export const Concierge = forwardRef<
   }
 >(function Concierge({ context, onClose }, ref) {
   const [open, setOpen] = useState(false);
+  const [askToken, setAskToken] = useState(0);
   const chat = useRef<ChatHandle>(null);
+  const pendingDraft = useRef('');
   useImperativeHandle(
     ref,
     () => ({
       ask: (text?: string) => {
+        /* The draft cannot be handed over here: the panel is still hidden, so
+         * the widget has not revealed its composer and the value is dropped.
+         * Park it and let the reveal effect below apply it. The token makes a
+         * second ask land even when the panel is already open. */
+        pendingDraft.current = (text ?? '').trim();
+        setAskToken((token) => token + 1);
         setOpen(true);
-        /* The chip pre-fills the composer rather than sending: the shopper
-         * still gets to edit the question before it reaches the agent. */
-        const prefill = (text ?? '').trim();
-        if (prefill) chat.current?.setInput(prefill);
       },
       close: () => setOpen(false),
     }),
@@ -59,6 +63,19 @@ export const Concierge = forwardRef<
   useEffect(() => {
     trackConciergeVisibility(open);
   }, [open]);
+  /* Reveal, then draft. The widget's own open state is what focuses the
+   * composer, and setInput only sticks once that composer exists. */
+  useEffect(() => {
+    if (!open) return;
+    chat.current?.setOpen(true);
+    if (!pendingDraft.current) return;
+    const draft = pendingDraft.current;
+    pendingDraft.current = '';
+    /* One frame after the reveal: the widget mounts its composer during this
+     * commit, and a value set in the same tick is discarded. */
+    const timer = window.setTimeout(() => chat.current?.setInput(draft), 0);
+    return () => window.clearTimeout(timer);
+  }, [open, askToken]);
   /* A page whose context cannot be prepared must still be able to ask a
    * question: the turn goes out ungrounded instead of failing to send. */
   const turnContext = useCallback(() => {

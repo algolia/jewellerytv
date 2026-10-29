@@ -5,7 +5,12 @@ test.describe('ConnectedConcierge Phase 3.1 scenario manifest', () => {
   test('contains the required balanced journey coverage', () => {
     expect(manifest.status).toBe('prepared-unexecuted');
     expect(manifest.coverage.journeyCount).toBeGreaterThanOrEqual(10);
-    expect(manifest.scenarios).toHaveLength(10);
+    /* The manifest grew past the original ten balanced journeys (it now also
+     * carries the long continuity journey and the three demo stories), so the
+     * floor is asserted, not the exact count — which is what the sibling
+     * `evaluation/concierge-phases-1-3/manifest.test.mjs` already does. */
+    expect(manifest.scenarios.length).toBeGreaterThanOrEqual(10);
+    expect(manifest.coverage.journeyCount).toBe(manifest.scenarios.length);
     for (const family of ['broad-jewelry', 'necklaces', 'rings', 'bracelets', 'watches']) {
       expect(manifest.scenarios.filter((scenario) => scenario.family === family)).toHaveLength(2);
     }

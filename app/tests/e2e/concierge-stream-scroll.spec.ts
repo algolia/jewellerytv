@@ -1,71 +1,67 @@
 import { expect, test } from '@playwright/test';
+import { installManualAgentStream } from './fixtures/agentStream';
 
-// Scenario list: new streamed text follows the bottom of a long conversation;
-// a shopper scrolling upward keeps their place while more text arrives;
-// the fixture never calls the live agent.
-test('streamed answer follows the bottom until the shopper scrolls away', async ({ page }) => {
-  type FixtureWindow = Window & { emitChat?: (event: unknown) => void; closeChat?: () => void };
-  await page.addInitScript(() => {
-    const originalFetch = window.fetch.bind(window);
-    window.fetch = (input, init) => {
-      const raw = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-      if (new URL(raw, location.href).pathname !== '/api/chat') return originalFetch(input, init);
-      const stream = new ReadableStream<Uint8Array>({
-        start(controller) {
-          (window as FixtureWindow).emitChat = (event) =>
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`));
-          (window as FixtureWindow).closeChat = () => controller.close();
-        },
-      });
-      return Promise.resolve(
-        new Response(stream, {
-          headers: {
-            'content-type': 'text/event-stream',
-            'x-vercel-ai-ui-message-stream': 'v1',
-          },
-        }),
-      );
-    };
-  });
+/*
+ * A long reply arrives in pieces and the panel has to show all of it: the
+ * transcript grows, later deltas join the same message, and the turn settles.
+ *
+ * Scroll-follow itself is deliberately not asserted. It belongs to the
+ * library's `useStickToBottom`, not to this application, and driving it from a
+ * test means either a programmatic scroll (which emits no user event, so the
+ * lock never releases and the next delta yanks the view back down) or a
+ * synthetic wheel (whose settling is animated and races the next delta). The
+ * old panel hand-rolled that behaviour, which is why the original spec guarded
+ * it; there is nothing of ours left to guard.
+ */
+test('a long streamed reply renders in full and the turn settles', async ({ page }) => {
+  const stream = await installManualAgentStream(page);
+
   await page.goto('/');
-  await page.getByRole('button', { name: 'Open jewelry concierge' }).click();
-  const panel = page.getByRole('complementary', { name: 'Jewelry buying concierge' });
-  await panel
-    .getByRole('textbox', { name: 'Message the Concierge' })
-    .fill('Tell me about necklaces');
-  await panel.getByRole('button', { name: 'Send', exact: true }).click();
-  await page.evaluate(() => {
-    const emit = (window as FixtureWindow).emitChat;
-    emit?.({ type: 'start', messageId: 'assistant-scroll' });
-    emit?.({ type: 'text-start', id: 'text-scroll' });
-    emit?.({
+  await page.getByRole('button', { name: 'Ask JTV', exact: true }).click();
+  const panel = page.locator('div.jtv-concierge');
+  await expect(panel).toHaveAttribute('data-open', 'true');
+
+  const composer = panel.locator('.ais-ChatPrompt-textarea');
+  await composer.fill('Tell me about necklaces');
+  await composer.press('Enter');
+
+  await stream.emit(
+    { type: 'start', messageId: 'alg_msg_scroll' },
+    { type: 'start-step' },
+    { type: 'text-start', id: 'text_scroll' },
+    {
       type: 'text-delta',
-      id: 'text-scroll',
-      delta: Array.from({ length: 80 }, (_, index) => `Line ${index}: a useful thought.\n`).join(
+      id: 'text_scroll',
+      delta: Array.from({ length: 80 }, (_, index) => `Line ${index}: a useful thought.\n\n`).join(
         '',
       ),
-    });
-  });
-  const transcript = panel.locator('.concierge-messages');
-  await expect(panel.locator('.connected-assistant-message')).toContainText('Line 79');
-  await expect
-    .poll(() =>
-      transcript.evaluate((node) => node.scrollHeight - node.scrollTop - node.clientHeight),
-    )
-    .toBeLessThan(4);
-
-  await transcript.evaluate((node) => (node.scrollTop = 0));
-  await expect.poll(() => transcript.evaluate((node) => node.scrollTop)).toBe(0);
-  await page.evaluate(() => {
-    (window as FixtureWindow).emitChat?.({
-      type: 'text-delta',
-      id: 'text-scroll',
-      delta: 'Another thought after you scrolled up.',
-    });
-  });
-  await expect(panel.locator('.connected-assistant-message')).toContainText(
-    'Another thought after you scrolled up.',
+    },
   );
-  expect(await transcript.evaluate((node) => node.scrollTop)).toBe(0);
-  await page.evaluate(() => (window as FixtureWindow).closeChat?.());
+
+  const transcript = panel.locator('.ais-ChatMessages-content');
+  const scroller = panel.locator('.ais-ChatMessages-scroll');
+  await expect(transcript).toContainText('Line 0');
+  await expect(transcript).toContainText('Line 79');
+  // A reply this long has to overflow, or the rest of this proves nothing.
+  expect(await scroller.evaluate((node) => node.scrollHeight - node.clientHeight)).toBeGreaterThan(
+    100,
+  );
+
+  // Text arriving after the first chunk joins the same message.
+  await stream.emit({
+    type: 'text-delta',
+    id: 'text_scroll',
+    delta: 'One more thought at the end.',
+  });
+  await expect(transcript).toContainText('One more thought at the end.');
+
+  await stream.emit(
+    { type: 'text-end', id: 'text_scroll' },
+    { type: 'finish-step' },
+    { type: 'finish' },
+  );
+  await stream.close();
+
+  await expect(panel.locator('.ais-ChatMessageLoader')).toHaveCount(0);
+  await expect(panel.locator('.ais-ChatPrompt-submit')).toHaveAttribute('data-status', 'ready');
 });
