@@ -7,6 +7,7 @@ import { Chat as ChatInstance } from 'instantsearch.js/es/lib/chat';
 import type { UIMessage } from 'instantsearch.js/es/lib/chat';
 import { DefaultChatTransport } from 'instantsearch.js/es/lib/ai-lite';
 import { ProductCard, type JtvHit } from './ProductCard';
+import { StarterChips } from './StarterChips';
 import { createGatedTools } from './gatedGroupedResults';
 import './jtv-chat.css';
 
@@ -95,7 +96,14 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ c
     () =>
       new ChatInstance<UIMessage>({
         transport: new DefaultChatTransport({
-          api: `https://${appId}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5`,
+          /* cache=true is the platform default, stated here so it reads as a
+           * decision. It caches the whole response, not the prompt prefix:
+           * measured 2026-10-29, an identical question returns a byte-identical
+           * reply with identical product ids in 0.2 to 0.4s against 13.4s
+           * uncached. `cache=false` bypasses it at full cost. The tradeoff is
+           * freshness: on-air data refreshes daily and stock moves, so a cached
+           * answer can outlive what it describes. */
+          api: `https://${appId}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5&cache=true`,
           headers: {
             'x-algolia-application-id': appId,
             'x-algolia-api-key': apiKey,
@@ -121,6 +129,7 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ c
           itemComponent={ProductCard}
           tools={createGatedTools()}
           layoutComponent={ChatInlineLayout}
+          emptyComponent={StarterChips}
           headerComponent={useMemo(() => createHeader(onClose), [onClose])}
           requiresSearch={false}
           translations={{ prompt: { textareaPlaceholder: 'Ask about jewellery' } }}

@@ -137,6 +137,26 @@ test('no price reaches the panel even though the records carry one', async ({ pa
   expect(text).not.toMatch(/\d+\.\d{2}/);
 });
 
+test('the empty panel offers curated starters that send on click', async ({ page }) => {
+  await stubAgentTurn(page, { text: 'Here you go.' });
+  const panel = await openPanel(page);
+
+  /* Nine, per the pool's standing rule. These are the curated,
+   * analytics-grounded labels, not model-generated openers: the follow-up
+   * suggestions after a turn are the generated surface. */
+  const starters = panel.locator('.jtv-chat-starter');
+  await expect(starters).toHaveCount(9);
+
+  const first = await starters.first().innerText();
+  await starters.first().click();
+
+  // The chip is the shopper's question, sent verbatim.
+  await expect(panel.locator('.ais-ChatMessage').first()).toContainText(first);
+  await expect(panel.locator('.ais-ChatMessages-content')).toContainText('Here you go.');
+  // The empty state is gone once there is a conversation to show.
+  await expect(starters).toHaveCount(0);
+});
+
 test('the new-conversation control clears the turn and keeps the panel open', async ({ page }) => {
   await stubAgentTurn(page, { text: 'A short reply.' });
   const panel = await openPanel(page);
