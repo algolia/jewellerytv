@@ -39,7 +39,13 @@ async function fixtureApi(page: Page) {
     });
     await route.fulfill({ json: { results } });
   });
-  await page.route('**/api/products/*', (route) => route.fulfill({ json: record }));
+  /* The single-record read is a direct Algolia getObject now, not the retired
+   * /api/products/:id. Mocking the dead route is what let a broken product
+   * page pass this suite: the route 404s into the SPA shell, which answers
+   * 200 with index.html, so the page failed on JSON parsing instead. */
+  await page.route(/\/1\/indexes\/prod_catalog\/[^/?]+$/, (route) =>
+    route.fulfill({ json: record }),
+  );
   // Any accidental turn fails visibly and never reaches the live agent. The
   // panel posts straight to Agent Studio now, so that is what we intercept.
   await stubAgentTurn(page, { errorText: 'Live model calls disabled in fixture browser tests' });
