@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { forwardRef, useMemo } from 'react';
 import { liteClient } from 'algoliasearch/lite';
 import { Chat, ChatInlineLayout, InstantSearch } from 'react-instantsearch';
+import type { ChatHandle } from 'react-instantsearch';
 import { Chat as ChatInstance } from 'instantsearch.js/es/lib/chat';
 import type { UIMessage } from 'instantsearch.js/es/lib/chat';
 import { DefaultChatTransport } from 'instantsearch.js/es/lib/ai-lite';
@@ -31,7 +32,15 @@ function readConfig() {
   return { appId, apiKey, agentId };
 }
 
-export function JtvChat() {
+export type JtvChatProps = {
+  /** Ambient page facts attached to the user turn (Agent Studio grounding). */
+  context?: Record<string, string> | (() => Record<string, string>);
+};
+
+/* The ref exposes the widget's own handle (`setOpen`, `setInput`,
+ * `sendMessage`), which is how the storefront's "Ask JTV" chip hands the
+ * current search text to the panel. */
+export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ context }, ref) {
   const { appId, apiKey, agentId } = useMemo(readConfig, []);
 
   /* One instance per mount. Recreating it on every render would drop the
@@ -60,7 +69,9 @@ export function JtvChat() {
          * default tools, built from `itemComponent`, render the search
          * carousels, grouped results and comparisons. */}
         <Chat<JtvHit>
+          ref={ref}
           chat={chat}
+          context={context}
           itemComponent={ProductCard}
           layoutComponent={ChatInlineLayout}
           requiresSearch={false}
@@ -69,6 +80,6 @@ export function JtvChat() {
       </div>
     </InstantSearch>
   );
-}
+});
 
 export default JtvChat;

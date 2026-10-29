@@ -1,49 +1,35 @@
 # JTV Concierge
 
-This is the React and Node application behind the [JTV Concierge](../README.md).
-It connects a conversational shopping panel to one Concierge in Algolia's Agent
+This is the React application behind the [JTV Concierge](../README.md). It
+connects a conversational shopping panel to one Concierge in Algolia's Agent
 Studio. The deploy folder is `app/` (renamed from `storefront/` on 2026-10-25);
 the source is split into `src/website/` (the jtv.com surface), `src/concierge/`
-(the panel), `src/shared/` (catalogue adapter, session contract, telemetry) and
-`src/embed/`, with `server/` (the API proxy and catalogue vocabulary) beside
-them. Baseline tag: `baseline-2026-10-26`.
+(the panel), `src/shared/` (catalogue adapter, telemetry) and `src/embed/`.
+There is no application server: the browser calls Algolia and Agent Studio
+directly with a search-only key, restricted in the Algolia dashboard.
 
 ## How the system works
 
 One Concierge agent in Agent Studio owns every shopper-facing word. The
-application never writes dialogue; it connects, checks and renders. The turn
-has three steps, and every rendered tile has passed all of them:
+application never writes dialogue; it connects and renders.
 
-1. **Search.** The agent searches the catalogue with Agent Studio's own
-   `algolia_search_index` tool — one search per turn, twelve candidates, in-stock
-   filtered server-side. The streamed result carries the hits and the live facet
-   counts.
-2. **Verify.** The agent curates via the client-side `present_products` tool
-   (`src/concierge/tools/presentProducts.ts`). The model declares what it
-   understood from the shopper's words — material, gemstone, brand as verbatim
-   catalog values, a price ceiling when a budget was named — and the tool
-   fact-checks that declaration against every candidate's actual record:
-   exists, in stock, priced, photographed, not a same-design twin of one
-   already showing, and actually carrying the declared material, stone, brand
-   and budget. The generic pearl ask verifies against the record's pearl
-   fields rather than a name; a declared value the catalog does not carry is
-   skipped, so an invented constraint can never empty a shelf. The model
-   never sees the tool's diagnostics, only the verified shelf.
-3. **Render.** Every surface — the conversation preview, the staged shelf, the
-   history anchor cards — renders the tool's verified list, in the tool's order,
-   in rows of exactly three columns. A piece the tool dropped can never appear.
-   Raw search hits never render directly.
+1. **Search.** The agent searches with Agent Studio's own
+   `algolia_search_index` tool over six indices, in-stock filtered by the index
+   entry's own search parameters. The streamed result carries the hits.
+2. **Display.** The agent groups what it chose with the built-in
+   `algolia_grouped_results` tool. `react-instantsearch`'s `Chat` widget renders
+   those groups, and the conversation's own records store supplies each piece's
+   record, so a tile can only render for a record the search actually returned.
+3. **Render.** `src/concierge/chat/ProductCard.tsx` is the single tile: image,
+   name and a link to the product page. Price is deliberately absent, since the
+   product page is the only place a price is current.
 
-When verification leaves the shelf under the six-tile floor, three backfill
-layers top it up through the identical checks: the streamed search's remaining
-hits, a tool-side follow-up search facet-filtered on the enforced requirement,
-and the staging layer. The floor never invents tiles the catalogue doesn't have;
-when the catalogue is genuinely thin, the reply says so.
-
-The facet pills beside the reply come from the search's own facet counts — no
-hard-coded attribute list. A tap refines its own turn, the shelf updates in
-place, and the picks ride to the agent as session context, so the next typed
-question keeps the narrowing.
+The panel holds no eligibility logic of its own. The four-layer verification it
+used to run (tool admission, extraction cross-check, staging re-check, render
+caps) was removed on 2026-10-28: each layer independently re-checked stock,
+price and image and each returned nothing in silence, so a shelf could vanish
+with every layer reporting success. Stock filtering now lives in the index
+entry's search parameters, where it cannot fail quietly.
 
 ## Guardrails
 
@@ -59,14 +45,11 @@ deterministic tool checks above, and graded multi-turn story tests.
 
 | Area | What it owns |
 | --- | --- |
-| `src/concierge/ConnectedConcierge.tsx` and `EntryGuidance.tsx` | The Chat SDK wiring, streamed text with natural turn order (words stream first, the shelf mounts after the reply begins), starter questions, and the single composer path. |
-| `src/concierge/tools/presentProducts.ts` | The display gate: requirement matching from the shopper's own words, plated-composite and brand enforcement, twin collapse, the six-tile floor with its three backfill layers, and the verified output with names, prices and images. |
-| `src/concierge/tools/catalogRecord.ts`, `refreshProducts.ts` | The shared read-only record reader (material, gemstone and brand fields plus the raw record) and the exact-product freshness refresher. |
-| `src/concierge/nativeResults.ts` | The verified-list extractors every surface renders from: `extractSearchPresentation`, `extractMessageFacetPicks` (verified items), `extractSearchHitObjectIDs` (the backfill pool), and the facet-count pills. |
-| `src/concierge/ConciergeWorkspaceProvider.tsx` | Staging: normalizes the verified list, re-checks price/stock/image on the freshest record, tops up to the floor, and registers identity-verified records for `refresh_products`. |
-| `src/concierge/sessionPersistence.ts`, `turnContext.ts`, `shared/concierge/` | Session persistence, the turn context carrying shopping facts and active picks to the agent, and the shared catalogue, session and vocabulary contracts. |
-| `server/api.ts`, `server/concierge/` | The bounded `/api/chat` proxy with per-attempt deadlines; read-only `/api/search`, `/api/facets`, `/api/products/:id`; the tool-sheet guard that turns an agent/app tool mismatch into a labelled error instead of a silent failure. |
-| `tests/concierge/` | 374 unit and integration tests, including enforcement, floor, brand and dedup suites. |
+| `src/concierge/chat/JtvChat.tsx` | The whole panel: a chat instance, a transport pointed at Agent Studio, and the library `Chat` widget. 74 lines. |
+| `src/concierge/chat/ProductCard.tsx` | The one tile component, passed to `Chat` as `itemComponent`. Reads both record shapes: catalogue (`Catalog_TitleDescription`, `Media_Images`) and on-air (`name`, `image`). |
+| `src/concierge/Concierge.tsx` | The panel shell: open and close state, the `ask` handle the Ask JTV chip calls, and the page context attached to each turn. |
+| `src/shared/client.ts` | The storefront's Algolia client, `algoliasearch/lite` with analytics off. |
+| `tests/` | Unit and integration tests. The suites covering the removed pipeline went with it on 2026-10-28. |
 
 The agent's tools, instructions, guardrail and indexes are configured in Agent
 Studio, not in this repository. No product-index setting or record change is
@@ -74,8 +57,10 @@ part of this application.
 
 ## Local run
 
-Use Node.js 24. Place server credentials and the selected agent identity in the
-parent project's `.env.local`; see [`.env.example`](.env.example). Set
+Use Node.js 24. Place the browser configuration in the gitignored `app/.env`;
+see [`.env.example`](.env.example). `VITE_ALGOLIA_APP_ID`,
+`VITE_ALGOLIA_SEARCH_API_KEY` and `VITE_JTV_AGENT_ID` are inlined into the
+bundle at build time and are public by design. Set
 `JTV_CONCIERGE_DEVELOPMENT_AGENT_ID` and `JTV_CONCIERGE_PRODUCTION_AGENT_ID` to
 two different agents with identical definitions; the app and the baseline tools
 refuse to run if they are the same. `npm run dev` is the only supported local

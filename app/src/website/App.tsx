@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BrowserRouter, Link, Route, Routes, useLocation, useParams } from 'react-router-dom';
-import { JtvChat } from '../concierge/chat/JtvChat';
 import {
   Configure,
   InstantSearch,
@@ -277,9 +276,6 @@ function Experience() {
               </Home>
             }
           />
-          {/* Migration step 1: the rebuilt concierge on its own route, so the
-              old panel keeps working while this one is proven. */}
-          <Route path="/chat-next" element={<JtvChat />} />
           <Route path="/category/:slug" element={<Listing />} />
           <Route path="/search" element={<Listing />} />
           <Route

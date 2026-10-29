@@ -1,6 +1,43 @@
 // Read-only verification of the help_content index: existence, record count,
 // and attribute shape of one sample record. Makes no writes of any kind.
-import { loadConfig } from '../server/config.js';
+import { readFileSync, existsSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/* Configuration comes from the same place the rest of the app reads it: the
+ * process environment first, then the gitignored env file beside package.json.
+ * There is no application server to ask any more, so this script reads the
+ * two values it needs directly (mirrors scripts/baseline/settings.mjs). */
+const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+function readEnvFile(path) {
+  const values = {};
+  if (!existsSync(path)) return values;
+  for (const line of readFileSync(path, 'utf8').split(/\r?\n/)) {
+    const match = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (match) values[match[1]] = match[2].replace(/^(['"])(.*)\1$/, '$2');
+  }
+  return values;
+}
+
+function loadConfig() {
+  const fileValues = {
+    ...readEnvFile(resolve(appRoot, '.env')),
+    ...readEnvFile(resolve(appRoot, '.env.local')),
+  };
+  const value = (name) => process.env[name] ?? fileValues[name];
+  const appId = value('ALGOLIA_APP_ID');
+  const apiKey = value('ALGOLIA_SEARCH_API_KEY');
+  const missing = [appId ? '' : 'ALGOLIA_APP_ID', apiKey ? '' : 'ALGOLIA_SEARCH_API_KEY'].filter(
+    Boolean,
+  );
+  if (missing.length) {
+    throw new Error(
+      `Missing ${missing.join(' and ')}. Set them in the environment or in app/.env.`,
+    );
+  }
+  return { appId, apiKey };
+}
 
 const INDEX = 'help_content';
 const config = loadConfig();

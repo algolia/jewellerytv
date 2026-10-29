@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { createRoot } from 'react-dom/client';
-import { InstantSearch } from 'react-instantsearch';
 import { Concierge, type ConciergeHandle } from '../concierge/Concierge';
-import { searchClient } from '../shared/client';
+/* The rebuilt panel renders the library's Chat widget, so this entry needs the
+ * same widget stylesheet `src/main.tsx` loads for the demo app. */
+import 'instantsearch.css/components/chat.css';
 import '../website/styles.css';
 
 /*
@@ -70,15 +71,14 @@ function Frame() {
 
   return (
     <div onClickCapture={onProductClick}>
-      {/* The panel's chat hook reads the InstantSearch context, exactly as in
-          the demo app, so the frame mounts the same provider around it. */}
-      <InstantSearch searchClient={searchClient} indexName="prod_catalog" insights={false}>
-        <Concierge
-          ref={handle}
-          context={() => ({ route: 'embed' })}
-          onClose={() => post({ type: 'closed' }, hostOrigin.current ?? '*')}
-        />
-      </InstantSearch>
+      {/* The panel brings its own InstantSearch provider (see
+          `concierge/chat/JtvChat`), so the frame only supplies the click
+          interception the host contract needs. */}
+      <Concierge
+        ref={handle}
+        context={() => ({ route: 'embed' })}
+        onClose={() => post({ type: 'closed' }, hostOrigin.current ?? '*')}
+      />
     </div>
   );
 }
