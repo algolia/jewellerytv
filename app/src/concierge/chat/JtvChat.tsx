@@ -6,6 +6,7 @@ import { Chat as ChatInstance } from 'instantsearch.js/es/lib/chat';
 import type { UIMessage } from 'instantsearch.js/es/lib/chat';
 import { DefaultChatTransport } from 'instantsearch.js/es/lib/ai-lite';
 import { ProductCard, type JtvHit } from './ProductCard';
+import { createGatedTools } from './gatedGroupedResults';
 import './jtv-chat.css';
 
 const INDEX_NAME = 'prod_catalog';
@@ -73,6 +74,7 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ c
           chat={chat}
           context={context}
           itemComponent={ProductCard}
+          tools={createGatedTools()}
           layoutComponent={ChatInlineLayout}
           requiresSearch={false}
           translations={{ prompt: { textareaPlaceholder: 'Ask about jewellery' } }}
