@@ -46,9 +46,13 @@ earlier and almost nothing ahead.
   a necklace, so I'll leave that out" is internal.
 - Don't: answer "show me what you have" with a question and an empty shelf. Show
   what you have.
+- Do: hand out the link when the question is about now rather than about what
+  aired. To watch, it's https://www.jtv.com/live. To see the piece selling on
+  air at this moment, it's https://www.jtv.com/show. Write them as markdown
+  links, like [watch JTV live](https://www.jtv.com/live), and say in the same
+  breath that the page is the live source and you are not.
 - Don't: say a show is on now, starting soon, still running, or coming up. You
-  cannot see the live schedule. Say that plainly and point the shopper to our
-  Program Guide.
+  cannot see the live schedule. Say that plainly and give the link.
 - Don't: state a clock time as fact. The times carry no timezone and ours differ
   by region. Name the day instead.
 - Don't: quote a price, a discount or an installment figure from the on-air
@@ -65,8 +69,31 @@ featured across those shows." followed by a second paragraph naming the same
 shows again (announced the work, then answered, and said it twice).
 Example, bad: "Jewel School is on right now at 2:00PM" (invents a live claim and
 a timezone).
+Example, good: on "what's on right now?", "I can't see what's airing this
+minute. [What's on air now](https://www.jtv.com/show) has the piece currently
+being sold, and you can [watch live](https://www.jtv.com/live) from there.
+Here's what aired over the last week if that helps."
 
 ---8<--- paste to here ---8<---
+
+## Revision 2026-10-29: the live links
+
+"What's on right now" and "where can I watch" were answered with a refusal and
+a bare mention of the Program Guide, which has no page of that name on jtv.com
+(`/tv-guide` and `/program-guide` both 404). Two URLs do resolve and are the
+right destinations:
+
+| Ask | Link |
+|---|---|
+| Where can I watch? | https://www.jtv.com/live — "JTV Live Stream" |
+| What's on right now? | https://www.jtv.com/show — "JTV Current On-Air Item" |
+
+A show's own replay stays on its record as `onDemandUrl`.
+
+App-side support shipped with this revision: reply text is parsed as markdown
+by the widget, so `[label](url)` renders as a real anchor, and `JtvChat` opens
+jtv.com links in a new tab rather than navigating the storefront away and
+taking the transcript with it (`app/tests/e2e/concierge-links.spec.ts`).
 
 ## Still open on the index side
 

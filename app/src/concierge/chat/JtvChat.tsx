@@ -1,4 +1,5 @@
-import { forwardRef, useMemo } from 'react';
+import { forwardRef, useCallback, useMemo } from 'react';
+import type { MouseEvent } from 'react';
 import { Plus, X } from 'lucide-react';
 import { liteClient } from 'algoliasearch/lite';
 import { Chat, ChatInlineLayout, InstantSearch } from 'react-instantsearch';
@@ -115,9 +116,30 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ c
 
   const searchClient = useMemo(() => liteClient(appId, apiKey), [appId, apiKey]);
 
+  /* Replies link out to jtv.com: the live stream, the on-air item, a show's
+   * on-demand page. The widget renders markdown anchors with no target, so a
+   * plain click would navigate the storefront away and take the conversation
+   * with it, since the transcript lives in this component's state.
+   *
+   * Delegated rather than handled per link: the message renderer is the
+   * library's, and `parseMarkdown` is a boolean with no hook for anchor
+   * attributes, so the alternative was forking the text component. Modified
+   * and non-primary clicks are left alone, since the browser already opens
+   * those in a new tab or window. */
+  const openExternally = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const anchor = (event.target as HTMLElement | null)?.closest?.('a[href]');
+    if (!(anchor instanceof HTMLAnchorElement)) return;
+    if (!/^https?:/i.test(anchor.getAttribute('href') ?? '')) return;
+    if (anchor.host === window.location.host) return;
+    event.preventDefault();
+    window.open(anchor.href, '_blank', 'noopener,noreferrer');
+  }, []);
+
   return (
     <InstantSearch indexName={INDEX_NAME} searchClient={searchClient} insights={false}>
-      <div className="jtv-chat-panel">
+      <div className="jtv-chat-panel" onClick={openExternally}>
         {/* The inline layout is always visible, which is what lets the panel
          * live on its own route without a `<ChatTrigger />` next to it. The
          * default tools, built from `itemComponent`, render the search

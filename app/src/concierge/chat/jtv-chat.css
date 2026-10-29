@@ -260,3 +260,19 @@
   opacity: 0.5;
   cursor: default;
 }
+
+/* Links in a reply. The agent sends shoppers to jtv.com for the things the
+ * indices cannot answer — the live stream, the item on air right now, a
+ * show's on-demand replay — so these need to read as links rather than as
+ * stray blue words in a sentence. JtvChat opens them in a new tab; see the
+ * note on the delegated handler there for why that is not an attribute. */
+.jtv-concierge .ais-ChatMessage-text a,
+.jtv-concierge .ais-ChatMessage a {
+  color: var(--blue, #0076a9);
+  text-decoration: underline;
+  text-underline-offset: 0.125em;
+}
+
+.jtv-concierge .ais-ChatMessage a:hover {
+  text-decoration-thickness: 2px;
+}
