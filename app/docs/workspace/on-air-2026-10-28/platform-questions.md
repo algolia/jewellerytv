@@ -66,11 +66,60 @@ a field we discard (the model has already said the same thing in the message),
 so if it could be omitted the stall would at least not be preceded by output
 nobody reads.
 
-## 3. `max_iterations: 10` behaves as 3
+## 3. Something caps a completion at 5 steps regardless of `max_iterations`
 
-`config.max_iterations` is set to 10 on the dev agent. Turns still fail with
-`MaxStepsPerCompletionError` after three steps. We worked around it in the
-prompt (ban second searches and retries), which is the wrong layer for it.
+Corrects an earlier note in this file that put the ceiling at 3. Counting
+`start-step` events in a captured failing stream
+(`../simplification-2026-10-28/max-call-error.txt`, message
+`alg_msg_9n5BDJFXQ6UX13kH`) gives 5:
+
+| Step | What it did | Result |
+|---|---|---|
+| 1 | `on_air_products`, `facet_recencyDays: ["<7"]`, 4-word query | `nbHits: 0` |
+| 2 | `on_air_products`, same 4 words singular, no filter | `nbHits: 0` |
+| 3 | `on_air_products`, `"gold ring"` | 345 hits |
+| 4 | `algolia_grouped_results` | `{"status": "success"}` |
+| 5 | closing text | `MaxStepsPerCompletionError`, 400 |
+
+Four steps complete; the error fires as the fifth begins, and the closing text
+block is itself a step. `config.max_iterations` was 10 for this capture and
+raising it to 15 did not move the ceiling, which is the part that needs
+explaining: if the cap were config-driven, 15 would have let this turn finish.
+
+## 3a. Two silently-empty searches, which is what actually spent the budget
+
+Worth separating from the cap, because the turn only needed three steps. Both
+empty searches are reproducible against the index directly:
+
+**Multi-word queries return nothing on `on_air_products`.** It carries
+`removeWordsIfNoResults: "none"` and no `optionalWords`, so every term must
+match. `prod_catalog` has `removeWordsIfNoResults: "firstWords"` plus an
+`optionalWords` list and degrades instead:
+
+| Query | `on_air_products` | `prod_catalog` |
+|---|---|---|
+| `rings necklaces earrings bracelets` | 0 | 1 |
+| `ring necklace earring bracelet` | 0 | — |
+| `gold ring` | 345 | 10,442 |
+
+**An operator in a facet filter returns nothing, without erroring.**
+`facetFilters: [["recencyDays:<7"]]` is read as a literal facet value `<7`,
+which no record carries, so it comes back `nbHits: 0` rather than as an error.
+The numeric form returns the records:
+
+| Form | Result |
+|---|---|
+| `facetFilters: [["recencyDays:<7"]]` | 0 |
+| `filters: "recencyDays < 7"` | 1,615 |
+| no filter | 1,948 |
+
+`recencyDays` is a plain counting facet in `attributesForFaceting`, so this is
+not the `filterOnly` problem in item 4 — it is that the operator syntax does
+not apply to facet filters at all, and the failure is silent.
+
+Both are fixable on our side: align `on_air_products` word-matching with
+`prod_catalog`, and have the agent reach for `filters` rather than
+`facet_recencyDays` for a numeric comparison.
 
 ## 4. `Pricing_ActivePrice` is `filterOnly`, so budgets cannot be enforced
 

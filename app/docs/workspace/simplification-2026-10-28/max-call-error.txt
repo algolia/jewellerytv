@@ -1,0 +1,725 @@
+data: {"type": "start", "messageId": "alg_msg_9n5BDJFXQ6UX13kH", "messageMetadata": {"groupedResultsEnabled": true}}
+
+data: {"type": "start-step"}
+
+data: {"type": "text-start", "id": "alg_msg_9n5BDJFXQ6UX13kH"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "Pl"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "enty of finished pieces"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " aired this week out"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "side"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " Jewel School. Let me"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " find what's been featured across the"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " bro"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "ader l"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "ineup."}
+
+data: {"type": "text-end", "id": "alg_msg_9n5BDJFXQ6UX13kH"}
+
+data: {"type": "tool-input-start", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "toolName": "algolia_search_index_on_air_products"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "{\"queri"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "es\": [{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "\"query\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": ":\"rings"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": " neckla"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "ces ear"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "rings b"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "racelet"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "s\",\"fac"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "et_rece"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "ncyDays"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "\":[\"<7\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "]}]"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": ", \"user"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "Intent\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": ": \"Shop"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "per wan"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "ts fini"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "shed je"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "welry p"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "ieces f"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "eatured"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": " on air"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": " this w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "eek, ex"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "cluding"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": " making"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "-suppli"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "es focu"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "s\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": ", \"orig"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "inalQue"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "ry\": \"S"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "how me "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "finishe"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "d jewel"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "ry from"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": " this w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "eek\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": ", \"sess"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "ionId\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": " \"6d1e2"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "a3b-5f4"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "c-4e1a-"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "9c2d-7a"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "8b9c0d1"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "inputTextDelta": "e2f\"}"}
+
+data: {"type": "tool-input-available", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "toolName": "algolia_search_index_on_air_products", "input": {"queries": [{"query": "rings necklaces earrings bracelets", "facet_recencyDays": ["<7"]}], "userIntent": "Shopper wants finished jewelry pieces featured on air this week, excluding making-supplies focus", "originalQuery": "Show me finished jewelry from this week", "sessionId": "6d1e2a3b-5f4c-4e1a-9c2d-7a8b9c0d1e2f"}}
+
+data: {"type": "tool-output-available", "toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "output": {"hits": [], "nbHits": 0, "facets": {}}}
+
+data: {"type": "data-tool-output-metadata", "data": {"toolCallId": "toolu_01EWGMSRQB6mTaSmctPz3GHg", "metadata": {"com.algolia/resolved-search-params": [{"query": "rings necklaces earrings bracelets", "attributesToHighlight": [], "responseFields": ["hits", "nbHits", "page", "nbPages", "hitsPerPage", "facets"], "facets": ["*"], "clickAnalytics": false, "distinct": false, "page": 0, "hitsPerPage": 12, "attributesToRetrieve": ["brand", "hosts", "image", "date", "name", "outOfStock", "relativeDay", "recencyDays", "showId", "showTitle", "showKey"], "analytics": false, "enableABTest": false, "filters": "outOfStock:false", "facetFilters": [], "numericFilters": ["recencyDays < 7"]}]}}, "transient": true}
+
+data: {"type": "finish-step"}
+
+data: {"type": "start-step"}
+
+data: {"type": "tool-input-start", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "toolName": "algolia_search_index_on_air_products"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "{\"queri"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "es\": [{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "\"query\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": ":\"ring "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "necklac"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "e earri"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "ng brac"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "elet\"}]"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": ", \"user"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "Intent\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": ": \"Shop"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "per wan"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "ts fini"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "shed je"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "welry p"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "ieces f"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "eatured"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": " on air"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": " this w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "eek\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": ", \"orig"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "inalQue"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "ry\": \"S"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "how me "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "finishe"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "d jewel"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "ry from"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": " this w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "eek\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": ", \"sess"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "ionId\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": " \"6d1e2"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "a3b-5f4"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "c-4e1a-"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "9c2d-7a"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "8b9c0d1"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "inputTextDelta": "e2f\"}"}
+
+data: {"type": "tool-input-available", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "toolName": "algolia_search_index_on_air_products", "input": {"queries": [{"query": "ring necklace earring bracelet"}], "userIntent": "Shopper wants finished jewelry pieces featured on air this week", "originalQuery": "Show me finished jewelry from this week", "sessionId": "6d1e2a3b-5f4c-4e1a-9c2d-7a8b9c0d1e2f"}}
+
+data: {"type": "tool-output-available", "toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "output": {"hits": [], "nbHits": 0, "facets": {}}}
+
+data: {"type": "data-tool-output-metadata", "data": {"toolCallId": "toolu_01DHfGS1LUHzQdiAMMqxQRwu", "metadata": {"com.algolia/resolved-search-params": [{"query": "ring necklace earring bracelet", "attributesToHighlight": [], "responseFields": ["hits", "nbHits", "page", "nbPages", "hitsPerPage", "facets"], "facets": ["*"], "clickAnalytics": false, "distinct": false, "page": 0, "hitsPerPage": 12, "attributesToRetrieve": ["brand", "hosts", "image", "date", "name", "outOfStock", "relativeDay", "recencyDays", "showId", "showTitle", "showKey"], "analytics": false, "enableABTest": false, "filters": "outOfStock:false", "facetFilters": [], "numericFilters": []}]}}, "transient": true}
+
+data: {"type": "finish-step"}
+
+data: {"type": "start-step"}
+
+data: {"type": "tool-input-start", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "toolName": "algolia_search_index_on_air_products"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "{\"queri"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "es\": [{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "\"query\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": ":\"gold "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "ring\"}]"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": ", \"user"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "Intent\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": ": \"Shop"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "per wan"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "ts fini"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "shed je"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "welry p"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "ieces f"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "eatured"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": " on air"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": " this w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "eek; tr"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "ying si"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "mpler q"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "uery\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": ", \"orig"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "inalQue"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "ry\": \"S"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "how me "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "finishe"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "d jewel"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "ry from"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": " this w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "eek\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": ", \"sess"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "ionId\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": " \"6d1e2"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "a3b-5f4"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "c-4e1a-"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "9c2d-7a"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "8b9c0d1"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "inputTextDelta": "e2f\"}"}
+
+data: {"type": "tool-input-available", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "toolName": "algolia_search_index_on_air_products", "input": {"queries": [{"query": "gold ring"}], "userIntent": "Shopper wants finished jewelry pieces featured on air this week; trying simpler query", "originalQuery": "Show me finished jewelry from this week", "sessionId": "6d1e2a3b-5f4c-4e1a-9c2d-7a8b9c0d1e2f"}}
+
+data: {"type": "tool-output-available", "toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "output": {"hits": [{"hosts": ["Melissa", "Melissa"], "recencyDays": 5, "relativeDay": "5 days ago", "objectID": "CGD111", "name": "Gaspeite 10k Yellow Gold Ring 0.19ctw", "image": "https://images.jtv.com/jewelry/JTV-CGD111-1-plps.jpg", "date": "2026-10-24", "outOfStock": false, "showId": "283877", "showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "showTitle": "Gold Jewelry Sale & Clearance with Melissa and Melissa"}, {"showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "date": "2026-10-22", "relativeDay": "7 days ago", "name": "Blue Tanzanite 10K Yellow Gold Ring 1.79ctw", "image": "https://images.jtv.com/jewelry/JTV-CGD349-1-plps.jpg", "showTitle": "Black Friday Preview ft. Tanzanite Jewelry with Scott and Fatima", "hosts": ["Scott", "Fatima"], "recencyDays": 7, "objectID": "CGD349", "outOfStock": false, "showId": "279980"}, {"recencyDays": 1, "relativeDay": "yesterday", "objectID": "CGD186", "image": "https://images.jtv.com/jewelry/JTV-CGD186-1-plps.jpg", "showId": "280051", "showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "showTitle": "Sparkle in Silver featuring Morganite with Mandy and Elizabeth", "hosts": ["Mandy", "Elizabeth"], "date": "2026-10-28", "name": "Peach Morganite 10k Rose Gold Ring 2.90ctw", "outOfStock": false}, {"image": "https://images.jtv.com/jewelry/JTV-CGD265-1-plps.jpg", "showId": "283877", "hosts": ["Melissa", "Melissa"], "recencyDays": 5, "relativeDay": "5 days ago", "objectID": "CGD265", "outOfStock": false, "showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "showTitle": "Gold Jewelry Sale & Clearance with Melissa and Melissa", "date": "2026-10-24", "name": "Purple Canela Amethyst 10k White Gold Ring 4.45ctw"}, {"name": "Grape Color Garnet 10k Yellow Gold Ring 2.69ctw", "image": "https://images.jtv.com/jewelry/JTV-CGD170-1-plps.jpg", "outOfStock": false, "showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "showTitle": "Black Friday Preview with Melissa and Tommy", "date": "2026-10-25", "recencyDays": 4, "objectID": "CGD170", "showId": "280025", "hosts": ["Melissa", "Tommy"], "relativeDay": "4 days ago"}, {"name": "John Saul Ruby 10k Yellow Gold Ring 3.48ctw", "image": "https://images.jtv.com/jewelry/JTV-CGD121-1-plps.jpg", "outOfStock": false, "hosts": ["Mandy", "Elizabeth"], "date": "2026-10-28", "recencyDays": 1, "relativeDay": "yesterday", "showId": "280051", "showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "showTitle": "Sparkle in Silver featuring Morganite with Mandy and Elizabeth", "objectID": "CGD121"}, {"name": "John Saul Ruby 10k Yellow Gold Ring 1.93ctw", "image": "https://images.jtv.com/jewelry/JTV-CGD017-1-plps.jpg", "outOfStock": false, "showId": "280051", "showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "hosts": ["Mandy", "Elizabeth"], "date": "2026-10-28", "recencyDays": 1, "showTitle": "Sparkle in Silver featuring Morganite with Mandy and Elizabeth", "relativeDay": "yesterday", "objectID": "CGD017"}, {"date": "2026-10-27", "relativeDay": "2 days ago", "objectID": "CGD442", "image": "https://images.jtv.com/jewelry/JTV-CGD442-1-plps.jpg", "outOfStock": false, "showId": "280046", "recencyDays": 2, "name": "Grape Color Garnet 10K Yellow Gold Ring 2.72ctw", "showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "showTitle": "Silver Showcase with Lissa and Tommy", "hosts": ["Lissa", "Tommy"]}, {"showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "showTitle": "Warehouse Clearance with Dawn", "date": "2026-10-27", "recencyDays": 2, "relativeDay": "2 days ago", "objectID": "CGD120", "name": "John Saul Ruby 10k Yellow Gold Ring 2.61ctw", "image": "https://images.jtv.com/jewelry/JTV-CGD120-1-plps.jpg", "outOfStock": false, "showId": "280043", "hosts": ["Dawn"]}, {"relativeDay": "4 days ago", "objectID": "LGA155A", "name": "White Lab-Grown Diamond H SI1 10K White Gold Ring 1.25ctw", "brand": "Prazana Lab-Grown Diamonds", "image": "https://images.jtv.com/jewelry/JTV-LGA155A-1-plps.jpg", "showId": "280024", "showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "hosts": ["Jennifer", "Scott"], "outOfStock": false, "showTitle": "Prazana Lab-Grown Diamonds with Jennifer and Scott", "date": "2026-10-25", "recencyDays": 4}, {"showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "relativeDay": "yesterday", "name": "John Saul Ruby With White Diamond 10k Yellow Gold Ring 2.86ctw", "outOfStock": false, "showTitle": "Sparkle in Silver featuring Morganite with Mandy and Elizabeth", "hosts": ["Mandy", "Elizabeth"], "date": "2026-10-28", "recencyDays": 1, "objectID": "CLG947", "image": "https://images.jtv.com/jewelry/JTV-CLG947-1-plps.jpg", "showId": "280051"}, {"showKey": "/shows/silver-showcase-with-melissa-and-tommy/_/N-2201208151", "recencyDays": 4, "objectID": "LGA155B", "name": "White Lab-Grown Diamond H SI1 10K Yellow Gold Ring 1.25ctw", "image": "https://images.jtv.com/jewelry/JTV-LGA155B-1-plps.jpg", "outOfStock": false, "showId": "280024", "showTitle": "Prazana Lab-Grown Diamonds with Jennifer and Scott", "hosts": ["Jennifer", "Scott"], "date": "2026-10-25", "relativeDay": "4 days ago", "brand": "Prazana Lab-Grown Diamonds"}], "nbHits": 12, "facets": {"brand": {"Prazana Lab-Grown Diamonds": 74, "Moissanite Fire": 50, "Pacific Style": 9, "Vanna K for Moissanite": 8, "Moda Al Massimo": 7, "Splendido Italian Jewelry": 4, "Cameo Italiano": 3, "Bella Luce": 1}, "hosts": {"Melissa": 70, "Jennifer": 62, "Misty": 55, "Tommy": 51, "Scott": 50, "Lissa": 46, "Charles": 45, "Fatima": 27, "Mandy": 27, "Elizabeth": 25, "Wendy": 25, "Dawn": 17, "Mark": 16, "Lucy": 12, "Robert": 11, "Nancy": 9, "Melissa Miner": 8, "Vanna": 8, "Susan": 7, "Elian": 6, "Heidi": 5, "Federico": 4, "Gino": 3, "Katy": 3}, "showId": {"279979": 8, "279980": 3, "279981": 2, "279984": 9, "279985": 8, "279986": 2, "279987": 2, "279988": 2, "279989": 6, "279991": 2, "279992": 17, "279994": 6, "279997": 6, "279998": 9, "280000": 1, "280001": 1, "280002": 1, "280003": 1, "280004": 1, "280006": 1, "280007": 1, "280008": 3, "280009": 3, "280010": 8, "280012": 7, "280013": 4, "280014": 1, "280015": 5, "280019": 1, "280020": 4, "280021": 2, "280022": 1, "280023": 1, "280024": 13, "280025": 8, "280026": 2, "280027": 2, "280028": 1, "280031": 5, "280032": 1, "280033": 3, "280034": 2, "280036": 5, "280038": 6, "280039": 5, "280040": 2, "280041": 1, "280043": 5, "280046": 2, "280047": 3, "280050": 10, "280051": 8, "280055": 4, "280056": 5, "280057": 4, "280058": 4, "280059": 2, "280060": 11, "280062": 3, "280063": 2, "280065": 1, "280068": 4, "280069": 11, "280070": 4, "280071": 2, "280073": 6, "280074": 5, "282992": 1, "283128": 2, "283135": 1, "283136": 2, "283138": 10, "283212": 4, "283213": 6, "283214": 2, "283232": 4, "283253": 4, "283837": 1, "283857": 1, "283858": 3, "283864": 7, "283865": 1, "283877": 3, "283878": 2, "283977": 4, "284196": 3}, "outOfStock": {"false": 342}, "promoLabel": {"Top Rated": 66, "Just Reduced": 54, "New Arrival": 54, "Power Buy": 46, "Best Sellers": 13, "Super Buy": 7, "Closeout Buy": 6, "Big Holiday Deal": 3, "Markdown Madness": 1}, "seriesName": {"Prazana Lab-Grown Diamonds": 68, "Black Friday Preview": 34, "Warehouse Clearance": 26, "Moissanite Fire": 25, "Markdown Madness": 16, "Precious World of Pearls": 16, "Sparkle in Silver featuring Morganite": 16, "Sparkle in Silver": 12, "Bella Luce": 10, "Black Friday Preview featuring Lovery": 9, "Black Friday Preview featuring Moda al Massimo": 9, "Pacific Style": 9, "Personalized Style - Moissanite Fire": 8, "Silver Showcase": 8, "Vanna K for Moissanite": 8, "Jewel School": 7, "Moissanite Fire featuring 100 Facet": 7, "Colors of Topaz - Orchid Topaz": 6, "Moda al Massimo": 5, "Warehouse Clearance - Sleeping Beauty Turquoise": 5, "Girlfriend Friday - Moissanite Fire": 4, "Sleeping Beauty Turquoise Jewelry": 4, "Splendido Italian Jewelry": 4, "Warehouse Clearance featuring Diamonds": 4, "Black Friday Preview ft. Tanzanite Jewelry": 3, "Designer Styling - Cameo Italiano": 3, "Diamond Jewelry ft. Blue Diamonds": 3, "Gold Jewelry Sale & Clearance": 3, "Jewelry Love featuring Lovery": 2, "Jewelry Love ft. Precious World of Pearls": 2, "Warehouse Clearance - Up to 75% Off": 2, "After Party - Moissanite Fire": 1, "Black Friday Preview-Cobalt Color Shift Topaz w/Scott & Jennifer": 1, "Color Crush": 1, "Girlfriend Friday ft. Moda al Massimo": 1}, "recencyDays": {"0": 42, "1": 44, "2": 39, "3": 36, "4": 39, "5": 48, "6": 51, "7": 43}, "relativeDay": {"6 days ago": 51, "5 days ago": 48, "yesterday": 44, "7 days ago": 43, "today": 42, "2 days ago": 39, "4 days ago": 39, "3 days ago": 36}}}}
+
+data: {"type": "data-tool-output-metadata", "data": {"toolCallId": "toolu_01Pqydqh3Q22p9yXrzgV2wmx", "metadata": {"com.algolia/resolved-search-params": [{"query": "gold ring", "attributesToHighlight": [], "responseFields": ["hits", "nbHits", "page", "nbPages", "hitsPerPage", "facets"], "facets": ["*"], "clickAnalytics": false, "distinct": false, "page": 0, "hitsPerPage": 12, "attributesToRetrieve": ["brand", "hosts", "image", "date", "name", "outOfStock", "relativeDay", "recencyDays", "showId", "showTitle", "showKey"], "analytics": false, "enableABTest": false, "filters": "outOfStock:false", "facetFilters": [], "numericFilters": []}]}}, "transient": true}
+
+data: {"type": "finish-step"}
+
+data: {"type": "start-step"}
+
+data: {"type": "text-start", "id": "alg_msg_9n5BDJFXQ6UX13kH"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "This week's lineup ran"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " rich with col"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "ored"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " gemstone rings, l"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "ab-grown di"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "amonds, morganite,"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " t"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "anzanite, "}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "ruby, and am"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "ethyst across"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " gold sett"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "ings, with"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " Prazana Lab-"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "Grown Diamonds and"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " the"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " S"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "parkle in Silver /"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " Black Friday Preview"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " episodes espec"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "ially active."}
+
+data: {"type": "text-end", "id": "alg_msg_9n5BDJFXQ6UX13kH"}
+
+data: {"type": "tool-input-start", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "toolName": "algolia_grouped_results"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "{\"intro"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\": \"Her"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "e's a l"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ook at "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "finishe"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "d jewel"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ry feat"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ured ac"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ross th"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "is week"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "'s broa"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "dcasts."}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": ", \"grou"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ps\": [{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"title\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": ":\"Color"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ed Gems"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "tone Ri"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ngs\",\"w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "hy\":\"Va"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ried ge"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "m rings"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": " across"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": " multip"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "le show"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "s\",\"res"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ults\":["}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "tID\":\"C"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "GD111\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"why\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "Gaspeit"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "e yello"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "w gold "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ring\"},"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "tID\":\"C"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "GD349\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"why\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "Tanzani"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "te ring"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": " from B"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "lack Fr"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "iday Pr"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "eview\"}"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": ",{\"obje"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ctID\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "CGD186\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": ",\"why\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"Morgan"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ite ros"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "e gold "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ring\"},"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "tID\":\"C"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "GD265\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"why\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "Amethys"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "t white"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": " gold r"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ing\"},{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"object"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ID\":\"CG"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "D170\",\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "why\":\"G"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "arnet y"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ellow g"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "old rin"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "g\"},{\"o"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "bjectID"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\":\"CGD4"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "42\",\"wh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "y\":\"Gar"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "net rin"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "g, seco"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "nd epis"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ode\"}]}"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": ",{\"titl"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "e\":\"Rub"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "y Rings"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\",\"why\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": ":\"John "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "Saul ru"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "by feat"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ured re"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "peatedl"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "y\",\"res"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ults\":["}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "tID\":\"C"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "GD121\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"why\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "Ruby ri"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ng from"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": " Sparkl"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "e in Si"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "lver\"},"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "tID\":\"C"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "GD017\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"why\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "Ruby ri"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ng, low"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "er cara"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "t weigh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "t\"},{\"o"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "bjectID"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\":\"CGD1"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "20\",\"wh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "y\":\"Rub"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "y ring "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "from Wa"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "rehouse"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": " Cleara"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "nce\"},{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"object"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ID\":\"CL"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "G947\",\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "why\":\"R"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "uby wit"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "h diamo"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "nd acce"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "nt ring"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"}]},{\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "title\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"Lab-Gr"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "own Dia"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "mond Ri"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ngs\",\"w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "hy\":\"Pr"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "azana s"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "eries h"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ighligh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "t\",\"res"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ults\":["}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "tID\":\"L"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "GA155A\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": ",\"why\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"Lab-gr"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "own dia"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "mond wh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ite gol"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "d ring\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "},{\"obj"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ectID\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\"LGA155"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "B\",\"why"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "\":\"Same"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": " diamon"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "d, yell"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "ow gold"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": " settin"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "inputTextDelta": "g\"}]}]}"}
+
+data: {"type": "tool-input-available", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "toolName": "algolia_grouped_results", "input": {"intro": "Here's a look at finished jewelry featured across this week's broadcasts.", "groups": [{"title": "Colored Gemstone Rings", "why": "Varied gem rings across multiple shows", "results": [{"objectID": "CGD111", "why": "Gaspeite yellow gold ring"}, {"objectID": "CGD349", "why": "Tanzanite ring from Black Friday Preview"}, {"objectID": "CGD186", "why": "Morganite rose gold ring"}, {"objectID": "CGD265", "why": "Amethyst white gold ring"}, {"objectID": "CGD170", "why": "Garnet yellow gold ring"}, {"objectID": "CGD442", "why": "Garnet ring, second episode"}]}, {"title": "Ruby Rings", "why": "John Saul ruby featured repeatedly", "results": [{"objectID": "CGD121", "why": "Ruby ring from Sparkle in Silver"}, {"objectID": "CGD017", "why": "Ruby ring, lower carat weight"}, {"objectID": "CGD120", "why": "Ruby ring from Warehouse Clearance"}, {"objectID": "CLG947", "why": "Ruby with diamond accent ring"}]}, {"title": "Lab-Grown Diamond Rings", "why": "Prazana series highlight", "results": [{"objectID": "LGA155A", "why": "Lab-grown diamond white gold ring"}, {"objectID": "LGA155B", "why": "Same diamond, yellow gold setting"}]}]}}
+
+data: {"type": "tool-output-available", "toolCallId": "toolu_013xUFUuMmL6EFYxmhTczS26", "output": {"status": "success"}}
+
+data: {"type": "finish-step"}
+
+data: {"type": "start-step"}
+
+data: {"type": "text-start", "id": "alg_msg_9n5BDJFXQ6UX13kH"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "Qu"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "ite a range"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " of"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " color this"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " week,"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " t"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "anzanite, morganite"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": ", ruby, gar"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "net, amethyst,"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " alongside lab-grown"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " diamonds from"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " the"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " Prazana series."}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": "\n\nIs there a particular stone or"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " style"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " catching your eye to"}
+
+data: {"type": "text-delta", "id": "alg_msg_9n5BDJFXQ6UX13kH", "delta": " dig into further?"}
+
+data: {"type": "data-suggestions", "data": {"suggestions": ["Show me morganite pieces from this week", "What tanzanite jewelry aired recently?", "Filter by price range under $500"]}}
+
+data: {"type": "error", "errorText": "{\"message\": \"Max steps per completion limit was reached\", \"type\": \"MaxStepsPerCompletionError\", \"statusCode\": 400}"}
+
+data: [DONE]
