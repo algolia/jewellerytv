@@ -111,6 +111,34 @@ block is itself a step. `config.max_iterations` was 10 for this capture and
 raising it to 15 did not move the ceiling, which is the part that needs
 explaining: if the cap were config-driven, 15 would have let this turn finish.
 
+### Measured 2026-10-29: the cap is only reached after an empty search
+
+Three batches of the same eight questions
+(`../simplification-2026-10-28/measure-turn-shape.mjs`):
+
+| Configuration | median total | steps | failures |
+|---|---|---|---|
+| display tool, caching off | 14,967ms | 3 on 8 of 8 | 0 of 8 |
+| display tool, caching on | 15,682ms | 3 on 7 of 8 | 0 of 8 |
+| display tool removed, caching off | 18,636ms | 2 to 5 | **2 of 8** |
+
+Two things fall out. Caching is not what makes a turn quick — 15.0s against
+15.7s is noise, and both are fresh generations rather than the 0.2 to 0.4s a
+replay takes. And with the display tool in place a normal question costs
+exactly three steps of the five available: search, display, closing text.
+
+So the cap is not a general condition; it needs something to force extra
+steps, and an empty search is what does it. Reproduced directly:
+
+| Question | first search | steps |
+|---|---|---|
+| "Show me finished jewelry from this week" | `prod_catalog`, `"jewelry"` | 3 |
+| "Show me rings necklaces and earrings from this week" | `on_air_products`, `"rings necklaces earrings"` → 0 hits, retried as `"ring necklace pendant"` | **4** |
+
+One step from the cap, on a question a shopper would plausibly ask. Which
+means the word-matching settings below are not a tidiness issue — they are
+what puts ordinary on-air questions within reach of the ceiling.
+
 ## 3a. Two silently-empty searches, which is what actually spent the budget
 
 Worth separating from the cap, because the turn only needed three steps. Both

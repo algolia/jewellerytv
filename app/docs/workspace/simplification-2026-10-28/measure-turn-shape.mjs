@@ -9,13 +9,14 @@ import { readFileSync } from 'node:fs';
 const env=Object.fromEntries(readFileSync(new URL('../../../.env', import.meta.url),'utf8').split('\n')
  .filter(l=>l.includes('=')&&!l.startsWith('#')).map(l=>[l.slice(0,l.indexOf('=')).trim(),l.slice(l.indexOf('=')+1).trim()]));
 const {VITE_ALGOLIA_APP_ID:a,VITE_ALGOLIA_SEARCH_API_KEY:k,VITE_JTV_AGENT_ID:g}=env;
+const CACHE = process.argv[2] === 'cache' ? 'true' : 'false';
 const QS=['Show me opal jewelry','I need a gift for my mom under $200','What was shown on Jewel School this week?',
  'What did Misty feature this week?','Show me engagement rings','Something bold in sterling silver',
  'Compare tanzanite and amethyst rings','Show me clearance'];
 const rows=[];
 for(const q of QS){
  const t0=Date.now();
- const res=await fetch(`https://${a}.algolia.net/agent-studio/1/agents/${g}/completions?compatibilityMode=ai-sdk-5&cache=false`,{
+ const res=await fetch(`https://${a}.algolia.net/agent-studio/1/agents/${g}/completions?compatibilityMode=ai-sdk-5&cache=${CACHE}`,{
   method:'POST',headers:{'content-type':'application/json','x-algolia-application-id':a,'x-algolia-api-key':k},
   body:JSON.stringify({messages:[{id:'u1',role:'user',parts:[{type:'text',text:q}]}]})});
  const rd=res.body.getReader(),dec=new TextDecoder();let buf='';
