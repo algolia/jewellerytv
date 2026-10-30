@@ -12,6 +12,13 @@ mode=${1:-}; arg=${2:-}
 case "$mode" in
   plan|deploy)
     [ -n "$arg" ] || { echo "need a commit sha"; exit 2; }
+    # Config-drift guard (2026-10-30 incident): a release must not ship while
+    # a verified agent fix has been silently overwritten on either agent.
+    echo "agent drift check:"
+    (cd "$(dirname "$0")/.." && NODE_USE_SYSTEM_CA=1 node scripts/baseline/check-agent-drift.mjs) || {
+      echo "REFUSING: agent drift alarm — restore the missing rules before releasing (scripts/baseline/check-agent-drift.mjs).";
+      exit 4;
+    }
     git -C "$REPO" fetch -q origin
     full=$(git -C "$REPO" rev-parse "$arg"); main=$(git -C "$REPO" rev-parse origin/main)
     if [ "$full" != "$main" ]; then

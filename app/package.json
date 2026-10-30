@@ -18,7 +18,8 @@
     "snapshot": "tsx server/snapshot.ts",
     "check:server": "node scripts/check-server-runtime.mjs",
     "baseline:verify": "node scripts/baseline/verify-baseline.mjs",
-    "agent:promote": "node scripts/baseline/promote-agent.mjs"
+    "agent:promote": "node scripts/baseline/promote-agent.mjs",
+    "agent:drift": "NODE_USE_SYSTEM_CA=1 node scripts/baseline/check-agent-drift.mjs"
   },
   "dependencies": {
     "instantsearch.css": "^8.5.1",
