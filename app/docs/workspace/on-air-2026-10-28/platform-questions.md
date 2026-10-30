@@ -121,15 +121,46 @@ Both are fixable on our side: align `on_air_products` word-matching with
 `prod_catalog`, and have the agent reach for `filters` rather than
 `facet_recencyDays` for a numeric comparison.
 
-## 4. `Pricing_ActivePrice` is `filterOnly`, so budgets cannot be enforced
+## 4. The agent can only express equality, which is why budgets leak
 
-Numeric comparison on a `filterOnly` attribute is rejected with
-`invalid_facet_filter`, so the agent cannot write `Pricing_ActivePrice <= 150`.
-It falls back to the `priceBand` string facet, and the bands straddle budgets:
-for a $150 ask the `$100 - $200` band returned 2 of 12 items over budget while
-the reply asserted compliance. 44% of that band is over $150; dropping the band
-entirely would hide 2,214 affordable necklaces, so neither branch is correct.
+This replaces an earlier version of this item, which said enforcing a budget
+needed `Pricing_ActivePrice` promoted out of `filterOnly` in
+`attributesForFaceting` — a change `app/docs/BASELINE.md` rule 6 forbids.
+That was wrong, and the distinction matters because it moves the fix off the
+index settings entirely.
 
-The fix is an `attributesForFaceting` change on `prod_catalog`, which
-`app/docs/BASELINE.md` rule 6 forbids us from making. Raised with the index
-owners separately.
+`filterOnly` does not block numeric comparison. Against `prod_catalog` today,
+with the same search key:
+
+| Form | `necklace` hits |
+|---|---|
+| no price filter | 19,481 |
+| `numericFilters: ["Pricing_ActivePrice<=150"]` | 6,869 |
+| `filters: "Pricing_ActivePrice <= 150"` | 6,869 |
+| `facetFilters: [["Pricing_ActivePrice:<=150"]]` | **0** |
+
+Only the last form fails, and it fails because `facetFilters` is an equality
+match against a literal facet value — `<=150` is read as the name of a value,
+which no record carries. The same holds on `on_air_products`, where
+`recencyDays` is a plain counting facet: `recencyDays:5` matches 256 records,
+`recencyDays:<7` matches none, and `numericFilters: ["recencyDays<7"]` matches
+1,615.
+
+This is also how InstantSearch has always done ranges: `connectRange` calls
+`addNumericRefinement(attribute, '>=', min)` and `algoliasearch-helper`
+translates numeric refinements into `numericFilters`, never into
+`facetFilters`. A numeric attribute still belongs in `attributesForFaceting`
+so the widget can read the min, max and counts it needs to draw bounds — but
+drawing the range and applying it are two different parameters.
+
+So the gap is in what the agent is allowed to express. Its
+`algolia_search_index` tool offers `facet_<attribute>` parameters, which land
+in `facetFilters`, and the captured stream shows it reaching for
+`facet_recencyDays: ["<7"]` because that is the only shape available to it. No
+amount of prompting fixes a budget ceiling it has no parameter for.
+
+**What we would like to know:** whether an index entry's
+`searchControls.custom` can carry `filters` or `numericFilters`, or whether a
+comparison parameter can be exposed to the model directly. Either one closes
+both the budget ceiling and the on-air recency filter, with no index settings
+change at all.
