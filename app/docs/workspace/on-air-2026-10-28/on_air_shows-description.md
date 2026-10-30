@@ -15,40 +15,59 @@ window of roughly the last eight days, so this index can say what aired recently
 and what a series or host covers. It cannot say what is on air at this moment and
 it holds almost no future schedule.
 
-Use it when a shopper asks about a show, a series, a host, or what aired
-recently. To shop the items from a show, take that show's `showId` and search
-`on_air_products` filtered on it.
+Use it only when the question is about timing or people: when a series airs, who
+hosts it, what a series covers. To shop what a show sold, search
+`on_air_products` directly — every product there carries its own show, so this
+index is not a step on the way to the pieces.
 
 Key fields: `title` (searchable), `seriesName` (searchable, filterable),
 `hosts` (searchable, filterable, multi-valued, one show can have several hosts),
-`date` (filterable, exact `YYYY-MM-DD`), `startTimeLocal` and `endTimeLocal`
-(display strings such as "12:00PM"), `startMinutes` (minutes from midnight),
-`status` (filterable), `showId` (the key into `on_air_products`), `onDemandUrl`
-(replay page), `itemsUrl` (the show's product page on jtv.com).
+`date` (filterable, exact `YYYY-MM-DD`), `relativeDay` (filterable: `today`,
+`yesterday`, `2 days ago`), `recencyDays` (filterable integer, 0 is today),
+`startTimeLocal` and `endTimeLocal` (display strings such as "12:00PM"),
+`startMinutes` (minutes from midnight), `status` (filterable), `showId`,
+`onDemandUrl` (replay page), `itemsUrl` (the show's product page on jtv.com).
+
+For anything relative, use `relativeDay` — it is the shopper's own word already
+indexed. Never compute a calendar date yourself; you have no clock. Filters
+match a value exactly and cannot carry a comparison, so `recencyDays:1` is
+valid and a range is not.
 
 `status` is `aired`, `live` or `upcoming`. The data refreshes once a day, so
 `status` describes the last refresh and not this moment. Never tell a shopper a
-show is on now, starting soon, or still running. For anything about the current
-or future schedule, say you cannot see the live schedule and point to the Program
-Guide.
+show is on now, starting soon, or still running. For the current or future
+schedule, say you cannot see it and link the right page:
+https://www.jtv.com/show/program-guide for what is scheduled,
+https://www.jtv.com/show for the item selling on air now,
+https://www.jtv.com/show/channel-finder for which channel carries us, and
+https://www.jtv.com/live to watch online.
 
 Times carry no timezone, and JTV publishes its schedule per timezone, so a clock
 time here is not authoritative for any particular shopper. Name the day rather
 than the hour.
 
 Filter examples: `seriesName:"Jewel School"`, `hosts:Misty`, `status:aired`,
-`date:2026-10-27`. Copy facet values verbatim from the facet counts; do not
-compose them from the shopper's phrasing.
+`relativeDay:yesterday`, `date:2026-10-27`. Copy facet values verbatim from the
+facet counts; do not compose them from the shopper's phrasing.
 
 ---8<--- paste to here ---8<---
 
-## Add this paragraph once the recency fields are indexed
+## Revision 2026-10-30
 
-The agent has no clock, so it cannot turn "yesterday" or "this week" into a
-`date` filter today. Once `recencyDays` and `relativeDay` exist on the records,
-append:
+The block above replaces the 2026-10-28 draft. Its appendix — "add this once
+the recency fields are indexed" — has landed, and two things in the main text
+had gone stale.
 
-> `recencyDays` is an integer where 0 is today and 1 is yesterday, and
-> `relativeDay` is the same thing as a word (`today`, `yesterday`, `2 days ago`).
-> Use these for any relative ask: `relativeDay:yesterday`, or `recencyDays < 3`
-> for "the last few days". Never compute a calendar date yourself.
+- **`recencyDays` and `relativeDay` are in the field list now**, but the
+  appendix's suggested `recencyDays < 3` is deliberately not. A captured
+  failure started with `facet_recencyDays: ["<7"]`, which returns zero without
+  erroring because the operator is read as a literal facet value. Until a
+  comparison parameter reaches the search tool, `relativeDay` is the only
+  relative filter that works.
+- **"Point to the Program Guide" is now four real URLs.** The guide exists at
+  `/show/program-guide`, not at the top level, which is why an earlier check
+  for it 404'd.
+- **The join instruction is reversed.** It said to take a `showId` from here
+  into `on_air_products`; the show fields are denormalised onto the products
+  now, and following the old instruction cost two steps in a captured trace.
+  This index is for timing and people, not a step on the way to pieces.
