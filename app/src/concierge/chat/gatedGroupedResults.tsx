@@ -80,6 +80,34 @@ const GroupedResultsUI = createGroupedResultsToolComponent<JtvHit>({
   useRef,
 } as never);
 
+/* The wait between the reply text and the shelves.
+ *
+ * Measured against the dev agent on 2026-10-29: the model finishes the tool's
+ * `intro` at 86 characters and then stalls for 4.0 seconds before emitting a
+ * single group, after which all three groups and twelve pieces arrive in
+ * 380ms. Progressive rendering is already on (`streamInput`), so the shelves
+ * do appear as they stream; there is simply nothing to stream during the
+ * stall, and the one thing generated before it is the intro, which this gate
+ * drops on purpose.
+ *
+ * So the panel shows the shape of what is coming instead of nothing. Four
+ * placeholders, which is roughly a group, rather than a spinner: a spinner
+ * says "working", a shelf outline says "pieces are about to land here". */
+function GroupSkeleton() {
+  return (
+    <div className="jtv-chat-skeleton" aria-hidden="true">
+      <div className="jtv-chat-grid">
+        {[0, 1, 2, 3].map((slot) => (
+          <div key={slot} className="jtv-chat-card jtv-chat-card--pending">
+            <div className="jtv-chat-card-image" />
+            <div className="jtv-chat-card-title" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function GroupGrid({ items }: { items: JtvHit[] }) {
   return (
     <div className="jtv-chat-grid">
@@ -99,6 +127,11 @@ export function createGatedTools(): Tools {
     const { input, dropped } = gateGroups(raw, props.context?.records as RecordsStore | undefined);
     if (dropped.length) recordDisplayEvent('stage-ok', `gate dropped ${dropped.join(', ')}`);
     const gatedMessage = { ...message, input };
+    /* Nothing to lay out yet: the tool is mid-stream and no group has arrived.
+     * The library renders an empty block here, which is the dead gap. */
+    if (message?.state === 'input-streaming' && !input.groups?.length) {
+      return <GroupSkeleton />;
+    }
     return (
       <GroupedResultsUI
         toolProps={{

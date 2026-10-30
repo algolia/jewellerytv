@@ -34,13 +34,45 @@ cache key (does it include the agent version and the index contents, or only
 the message?), and whether a per-index or per-tool opt-out exists so that
 stock- and schedule-sensitive answers can bypass while the rest stays cached.
 
-## 2. `max_iterations: 10` behaves as 3
+## 2. A four-second stall between the display tool's intro and its first group
+
+This is the pause shoppers report as "it hangs after the text, then everything
+appears at once". Timestamping the SSE stream on a real turn ("Show me opal
+jewelry", `cache=false`) puts it in one place:
+
+```
+ 6720ms  tool-input-start (algolia_grouped_results)
+         ... streams 86 chars: {"intro": "Here's a first look at opal jewelry..."
+ 6744ms  STALL 4003ms
+10747ms  ... remaining 996 chars: 3 groups, 12 objectIDs, in 360ms
+11107ms  tool-input-available
+```
+
+The whole tool input is 1,082 characters across 158 deltas with a median
+inter-delta gap of 0ms, so this is not generation throughput. One stall of
+4,003ms accounts for 91% of the phase, and it lands at exactly the boundary
+between the intro string and the `groups` array. A second run put the same
+stall at 5,785ms, in the same position.
+
+Our side of it is handled: progressive rendering is on, so groups render as
+they stream, and the panel now shows a placeholder shelf during the stall
+rather than an empty block. But the four seconds are real and they are the
+largest single component of a 17.6s turn.
+
+**What we would like to know:** what runs between the intro and the first
+group — a re-rank, a validation pass, a second retrieval — and whether it can
+start before the intro is written rather than after. A related ask: `intro` is
+a field we discard (the model has already said the same thing in the message),
+so if it could be omitted the stall would at least not be preceded by output
+nobody reads.
+
+## 3. `max_iterations: 10` behaves as 3
 
 `config.max_iterations` is set to 10 on the dev agent. Turns still fail with
 `MaxStepsPerCompletionError` after three steps. We worked around it in the
 prompt (ban second searches and retries), which is the wrong layer for it.
 
-## 3. `Pricing_ActivePrice` is `filterOnly`, so budgets cannot be enforced
+## 4. `Pricing_ActivePrice` is `filterOnly`, so budgets cannot be enforced
 
 Numeric comparison on a `filterOnly` attribute is rejected with
 `invalid_facet_filter`, so the agent cannot write `Pricing_ActivePrice <= 150`.

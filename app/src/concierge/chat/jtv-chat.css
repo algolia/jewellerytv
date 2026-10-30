@@ -276,3 +276,43 @@
 .jtv-concierge .ais-ChatMessage a:hover {
   text-decoration-thickness: 2px;
 }
+
+/* The pending shelf. Shown while the grouped-results tool is still streaming
+ * its input and no group has arrived yet; see the note in
+ * gatedGroupedResults.tsx for the measurement that made this necessary. The
+ * cards are the real cards with no content, so when the pieces land they land
+ * in place rather than replacing a different shape. */
+.jtv-chat-card--pending .jtv-chat-card-image,
+.jtv-chat-card--pending .jtv-chat-card-title {
+  background: linear-gradient(
+    90deg,
+    var(--surface, #f3f3f3) 0%,
+    #e9e9e9 40%,
+    var(--surface, #f3f3f3) 80%
+  );
+  background-size: 300% 100%;
+  animation: jtv-chat-pending 1.4s ease-in-out infinite;
+}
+
+.jtv-chat-card--pending .jtv-chat-card-title {
+  height: 1.75rem;
+  border-radius: 2px;
+}
+
+@keyframes jtv-chat-pending {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* Respect a reduced-motion preference: the placeholder still reserves the
+ * space, it just stops shimmering. */
+@media (prefers-reduced-motion: reduce) {
+  .jtv-chat-card--pending .jtv-chat-card-image,
+  .jtv-chat-card--pending .jtv-chat-card-title {
+    animation: none;
+  }
+}
