@@ -164,6 +164,13 @@ function displayTextParts(message: UIMessage) {
   for (const part of message.parts) {
     if (part.type === 'text' && 'text' in part && typeof part.text === 'string') {
       current += part.text;
+    } else if (typeof part.type === 'string' && part.type.startsWith('tool-')) {
+      /* Mid-turn narration (2026-10-30): text written before a tool call is
+       * progress talk, and the platform's completion cache replays it verbatim
+       * for exact repeated questions even after the prompt banned it. The
+       * display keeps only what the model wrote after its last tool call —
+       * the reply. Raw transcript state above keeps every part. */
+      current = '';
     } else if (current.trim()) {
       segments.push(current);
       current = '';
