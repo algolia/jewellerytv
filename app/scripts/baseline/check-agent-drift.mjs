@@ -22,8 +22,15 @@ const S = loadSettings();
 const MARKERS = [
   { name: 'guardrail education-aware rule (V10)', where: 'config.guardrail.categories', test: (a) => (a.config?.guardrail?.categories ?? []).some((c) => (c.description ?? '').includes('never flag education merely because')) },
   { name: 'pre-owned scope rule', where: 'instructions', test: (a) => a.instructions.includes('Pre-owned is out of scope entirely') },
-  { name: 'trending merchandising rule', where: 'instructions', test: (a) => a.instructions.includes('What is trending on our site is merchandised') },
-  { name: 'narration bar', where: 'instructions', test: (a) => a.instructions.includes("don't read as pearl") },
+  /* Trending marker removed 2026-10-30: Arijit's own dashboard edit (19:36Z, the
+   * owner base) replaced the merchandised-trending rule with "never call
+   * anything top-selling, popular or trending". OPEN PRODUCT FLAG: this
+   * reverses the Oct 27 Craig commitment ("Trending - the agent now answers
+   * with the site's own trending collections") — re-add the marker if that
+   * decision is reversed. */
+  /* Narration bar marker tracks the owner base wording (the older
+   * "don't read as pearl" bar was superseded by Arijit's 19:36Z edit). */
+  { name: 'narration bar (owner base: future-tense ban)', where: 'instructions', test: (a) => a.instructions.includes("Don't: promise an action you are about to take") },
   { name: 'declaration contract: understood field', where: 'tools', test: (a) => !!(a.tools ?? []).find((t) => t.name === 'present_products')?.inputSchema?.properties?.understood },
   { name: 'declaration contract: priceMax', where: 'tools', test: (a) => !!Object.keys((a.tools ?? []).find((t) => t.name === 'present_products')?.inputSchema?.properties?.understood?.properties ?? {}).includes('priceMax') },
 ];

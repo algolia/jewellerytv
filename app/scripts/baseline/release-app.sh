@@ -15,7 +15,7 @@ case "$mode" in
     # Config-drift guard (2026-10-30 incident): a release must not ship while
     # a verified agent fix has been silently overwritten on either agent.
     echo "agent drift check:"
-    (cd "$(dirname "$0")/.." && NODE_USE_SYSTEM_CA=1 node scripts/baseline/check-agent-drift.mjs) || {
+    (cd "$(dirname "$0")" && NODE_USE_SYSTEM_CA=1 node check-agent-drift.mjs) || {
       echo "REFUSING: agent drift alarm — restore the missing rules before releasing (scripts/baseline/check-agent-drift.mjs).";
       exit 4;
     }

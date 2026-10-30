@@ -31,7 +31,7 @@ page.on('response', async (r) => {
   } catch { apiCalls.push({ status: r.status(), parse: 'failed' }); }
 });
 
-await page.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
+await page.goto(process.env.REPRO_BASE ?? 'http://localhost:5173/', { waitUntil: 'networkidle' });
 await page.waitForTimeout(2_500);
 const panel = page.getByRole('complementary', { name: 'Jewelry buying Concierge' });
 if (!(await panel.isVisible().catch(() => false))) {
