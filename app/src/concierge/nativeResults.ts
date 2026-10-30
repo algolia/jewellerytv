@@ -74,7 +74,7 @@ export function extractMessageAnchors(
       }
       if (!part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
       const input = isRecord(part.input) ? (part.input as Record<string, unknown>) : null;
-      const queries = normalizeSearchQueries(input);
+      const queries = Array.isArray(input?.queries) ? (input!.queries as unknown[]) : null;
       if (!queries) continue;
       if (queries.length !== 1) multiScope = true;
       const first = queries[0];
@@ -202,39 +202,6 @@ export function deriveDisplayFacets(
     .map(([attribute]) => attribute);
 }
 
-/** The search tool's input reaches the wire in TWO shapes: the multi-query
- * array ({queries: [{query, facet_<Attribute>: [...]}]}) and the flat
- * single-query form ({query, index, facet_filters: [[attr:value, ...]],
- * number_of_results}) — the model picks per turn. Measured 2026-10-30:
- * flat-shape turns silently lost facets, cards and the canvas because every
- * reader keyed on input.queries only. Normalizes the flat shape into the
- * array form; facet_filters OR-groups map to facet_<Attribute> arrays (first
- * group per attribute wins — Algolia ANDs across groups). */
-function normalizeSearchQueries(input: unknown): unknown[] | null {
-  if (!isRecord(input)) return null;
-  if (Array.isArray(input.queries)) return input.queries as unknown[];
-  if (typeof input.query !== 'string' || !input.query) return null;
-  const flat: Record<string, unknown> = { query: input.query };
-  const facetFilters = input.facet_filters;
-  if (Array.isArray(facetFilters)) {
-    for (const group of facetFilters) {
-      if (!Array.isArray(group)) continue;
-      const perAttribute: Record<string, string[]> = {};
-      for (const entry of group) {
-        if (typeof entry !== 'string') continue;
-        const sep = entry.indexOf(':');
-        if (sep <= 0) continue;
-        const attribute = `facet_${entry.slice(0, sep)}`;
-        (perAttribute[attribute] ??= []).push(entry.slice(sep + 1));
-      }
-      for (const [attribute, values] of Object.entries(perAttribute)) {
-        if (!Array.isArray(flat[attribute])) flat[attribute] = values;
-      }
-    }
-  }
-  return [flat];
-}
-
 /** Reads the search input's `facet_<Attribute>` keys — the model's per-query
  * narrowing (ground truth: prod mission-d99113f8 expresses "under $1,000" as
  * every Pricing_PriceRange band at or under the cap). Null and empty values
@@ -304,7 +271,7 @@ export function extractMessageFacetPicks(messages: readonly Message[]): MessageF
       }
       if (!part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
       const input = isRecord(part.input) ? (part.input as Record<string, unknown>) : null;
-      const queries = normalizeSearchQueries(input);
+      const queries = Array.isArray(input?.queries) ? (input!.queries as unknown[]) : null;
       if (!queries) continue;
       sawSearch = true;
       if (queries.length !== 1) multiScope = true;
@@ -387,7 +354,7 @@ export function extractSearchPresentation(messages: readonly Message[]): SearchP
       }
       if (!part.type.startsWith(SEARCH_TOOL_PREFIX)) continue;
       const input = isRecord(part.input) ? (part.input as Record<string, unknown>) : null;
-      const queries = normalizeSearchQueries(input);
+      const queries = Array.isArray(input?.queries) ? (input!.queries as unknown[]) : null;
       if (!queries) continue;
       if (queries.length !== 1) return null;
       const first = queries[0];
