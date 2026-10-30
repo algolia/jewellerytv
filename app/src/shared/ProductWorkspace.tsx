@@ -114,9 +114,7 @@ export function ProductWorkspace({
   const groupedDiscoveries = [...mergedDiscoveries.values()].slice(0, 3).flatMap((group) => {
     // The chips-native search presentation is one unsplit group at the full
     // tile cap; any other presentation keeps the accepted two-per-group cap.
-    // 9 is the shelf cap the curation tool law-trims to (Arijit's rows-of-three
-    // law: 3, 6 or 9) — an 8 cap here truncated the verified shelf to a broken row.
-    const itemCap = group.mode === 'search_results' ? 9 : 2;
+    const itemCap = group.mode === 'search_results' ? 8 : 2;
     const items = group.items
       .filter((item) => {
         if (seenDiscoveryIds.has(item.product.id)) return false;

@@ -119,11 +119,7 @@ export function createConciergeWorkspaceSession(options: {
         const product = normalize(verified.get(objectID));
         return product ? [{ product, why: group.why }] : [];
       });
-      /* search_results marks the chips-native single-group shelf so the
-       * workspace renders the full verified list — without it the canvas
-       * fell back to the grouped two-per-group cap (measured: 2 of 9 tiles,
-       * 2026-10-27). */
-      return items.length ? [{ title: group.title, mode: 'search_results', items }] : [];
+      return items.length ? [{ title: group.title, items }] : [];
     });
   }
 
@@ -233,12 +229,6 @@ export function createConciergeWorkspaceSession(options: {
      * their raw records ride the present_products output. */
     for (const [objectID, raw] of collectPresentRaws(messages as never)) {
       if (!records.has(objectID)) records.set(objectID, raw);
-    }
-    /* Records already registered by an earlier staging (the verified shelf
-     * the model wrote its reply from) seed the map — a per-ID proxy refetch
-     * can fail transiently and silently drop a tile from the canvas. */
-    for (const r of store.getSnapshot()?.selectionRecords ?? []) {
-      if (!records.has(r.objectID) && r.raw) records.set(r.objectID, r.raw as Record<string, unknown>);
     }
     const staged = new Map<string, WorkspaceGroup[]>();
     for (const anchor of anchors) {
