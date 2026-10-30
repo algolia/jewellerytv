@@ -20,8 +20,7 @@ const expect = process.argv.find((x) => x.startsWith('--expect='))?.split('=')[1
 const s8 = (v) => createHash('sha256').update(typeof v === 'string' ? v : JSON.stringify(v)).digest('hex').slice(0, 8);
 const hash3 = (a) => [s8(a.instructions), s8(a.systemPrompt), s8(a.tools ?? [])].join(':');
 
-const WINDOW = 12;
-const FILTERS = 'Inventory_InStock:true AND NOT Catalog_PreviouslyOwned:true';
+const FILTERS = 'Inventory_InStock:true';
 const url = `https://${S.appId}.algolia.net/agent-studio/1/agents/${process.env.JTV_TARGET_AGENT_ID ?? S.devAgentId}`;
 const get = async () => {
   const r = await fetch(url, { headers: { 'x-algolia-application-id': S.appId, 'x-algolia-api-key': S.searchKey } });
@@ -35,15 +34,15 @@ const searchTool = (live.tools ?? []).find((t) => t.type === 'algolia_search_ind
 if (!searchTool) throw new Error('search tool missing');
 const catalog = (searchTool.indices ?? []).find((ix) => ix.index === 'prod_catalog');
 if (!catalog) throw new Error('prod_catalog index config missing');
-if (catalog.searchParameters?.hitsPerPage != null && catalog.searchParameters.hitsPerPage !== WINDOW) {
-  console.log(JSON.stringify({ note: `existing developer window ${catalog.searchParameters.hitsPerPage}; replacing with ${WINDOW}` }));
+if (catalog.searchParameters?.hitsPerPage != null) {
+  console.log(JSON.stringify({ note: `existing developer window ${catalog.searchParameters.hitsPerPage}; removing` }));
 }
 
 const target = {
   ...live,
   tools: (live.tools ?? []).map((t) =>
     t.type === 'algolia_search_index'
-      ? { ...t, indices: (t.indices ?? []).map((ix) => ix.index === 'prod_catalog' ? { ...ix, searchParameters: { ...ix.searchParameters, hitsPerPage: WINDOW, filters: FILTERS } } : ix) }
+      ? { ...t, indices: (t.indices ?? []).map((ix) => ix.index === 'prod_catalog' ? { ...ix, searchParameters: { ...ix.searchParameters, filters: FILTERS } } : ix) }
       : t),
 };
 const targetHash = hash3(target);
@@ -52,7 +51,7 @@ console.log(JSON.stringify({
   phase: 'preflight',
   execute,
   live: { hash3: liveHash, updatedAt: live.updatedAt },
-  change: { hitsPerPage: catalog.searchParameters?.hitsPerPage ?? null, to: WINDOW, filters: catalog.searchParameters?.filters ?? null },
+  change: { filtersTo: FILTERS },
   expectMatchesLive: !expect || liveHash === expect,
 }, null, 1));
 if (expect && liveHash !== expect) throw new Error(`Live hash ${liveHash} != --expect ${expect}; refusing`);
