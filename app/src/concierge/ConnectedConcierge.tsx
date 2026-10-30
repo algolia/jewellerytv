@@ -27,7 +27,7 @@ import { STARTER_QUESTION_POOL, selectStarterSet, type StarterQuestion } from '.
 import { createConciergeWorkspaceSession } from './ConciergeWorkspaceProvider';
 import { extractSearchPresentation, extractSearchHitObjectIDs, stripTrailingNote } from './nativeResults';
 import { buildClientTools } from './clientTools';
-import { extractMessageFacetPicks, buildFacetRefineParams } from './nativeResults';
+import { extractMessageFacetPicks, buildFacetRefineParams, buildFacetCountParams } from './nativeResults';
 import { FacetChips, buildChipRows } from './FacetChips';
 import { normalizeProduct, type Product } from '../shared/catalog';
 import { searchClient } from '../shared/client';
@@ -860,6 +860,47 @@ export function ConnectedConcierge({
     products: Product[] | null;
   };
   const [facetFunnels, setFacetFunnels] = useState<Record<string, FacetFunnel>>({});
+  /* The platform's search results stopped carrying facet counts (2026-10-30:
+   * model-side and client-side tool outputs both carry only hits, nbHits and
+   * queryID, and no agent-side control restores them). The narrowing chips are
+   * built from those counts, so fetch them client-side for a pick the stream
+   * left empty — the same same-origin search a chip tap already refines
+   * through, once per message, and the streamed counts still win when the
+   * platform returns them again. */
+  const [fetchedFacets, setFetchedFacets] = useState<
+    Record<string, Record<string, Record<string, number>>>
+  >({});
+  const facetCountFetches = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const entry of facetPicks) {
+      if (Object.keys(entry.pick.facets).length) continue;
+      if (!entry.pick.displayFacets.length || !entry.pick.queryText) continue;
+      if (facetCountFetches.current.has(entry.messageId)) continue;
+      facetCountFetches.current.add(entry.messageId);
+      /* No cancel-on-cleanup: this effect re-runs on every streaming transcript
+       * update, and cancelling the in-flight fetch each time (while the dedup
+       * set blocks the retry) dropped the counts whenever later text parts
+       * followed the pick. Storing after an update is safe; the state shape
+       * only ever grows per messageId. */
+      searchClient
+        .search([
+          {
+            indexName: 'prod_catalog',
+            params: { ...buildFacetCountParams(entry.pick), filters: 'Inventory_InStock:true' },
+          },
+        ])
+        .then((response) => {
+          const result = (response as { results?: Record<string, unknown>[] })?.results?.[0] ?? {};
+          const facets = (result.facets as Record<string, Record<string, number>> | undefined) ?? {};
+          if (Object.keys(facets).length)
+            setFetchedFacets((current) => ({ ...current, [entry.messageId]: facets }));
+        })
+        .catch((error) => {
+          if (import.meta.env.DEV) console.warn('JTV facet count fetch failed', error);
+          facetCountFetches.current.delete(entry.messageId);
+        });
+    }
+  }, [facetPicks]);
   const handleFacetSelect = useCallback(
     async (messageId: string, attribute: string, value: string) => {
       const entry = facetPicks.find((p) => p.messageId === messageId);
@@ -1441,7 +1482,8 @@ export function ConnectedConcierge({
                     const attribute = entry.pick.displayFacets[level];
                     const counts =
                       level === 0
-                        ? entry.pick.facets[attribute]
+                        ? entry.pick.facets[attribute] ??
+                          fetchedFacets[message.id]?.[attribute]
                         : funnel?.facets[attribute];
                     const row =
                       attribute && counts && Object.keys(counts).length > 1

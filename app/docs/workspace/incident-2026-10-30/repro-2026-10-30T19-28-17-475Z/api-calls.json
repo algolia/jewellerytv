@@ -1,0 +1,64 @@
+[
+  {
+    "status": 200,
+    "facetsAttrs": [
+      "Catalog_BackingType",
+      "Catalog_BraceletType",
+      "Catalog_BrandNavigationName",
+      "Catalog_ChainLinkType",
+      "Catalog_Collection",
+      "Catalog_EarringType",
+      "Catalog_GemstoneInformationPrimary.GemstoneCTW",
+      "Catalog_GemstoneInformationPrimary.GemstoneCalibratedDimensions",
+      "Catalog_GemstoneInformationPrimary.GemstoneCreationClassification",
+      "Catalog_GemstoneInformationPrimary.GemstoneName",
+      "Catalog_GemstoneInformationPrimary.GemstoneOriginCountry",
+      "Catalog_GemstoneInformationPrimary.GemstoneShape",
+      "Catalog_JewelryMaterialNavigationColor",
+      "Catalog_JewelryMaterialNavigationName",
+      "Catalog_JewelryMaterialNavigationPurity",
+      "Catalog_Motif",
+      "Catalog_MovementComplication",
+      "Catalog_MovementType",
+      "Catalog_NecklaceType",
+      "Catalog_OtherSettingMaterialNavigationName",
+      "Catalog_PearlInformationPrimary.PearlFullName",
+      "Catalog_PendantType",
+      "Catalog_PrimaryGemstoneAndPearlColorGroups",
+      "Catalog_ProductType",
+      "Catalog_RingType",
+      "Catalog_TargetConsumer",
+      "Catalog_Theme",
+      "Catalog_WatchBandType",
+      "Catalog_WatchCaseShape",
+      "Catalog_WatchCaseSize",
+      "Catalog_WatchCrystalType",
+      "Catalog_WatchPrimaryDialPrimaryColor",
+      "Catalog_WatchStyle",
+      "Catalog_WaterResistanceRating",
+      "Financing_InstallmentBillingTermsName",
+      "Inventory_AvailableSkuSizeNames",
+      "Inventory_AvailableSkuSizes",
+      "Pricing_PriceRange"
+    ],
+    "nbHits": 77484
+  },
+  {
+    "status": 200,
+    "facetsAttrs": [
+      "Catalog_GemstoneAndPearlNavigationName",
+      "Catalog_JewelryMaterialNavigationPurity",
+      "Pricing_PriceRange"
+    ],
+    "nbHits": 51
+  },
+  {
+    "status": 200,
+    "facetsAttrs": [
+      "Catalog_JewelryMaterialNavigationPurity",
+      "Catalog_ProductType",
+      "Pricing_PriceRange"
+    ],
+    "nbHits": 2
+  }
+]

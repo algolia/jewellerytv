@@ -1,0 +1,9 @@
+{
+  "appliedAt": "2026-10-30T19:12:29.022Z",
+  "agent": "8129ad66-170b-4bb5-926a-c81d2cb38f22",
+  "change": "searchParameters.facets = [\"*\"] on prod_catalog entry",
+  "liveBefore": "762a95d7:2c02f7de:5a00ad0b",
+  "liveAfter": "762a95d7:2c02f7de:754837ce",
+  "targetMatch": true,
+  "updatedAt": "2026-10-30T19:12:21.603218Z"
+}

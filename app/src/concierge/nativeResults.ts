@@ -218,9 +218,12 @@ function normalizeSearchQueries(input: unknown): unknown[] | null {
   const facetFilters = input.facet_filters;
   if (Array.isArray(facetFilters)) {
     for (const group of facetFilters) {
-      if (!Array.isArray(group)) continue;
+      /* The model alternates between [["Attr:Value"]] and ["Attr:Value"] for
+       * the same field (measured live 2026-10-30 across consecutive turns);
+       * a bare string is a one-entry OR-group. */
+      const entries = typeof group === 'string' ? [group] : Array.isArray(group) ? group : [];
       const perAttribute: Record<string, string[]> = {};
-      for (const entry of group) {
+      for (const entry of entries) {
         if (typeof entry !== 'string') continue;
         const sep = entry.indexOf(':');
         if (sep <= 0) continue;
@@ -271,6 +274,25 @@ export function buildFacetRefineParams(
       ...pick.turnFilters,
       ...selections.map((selection) => `${selection.attribute}:"${selection.value}"`),
     ],
+  };
+}
+
+/** Facet-count-only search for a turn whose streamed result carried no facet
+ * counts (the platform stopped returning them on 2026-10-30 — measured: model-side
+ * and client-side tool outputs both carry only hits, nbHits, queryID, and no
+ * agent-side control restores them). Runs the turn's own query and constraints
+ * so the counts describe exactly what the shopper is looking at. Zero hits
+ * retrieved: this call exists for the counts alone. */
+export function buildFacetCountParams(
+  pick: Pick<FacetPick, 'queryText' | 'turnFilters' | 'displayFacets'>,
+): { query: string; facetFilters: (string | string[])[]; facets: string[]; attributesToRetrieve: string[]; hitsPerPage: number; maxValuesPerFacet: number } {
+  return {
+    query: pick.queryText,
+    facetFilters: [...pick.turnFilters],
+    facets: pick.displayFacets,
+    attributesToRetrieve: [],
+    hitsPerPage: 1,
+    maxValuesPerFacet: 24,
   };
 }
 
