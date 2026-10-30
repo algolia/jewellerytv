@@ -159,8 +159,47 @@ in `facetFilters`, and the captured stream shows it reaching for
 `facet_recencyDays: ["<7"]` because that is the only shape available to it. No
 amount of prompting fixes a budget ceiling it has no parameter for.
 
-**What we would like to know:** whether an index entry's
-`searchControls.custom` can carry `filters` or `numericFilters`, or whether a
-comparison parameter can be exposed to the model directly. Either one closes
-both the budget ceiling and the on-air recency filter, with no index settings
-change at all.
+### Probed 2026-10-29: the model reports it has no such parameter
+
+A Slack thread suggests `numericFilters` was enabled for the search tool. If it
+was, it is not reaching this agent's tool schema. Asked plainly for a budget,
+the agent reaches for bands and says so in its own `userIntent`:
+
+```
+"queries":[{"query":"necklace","facet_Pricing_PriceRange":
+  ["Under $25","$25 - $50","$50 - $100","$100 - $200"]}]
+"userIntent":"... searching necklace category across price bands that cover
+  the ceiling, will filter individual prices after."
+```
+
+Returned 12 hits at 28.79, 126, **158.99**, 99.99, 64.99, 137.5, 149.99,
+118.08, 124.99, 63.18, 74.99, **155.6** — two over the ceiling, and the
+"filter individual prices after" it promises is not something it can do, since
+the display tool takes objectIDs only.
+
+Instructed explicitly to use the parameter — *"Use numericFilters, not price
+bands"* — it emitted the identical band query and reported why:
+
+```
+"userIntent":"... using price-band facets since raw numericFilters isn't
+  supported, then will filter exact prices below $150 myself."
+```
+
+That is the model reading its own tool schema, which is evidence about the
+schema rather than about the server. The two are worth separating:
+
+| Level | Who sets it | Can it express "under $150"? |
+|---|---|---|
+| Index entry `searchParameters` / `searchControls` | the agent author, fixed | No — a budget is per shopper, a fixed value cannot vary |
+| Tool input schema, per query | the model, per turn | Yes — this is the one that is missing |
+
+So even if the Slack thread is accurate at the index-entry level, it does not
+reach the problem: a ceiling that changes every turn has to be expressible per
+query.
+
+**What we would like to know:** whether a per-query comparison parameter can be
+surfaced in the `algolia_search_index` input schema — and if `numericFilters`
+is already meant to be there, what makes it absent for this agent (a version
+that predates it, an entry that needs re-saving, a per-index gate). Closing
+this closes the budget ceiling and the on-air recency filter together, with no
+index settings change.
