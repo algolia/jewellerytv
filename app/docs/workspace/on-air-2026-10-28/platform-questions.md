@@ -54,6 +54,31 @@ inter-delta gap of 0ms, so this is not generation throughput. One stall of
 between the intro string and the `groups` array. A second run put the same
 stall at 5,785ms, in the same position.
 
+### The stall does not scale with what the tool is asked to produce
+
+Six turns across three questions, caching off
+(`../simplification-2026-10-28/measure-display-stall.mjs`), separating the
+stall from the time spent writing the payload:
+
+| Question | groups / items | payload | stall | writing |
+|---|---|---|---|---|
+| Show me opal jewelry | 3 / 12 | 1157 | 4730ms | 672ms |
+| Show me opal jewelry | 3 / 12 | 1154 | 4393ms | 645ms |
+| Show me engagement rings | 3 / 12 | 1145 | 4511ms | 524ms |
+| Show me engagement rings | 3 / 11 | 1191 | 4061ms | 961ms |
+| Compare tanzanite and amethyst | 2 / 10 | 1036 | 4031ms | 582ms |
+| Compare tanzanite and amethyst | 2 / 12 | 1188 | 4381ms | 994ms |
+
+Median stall 4,393ms; the whole spread is 4,031–4,730ms. Group count, item
+count and payload size all vary across these turns and the stall does not
+follow them: the three-group turns average 4,424ms and the two-group turns
+4,206ms, a difference well inside the run-to-run noise. The stall also lands
+at a median of 124 characters written, which is the end of `intro` every time.
+
+Whatever happens there appears to be fixed-cost and to precede the work of
+choosing and arranging results — which is the opposite of what we assumed when
+we considered capping group and result counts to shorten it.
+
 Our side of it is handled: progressive rendering is on, so groups render as
 they stream, and the panel now shows a placeholder shelf during the stall
 rather than an empty block. But the four seconds are real and they are the
