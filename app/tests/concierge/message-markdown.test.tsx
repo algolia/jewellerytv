@@ -200,9 +200,13 @@ describe('connected conversation rendering', () => {
     );
     expect(html).not.toContain('<script>');
   });
-  it('keeps pre-tool and final text parts distinct without changing either part', () => {
+  it('renders only the post-tool reply; pre-tool text is mid-turn narration and never displays', () => {
+    /* 2026-10-30: the display drops text written before a tool call. The
+     * platform's completion cache replays old narrated completions verbatim for
+     * exact repeated questions, so pre-tool text can be junk the live prompt no
+     * longer allows; the shopper reads the reply, never the progress talk. */
     const beforeTool =
-      'A 10th anniversary is a lovely milestone, and your instinct toward something timeless and understated feels especially thoughtful. With white gold and a $500 ceiling, I’d focus on a piece she can wear often rather than something that only works for special occasions.\n\nWhat does she reach for most in everyday life: earrings, necklaces, bracelets, or rings?';
+      'This query is too thin, only 2 hits. Let me broaden it with better anniversary-relevant terms.';
     const afterTool =
       'A 10th anniversary is a lovely milestone, and your instinct toward something timeless and understated feels especially thoughtful. With white gold and a $500 ceiling, I’d focus on a piece she can wear often rather than something reserved for special occasions.\n\nWhat does she reach for most in everyday life: earrings, necklaces, bracelets, or rings?';
     const message = {
@@ -226,13 +230,10 @@ describe('connected conversation rendering', () => {
     expect(html).toContain(
       'What does she reach for most in everyday life: earrings, necklaces, bracelets, or rings?</p>',
     );
-    expect(html.match(/class="connected-assistant-text-part"/g)).toHaveLength(2);
-    expect(html.indexOf('only works for special occasions')).toBeLessThan(
-      html.indexOf('reserved for special occasions'),
-    );
-    expect(html.match(/What does she reach for most in everyday life:/g)).toHaveLength(2);
+    expect(html.match(/class="connected-assistant-text-part"/g)).toHaveLength(1);
+    expect(html).not.toContain('only 2 hits');
   });
-  it('preserves meaningful pre-tool text alongside the final post-tool answer', () => {
+  it('drops pre-tool text even when it reads as a status line, keeping the final answer', () => {
     const preTool = 'I’ll keep her ring size unknown while we explore.';
     const finalAnswer = 'A blue necklace could avoid guessing her ring size.';
     const message = {
@@ -252,9 +253,8 @@ describe('connected conversation rendering', () => {
       ],
     } as UIMessage;
     const html = renderToStaticMarkup(<ConversationMessage message={message} revealed />);
-    expect(html).toContain(preTool);
     expect(html).toContain(finalAnswer);
-    expect(html.indexOf(preTool)).toBeLessThan(html.indexOf(finalAnswer));
-    expect(html.match(/class="connected-assistant-text-part"/g)).toHaveLength(2);
+    expect(html).not.toContain(preTool);
+    expect(html.match(/class="connected-assistant-text-part"/g)).toHaveLength(1);
   });
 });
