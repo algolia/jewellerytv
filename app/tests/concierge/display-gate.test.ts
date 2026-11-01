@@ -126,3 +126,21 @@ describe('undersized groups', () => {
     expect(input.groups?.[0].results).toHaveLength(2);
   });
 });
+
+/* The intro is the model's voice duplicated when it also writes a message,
+ * and its only voice when it does not. Which happens depends on the display
+ * tool's settings, so the gate decides per message rather than once. */
+describe('the tool intro', () => {
+  const records = { get: () => ({ Media_Images: ['https://img.test/a.jpg'] }) };
+  const groups = [{ title: 'Rings', results: [{ objectID: 'a' }, { objectID: 'b' }, { objectID: 'c' }] }];
+
+  it('is dropped when the message says it too', () => {
+    const { input } = gateGroups({ intro: 'A first look.', groups }, records);
+    expect(input.intro).toBeUndefined();
+  });
+
+  it('is kept when the message said nothing', () => {
+    const { input } = gateGroups({ intro: 'A first look.', groups }, records, { keepIntro: true });
+    expect(input.intro).toBe('A first look.');
+  });
+});

@@ -118,6 +118,22 @@ test('a grouped-results call renders one tile per piece, imaged, titled and link
   );
 });
 
+/* With the display tool's settings tightened the agent stopped writing any
+ * message text and put its opening line in the tool's own intro instead.
+ * Stripping that unconditionally left the panel showing tiles and silence. */
+test('the tool intro is shown when the reply carries no text of its own', async ({ page }) => {
+  await stubAgentTurn(page, {
+    hits: [RING, EARRINGS],
+    intro: 'A varied first look at opal jewelry.',
+    groups: [{ title: 'Opal rings', objectIDs: [RING.objectID, EARRINGS.objectID] }],
+  });
+  const panel = await openPanel(page);
+  await ask(page, 'Show me opal jewelry');
+
+  await expect(panel.locator(CARD)).toHaveCount(2);
+  await expect(panel.getByText('A varied first look at opal jewelry.')).toBeVisible();
+});
+
 test('no price reaches the panel even though the records carry one', async ({ page }) => {
   await stubAgentTurn(page, {
     text: 'Both are in stock.',

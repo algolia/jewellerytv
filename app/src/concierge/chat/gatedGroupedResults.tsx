@@ -59,12 +59,24 @@ function foldSmallGroups(groups: Group[]): Group[] {
   return folded;
 }
 
-/** Returns the input with ineligible pieces, emptied groups and the tool's
- * own intro removed. The intro is a second voice: the model writes its reply
- * in the message and then says the same thing again above the shelves
- * (measured 2026-10-29, three near-identical sentences in one turn). The
- * message is the reply; this field is dropped rather than rendered. */
-export function gateGroups(input: ToolInput, records?: RecordsStore) {
+/** Returns the input with ineligible pieces, emptied groups and, usually, the
+ * tool's own intro removed.
+ *
+ * The intro is normally a second voice: the model writes its reply in the
+ * message and then says the same thing again above the shelves (measured
+ * 2026-10-29, three near-identical sentences in one turn). The message is the
+ * reply, so the field is dropped.
+ *
+ * `keepIntro` covers the case where it is the only voice. Measured 2026-11-01,
+ * after the display tool's settings were tightened: the agent stopped writing
+ * any message text at all and put its opening line in `intro` instead, so
+ * stripping it unconditionally left the panel showing tiles and nothing else.
+ * Whichever side the sentence arrives on, the shopper should read it once. */
+export function gateGroups(
+  input: ToolInput,
+  records?: RecordsStore,
+  { keepIntro = false }: { keepIntro?: boolean } = {},
+) {
   const groups = Array.isArray(input.groups) ? input.groups : [];
   const seen = new Set<string>();
   const dropped: string[] = [];
@@ -91,7 +103,10 @@ export function gateGroups(input: ToolInput, records?: RecordsStore) {
     /* A group whose pieces were all refused renders as a bare heading. */
     if (items.length) kept.push({ ...group, results: items });
   }
-  return { input: { ...input, intro: undefined, groups: foldSmallGroups(kept) }, dropped };
+  return {
+    input: { ...input, intro: keepIntro ? input.intro : undefined, groups: foldSmallGroups(kept) },
+    dropped,
+  };
 }
 
 /* The library lays out the intro, the per-group headers and the streaming
@@ -136,6 +151,23 @@ function GroupSkeleton() {
   );
 }
 
+/* Whether the assistant message carrying this tool call also wrote prose of
+ * its own. The tool part is found by identity among the message parts, the
+ * same way the library decides which message is still streaming. */
+type MessagePart = { type?: string; text?: string };
+function messageCarriesText(
+  messages: Array<{ parts?: MessagePart[] }> | undefined,
+  part: unknown,
+): boolean {
+  const owner = messages?.find((message) => message?.parts?.some((candidate) => candidate === part));
+  return Boolean(
+    owner?.parts?.some(
+      (candidate) =>
+        candidate?.type === 'text' && typeof candidate.text === 'string' && candidate.text.trim(),
+    ),
+  );
+}
+
 function GroupGrid({ items }: { items: JtvHit[] }) {
   return (
     <div className="jtv-chat-grid">
@@ -152,7 +184,10 @@ export function createGatedTools(): Tools {
   const Gated: NonNullable<Tool['layoutComponent']> = (props) => {
     const message = props.context?.message ?? props.message;
     const raw = (message?.input ?? {}) as ToolInput;
-    const { input, dropped } = gateGroups(raw, props.context?.records as RecordsStore | undefined);
+    const messages = props.context?.messages as Array<{ parts?: MessagePart[] }> | undefined;
+    const { input, dropped } = gateGroups(raw, props.context?.records as RecordsStore | undefined, {
+      keepIntro: !messageCarriesText(messages, message),
+    });
     if (dropped.length) recordDisplayEvent('stage-ok', `gate dropped ${dropped.join(', ')}`);
     const gatedMessage = { ...message, input };
     /* Nothing to lay out yet: the tool is mid-stream and no group has arrived.
