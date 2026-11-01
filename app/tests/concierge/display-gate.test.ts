@@ -41,13 +41,18 @@ describe('the display gate', () => {
     expect(dropped).toEqual(['C3:no_image']);
   });
 
+  /* Both groups end up under the three-piece floor once the repeat is
+   * removed, so they fold together; what matters here is that the piece
+   * appears once and the repeat is reported. */
   it('shows a piece once when the model repeats it across groups', () => {
     const { input, dropped } = gateGroups(
       { groups: [group('First', ['A1']), group('Second', ['A1', 'B2'])] },
       store([withImage, onAirShape]),
     );
-    expect(input.groups?.[0].results?.map((r) => r.objectID)).toEqual(['A1']);
-    expect(input.groups?.[1].results?.map((r) => r.objectID)).toEqual(['B2']);
+    expect(input.groups?.flatMap((g) => g.results ?? []).map((r) => r.objectID)).toEqual([
+      'A1',
+      'B2',
+    ]);
     expect(dropped).toEqual(['A1:duplicate']);
   });
 
@@ -72,5 +77,52 @@ describe('the display gate', () => {
     expect(gateGroups({ groups: [{ title: 'No results key' }] }, store([])).input.groups).toEqual(
       [],
     );
+  });
+});
+
+/* A shelf is four across. A group of one renders as a heading over a row that
+ * is mostly empty, which is the complaint; folding keeps the piece and drops
+ * only the claim that it is a direction of its own. */
+describe('undersized groups', () => {
+  const record = { Media_Images: ['https://img.test/a.jpg'] };
+  const records = { get: () => record };
+  const group = (title: string, ids: string[]) => ({
+    title,
+    results: ids.map((objectID) => ({ objectID })),
+  });
+
+  it('folds a trailing group of one into the group before it', () => {
+    const { input } = gateGroups(
+      { groups: [group('Rings', ['a', 'b', 'c', 'd']), group('Pendants', ['e'])] },
+      records,
+    );
+    expect(input.groups).toHaveLength(1);
+    expect(input.groups?.[0].title).toBe('Rings');
+    expect(input.groups?.[0].results?.map((r) => r.objectID)).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
+  it('keeps a group of three, which fills a row', () => {
+    const { input } = gateGroups(
+      { groups: [group('Rings', ['a', 'b', 'c']), group('Pendants', ['d', 'e', 'f'])] },
+      records,
+    );
+    expect(input.groups).toHaveLength(2);
+  });
+
+  /* The first group has nothing to fold back into, so it keeps its pieces and
+   * loses only the heading. Dropping them would lose shoppable stock. */
+  it('strips the heading from a small leading group but keeps its pieces', () => {
+    const { input } = gateGroups(
+      { groups: [group('Odd one', ['a']), group('Rings', ['b', 'c', 'd', 'e'])] },
+      records,
+    );
+    expect(input.groups?.map((g) => g.title)).toEqual([undefined, 'Rings']);
+    expect(input.groups?.[0].results?.map((r) => r.objectID)).toEqual(['a']);
+  });
+
+  it('leaves a lone small group alone rather than emptying the shelf', () => {
+    const { input } = gateGroups({ groups: [group('Rings', ['a', 'b'])] }, records);
+    expect(input.groups).toHaveLength(1);
+    expect(input.groups?.[0].results).toHaveLength(2);
   });
 });

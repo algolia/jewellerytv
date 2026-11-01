@@ -31,6 +31,34 @@ function hasImage(record: Record<string, unknown> | undefined): boolean {
   return typeof record.imageLarge === 'string' || typeof record.image === 'string';
 }
 
+/* A shelf is four across, so a group of four fills a row and a group of eight
+ * fills two. Measured over 18 groups from ten questions: one came back with a
+ * single piece and one with two, which render as a heading above a row that is
+ * mostly empty space. Anything under three is folded into its neighbour — the
+ * pieces stay, the heading goes, because a heading over one tile claims a
+ * direction the shelf does not show. */
+const MIN_GROUP = 3;
+
+function foldSmallGroups(groups: Group[]): Group[] {
+  const folded: Group[] = [];
+  for (const group of groups) {
+    const results = Array.isArray(group.results) ? group.results : [];
+    const previous = folded[folded.length - 1];
+    /* Fold backwards where there is somewhere to fold to. A small first group
+     * has nowhere to go, so it keeps its pieces and loses only its heading. */
+    if (results.length < MIN_GROUP && previous) {
+      previous.results = [...(previous.results ?? []), ...results];
+      continue;
+    }
+    if (results.length < MIN_GROUP && groups.length > 1) {
+      folded.push({ ...group, title: undefined, results });
+      continue;
+    }
+    folded.push({ ...group, results });
+  }
+  return folded;
+}
+
 /** Returns the input with ineligible pieces, emptied groups and the tool's
  * own intro removed. The intro is a second voice: the model writes its reply
  * in the message and then says the same thing again above the shelves
@@ -63,7 +91,7 @@ export function gateGroups(input: ToolInput, records?: RecordsStore) {
     /* A group whose pieces were all refused renders as a bare heading. */
     if (items.length) kept.push({ ...group, results: items });
   }
-  return { input: { ...input, intro: undefined, groups: kept }, dropped };
+  return { input: { ...input, intro: undefined, groups: foldSmallGroups(kept) }, dropped };
 }
 
 /* The library lays out the intro, the per-group headers and the streaming
