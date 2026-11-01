@@ -126,11 +126,16 @@
 
 /* Groups: a grid, not a carousel. At this width a row of cards hides most of
  * a shelf behind arrows, and the shopper cannot see what they are choosing
- * between. Two columns on a docked panel, one when it goes full width. */
+ * between.
+ *
+ * Four across rather than auto-fill. Auto-fill gave three and left a fourth
+ * piece alone on its own row, which reads as a mistake; a fixed four makes a
+ * group of four or eight a clean block and keeps the shelf compact enough
+ * that two groups fit without scrolling. */
 .jtv-chat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
-  gap: 1rem 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.875rem 0.5rem;
   padding-block: 0.25rem;
 }
 
@@ -142,15 +147,16 @@
   text-decoration: none;
 }
 
+/* No frame. The catalogue's photography is already on white, so a border and
+ * a grey fill around it draw a box around a box; without them the pieces sit
+ * on the panel the way they do on a contact sheet. */
 .jtv-chat-card-image {
   display: flex;
   align-items: center;
   justify-content: center;
   aspect-ratio: 1;
   overflow: hidden;
-  border: 1px solid var(--line, #ddd);
-  border-radius: 2px;
-  background: var(--surface, #f3f3f3);
+  background: #fff;
   font-size: 0.75rem;
   color: var(--muted, #707070);
 }
@@ -166,11 +172,16 @@
   transform: scale(1.04);
 }
 
+/* The title is a label, not a link to be clicked past. The whole tile is the
+ * link, so underlining the words as well made a shelf read as a list of
+ * search results. */
 .jtv-chat-card-title {
-  font-size: 0.8125rem;
-  line-height: 1.35;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--text, #454545);
+  text-decoration: none;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -266,14 +277,13 @@
  * show's on-demand replay — so these need to read as links rather than as
  * stray blue words in a sentence. JtvChat opens them in a new tab; see the
  * note on the delegated handler there for why that is not an attribute. */
-.jtv-concierge .ais-ChatMessage-text a,
-.jtv-concierge .ais-ChatMessage a {
+.jtv-concierge .ais-ChatMessage a:not(.jtv-chat-card) {
   color: var(--blue, #0076a9);
   text-decoration: underline;
   text-underline-offset: 0.125em;
 }
 
-.jtv-concierge .ais-ChatMessage a:hover {
+.jtv-concierge .ais-ChatMessage a:not(.jtv-chat-card):hover {
   text-decoration-thickness: 2px;
 }
 
@@ -315,4 +325,22 @@
   .jtv-chat-card--pending .jtv-chat-card-title {
     animation: none;
   }
+}
+
+/* Group headings. The library's default sits tight against the shelf above
+ * it, so two groups read as one long run of pieces. Air above the heading,
+ * less below it, so a heading belongs to the shelf it introduces. */
+.jtv-concierge .ais-ChatToolGroupedResults-groupTitle,
+.jtv-concierge .ais-ChatToolGroupedResults-group > h3,
+.jtv-concierge .ais-ChatToolGroupedResults-group > h4 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.jtv-concierge .ais-ChatToolGroupedResults-group:first-child > :is(h3, h4),
+.jtv-concierge .ais-ChatToolGroupedResults-group:first-child
+  .ais-ChatToolGroupedResults-groupTitle {
+  margin-top: 0.75rem;
 }
