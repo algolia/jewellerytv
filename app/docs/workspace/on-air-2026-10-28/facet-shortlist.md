@@ -62,3 +62,33 @@ for five partial coverages. Pick one only if a specific category matters most.
 - `Catalog_Designer` has 7 values at 0.0% coverage — effectively empty.
 
 None of the three can do anything for the agent as they stand.
+
+## Revision 2026-11-01: one of the nine needs `searchable()`
+
+With only nine facets exposed, the agent started facet-searching the
+high-cardinality ones to find an exact value before filtering — sensible, and
+it fails:
+
+```
+TOOL algolia_search_for_facet_values
+  ERROR: Cannot search in `Catalog_GemstoneAndPearlNavigationName` attribute,
+  you need to add `searchable(Catalog_GemstoneAndPearlNavigationName)` to
+  attributesForFaceting.
+```
+
+That burned a step and a tool call on a turn that then took 16.3s over four
+steps. The attribute is declared as a plain facet; `Catalog_ProductType` and
+`Catalog_Brand` already carry `searchable()`, which is why the agent reaches
+for this one and not those.
+
+Wrap it, and consider `Catalog_JewelryMaterialNavigationName` (64 values) for
+the same reason:
+
+```
+searchable(Catalog_GemstoneAndPearlNavigationName)
+searchable(Catalog_JewelryMaterialNavigationName)
+```
+
+The other six are small enough to enumerate — 16 values or fewer — so the
+agent can read their values straight from the facet counts and has no reason
+to search them.
