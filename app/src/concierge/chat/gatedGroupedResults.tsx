@@ -38,6 +38,23 @@ function hasImage(record: Record<string, unknown> | undefined): boolean {
  * pieces stay, the heading goes, because a heading over one tile claims a
  * direction the shelf does not show. */
 const MIN_GROUP = 3;
+const COLUMNS = 4;
+
+/* The shelf is four across, so a group of five is a full row and one piece
+ * stranded underneath it — the shape the team flagged. A remainder of two or
+ * three reads as a partial row, which is fine; a remainder of one reads as a
+ * mistake.
+ *
+ * Trimming is the lesser evil, and it is bounded: at most one piece, and only
+ * when that piece would otherwise sit alone. Dropping it is logged like any
+ * other refusal. The agent's max-per-group setting should mean this never
+ * fires; this is the guarantee for when it does. */
+function trimOrphan(results: GroupResult[]): { results: GroupResult[]; orphan?: string } {
+  if (results.length <= COLUMNS || results.length % COLUMNS !== 1) return { results };
+  const last = results[results.length - 1];
+  const objectID = typeof last?.objectID === 'string' ? last.objectID : 'unknown';
+  return { results: results.slice(0, -1), orphan: objectID };
+}
 
 function foldSmallGroups(groups: Group[]): Group[] {
   const folded: Group[] = [];
@@ -101,7 +118,10 @@ export function gateGroups(
       return true;
     });
     /* A group whose pieces were all refused renders as a bare heading. */
-    if (items.length) kept.push({ ...group, results: items });
+    if (!items.length) continue;
+    const { results: fitted, orphan } = trimOrphan(items);
+    if (orphan) dropped.push(`${orphan}:orphan_row`);
+    kept.push({ ...group, results: fitted });
   }
   return {
     input: { ...input, intro: keepIntro ? input.intro : undefined, groups: foldSmallGroups(kept) },

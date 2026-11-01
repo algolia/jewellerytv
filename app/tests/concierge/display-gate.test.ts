@@ -144,3 +144,44 @@ describe('the tool intro', () => {
     expect(input.intro).toBe('A first look.');
   });
 });
+
+/* Four across, so a remainder of one is a piece stranded on a row by itself.
+ * Two or three read as a partial row and are left alone. */
+describe('a trailing row of one', () => {
+  const records = { get: () => ({ Media_Images: ['https://img.test/a.jpg'] }) };
+  const ids = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ objectID: `p${i}` }));
+
+  it('trims the fifth piece rather than stranding it', () => {
+    const { input, dropped } = gateGroups(
+      { groups: [{ title: 'Bands', results: ids(5) }] },
+      records,
+    );
+    expect(input.groups?.[0].results).toHaveLength(4);
+    expect(dropped).toEqual(['p4:orphan_row']);
+  });
+
+  it('leaves a partial row of two or three alone', () => {
+    for (const n of [6, 7]) {
+      const { input, dropped } = gateGroups(
+        { groups: [{ title: 'Bands', results: ids(n) }] },
+        records,
+      );
+      expect(input.groups?.[0].results).toHaveLength(n);
+      expect(dropped).toEqual([]);
+    }
+  });
+
+  it('leaves an exact row alone', () => {
+    const { input } = gateGroups({ groups: [{ title: 'Bands', results: ids(8) }] }, records);
+    expect(input.groups?.[0].results).toHaveLength(8);
+  });
+
+  /* Four or fewer is a single row; a group of one is the folding rule's job,
+   * not this one. */
+  it('does not touch a group that fits in one row', () => {
+    const { input, dropped } = gateGroups({ groups: [{ title: 'Bands', results: ids(4) }] }, records);
+    expect(input.groups?.[0].results).toHaveLength(4);
+    expect(dropped).toEqual([]);
+  });
+});
