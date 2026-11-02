@@ -21,7 +21,7 @@ import { narrowChipsFor, type NarrowChip, type NarrowGroup } from './narrowChips
  * against). Those stay out of here deliberately. */
 
 type GroupResult = { objectID?: unknown };
-type Group = { title?: unknown; results?: GroupResult[] };
+type Group = { title?: unknown; why?: unknown; results?: GroupResult[] };
 type ToolInput = { groups?: Group[] } & Record<string, unknown>;
 type RecordsStore = { get?: (objectID: string) => Record<string, unknown> | undefined };
 
@@ -122,7 +122,12 @@ export function gateGroups(
     if (!items.length) continue;
     const { results: fitted, orphan } = trimOrphan(items);
     if (orphan) dropped.push(`${orphan}:orphan_row`);
-    kept.push({ ...group, results: fitted });
+    /* The group's `why` renders as a second line under the heading, and it
+     * restates the heading in vaguer words — "Featured products" over
+     * "Different jewelry and accessory styles". Two lines of chrome above
+     * every shelf, on a rail this narrow, for nothing the pieces do not
+     * already show. Dropped like the intro. */
+    kept.push({ ...group, why: undefined, results: fitted });
   }
   return {
     input: { ...input, intro: keepIntro ? input.intro : undefined, groups: foldSmallGroups(kept) },

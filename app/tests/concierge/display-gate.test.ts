@@ -185,3 +185,27 @@ describe('a trailing row of one', () => {
     expect(dropped).toEqual([]);
   });
 });
+
+/* The group's `why` renders as a second line under the heading and restates
+ * it more vaguely — "Featured products" over "Different jewelry and accessory
+ * styles". Two lines of chrome above every shelf buys nothing. */
+describe('the group subtitle', () => {
+  const records = { get: () => ({ Media_Images: ['https://img.test/a.jpg'] }) };
+
+  it('is dropped, and the heading is kept', () => {
+    const { input } = gateGroups(
+      {
+        groups: [
+          {
+            title: 'Featured products',
+            why: 'Different jewelry and accessory styles',
+            results: [{ objectID: 'a' }, { objectID: 'b' }, { objectID: 'c' }],
+          },
+        ],
+      },
+      records,
+    );
+    expect(input.groups?.[0].title).toBe('Featured products');
+    expect(input.groups?.[0].why).toBeUndefined();
+  });
+});
