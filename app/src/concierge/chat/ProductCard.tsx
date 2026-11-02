@@ -29,7 +29,7 @@ export function ProductCard({ item }: RecommendItemComponentProps<JtvHit>) {
       <span className="jtv-chat-card-image">
         {image ? <img src={image} alt="" loading="lazy" /> : <span>Image unavailable</span>}
       </span>
-      <span className="jtv-chat-card-title">{item.Pricing_PriceRange || item.price || item.listPrice}</span>
+      <span className="jtv-chat-card-title">{item.Pricing_PriceRange}</span>
     </a>
   );
 }

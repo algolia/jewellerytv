@@ -257,3 +257,33 @@ also changed from a single `algolia_search_index` to one per index between the
 5,751ms run and this one. That is not obviously a latency change, but it was
 not held constant, so treat the two numbers as a comparison between
 configurations rather than a clean measurement of the prompt.
+
+## After removing the mention, same day
+
+| | 2-step config, before the paste | with the mention | **mention removed** |
+|---|---|---|---|
+| median turn | 5,751ms | 11,169ms | **9,013ms** |
+| median to first hits | 2,698ms | 7,826ms | **3,926ms** |
+| steps | 2 on 8 of 8 | 2 to 4 | **2 on 8 of 8** |
+| failing tool calls | none | 1 per turn | **none** |
+
+No `algolia_search_for_facet_values` call appears at all now, and the time to
+first hits is back within about 1.2s of the old baseline. The failing step is
+gone.
+
+A gap of roughly 3.3s on the median remains, and it is not cleanly
+attributable. Two things changed between the 5,751ms run and these: the system
+prompt, and the search tool going from a single `algolia_search_index` to one
+per index. The second is the more suspicious of the two — five search tool
+schemas sit in the model's context instead of one, each carrying a
+`facet_<attribute>` parameter per facetable attribute. That is a context cost
+paid on every turn before a word is generated, and it would show up exactly
+where it does, in the time before the first search.
+
+Worth checking whether the per-index split was intentional. If it was not,
+reverting it is the next measurement; if it was, the trade is five indices the
+model can reach directly against the context each one costs.
+
+The `searchable()` fix stays open — it needs index permissions that are not
+available today. When it lands, the facet-value tool can be re-advertised in
+the Tools paragraph and the clause in Filters and vocabulary restored.
