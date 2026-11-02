@@ -30,8 +30,11 @@ export type CatalogRecord = {
    * refuses the piece rather than rendering a placeholder tile. */
   Media_Images: string[];
   Inventory_InStock: boolean;
-  /* Carried deliberately. The panel must never print it. */
+  /* Carried deliberately. The panel must never print it: an exact figure
+   * beside an answer about fit and style reads as a quote. */
   Pricing_ActivePrice: number;
+  /* The band is what a catalogue tile shows in place of the name. */
+  Pricing_PriceRange: string;
 };
 
 export const RING: CatalogRecord = {
@@ -40,6 +43,7 @@ export const RING: CatalogRecord = {
   Media_Images: [PIXEL],
   Inventory_InStock: true,
   Pricing_ActivePrice: 189.99,
+  Pricing_PriceRange: '$100 - $200',
 };
 
 export const EARRINGS: CatalogRecord = {
@@ -48,6 +52,7 @@ export const EARRINGS: CatalogRecord = {
   Media_Images: [PIXEL],
   Inventory_InStock: true,
   Pricing_ActivePrice: 94.99,
+  Pricing_PriceRange: '$50 - $100',
 };
 
 /** In the catalogue, in stock, and unphotographed: the gate must refuse it. */
@@ -57,6 +62,7 @@ export const UNPHOTOGRAPHED: CatalogRecord = {
   Media_Images: [],
   Inventory_InStock: true,
   Pricing_ActivePrice: 249.99,
+  Pricing_PriceRange: '$200 - $500',
 };
 
 export const CATALOG_RECORDS: CatalogRecord[] = [RING, EARRINGS, UNPHOTOGRAPHED];

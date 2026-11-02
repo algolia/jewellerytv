@@ -1,8 +1,20 @@
 import type { RecommendItemComponentProps, RecordWithObjectID } from 'instantsearch-ui-components';
 
-/* A `prod_catalog` record as the chat tiles read it. Price is deliberately
- * absent: the agent answers about fit and style, and a stale price next to an
- * answer reads as a quote. */
+/* A `prod_catalog` record as the chat tiles read it.
+ *
+ * The label under a catalogue tile is the price band, not the name. JTV's
+ * names are catalogue descriptions — "Ethiopian Opal Rhodium Over 14K White
+ * Gold Ring 2.50ctw" — which truncate mid-phrase at this width and tell a
+ * shopper less than the photograph already does; the band is short, scannable
+ * and the thing they are deciding on.
+ *
+ * A band rather than the exact price on purpose. An exact figure beside an
+ * answer about fit and style reads as a quote and goes stale between the
+ * search and the glance; a band stays true far longer and promises less.
+ *
+ * On-air records have no price of their own, so they keep their name. That is
+ * also the test for which shape a record is: no `Pricing_PriceRange`, no
+ * band. */
 export type JtvRecord = {
   Catalog_TitleDescription?: string | null;
   Media_Images?: string[] | null;
@@ -20,16 +32,26 @@ export type JtvRecord = {
 export type JtvHit = RecordWithObjectID<JtvRecord>;
 
 export function ProductCard({ item }: RecommendItemComponentProps<JtvHit>) {
-  const title = item.Catalog_TitleDescription || item.name || item.objectID;
   const image = item.Media_Images?.[0] || item.imageLarge || item.image || undefined;
+  /* Falls back to the name when there is no band — an on-air piece, or a
+   * catalogue record whose retrieved attributes do not include
+   * `Pricing_PriceRange`. A tile with no label at all is worse than a long
+   * one. */
+  const name = item.Catalog_TitleDescription || item.name || '';
+  const label = item.Pricing_PriceRange || name;
   return (
     <a className="jtv-chat-card" href={`/product/${encodeURIComponent(item.objectID)}`}>
       {/* A record without imagery still has to occupy the same tile box, or the
-       * carousel rows jump as results stream in. */}
+       * carousel rows jump as results stream in.
+       *
+       * The image carries the name. With the band as the visible label, the
+       * link's accessible name would otherwise be "$25 - $50" and nothing
+       * else — the one reader who cannot see the photograph would be the one
+       * told least about the piece. */}
       <span className="jtv-chat-card-image">
-        {image ? <img src={image} alt="" loading="lazy" /> : <span>Image unavailable</span>}
+        {image ? <img src={image} alt={name} loading="lazy" /> : <span>Image unavailable</span>}
       </span>
-      <span className="jtv-chat-card-title">{item.Catalog_TitleDescription || item.name}</span>
+      <span className="jtv-chat-card-title">{label}</span>
     </a>
   );
 }
