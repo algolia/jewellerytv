@@ -271,18 +271,21 @@ No `algolia_search_for_facet_values` call appears at all now, and the time to
 first hits is back within about 1.2s of the old baseline. The failing step is
 gone.
 
-A gap of roughly 3.3s on the median remains, and it is not cleanly
-attributable. Two things changed between the 5,751ms run and these: the system
-prompt, and the search tool going from a single `algolia_search_index` to one
-per index. The second is the more suspicious of the two — five search tool
-schemas sit in the model's context instead of one, each carrying a
-`facet_<attribute>` parameter per facetable attribute. That is a context cost
-paid on every turn before a word is generated, and it would show up exactly
-where it does, in the time before the first search.
+A gap of roughly 3.3s on the median remains and is unexplained. It is outside
+run-to-run noise — the two runs barely overlap, 4.6–7.3s against 7.2–10.5s —
+so it is a real difference, not variance.
 
-Worth checking whether the per-index split was intentional. If it was not,
-reverting it is the next measurement; if it was, the trade is five indices the
-model can reach directly against the context each one costs.
+**Retracted:** an earlier version of this note blamed the search tool going
+from a single `algolia_search_index` to one per index. The tool name was
+observed without its index suffix once and could not be reproduced; the names
+now match on both `tool-input-start` and `tool-input-available`, and the
+configuration owner confirms the tool has always carried all five indices.
+One unreproduced sighting is not evidence, and it should not have been written
+up as a cause.
+
+That leaves the system prompt itself as the only known change, and it is not
+an obvious culprit: the rewrite removed a session-state section of comparable
+size to the tool descriptions it added. Unexplained is the honest label.
 
 The `searchable()` fix stays open — it needs index permissions that are not
 available today. When it lands, the facet-value tool can be re-advertised in
