@@ -210,3 +210,50 @@ Do: correct it — the exact facet value the tool offered, or shorter query word
 Do not: resend the same failing call, or tell the shopper you are retrying.
 
 ---8<--- paste to here ---8<---
+
+## Eval after pasting, 2026-11-02
+
+Slower, and the cause is one step that fails.
+
+| | before the paste | after |
+|---|---|---|
+| median turn | 5,751ms | **11,169ms** |
+| median to first hits | 2,698ms | **7,826ms** |
+| steps | 2 on 8 of 8 | 2 to 4 |
+| failures | 0 of 8 | 0 of 8 |
+
+Timestamped, the first step is the whole difference:
+
+```
+ 3893ms  tool-input-start  algolia_search_for_facet_values
+ 4554ms  tool-output-error   <- Cannot search in
+                                `Catalog_GemstoneAndPearlNavigationName`
+ 8010ms  finish-step
+ 8010ms  tool-input-start  algolia_search_index_prod_catalog   <- the real search
+```
+
+**A step and about 4.9 seconds spent on a call that cannot succeed**, before
+the real search begins.
+
+This one is on the rewrite. The old prompt never named
+`algolia_search_for_facet_values`; the new one lists it under Tools and tells
+the agent to "reach for" it when a facet value is rejected. The tool is the
+right instinct and the advice is sound — it just points at an attribute that
+is not searchable, which is the index fix recorded in `facet-shortlist.md`
+and not yet applied.
+
+Two ways out, in order of preference:
+
+1. **Apply the index fix.** `searchable(Catalog_GemstoneAndPearlNavigationName)`
+   and `searchable(Catalog_JewelryMaterialNavigationName)` in
+   `attributesForFaceting`. The tool then works and the step buys something.
+2. **Cut the mention.** Remove `algolia_search_for_facet_values` from the Tools
+   paragraph and drop the clause "reach for `algolia_search_for_facet_values`"
+   from Filters and vocabulary. Do this if the index change is not imminent;
+   advertising a tool that always errors is worse than not having one.
+
+A caveat on attributing the whole difference to the prompt: the search tool
+also changed from a single `algolia_search_index` to one per index between the
+5,751ms run and this one. That is not obviously a latency change, but it was
+not held constant, so treat the two numbers as a comparison between
+configurations rather than a clean measurement of the prompt.

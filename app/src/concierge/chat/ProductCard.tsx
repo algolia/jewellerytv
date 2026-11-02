@@ -13,6 +13,8 @@ export type JtvRecord = {
   image?: string | null;
   imageLarge?: string | null;
   Pricing_PriceRange: string | null;
+  price: number | null;
+  listPrice: number | null;
 };
 
 export type JtvHit = RecordWithObjectID<JtvRecord>;
@@ -27,7 +29,7 @@ export function ProductCard({ item }: RecommendItemComponentProps<JtvHit>) {
       <span className="jtv-chat-card-image">
         {image ? <img src={image} alt="" loading="lazy" /> : <span>Image unavailable</span>}
       </span>
-      <span className="jtv-chat-card-title">{item.Pricing_PriceRange}</span>
+      <span className="jtv-chat-card-title">{item.Pricing_PriceRange || item.price || item.listPrice}</span>
     </a>
   );
 }
