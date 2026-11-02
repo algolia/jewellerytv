@@ -4,6 +4,7 @@ import type { Tool, Tools } from 'react-instantsearch';
 import { createGroupedResultsToolComponent } from 'instantsearch-ui-components';
 import { recordDisplayEvent } from '../../shared/telemetry';
 import { ProductCard, type JtvHit } from './ProductCard';
+import { narrowChipsFor, type NarrowChip } from './narrowChips';
 
 /* The one display gate.
  *
@@ -174,17 +175,58 @@ function GroupSkeleton() {
 /* Whether the assistant message carrying this tool call also wrote prose of
  * its own. The tool part is found by identity among the message parts, the
  * same way the library decides which message is still streaming. */
-type MessagePart = { type?: string; text?: string };
-function messageCarriesText(
-  messages: Array<{ parts?: MessagePart[] }> | undefined,
-  part: unknown,
-): boolean {
-  const owner = messages?.find((message) => message?.parts?.some((candidate) => candidate === part));
+type MessagePart = {
+  type?: string;
+  text?: string;
+  toolName?: string;
+  input?: Record<string, unknown>;
+  output?: { facets?: Record<string, Record<string, number>> };
+};
+type OwnerMessage = { parts?: MessagePart[] };
+
+function ownerOf(messages: Array<OwnerMessage> | undefined, part: unknown) {
+  return messages?.find((message) => message?.parts?.some((candidate) => candidate === part));
+}
+
+function messageCarriesText(owner: OwnerMessage | undefined): boolean {
   return Boolean(
     owner?.parts?.some(
       (candidate) =>
         candidate?.type === 'text' && typeof candidate.text === 'string' && candidate.text.trim(),
     ),
+  );
+}
+
+/* The search that produced this shelf, so its facet counts can become chips.
+ * The last one in the message: a turn that searches twice has narrowed as it
+ * went, and the later counts describe what is actually on screen. */
+function searchPartOf(owner: OwnerMessage | undefined): MessagePart | undefined {
+  const searches = (owner?.parts ?? []).filter((part) =>
+    String(part?.type ?? '').includes('algolia_search_index'),
+  );
+  return searches[searches.length - 1];
+}
+
+function NarrowChips({
+  chips,
+  onPick,
+}: {
+  chips: NarrowChip[];
+  onPick: (chip: NarrowChip) => void;
+}) {
+  return (
+    <div className="jtv-chat-narrow">
+      <p className="jtv-chat-narrow-lead">Narrow it down</p>
+      <ul className="jtv-chat-narrow-list">
+        {chips.map((chip) => (
+          <li key={chip.label}>
+            <button type="button" className="jtv-chat-narrow-chip" onClick={() => onPick(chip)}>
+              {chip.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -198,15 +240,20 @@ function GroupGrid({ items }: { items: JtvHit[] }) {
   );
 }
 
-export function createGatedTools(): Tools {
+/** `sendMessage` is the chat instance's, closed over here because the tool
+ * context does not carry it — the same route the header's close control
+ * takes. Without it the chips render disabled rather than lying about what a
+ * click will do. */
+export function createGatedTools(sendMessage?: (params: { text: string }) => void): Tools {
   const defaults = createDefaultTools<JtvHit>(ProductCard);
   const grouped = defaults[GroupedResultsToolType] as Tool;
   const Gated: NonNullable<Tool['layoutComponent']> = (props) => {
     const message = props.context?.message ?? props.message;
     const raw = (message?.input ?? {}) as ToolInput;
-    const messages = props.context?.messages as Array<{ parts?: MessagePart[] }> | undefined;
+    const messages = props.context?.messages as Array<OwnerMessage> | undefined;
+    const owner = ownerOf(messages, message);
     const { input, dropped } = gateGroups(raw, props.context?.records as RecordsStore | undefined, {
-      keepIntro: !messageCarriesText(messages, message),
+      keepIntro: !messageCarriesText(owner),
     });
     if (dropped.length) recordDisplayEvent('stage-ok', `gate dropped ${dropped.join(', ')}`);
     const gatedMessage = { ...message, input };
@@ -215,15 +262,25 @@ export function createGatedTools(): Tools {
     if (message?.state === 'input-streaming' && !input.groups?.length) {
       return <GroupSkeleton />;
     }
+    /* Chips only once the shelf has settled. Offering a refinement while the
+     * pieces are still arriving invites a click that cancels the turn that
+     * would have answered it. */
+    const settled = message?.state !== 'input-streaming';
+    const chips = settled && sendMessage ? narrowChipsFor(searchPartOf(owner)) : [];
     return (
-      <GroupedResultsUI
-        toolProps={{
-          ...props,
-          message: gatedMessage,
-          context: { ...props.context, message: gatedMessage },
-        }}
-        groupCarouselComponent={({ items }) => <GroupGrid items={items as JtvHit[]} />}
-      />
+      <>
+        <GroupedResultsUI
+          toolProps={{
+            ...props,
+            message: gatedMessage,
+            context: { ...props.context, message: gatedMessage },
+          }}
+          groupCarouselComponent={({ items }) => <GroupGrid items={items as JtvHit[]} />}
+        />
+        {chips.length ? (
+          <NarrowChips chips={chips} onPick={(chip) => sendMessage?.({ text: chip.ask })} />
+        ) : null}
+      </>
     );
   };
   return { ...defaults, [GroupedResultsToolType]: { ...grouped, layoutComponent: Gated } };

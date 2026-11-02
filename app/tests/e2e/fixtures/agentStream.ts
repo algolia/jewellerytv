@@ -75,6 +75,8 @@ export type AgentTurn = {
   textDeltas?: string[];
   /** Records the search tool returns. Grouped results can only show these. */
   hits?: CatalogRecord[];
+  /** Facet counts the search returned; the narrowing chips are built from these. */
+  facets?: Record<string, Record<string, number>>;
   /** Caption above the shelves. */
   intro?: string;
   /** The display call. Omit it and the turn is prose only. */
@@ -114,7 +116,11 @@ export function agentTurnEvents(turn: AgentTurn = {}): AgentEvent[] {
     events.push({
       type: 'tool-output-available',
       toolCallId: 'call_search',
-      output: { hits: turn.hits, nbHits: turn.hits.length },
+      output: {
+        hits: turn.hits,
+        nbHits: turn.hits.length,
+        ...(turn.facets === undefined ? {} : { facets: turn.facets }),
+      },
     });
   }
 

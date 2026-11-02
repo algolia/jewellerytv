@@ -149,7 +149,7 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ c
           chat={chat}
           context={context}
           itemComponent={ProductCard}
-          tools={createGatedTools()}
+          tools={useMemo(() => createGatedTools((params) => chat.sendMessage({ text: params.text })), [chat])}
           layoutComponent={ChatInlineLayout}
           emptyComponent={StarterChips}
           headerComponent={useMemo(() => createHeader(onClose), [onClose])}

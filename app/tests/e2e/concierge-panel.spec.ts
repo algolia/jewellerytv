@@ -134,6 +134,29 @@ test('the tool intro is shown when the reply carries no text of its own', async 
   await expect(panel.getByText('A varied first look at opal jewelry.')).toBeVisible();
 });
 
+/* Settled 2026-11-02: a chip asks the agent again rather than filtering the
+ * tiles, so the reply, the grouping and the pieces still agree afterwards. */
+test('a narrowing chip asks the agent again', async ({ page }) => {
+  await stubAgentTurn(page, {
+    text: 'Opal runs deep here.',
+    hits: [RING, EARRINGS],
+    groups: [{ title: 'Opal rings', objectIDs: [RING.objectID, EARRINGS.objectID] }],
+    facets: {
+      Catalog_JewelryMaterialNavigationColor: { White: 400, Yellow: 300 },
+    },
+  });
+  const panel = await openPanel(page);
+  await ask(page, 'Show me opal jewelry');
+  await expect(panel.locator(CARD)).toHaveCount(2);
+
+  const chip = panel.getByRole('button', { name: 'White', exact: true });
+  await expect(chip).toBeVisible();
+  await chip.click();
+
+  // The chip's whole job is to put a new question in the transcript.
+  await expect(panel.getByText('Show me the white ones')).toBeVisible();
+});
+
 test('no price reaches the panel even though the records carry one', async ({ page }) => {
   await stubAgentTurn(page, {
     text: 'Both are in stock.',
