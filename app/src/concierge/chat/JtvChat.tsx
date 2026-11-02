@@ -10,6 +10,7 @@ import { DefaultChatTransport } from 'instantsearch.js/es/lib/ai-lite';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { StarterChips } from './StarterChips';
 import { createGatedTools } from './gatedGroupedResults';
+import { loaderTextFor } from './loaderText';
 import './jtv-chat.css';
 
 const INDEX_NAME = 'prod_catalog';
@@ -158,7 +159,10 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ c
            * "Ask about jewellery" competed with them; this invites the
            * shopper past them. */
           translations={{
-            prompt: { textareaPlaceholder: 'Or enter your own special request here' },
+            prompt: { textareaPlaceholder: 'Shall we find something delighting?' },
+            /* The widget calls this with the loader's own context on every
+             * render, so the words track the turn rather than a timer. */
+            messages: { loaderText: loaderTextFor },
           }}
         />
       </div>

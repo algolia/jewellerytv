@@ -183,6 +183,9 @@ test('a pending turn shows the widget loader until the reply arrives', async ({ 
   await composer.press('Enter');
 
   await expect(panel.locator('.ais-ChatMessageLoader')).toBeVisible();
+  /* The loader names what the turn is doing rather than cycling words on a
+   * timer; nothing has started yet, so it is thinking. */
+  await expect(panel.locator('.ais-ChatMessageLoader-text')).toHaveText('Thinking…');
   /* `submitted` is a single frame before the connection opens, so asserting it
    * exactly is a race. What matters to the shopper is that the turn reads as
    * in flight and the submit button offers to stop it. */
