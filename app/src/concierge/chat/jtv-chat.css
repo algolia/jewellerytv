@@ -361,6 +361,10 @@
   color: var(--muted, #707070);
 }
 
+/* One row per attribute. Colour and price running together as a single
+ * wrapped list read as one undifferentiated choice, and a trailing chip
+ * stranded on a second row looked like the orphan tile it took a rule to
+ * remove from the shelf. */
 .jtv-chat-narrow-list {
   display: flex;
   flex-wrap: wrap;
@@ -368,6 +372,10 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.jtv-chat-narrow-list + .jtv-chat-narrow-list {
+  margin-top: 0.375rem;
 }
 
 .jtv-chat-narrow-chip {

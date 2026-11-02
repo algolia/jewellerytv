@@ -23,7 +23,19 @@ const MAX_VALUES = 3;
  * `Catalog_ProductType` restates the shelf the shopper is already looking at,
  * and the discount range is a filter rather than a taste. Each entry carries
  * the sentence the chip sends, since "White" alone is not a request. */
-const OFFERABLE: ReadonlyArray<{ attribute: string; ask: (value: string) => string }> = [
+/** Price bands sort by price, not by popularity: "$25 - $50, Under $25,
+ * $50 - $100" is the count order and reads as a shuffle. */
+function bandFloor(value: string): number {
+  const digits = value.replace(/,/g, '').match(/\d+/g);
+  if (!digits) return Number.MAX_SAFE_INTEGER;
+  return /^under/i.test(value) ? -1 : Number(digits[0]);
+}
+
+const OFFERABLE: ReadonlyArray<{
+  attribute: string;
+  ask: (value: string) => string;
+  order?: (a: string, b: string) => number;
+}> = [
   {
     attribute: 'Catalog_JewelryMaterialNavigationColor',
     ask: (value) => `Show me the ${value.toLowerCase()} ones`,
@@ -32,7 +44,11 @@ const OFFERABLE: ReadonlyArray<{ attribute: string; ask: (value: string) => stri
     attribute: 'Catalog_GemstoneInformation.GemstoneCreationClassification',
     ask: (value) => `Show me the ${value.toLowerCase()} ones`,
   },
-  { attribute: 'Pricing_PriceRange', ask: (value) => `Show me the ones in ${value}` },
+  {
+    attribute: 'Pricing_PriceRange',
+    ask: (value) => `Show me the ones in ${value}`,
+    order: (a, b) => bandFloor(a) - bandFloor(b),
+  },
   {
     attribute: 'Catalog_JewelryMaterialNavigationName',
     ask: (value) => `Show me the ${value.toLowerCase()} pieces`,
@@ -44,6 +60,10 @@ const OFFERABLE: ReadonlyArray<{ attribute: string; ask: (value: string) => stri
 ];
 
 export type NarrowChip = { label: string; ask: string };
+/** Chips keep their attribute so the panel can put each axis on its own row.
+ * Run together, colour and price read as one undifferentiated list and the
+ * shopper cannot tell they are different questions. */
+export type NarrowGroup = { attribute: string; chips: NarrowChip[] };
 
 type FacetCounts = Record<string, Record<string, number>>;
 type SearchPart = {
@@ -102,32 +122,34 @@ function alreadyFiltered(part: SearchPart | undefined): Set<string> {
  * next to twelve tiles "White (1,240)" invites the question of where the
  * other 1,228 are.
  */
-export function narrowChipsFor(part: SearchPart | undefined): NarrowChip[] {
+export function narrowChipsFor(part: SearchPart | undefined): NarrowGroup[] {
   if (indexOf(part) !== CATALOGUE_INDEX) return [];
   const facets = part?.output?.facets;
   if (!facets) return [];
   const applied = alreadyFiltered(part);
-  const chips: NarrowChip[] = [];
+  const groups: NarrowGroup[] = [];
 
-  for (const { attribute, ask } of OFFERABLE) {
-    if (chips.length >= MAX_ATTRIBUTES * MAX_VALUES) break;
+  for (const { attribute, ask, order } of OFFERABLE) {
+    if (groups.length >= MAX_ATTRIBUTES) break;
     const counts = facets[attribute];
     if (!counts) continue;
-    const values = Object.entries(counts)
+    /* Pick by count — the biggest slices of the shelf — then present in the
+     * attribute's own natural order. */
+    const picked = Object.entries(counts)
       .filter(([value]) => !applied.has(`${attribute}:${value}`))
       .sort(([, a], [, b]) => b - a)
       .slice(0, MAX_VALUES)
       .map(([value]) => value);
     /* One value is not a choice — it describes the shelf rather than
      * narrowing it. */
-    if (values.length < 2) continue;
-    for (const value of values) chips.push({ label: value, ask: ask(value) });
-    if (chips.filter((c) => c.label).length >= MAX_ATTRIBUTES * MAX_VALUES) break;
+    if (picked.length < 2) continue;
+    const ordered = order ? [...picked].sort(order) : picked;
+    groups.push({ attribute, chips: ordered.map((value) => ({ label: value, ask: ask(value) })) });
   }
 
-  const offered = chips.slice(0, MAX_ATTRIBUTES * MAX_VALUES);
-  if (offered.length) {
-    recordDisplayEvent('stage-ok', `narrow chips offered ${offered.map((c) => c.label).join(', ')}`);
+  if (groups.length) {
+    const offered = groups.flatMap((group) => group.chips.map((chip) => chip.label));
+    recordDisplayEvent('stage-ok', `narrow chips offered ${offered.join(', ')}`);
   }
-  return offered;
+  return groups;
 }

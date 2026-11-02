@@ -4,7 +4,7 @@ import type { Tool, Tools } from 'react-instantsearch';
 import { createGroupedResultsToolComponent } from 'instantsearch-ui-components';
 import { recordDisplayEvent } from '../../shared/telemetry';
 import { ProductCard, type JtvHit } from './ProductCard';
-import { narrowChipsFor, type NarrowChip } from './narrowChips';
+import { narrowChipsFor, type NarrowChip, type NarrowGroup } from './narrowChips';
 
 /* The one display gate.
  *
@@ -208,24 +208,26 @@ function searchPartOf(owner: OwnerMessage | undefined): MessagePart | undefined 
 }
 
 function NarrowChips({
-  chips,
+  groups,
   onPick,
 }: {
-  chips: NarrowChip[];
+  groups: NarrowGroup[];
   onPick: (chip: NarrowChip) => void;
 }) {
   return (
     <div className="jtv-chat-narrow">
       <p className="jtv-chat-narrow-lead">Narrow it down</p>
-      <ul className="jtv-chat-narrow-list">
-        {chips.map((chip) => (
-          <li key={chip.label}>
-            <button type="button" className="jtv-chat-narrow-chip" onClick={() => onPick(chip)}>
-              {chip.label}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {groups.map((group) => (
+        <ul key={group.attribute} className="jtv-chat-narrow-list">
+          {group.chips.map((chip) => (
+            <li key={chip.label}>
+              <button type="button" className="jtv-chat-narrow-chip" onClick={() => onPick(chip)}>
+                {chip.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ))}
     </div>
   );
 }
@@ -266,7 +268,7 @@ export function createGatedTools(sendMessage?: (params: { text: string }) => voi
      * pieces are still arriving invites a click that cancels the turn that
      * would have answered it. */
     const settled = message?.state !== 'input-streaming';
-    const chips = settled && sendMessage ? narrowChipsFor(searchPartOf(owner)) : [];
+    const chipGroups = settled && sendMessage ? narrowChipsFor(searchPartOf(owner)) : [];
     return (
       <>
         <GroupedResultsUI
@@ -277,8 +279,8 @@ export function createGatedTools(sendMessage?: (params: { text: string }) => voi
           }}
           groupCarouselComponent={({ items }) => <GroupGrid items={items as JtvHit[]} />}
         />
-        {chips.length ? (
-          <NarrowChips chips={chips} onPick={(chip) => sendMessage?.({ text: chip.ask })} />
+        {chipGroups.length ? (
+          <NarrowChips groups={chipGroups} onPick={(chip) => sendMessage?.({ text: chip.ask })} />
         ) : null}
       </>
     );

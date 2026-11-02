@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { indexOf, narrowChipsFor } from '../../src/concierge/chat/narrowChips';
+import type { NarrowGroup } from '../../src/concierge/chat/narrowChips';
+
+/** Chips come back grouped by attribute so each axis gets its own row; most
+ * assertions only care about the labels in order. */
+const labels = (groups: NarrowGroup[]) => groups.flatMap((g) => g.chips.map((c) => c.label));
 
 /* The chips are built from facet counts the search already returned, so these
  * tests feed the two tool shapes we have actually seen on the wire. */
@@ -41,42 +46,45 @@ describe('which index answered', () => {
 
 describe('the narrowing chips', () => {
   it('offers values from the catalogue facets, highest count first', () => {
-    const chips = narrowChipsFor(perIndex());
-    expect(chips.map((c) => c.label)).toEqual([
+    expect(labels(narrowChipsFor(perIndex()))).toEqual([
       'White',
       'Yellow',
       'Rose',
-      '$100 - $200',
-      '$50 - $100',
+      /* Price bands come back in price order, not count order: the counts
+       * here would put "$100 - $200" first and "Under $25" last. */
       'Under $25',
+      '$50 - $100',
+      '$100 - $200',
     ]);
   });
 
   it('phrases each chip as something a shopper would say', () => {
-    const [first] = narrowChipsFor(perIndex());
+    const [first] = narrowChipsFor(perIndex())[0].chips;
     expect(first.ask).toBe('Show me the white ones');
-    const band = narrowChipsFor(perIndex()).find((c) => c.label === '$100 - $200');
+    const band = narrowChipsFor(perIndex())
+      .flatMap((g) => g.chips)
+      .find((c) => c.label === '$100 - $200');
     expect(band?.ask).toBe('Show me the ones in $100 - $200');
   });
 
   /* One value describes the shelf rather than narrowing it. */
   it('skips an attribute with a single value', () => {
-    expect(narrowChipsFor(perIndex()).some((c) => c.label === 'Ring')).toBe(false);
+    expect(labels(narrowChipsFor(perIndex()))).not.toContain('Ring');
   });
 
   it('never offers a refinement the search already applied', () => {
     const applied = narrowChipsFor(
       perIndex({ queries: [{ query: 'opal', facet_Catalog_JewelryMaterialNavigationColor: ['White'] }] }),
     );
-    expect(applied.some((c) => c.label === 'White')).toBe(false);
-    expect(applied.some((c) => c.label === 'Yellow')).toBe(true);
+    expect(labels(applied)).not.toContain('White');
+    expect(labels(applied)).toContain('Yellow');
   });
 
   it('reads an applied filter in the generic tool shape too', () => {
     const applied = narrowChipsFor(
       generic({ facet_filters: ['Catalog_JewelryMaterialNavigationColor:White'] }),
     );
-    expect(applied.some((c) => c.label === 'White')).toBe(false);
+    expect(labels(applied)).not.toContain('White');
   });
 
   /* On-air facets narrow a broadcast, not a taste. */
@@ -97,6 +105,17 @@ describe('the narrowing chips', () => {
   });
 });
 
+/* Each axis is its own group so the panel can give it a row. */
+describe('grouping', () => {
+  it('returns one group per attribute', () => {
+    const groups = narrowChipsFor(perIndex());
+    expect(groups.map((g) => g.attribute)).toEqual([
+      'Catalog_JewelryMaterialNavigationColor',
+      'Pricing_PriceRange',
+    ]);
+  });
+});
+
 /* A rendered message part names its tool in `type` as `tool-<name>`; the raw
  * stream event uses `toolName`. The chips are built from the rendered part. */
 describe('the rendered part shape', () => {
@@ -110,6 +129,6 @@ describe('the rendered part shape', () => {
       input: { queries: [{ query: 'opal' }] },
       output: { facets },
     });
-    expect(chips.map((c) => c.label)).toContain('White');
+    expect(labels(chips)).toContain('White');
   });
 });
