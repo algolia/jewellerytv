@@ -25,11 +25,21 @@ export type JtvRecord = {
   image?: string | null;
   imageLarge?: string | null;
   Pricing_PriceRange: string | null;
+  Pricing_ActivePrice: number | null;
   price: number | null;
   listPrice: number | null;
 };
 
 export type JtvHit = RecordWithObjectID<JtvRecord>;
+
+/* A bare `57.97` next to a photograph is not a price, and `129` beside it
+ * reads as a different kind of number again. Whole amounts lose the cents so
+ * a shelf does not fill with ".00"; anything else keeps them. */
+const WHOLE = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const CENTS = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+function money(value: number): string {
+  return Number.isInteger(value) ? WHOLE.format(value) : CENTS.format(value);
+}
 
 export function ProductCard({ item }: RecommendItemComponentProps<JtvHit>) {
   const image = item.Media_Images?.[0] || item.imageLarge || item.image || undefined;
@@ -38,7 +48,9 @@ export function ProductCard({ item }: RecommendItemComponentProps<JtvHit>) {
    * `Pricing_PriceRange`. A tile with no label at all is worse than a long
    * one. */
   const name = item.Catalog_TitleDescription || item.name || '';
-  const label = item.Pricing_PriceRange || name;
+  /* `|| name` would swallow a zero-priced piece and label it with its title
+   * instead, so the test is for a number rather than for truthiness. */
+  const label = typeof item.Pricing_ActivePrice === 'number' ? money(item.Pricing_ActivePrice) : name;
   return (
     <a className="jtv-chat-card" href={`/product/${encodeURIComponent(item.objectID)}`}>
       {/* A record without imagery still has to occupy the same tile box, or the

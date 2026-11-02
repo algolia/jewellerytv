@@ -108,17 +108,17 @@ test('a grouped-results call renders one tile per piece, imaged, titled and link
   const ring = panel.locator(`${CARD}[href="/product/${RING.objectID}"]`);
   await expect(ring).toHaveCount(1);
   await expect(ring.locator('.jtv-chat-card-image img')).toHaveCount(1);
-  /* A catalogue tile is labelled with its price band, not its name: JTV's
-   * names are catalogue descriptions that truncate mid-phrase at this width.
-   * The name rides the image's alt text so the link still identifies the
-   * piece to a reader who cannot see it. */
-  await expect(ring.locator('.jtv-chat-card-title')).toHaveText(RING.Pricing_PriceRange);
+  /* A catalogue tile is labelled with its price, not its name: JTV's names
+   * are catalogue descriptions that truncate mid-phrase at this width. The
+   * name rides the image's alt text so the link still identifies the piece to
+   * a reader who cannot see it. */
+  await expect(ring.locator('.jtv-chat-card-title')).toHaveText('$189.99');
   await expect(ring.locator('img')).toHaveAttribute('alt', RING.Catalog_TitleDescription);
 
   const earrings = panel.locator(`${CARD}[href="/product/${EARRINGS.objectID}"]`);
   await expect(earrings).toHaveCount(1);
   await expect(earrings.locator('.jtv-chat-card-image img')).toHaveCount(1);
-  await expect(earrings.locator('.jtv-chat-card-title')).toHaveText(EARRINGS.Pricing_PriceRange);
+  await expect(earrings.locator('.jtv-chat-card-title')).toHaveText('$94.99');
 });
 
 /* With the display tool's settings tightened the agent stopped writing any
@@ -160,7 +160,12 @@ test('a narrowing chip asks the agent again', async ({ page }) => {
   await expect(panel.getByText('Show me the white ones')).toBeVisible();
 });
 
-test('no price reaches the panel even though the records carry one', async ({ page }) => {
+/* The tile label is the price now, so the old guard — no currency anywhere in
+ * the panel — would fail on the thing we intend to show. What it was really
+ * protecting against survives: a price must never appear in the agent's
+ * prose, where it reads as a quote and goes stale between the search and the
+ * glance. */
+test('a price appears on the tiles and never in the reply', async ({ page }) => {
   await stubAgentTurn(page, {
     text: 'Both are in stock.',
     hits: [RING, EARRINGS],
@@ -170,21 +175,14 @@ test('no price reaches the panel even though the records carry one', async ({ pa
   await ask(page, 'What do you have in stock?');
   await expect(panel.locator(CARD)).toHaveCount(2);
 
-  // The band is shown; the exact figure never is. It goes stale between the
-  // search and the glance, and beside an answer about fit and style it reads
-  // as a quote (`src/concierge/chat/ProductCard.tsx`).
-  const text = (await panel.innerText()).replace(/\s+/g, ' ');
-  expect(text).not.toContain(String(RING.Pricing_ActivePrice));
-  expect(text).not.toContain(String(EARRINGS.Pricing_ActivePrice));
-  /* Bands are the tile label now, so a blanket "no currency anywhere" check
-   * would fail on the thing we intend to show. Remove the bands the records
-   * actually carry, then nothing priced may remain: no other currency run,
-   * and no figure with cents. */
-  const withoutBands = [RING, EARRINGS]
-    .reduce((rest, record) => rest.split(record.Pricing_PriceRange).join(' '), text)
-    .replace(/\s+/g, ' ');
-  expect(withoutBands).not.toMatch(/[$£€]\s?\d/);
-  expect(withoutBands).not.toMatch(/\d+\.\d{2}/);
+  await expect(panel.locator(`${CARD}[href="/product/${RING.objectID}"] .jtv-chat-card-title`)).toHaveText(
+    '$189.99',
+  );
+
+  const prose = (await panel.locator('.ais-ChatMessage-text').allInnerTexts()).join(' ');
+  expect(prose).not.toMatch(/[$£€]\s?\d/);
+  expect(prose).not.toContain(String(RING.Pricing_ActivePrice));
+  expect(prose).not.toContain(String(EARRINGS.Pricing_ActivePrice));
 });
 
 test('the empty panel offers curated starters that send on click', async ({ page }) => {

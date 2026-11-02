@@ -34,17 +34,46 @@ describe('the product tile', () => {
     expect(html).toContain('https://img/mfp125.jpg');
   });
 
-  it('never prints a price, in either shape', () => {
-    const html = render({
+  /* The label is the price now. An on-air record has none, which is what
+   * distinguishes the two shapes, so it keeps its name. */
+  it('labels a catalogue piece with its price and an on-air piece with its name', () => {
+    const catalogue = render({
       objectID: 'XTP21',
       Catalog_TitleDescription: 'Sterling Silver Chain',
       Media_Images: ['https://img/xtp21.jpg'],
       Pricing_ActivePrice: 158.99,
-      estimatedPrice: 142.17,
     } as unknown as JtvHit);
-    expect(html).not.toContain('158');
-    expect(html).not.toContain('142');
-    expect(html).not.toContain('$');
+    expect(catalogue).toContain('>$158.99<');
+    /* The name is not lost — it carries the tile's accessible name, since the
+     * label alone would tell a reader who cannot see the photograph only what
+     * the piece costs. */
+    expect(catalogue).toContain('alt="Sterling Silver Chain"');
+
+    const onAir = render({
+      objectID: 'MFP125',
+      name: 'Moissanite Platineve Ring',
+      imageLarge: 'https://img/mfp125.jpg',
+    } as JtvHit);
+    expect(onAir).toContain('>Moissanite Platineve Ring<');
+  });
+
+  it('formats a whole amount without empty cents', () => {
+    const html = render({
+      objectID: 'R1',
+      Catalog_TitleDescription: 'Band',
+      Pricing_ActivePrice: 129,
+    } as unknown as JtvHit);
+    expect(html).toContain('>$129<');
+  });
+
+  /* Truthiness would swallow this one and label it with its title. */
+  it('labels a zero-priced piece with its price, not its name', () => {
+    const html = render({
+      objectID: 'Z1',
+      Catalog_TitleDescription: 'Gift With Purchase',
+      Pricing_ActivePrice: 0,
+    } as unknown as JtvHit);
+    expect(html).toContain('>$0<');
   });
 
   /* The gate refuses imageless pieces whose record it has, but a record still
