@@ -84,8 +84,19 @@ export const Concierge = forwardRef<
       return {};
     }
   }, [context]);
+  /* The panel sits bottom-right at a readable height by default, which is
+   * what JTV asked for; full height is a choice the shopper makes, not the
+   * only shape on offer. Kept here rather than in the widget because the
+   * class belongs to the shell, and reset on close so the next open starts
+   * from the smaller panel again. */
+  const [maximized, setMaximized] = useState(false);
   return (
-    <div className="jtv-concierge" data-open={open} hidden={!open}>
+    <div
+      className={maximized ? 'jtv-concierge jtv-concierge--maximized' : 'jtv-concierge'}
+      data-open={open}
+      data-maximized={maximized}
+      hidden={!open}
+    >
       {/* The header lives inside the widget: only the widget can reach
         * `clearMessages`, which is what the new-conversation control needs.
         * Kept mounted while closed so reopening returns to the same
@@ -93,7 +104,10 @@ export const Concierge = forwardRef<
       <JtvChat
         ref={chat}
         context={turnContext}
+        maximized={maximized}
+        onToggleMaximized={() => setMaximized((current) => !current)}
         onClose={() => {
+          setMaximized(false);
           setOpen(false);
           onClose?.();
         }}

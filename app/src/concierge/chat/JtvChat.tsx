@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useMemo } from 'react';
 import type { MouseEvent } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Maximize2, Minimize2, Plus, X } from 'lucide-react';
 import { liteClient } from 'algoliasearch/lite';
 import { Chat, ChatInlineLayout, InstantSearch } from 'react-instantsearch';
 import type { ChatHandle } from 'react-instantsearch';
@@ -46,12 +46,28 @@ type HeaderProps = {
 /* The widget owns `clearMessages` and hands it to whatever header it is given,
  * so the panel header lives inside the widget rather than beside it. A second
  * header outside would have had no way to reach it. */
-function createHeader(onPanelClose?: () => void) {
+function createHeader(
+  onPanelClose?: () => void,
+  maximized?: boolean,
+  onToggleMaximized?: () => void,
+) {
   return function JtvChatHeader({ onClose, onClear, canClear }: HeaderProps) {
     return (
       <div className="jtv-concierge-header">
         <h2>Jewelry concierge</h2>
         <div className="jtv-concierge-header-actions">
+          {onToggleMaximized ? (
+            <button
+              type="button"
+              className="jtv-concierge-header-button"
+              aria-label={maximized ? 'Shrink the panel' : 'Expand the panel to full height'}
+              title={maximized ? 'Shrink' : 'Expand'}
+              aria-pressed={maximized}
+              onClick={onToggleMaximized}
+            >
+              {maximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+          ) : null}
           <button
             type="button"
             className="jtv-concierge-header-button"
@@ -84,12 +100,19 @@ export type JtvChatProps = {
   context?: Record<string, string> | (() => Record<string, string>);
   /** Lets the header's close control dismiss the panel shell around it. */
   onClose?: () => void;
+  /** Whether the shell is at full height; drives the header's control. */
+  maximized?: boolean;
+  /** Toggles the shell between the default panel and full height. */
+  onToggleMaximized?: () => void;
 };
 
 /* The ref exposes the widget's own handle (`setOpen`, `setInput`,
  * `sendMessage`), which is how the storefront's "Ask JTV" chip hands the
  * current search text to the panel. */
-export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ context, onClose }, ref) {
+export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
+  { context, onClose, maximized, onToggleMaximized },
+  ref,
+) {
   const { appId, apiKey, agentId } = useMemo(readConfig, []);
 
   /* One instance per mount. Recreating it on every render would drop the
@@ -153,7 +176,10 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat({ c
           tools={useMemo(() => createGatedTools((params) => chat.sendMessage({ text: params.text })), [chat])}
           layoutComponent={ChatInlineLayout}
           emptyComponent={StarterChips}
-          headerComponent={useMemo(() => createHeader(onClose), [onClose])}
+          headerComponent={useMemo(
+            () => createHeader(onClose, maximized, onToggleMaximized),
+            [onClose, maximized, onToggleMaximized],
+          )}
           requiresSearch={false}
           /* Positions the chips as optional rather than as the only way in.
            * "Ask about jewellery" competed with them; this invites the

@@ -58,6 +58,32 @@ test('the Ask JTV chip opens the panel with the search text as a draft', async (
   await expect(composer).toHaveValue('tanzanite ring under 18 inches');
 });
 
+/* JTV asked for the floating panel back, with full height as a choice rather
+ * than the only shape. Below the breakpoint neither shape leaves room for the
+ * store, so the panel takes the screen and the control has nothing to do. */
+test('the panel opens as a card and expands to full height on request', async ({ page }) => {
+  const panel = await openPanel(page);
+  const viewport = page.viewportSize()!;
+  const card = (await panel.boundingBox())!;
+
+  if (viewport.width <= 768) {
+    expect(card.height).toBe(viewport.height);
+    return;
+  }
+
+  expect(card.height).toBeLessThan(viewport.height);
+  expect(card.y).toBeGreaterThan(0);
+
+  await page.getByRole('button', { name: 'Expand the panel to full height' }).click();
+  await expect(panel).toHaveAttribute('data-maximized', 'true');
+  const full = (await panel.boundingBox())!;
+  expect(full.y).toBe(0);
+  expect(full.height).toBe(viewport.height);
+
+  await page.getByRole('button', { name: 'Shrink the panel' }).click();
+  await expect(panel).toHaveAttribute('data-maximized', 'false');
+});
+
 test('the panel starts closed and the chip is the only way in', async ({ page }) => {
   await stubAgentTurn(page, { text: 'Unused.' });
   await page.goto('/');
