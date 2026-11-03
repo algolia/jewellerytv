@@ -59,11 +59,37 @@ this question turned on.
 $1,000. "New" and "first-quality" are the agent's words, added to the brief
 and then failed by it.
 
-**3. It asserted a policy that is not true.** "We don't offer pre-owned
-jewelry" is a claim about the business, made from the absence of pre-owned
-pieces in a search it had just filtered. The system prompt already forbids
-this — *"never manufacture missing evidence, infer negative facts from
-absence"* — so it is a rule that needs sharpening rather than adding.
+**3. It was told to say that.** Corrected after this note was first written:
+"we don't offer pre-owned jewelry" is not an inference from absence, it is
+close to a quotation. `instructions.md` line 127:
+
+> Pre-owned is out of scope entirely: we deal in new, first-quality pieces.
+> If the shopper asks for pre-owned, pre-loved or second-hand jewelry, say so
+> plainly in one line and show the closest thing we do carry instead — never
+> a pre-owned piece, and never an offer to browse one.
+
+The agent followed its instructions exactly. The "new" it insisted on is the
+rule's word, not an assumption that a gift must be new.
+
+That makes this a scope decision rather than a model defect, and it is
+probably the right decision — the catalogue holds 8,371 pre-owned pieces that
+the concierge may well not be meant to sell. But it is implemented in the
+wrong place:
+
+- **It costs a step.** A plain "diamond hoop earrings" query returns twelve
+  pre-owned titles, so the agent searches again with "new" prepended. Two
+  searches of the five-step budget to work around its own catalogue.
+- **It leaks as a false statement about the business.** "We don't offer
+  pre-owned jewelry" is true of the concierge and false of JTV, and the
+  shopper cannot tell which one is speaking.
+- **It is unenforceable.** Without `Catalog_Condition` retrieved, the rule can
+  only be applied by reading "Pre-Owned" out of a title.
+
+The fix is a search parameter rather than a sentence:
+`Catalog_Condition:First Quality` on the `prod_catalog` index entry, the way
+stock is filtered. Pre-owned pieces then never reach the agent, the second
+search disappears, and the instruction can shrink to one line about what to
+say if a shopper asks for pre-owned directly.
 
 ## Fixes
 
@@ -79,7 +105,11 @@ absence"* — so it is a rule that needs sharpening rather than adding.
    at 1.7%; `Catalog_JewelryMaterialNavigationColor` already covers colour at
    112%.
 
-**Prompt**, as paste block H below.
+**Prompt.** With the search parameter in place, line 127 keeps only its
+second half — what to say when a shopper asks for pre-owned directly — and
+the two bullets below still earn their place, since inventing a requirement
+and reporting the store's scope as the catalogue's contents are general
+failures rather than pre-owned ones.
 
 ---8<--- paste from here ---8<---
 
@@ -95,6 +125,6 @@ absence"* — so it is a rule that needs sharpening rather than adding.
 ---8<--- paste to here ---8<---
 
 Example, bad: "I don't have a new, first-quality diamond hoop option I can
-confidently keep below $1,000, and we don't offer pre-owned jewelry" — said
-with twelve first-quality diamond hoops between $89.99 and $953.99 in hand,
-about a store holding 8,371 pre-owned pieces.
+confidently keep below $1,000" — said with twelve first-quality diamond hoops
+between $89.99 and $953.99 in hand. The pre-owned half of that sentence is
+the instruction working as written; this half is the defect.
