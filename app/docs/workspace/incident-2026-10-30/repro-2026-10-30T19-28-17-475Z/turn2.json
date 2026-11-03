@@ -1,0 +1,177 @@
+{
+  "messageCount": 4,
+  "partSummary": [
+    {
+      "type": "step-start",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": null
+    },
+    {
+      "type": "tool-algolia_search_index",
+      "inputKeys": [
+        "query",
+        "index",
+        "facet_filters",
+        "number_of_results"
+      ],
+      "input": "{\"query\":\"garnet jewelry\",\"index\":\"prod_catalog\",\"facet_filters\":[[\"Catalog_GemstoneAndPearlNavigationName:Garnet\"],[\"Pricing_PriceRange:Under $25\",\"Pricing_PriceRange:$25 - $50\"]],\"number_of_results\":30}",
+      "outputKeys": [
+        "hits",
+        "nbHits",
+        "queryID"
+      ],
+      "output": "{\"hits\":[{\"Catalog_ConsumerProductCategoryHierarchyDisplayNames\":[\"All > All JTV\",\"JTV Clearance\",\"JTV Clearance > Clearance Jewelry\",\"JTV Clearance > Clearance Jewelry > Clearance Color Gemstone Jewelry\",\"JTV Clearance > Clearance Jewelry > Clearance Color Gemstone Jewelry > Clearance Color Gemstone Gold Over Silver Jewelry\",\"JTV Clearance > Clearance Jewelry > Clearance Garnet Jewelry\",\"JTV Clea",
+      "textHead": null
+    },
+    {
+      "type": "step-start",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": null
+    },
+    {
+      "type": "text",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": "Garnet runs deep in the catalog, from rings and earrings to pendants and a stackable bangle, in sterling silver, gold over silver, and platinum over silver sett"
+    },
+    {
+      "type": "tool-present_products",
+      "inputKeys": [
+        "objectIDs",
+        "displayFacets",
+        "understood"
+      ],
+      "input": "{\"objectIDs\":[\"WPD551\",\"WIG257\",\"SHD710\",\"RST732\",\"RST689\",\"RST594E\",\"RST439\",\"RST111\",\"JSM930\",\"WIG1041\",\"RST202\",\"MFH076\"],\"displayFacets\":[\"Catalog_GemstoneAndPearlNavigationName\",\"Catalog_JewelryMaterialNavigationPurity\",\"Pricing_PriceRange\"],\"understood\":{\"material\":[],\"gemstone\":[\"Garnet\"],\"br",
+      "outputKeys": [
+        "status",
+        "objectIDs",
+        "displayFacets"
+      ],
+      "output": "{\"status\":\"ok\",\"objectIDs\":[{\"objectID\":\"WPD551\",\"name\":\"Garnet 18k Yellow Gold Over Sterling Silver Ring 1.01ctw\",\"price\":32.05,\"image\":\"https://images.jtv.com/jewelry/JTV-WPD551-1.jpg\"},{\"objectID\":\"WIG257\",\"name\":\"Red Garnet 18k Yellow Gold Over Sterling Silver Earrings 3.40ctw\",\"price\":49.99,\"image\":\"https://images.jtv.com/jewelry/JTV-WIG257-1.jpg\"},{\"objectID\":\"SHD710\",\"name\":\"Red Garnet Rhod",
+      "textHead": null
+    },
+    {
+      "type": "step-start",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": null
+    },
+    {
+      "type": "text",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": "You'll find rings, earrings, and pendants here, with warm gold-over-silver and cooler platinum-over-silver settings to choose from.\n\nIs there a particular piece"
+    },
+    {
+      "type": "step-start",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": null
+    },
+    {
+      "type": "text",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": "A colleague gift calls for something easygoing and polished rather than sentimental, so garnet pieces that read professional and versatile make sense here."
+    },
+    {
+      "type": "tool-algolia_search_index",
+      "inputKeys": [
+        "query",
+        "index",
+        "facet_filters",
+        "number_of_results"
+      ],
+      "input": "{\"query\":\"garnet earrings pendant\",\"index\":\"prod_catalog\",\"facet_filters\":[[\"Catalog_GemstoneAndPearlNavigationName:Garnet\"],[\"Pricing_PriceRange:Under $25\",\"Pricing_PriceRange:$25 - $50\"]],\"number_of_results\":30}",
+      "outputKeys": [
+        "hits",
+        "nbHits",
+        "queryID"
+      ],
+      "output": "{\"hits\":[{\"objectID\":\"RST111\",\"Catalog_ConsumerProductCategoryHierarchyDisplayNames\":[\"All > All JTV\",\"JTV Clearance\",\"JTV Clearance > Clearance Jewelry\",\"JTV Clearance > Clearance Jewelry > Clearance Color Gemstone Jewelry\",\"JTV Clearance > Clearance Jewelry > Clearance Color Gemstone Jewelry > Clearance Color Gemstone Silver Jewelry\",\"JTV Clearance > Clearance Jewelry > Clearance Garnet Jewelry\"",
+      "textHead": null
+    },
+    {
+      "type": "step-start",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": null
+    },
+    {
+      "type": "text",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": "Pendants are thin here, so earrings and simple rings are the better bet for a colleague on this budget."
+    },
+    {
+      "type": "tool-present_products",
+      "inputKeys": [
+        "objectIDs",
+        "displayFacets",
+        "understood"
+      ],
+      "input": "{\"objectIDs\":[\"WIG257\",\"RST439\",\"SHD710\",\"RST689\",\"RST732\",\"WPD551\",\"RST111\",\"JSM930\"],\"displayFacets\":[\"Catalog_ProductType\",\"Catalog_JewelryMaterialNavigationPurity\",\"Pricing_PriceRange\"],\"understood\":{\"material\":[],\"gemstone\":[\"Garnet\"],\"brand\":[],\"priceMax\":50}}",
+      "outputKeys": [
+        "status",
+        "objectIDs",
+        "displayFacets"
+      ],
+      "output": "{\"status\":\"ok\",\"objectIDs\":[{\"objectID\":\"WIG257\",\"name\":\"Red Garnet 18k Yellow Gold Over Sterling Silver Earrings 3.40ctw\",\"price\":49.99,\"image\":\"https://images.jtv.com/jewelry/JTV-WIG257-1.jpg\"},{\"objectID\":\"RST439\",\"name\":\"Red Garnet with White Zircon Rhodium Over Sterling Silver Earrings 3.84ctw\",\"price\":42.8,\"image\":\"https://images.jtv.com/jewelry/JTV-RST439-1.jpg\"},{\"objectID\":\"SHD710\",\"name\"",
+      "textHead": null
+    },
+    {
+      "type": "step-start",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": null
+    },
+    {
+      "type": "text",
+      "inputKeys": null,
+      "input": null,
+      "outputKeys": null,
+      "output": null,
+      "textHead": "Earrings and rings fit the bill nicely, easy to wear at the office without feeling too personal.\n\nWould you like to stick with sterling silver, or does a gold-o"
+    }
+  ],
+  "tiles": [
+    "View details for Garnet 18k Yellow Gold Over Sterling Silver Ring 1.01",
+    "View details for Red Garnet 18k Yellow Gold Over Sterling Silver Earri",
+    "View details for Red Garnet Rhodium Over Sterling Silver Ring 2.15ctw,",
+    "View details for Red Garnet with Green Chrome Diopside and White Zirco",
+    "View details for Red Garnet Rhodium Over Sterling Silver Ring 2.34ctw,",
+    "View details for Red Garnet Platinum Over Sterling Silver 3-Stone Ring",
+    "View details for Red Garnet with White Zircon Rhodium Over Sterling Si",
+    "View details for Red Garnet Rhodium Over Sterling Silver Pendant with "
+  ],
+  "chipButtons": [
+    "Garnet",
+    "Vermelho Garnet",
+    "Citrine",
+    "Freshwater Pearl",
+    "Hessonite",
+    "Opal"
+  ]
+}

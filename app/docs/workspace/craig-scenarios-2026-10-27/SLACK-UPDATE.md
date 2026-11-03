@@ -29,7 +29,7 @@ light"), no lab jargon
 • **Returns and shipping** - grounded answers with the current holiday return
 dates
 • **Chain-length guidance** - our safety layer was over-blocking sizing help
-from our own style guides; the correction is in and rolling out now
+from our own style guides; corrected so the guidance comes through
 • **Trending** - the agent now answers with the site's own trending
 collections and gemstones (the same merchandising the website shows) and can
 pull pieces from any of them
