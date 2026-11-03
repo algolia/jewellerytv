@@ -22,10 +22,8 @@
   },
   "include": [
     "src",
-    "server",
     "tests",
     "vite.config.ts",
-    "playwright.config.ts",
-    "api"
+    "playwright.config.ts"
   ]
 }

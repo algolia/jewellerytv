@@ -1,0 +1,394 @@
+/* Panel chrome and tile styling. Everything else comes from
+ * instantsearch.css/components/chat.css, imported by the host app.
+ *
+ * The panel docks full height on the left, the shape the shopper reads as a
+ * conversation running alongside the store rather than a widget sitting on
+ * top of it. The palette is the storefront's own (`src/website/styles.css`):
+ * JTV blue for the header, the site ink and rules everywhere else, so the
+ * rebuilt panel still reads as part of the same shop. */
+
+/* The panel.
+ *
+ * A floating card bottom-right, at a height that reads as a conversation
+ * beside the store rather than a second page of it — which is what JTV asked
+ * for, and what the full-height rail replaced. Full height is still there,
+ * behind the expand control in the header, so a shopper working through a
+ * long shelf can take the whole side.
+ *
+ * The palette is the storefront's own (`src/website/styles.css`): JTV blue
+ * for the header, the site ink and rules everywhere else. */
+.jtv-concierge {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  width: min(27.5rem, calc(100vw - 3rem));
+  height: min(45rem, calc(100dvh - 3rem));
+  background: #fff;
+  border: 1px solid var(--line, #ddd);
+  border-radius: 0.75rem;
+  box-shadow: 0 0.75rem 2.5rem rgba(9, 9, 11, 0.18);
+  overflow: hidden;
+  font-family: inherit;
+  color: var(--text, #454545);
+}
+
+/* Full height, flush to the edge: the rail shape, now a choice rather than
+ * the only option. */
+.jtv-concierge--maximized {
+  right: 0;
+  bottom: 0;
+  top: 0;
+  width: min(30rem, 100vw);
+  height: auto;
+  border: 0;
+  border-left: 1px solid var(--line, #ddd);
+  border-radius: 0;
+  box-shadow: 0 0 2.5rem rgba(9, 9, 11, 0.12);
+}
+
+/* `display: flex` above would otherwise defeat the `hidden` attribute the
+ * shell uses to keep the conversation mounted while the panel is closed. */
+.jtv-concierge[hidden] {
+  display: none;
+}
+
+.jtv-concierge-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--blue, #0076a9);
+  color: #fff;
+}
+
+.jtv-concierge-header h2 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.jtv-chat-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The inline layout sizes its container from its own `--ais-chat-height`,
+ * which defaults to 32rem. In a docked rail the panel decides the height, so
+ * hand the variable 100% rather than fighting the rule that reads it. */
+.jtv-concierge .ais-ChatInlineLayout {
+  --ais-chat-height: 100%;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.jtv-concierge .ais-Chat,
+.jtv-concierge .ais-Chat-container {
+  flex: 1;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.jtv-concierge .ais-ChatMessages {
+  flex: 1;
+  min-height: 0;
+}
+
+/* The widget's header slot carries our chrome, so style the slot rather than
+ * hiding it: its close and new-conversation controls are wired to the widget's
+ * own state, which nothing outside the widget can reach. */
+.jtv-concierge .ais-ChatHeader {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.jtv-concierge-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.jtv-concierge-header-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.jtv-concierge-header-button:hover:not(:disabled) {
+  background: #ffffff20;
+}
+
+.jtv-concierge-header-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* The library's own padding assumes a floating bubble. A docked rail needs
+ * the text and the shelves to clear the edge the same way the store does. */
+.jtv-concierge .ais-ChatMessages-scroll {
+  padding: 1rem 1.25rem;
+}
+
+.jtv-concierge .ais-ChatPrompt {
+  padding-inline: 1.25rem;
+}
+
+/* Groups: a grid, not a carousel. At this width a row of cards hides most of
+ * a shelf behind arrows, and the shopper cannot see what they are choosing
+ * between.
+ *
+ * Four across rather than auto-fill. Auto-fill gave three and left a fourth
+ * piece alone on its own row, which reads as a mistake; a fixed four makes a
+ * group of four or eight a clean block and keeps the shelf compact enough
+ * that two groups fit without scrolling. */
+.jtv-chat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.875rem 0.5rem;
+  padding-block: 0.25rem;
+}
+
+.jtv-chat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* No frame. The catalogue's photography is already on white, so a border and
+ * a grey fill around it draw a box around a box; without them the pieces sit
+ * on the panel the way they do on a contact sheet. */
+.jtv-chat-card-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #fff;
+  font-size: 0.75rem;
+  color: var(--muted, #707070);
+}
+
+.jtv-chat-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 150ms ease;
+}
+
+.jtv-chat-card:hover .jtv-chat-card-image img {
+  transform: scale(1.04);
+}
+
+/* The title is a label, not a link to be clicked past. The whole tile is the
+ * link, so underlining the words as well made a shelf read as a list of
+ * search results. */
+.jtv-chat-card-title {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--text, #454545);
+  text-decoration: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.jtv-chat-card:hover .jtv-chat-card-title {
+  color: var(--blue, #0076a9);
+}
+
+/* Below the breakpoint neither shape leaves room for the store, so the panel
+ * takes the screen and the expand control has nothing left to do. */
+@media (max-width: 48rem) {
+  .jtv-concierge,
+  .jtv-concierge--maximized {
+    inset: 0;
+    width: 100vw;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+/* Empty state: JTV's own welcome screen, restored.
+ *
+ * Logo, an invitation, nine chips staggered left and right, and a way to see
+ * a different nine. The stagger is the part that makes it read as an offer
+ * rather than a form — nine full-width rows is a menu, and the alternating
+ * indent breaks the column without hiding anything behind an interaction. */
+.jtv-chat-starters {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 0.5rem;
+  padding-block: 0.5rem;
+  text-align: center;
+}
+
+/* The widget wraps the scroll area's contents in a content-sized flex column,
+ * so the welcome could not grow into the rail whatever height it asked for.
+ * Scoped with :has() to the empty state, since a short conversation's
+ * messages should stay packed at the top rather than spreading down. */
+.jtv-concierge .ais-ChatMessages-content:has(> .jtv-chat-starters) {
+  min-height: 100%;
+}
+
+/* Sized so the logo, the invitation, nine chips and the re-roll all fit the
+ * default panel without scrolling. The full-height panel has room to spare
+ * either way. */
+.jtv-chat-starters-logo {
+  width: 6.5rem;
+  height: auto;
+}
+
+.jtv-chat-starters-lead {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted, #707070);
+}
+
+.jtv-chat-starters-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The stagger. Odd rows sit right, even rows left, each inset from its edge
+ * so neither column runs flush against the rail. */
+.jtv-chat-starters-list li {
+  display: flex;
+  padding-right: 2.5rem;
+}
+
+.jtv-chat-starters-list li.jtv-chat-starter-row--right {
+  justify-content: flex-end;
+  padding-right: 0;
+  padding-left: 2.5rem;
+}
+
+/* White with a soft edge, the way JTV drew them: on a welcome screen the
+ * chips are the only thing to touch, and a lifted card reads as touchable
+ * without shouting the way a filled pill does. */
+.jtv-chat-starter {
+  padding: 0.4375rem 0.875rem;
+  border: 1px solid var(--line, #e3e3e3);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text, #454545);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.06);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.jtv-chat-starter:hover:not(:disabled) {
+  border-color: var(--blue, #0076a9);
+  color: var(--blue, #0076a9);
+  box-shadow: 0 2px 6px rgba(9, 9, 11, 0.1);
+}
+
+.jtv-chat-starter:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* A link, not a button: it deals another nine rather than committing the
+ * shopper to anything, and a second filled control would compete with the
+ * chips it sits under. */
+.jtv-chat-starters-more {
+  padding: 0.125rem;
+  border: 0;
+  background: none;
+  color: var(--blue, #0076a9);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.jtv-chat-starters-more:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.jtv-chat-starters-more:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Narrowing chips under a shelf. Quieter than the starter chips — those are
+ * an invitation on an empty panel, these sit beside pieces the shopper is
+ * already reading and must not compete with them. */
+.jtv-chat-narrow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4375rem;
+  padding-block: 0.75rem 0.25rem;
+}
+
+.jtv-chat-narrow-lead {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted, #707070);
+}
+
+/* One row per attribute. Colour and price running together as a single
+ * wrapped list read as one undifferentiated choice, and a trailing chip
+ * stranded on a second row looked like the orphan tile it took a rule to
+ * remove from the shelf. */
+.jtv-chat-narrow-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jtv-chat-narrow-list + .jtv-chat-narrow-list {
+  margin-top: 0.375rem;
+}
+
+.jtv-chat-narrow-chip {
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid var(--line, #ddd);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text, #454545);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.jtv-chat-narrow-chip:hover {
+  border-color: var(--blue, #0076a9);
+  color: var(--blue, #0076a9);
+}

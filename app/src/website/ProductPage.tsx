@@ -1,10 +1,11 @@
 import {useEffect,useState} from 'react';
 import {Link,useLocation,useParams} from 'react-router-dom';
 import {normalizeProduct,type Product} from '../shared/catalog';
+import {getProductRecord} from '../shared/client';
 export function ProductPage({onSelection,onAsk}:{onSelection:(id:string|null,size:string|null)=>void;onAsk:()=>void}){
  const {objectID}=useParams();const location=useLocation();const [product,setProduct]=useState<Product|null>(null);const [error,setError]=useState('');const [size,setSize]=useState('');const [photo,setPhoto]=useState(0);
  useEffect(()=>{const controller=new AbortController();setProduct(null);setError('');setSize('');setPhoto(0);onSelection(objectID||null,null);
- fetch(`/api/products/${encodeURIComponent(objectID||'')}`,{signal:controller.signal}).then(async r=>{if(!r.ok)throw new Error(r.status===404?'This item is no longer in the catalogue.':'Product information could not be loaded.');return r.json();}).then(raw=>setProduct(normalizeProduct(raw))).catch((e:unknown)=>{if(!controller.signal.aborted)setError(e instanceof Error?e.message:'Product information could not be loaded.');});return()=>{controller.abort();onSelection(null,null);};},[objectID,onSelection]);
+ getProductRecord(objectID||'',{signal:controller.signal}).then(raw=>setProduct(normalizeProduct(raw))).catch((e:unknown)=>{if(!controller.signal.aborted)setError(e instanceof Error?e.message:'Product information could not be loaded.');});return()=>{controller.abort();onSelection(null,null);};},[objectID,onSelection]);
  if(error)return <main className="page error-state"><h1>Product unavailable</h1><p role="alert">{error}</p><Link to="/search">Browse jewelry</Link></main>;
  if(!product)return <main className="page loading-state" aria-busy="true">Loading product details…</main>;
  const browseParams = new URLSearchParams(location.search);

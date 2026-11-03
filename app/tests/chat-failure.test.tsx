@@ -1,16 +1,20 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { expect, it, vi } from 'vitest';
+import { expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { Concierge } from '../src/concierge/Concierge';
 import { Shell } from '../src/website/shell/Shell';
 
-vi.mock('../src/concierge/ConnectedConcierge', () => ({ ConnectedConcierge: () => null }));
-
-it('the closed Concierge renders no launcher and no panel chrome', () => {
+/* The closed panel used to render nothing at all. It now renders an inert,
+ * hidden shell so the chat instance survives a close and reopens on the same
+ * conversation. What still has to hold is that nothing shopper-facing leaks
+ * out of it: no launcher button competing with the Ask JTV chip, and no
+ * composer a keyboard user could reach while the panel is shut. */
+it('the closed Concierge renders hidden chrome and no reachable panel', () => {
   const html = renderToStaticMarkup(<Concierge />);
-  expect(html).toBe('');
+  expect(html).toContain('data-open="false"');
+  expect(html).toContain('hidden=""');
   expect(html).not.toContain('Ask Concierge');
-  expect(html).not.toContain('concierge-panel');
+  expect(html).not.toContain('concierge-launcher');
 });
 
 it('the header search bar carries the Ask JTV chip beside keyword search', () => {

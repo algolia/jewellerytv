@@ -6,3 +6,5 @@
 !/app/
 
 .DS_Store
+.vercel
+.env*
