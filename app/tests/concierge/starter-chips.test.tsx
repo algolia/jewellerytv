@@ -59,19 +59,31 @@ describe('the empty state', () => {
   it('renders every starter as its own sendable control', () => {
     const html = renderToStaticMarkup(<StarterChips sendMessage={() => undefined} />);
     expect(html.match(/class="jtv-chat-starter"/g)).toHaveLength(9);
-    expect(html).toContain('Ask about a piece, an occasion, or how we work.');
+    expect(html).toContain('Not sure where to start? Try one of these.');
+    expect(html).toContain('/assets/jtv-logo.png');
   });
 
-  it('disables the chips mid-turn so a second question cannot stack', () => {
+  /* Mid-turn everything goes down, "Show more" included: dealing a new set
+   * under a streaming answer would move the panel while it is being read. */
+  it('disables the chips and the re-roll mid-turn', () => {
     const html = renderToStaticMarkup(
       <StarterChips sendMessage={() => undefined} status="streaming" />,
     );
-    expect(html.match(/disabled=""/g)).toHaveLength(9);
+    expect(html.match(/disabled=""/g)).toHaveLength(10);
   });
 
+  /* Without a sender the chips can do nothing, but "Show more" still can:
+   * it only deals from the local pool. */
   it('disables the chips when the widget hands over no sender', () => {
     const html = renderToStaticMarkup(<StarterChips />);
     expect(html.match(/disabled=""/g)).toHaveLength(9);
+    expect(html).toContain('Show more');
+  });
+
+  /* The stagger is JTV's own layout; every other row sits right. */
+  it('staggers the rows left and right', () => {
+    const html = renderToStaticMarkup(<StarterChips sendMessage={() => undefined} />);
+    expect(html.match(/jtv-chat-starter-row--right/g)).toHaveLength(4);
   });
 });
 

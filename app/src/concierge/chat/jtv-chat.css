@@ -198,37 +198,39 @@
   }
 }
 
-/* Empty state: the curated starters.
+/* Empty state: JTV's own welcome screen, restored.
  *
- * The panel is a full-height rail, so a wrap-flow cluster of content-width
- * pills left most of the column empty: a ragged right edge, nine rows of
- * chips at the top, and the rest of the rail blank above a pinned prompt.
- *
- * Two changes fill it. The rows run full width, so the horizontal void and
- * the ragged edge both go, and each label gets a line of its own at a bigger
- * tap target. The block then centres in whatever height is left, so the
- * remaining space splits above and below and reads as placement rather than
- * as something unfinished. */
+ * Logo, an invitation, nine chips staggered left and right, and a way to see
+ * a different nine. The stagger is the part that makes it read as an offer
+ * rather than a form — nine full-width rows is a menu, and the alternating
+ * indent breaks the column without hiding anything behind an interaction. */
 .jtv-chat-starters {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
   flex: 1;
-  gap: 1rem;
-  padding-block: 0.5rem;
+  gap: 0.75rem;
+  padding-block: 1rem;
+  text-align: center;
 }
 
-/* The widget wraps whatever the scroll area holds in a content-sized flex
- * column, so the starters could not grow into the rail no matter what height
- * they asked for. Stretch that wrapper, but only when it is the empty state
- * inside it: a short conversation's messages should stay packed at the top
- * rather than spreading down the column. */
+/* The widget wraps the scroll area's contents in a content-sized flex column,
+ * so the welcome could not grow into the rail whatever height it asked for.
+ * Scoped with :has() to the empty state, since a short conversation's
+ * messages should stay packed at the top rather than spreading down. */
 .jtv-concierge .ais-ChatMessages-content:has(> .jtv-chat-starters) {
   min-height: 100%;
 }
 
+.jtv-chat-starters-logo {
+  width: 9.375rem;
+  height: auto;
+  margin-bottom: 0.25rem;
+}
+
 .jtv-chat-starters-lead {
-  margin: 0;
+  margin: 0 0 0.25rem;
   font-size: 0.875rem;
   color: var(--muted, #707070);
 }
@@ -237,34 +239,48 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  width: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* Filled rather than ghost-outlined: a white pill with a grey rule reads as
- * disabled until hover, and these are the one thing on an empty panel the
- * shopper is meant to touch. The fill is the header blue at low alpha, which
- * is also what JTV's own mock used. */
+/* The stagger. Odd rows sit right, even rows left, each inset from its edge
+ * so neither column runs flush against the rail. */
+.jtv-chat-starters-list li {
+  display: flex;
+  padding-right: 2.5rem;
+}
+
+.jtv-chat-starters-list li.jtv-chat-starter-row--right {
+  justify-content: flex-end;
+  padding-right: 0;
+  padding-left: 2.5rem;
+}
+
+/* White with a soft edge, the way JTV drew them: on a welcome screen the
+ * chips are the only thing to touch, and a lifted card reads as touchable
+ * without shouting the way a filled pill does. */
 .jtv-chat-starter {
-  width: 100%;
-  padding: 0.5625rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--blue, #0076a9) 35%, #fff);
+  padding: 0.5rem 0.9375rem;
+  border: 1px solid var(--line, #e3e3e3);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--blue, #0076a9) 10%, #fff);
-  color: var(--blue, #0076a9);
+  background: #fff;
+  color: var(--text, #454545);
   font: inherit;
   font-size: 0.8125rem;
   text-align: left;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.06);
   transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
+    border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .jtv-chat-starter:hover:not(:disabled) {
   border-color: var(--blue, #0076a9);
-  background: color-mix(in srgb, var(--blue, #0076a9) 18%, #fff);
+  color: var(--blue, #0076a9);
+  box-shadow: 0 2px 6px rgba(9, 9, 11, 0.1);
 }
 
 .jtv-chat-starter:disabled {
@@ -272,77 +288,27 @@
   cursor: default;
 }
 
-/* Links in a reply. The agent sends shoppers to jtv.com for the things the
- * indices cannot answer — the live stream, the item on air right now, a
- * show's on-demand replay — so these need to read as links rather than as
- * stray blue words in a sentence. JtvChat opens them in a new tab; see the
- * note on the delegated handler there for why that is not an attribute. */
-.jtv-concierge .ais-ChatMessage a:not(.jtv-chat-card) {
+/* A link, not a button: it deals another nine rather than committing the
+ * shopper to anything, and a second filled control would compete with the
+ * chips it sits under. */
+.jtv-chat-starters-more {
+  margin-top: 0.25rem;
+  padding: 0.25rem;
+  border: 0;
+  background: none;
   color: var(--blue, #0076a9);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.jtv-chat-starters-more:hover:not(:disabled) {
   text-decoration: underline;
-  text-underline-offset: 0.125em;
 }
 
-.jtv-concierge .ais-ChatMessage a:not(.jtv-chat-card):hover {
-  text-decoration-thickness: 2px;
-}
-
-/* The pending shelf. Shown while the grouped-results tool is still streaming
- * its input and no group has arrived yet; see the note in
- * gatedGroupedResults.tsx for the measurement that made this necessary. The
- * cards are the real cards with no content, so when the pieces land they land
- * in place rather than replacing a different shape. */
-.jtv-chat-card--pending .jtv-chat-card-image,
-.jtv-chat-card--pending .jtv-chat-card-title {
-  background: linear-gradient(
-    90deg,
-    var(--surface, #f3f3f3) 0%,
-    #e9e9e9 40%,
-    var(--surface, #f3f3f3) 80%
-  );
-  background-size: 300% 100%;
-  animation: jtv-chat-pending 1.4s ease-in-out infinite;
-}
-
-.jtv-chat-card--pending .jtv-chat-card-title {
-  height: 1.75rem;
-  border-radius: 2px;
-}
-
-@keyframes jtv-chat-pending {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: 0 0;
-  }
-}
-
-/* Respect a reduced-motion preference: the placeholder still reserves the
- * space, it just stops shimmering. */
-@media (prefers-reduced-motion: reduce) {
-  .jtv-chat-card--pending .jtv-chat-card-image,
-  .jtv-chat-card--pending .jtv-chat-card-title {
-    animation: none;
-  }
-}
-
-/* Group headings. The library's default sits tight against the shelf above
- * it, so two groups read as one long run of pieces. Air above the heading,
- * less below it, so a heading belongs to the shelf it introduces. */
-.jtv-concierge .ais-ChatToolGroupedResults-groupTitle,
-.jtv-concierge .ais-ChatToolGroupedResults-group > h3,
-.jtv-concierge .ais-ChatToolGroupedResults-group > h4 {
-  margin: 1.25rem 0 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.jtv-concierge .ais-ChatToolGroupedResults-group:first-child > :is(h3, h4),
-.jtv-concierge .ais-ChatToolGroupedResults-group:first-child
-  .ais-ChatToolGroupedResults-groupTitle {
-  margin-top: 0.75rem;
+.jtv-chat-starters-more:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* Narrowing chips under a shelf. Quieter than the starter chips — those are

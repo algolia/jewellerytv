@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { STARTER_QUESTION_POOL, selectStarterSet } from './starterQuestions';
 import { readStarterSignals, signalsToLabels } from './starterSignals';
 
@@ -25,11 +25,10 @@ const LIVE_SLOTS = 2;
 const SET_SIZE = 9;
 
 export function StarterChips({ sendMessage, status }: StarterChipsProps) {
-  /* One set per mount. Reshuffling on every render would move a chip out from
-   * under the pointer. */
-  const curated = useMemo(
-    () => selectStarterSet(STARTER_QUESTION_POOL, [], Math.random, SET_SIZE),
-    [],
+  /* One set per mount, re-rolled only when the shopper asks. Reshuffling on
+   * every render would move a chip out from under the pointer. */
+  const [curated, setCurated] = useState(() =>
+    selectStarterSet(STARTER_QUESTION_POOL, [], Math.random, SET_SIZE),
   );
   const [live, setLive] = useState<string[]>([]);
 
@@ -43,6 +42,18 @@ export function StarterChips({ sendMessage, status }: StarterChipsProps) {
     };
   }, []);
 
+  /* "Show more" deals a fresh set, excluding everything already offered this
+   * session, so a shopper who asks for more gets more rather than a reshuffle
+   * of the same nine. Past four sets the pool is exhausted and
+   * `selectStarterSet` recycles it. The live on-air chips are held across
+   * re-rolls: there is one top series and one top host in the window, so
+   * there is nothing to roll to. */
+  const shown = useRef<string[]>([]);
+  const showMore = useCallback(() => {
+    shown.current = [...shown.current, ...curated.map((question) => question.label)];
+    setCurated(selectStarterSet(STARTER_QUESTION_POOL, shown.current, Math.random, SET_SIZE));
+  }, [curated]);
+
   const labels = useMemo(() => {
     const curatedLabels = curated.map((question) => question.label);
     /* A live chip can restate a curated one (the pool carries a Jewel School
@@ -54,10 +65,14 @@ export function StarterChips({ sendMessage, status }: StarterChipsProps) {
   const busy = status === 'submitted' || status === 'streaming';
   return (
     <div className="jtv-chat-starters">
-      <p className="jtv-chat-starters-lead">Ask about a piece, an occasion, or how we work.</p>
+      <img className="jtv-chat-starters-logo" src="/assets/jtv-logo.png" alt="JTV" width="150" />
+      <p className="jtv-chat-starters-lead">Not sure where to start? Try one of these.</p>
+      {/* Staggered rather than stacked: the alternating indent is how JTV's
+        * own design reads, and it keeps nine chips from looking like a form.
+        * The offset is presentational, so the list stays a plain list. */}
       <ul className="jtv-chat-starters-list">
-        {labels.slice(0, SET_SIZE).map((label) => (
-          <li key={label}>
+        {labels.slice(0, SET_SIZE).map((label, index) => (
+          <li key={label} className={index % 2 ? 'jtv-chat-starter-row--right' : undefined}>
             <button
               type="button"
               className="jtv-chat-starter"
@@ -69,6 +84,14 @@ export function StarterChips({ sendMessage, status }: StarterChipsProps) {
           </li>
         ))}
       </ul>
+      <button
+        type="button"
+        className="jtv-chat-starters-more"
+        disabled={busy}
+        onClick={showMore}
+      >
+        Show more
+      </button>
     </div>
   );
 }
