@@ -30,4 +30,5 @@ jobs:
         env:
           VITE_ALGOLIA_APP_ID: ci-placeholder-app-id
           VITE_ALGOLIA_SEARCH_API_KEY: ci-placeholder-search-key
+          VITE_JTV_AGENT_ID: ci-placeholder-agent-id
       - run: npm run build
