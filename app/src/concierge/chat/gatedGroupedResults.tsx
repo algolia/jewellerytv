@@ -371,6 +371,13 @@ export function createGatedTools(): Tools {
               filters: IN_STOCK_FILTER,
               hitsPerPage: REFINE_HITS,
               attributesToRetrieve: REFINE_FIELDS,
+              /* The funnel deepens from the refine's own counts (measured
+               * live 2026-11-04: without a facets request the response
+               * carries none, and the refined shelf offers no next level).
+               * maxValuesPerFacet mirrors the storefront's own client query
+               * so the spec-sheet filter sees true cardinality. */
+              facets: ['*'],
+              maxValuesPerFacet: 100,
             },
           },
         ]);

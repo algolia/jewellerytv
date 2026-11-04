@@ -19,6 +19,10 @@ describe('sentence-level narration filter', () => {
     expect(keepSentence('The results are heavy on lab-created strontium titanate alternatives.')).toBe(false);
     expect(keepSentence('Let me curate the best gift-worthy options for graduation.')).toBe(false);
     expect(keepSentence("Let me show you some classic gift directions that work beautifully for the occasion.")).toBe(false);
+    /* Measured live 2026-11-04 on the simplified agent: "Now I'll display the
+     * selection of two-tone rings." — the display announcement. */
+    expect(keepSentence("Now I'll display the selection of two-tone rings.")).toBe(false);
+    expect(keepSentence('Now I will narrow these to the stones she asked about.')).toBe(false);
   });
 
   it('keeps the human moment, the guidance and the closing question', () => {
