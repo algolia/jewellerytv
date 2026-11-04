@@ -1,8 +1,18 @@
 # Agent lane fix 4: voice restored — draft for Arijit's review
 
-2026-11-04. Base: production agent snapshot `d466b4a6` (2026-11-03). Nothing
-in this folder has been applied to any agent. Dev apply happens only after
-Arijit approves the draft, then the full battery, then promotion on his go.
+2026-11-04, REBASED. Base: the LIVE agent text as of 2026-11-04 (39,438
+bytes, sha256 head e4498172b421, byte-identical on dev 8129ad66 and prod
+d466b4a6). An earlier draft was built on the 2026-11-03 snapshot (33,871
+bytes) and was scrapped when the pre-flight found both agents updated the
+same day (prod 16:21Z, dev 17:37Z): another lane had landed a narration,
+education, on-air and display-shaping pass on both agents. This draft is
+applied ON TOP of that pass, and per the consolidation law it merges the
+pass's "Never narrate the work" section with the old "While you work"
+section (which it duplicated) into one "# What you never say".
+
+Nothing in this folder has been applied to any agent. Dev apply happens only
+after Arijit approves the draft, then the full battery, then promotion on his
+go.
 
 ## Files
 
@@ -98,7 +108,8 @@ what this shopper said before it serves the catalog.
 
 ## Byte budget
 
-Draft prompt body = 34,622 bytes vs live 33,871 (+751 bytes net: the
-style-brief row, the suggestions section and the closing-action duty added
-≈ 2.4KB, offset by the While-you-work consolidation ≈ 1.6KB). The size
-budget holds.
+Draft prompt body = 39,726 bytes vs the live 39,438 (+288 bytes net on the
+rebased base: the style-brief table row, the suggestions section and the
+closing-action duty added ≈ 2.4KB, offset by merging the duplicated
+narration sections ≈ 2.1KB). All five em dashes the base carried in rules
+and examples are fixed in the draft (agent-output ban).
