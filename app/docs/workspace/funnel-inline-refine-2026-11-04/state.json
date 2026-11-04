@@ -13,10 +13,10 @@
   "stages": {
     "intake": "done",
     "plan": "done",
-    "build": "in_progress",
-    "verify": "pending",
-    "stagingPreview": "pending",
-    "finish": "pending"
+    "build": "done (commits 70a1252 + 6269fa5; gate: tsc 0, eslint 0, unit 143/149 with 6 pre-existing on base verified, e2e 32/34 with 2 pre-existing on base verified)",
+    "verify": "pending (preview battery on the Vercel preview once CI/build lands)",
+    "stagingPreview": "PR 54 open, awaiting Vercel preview + Arijit review",
+    "finish": "pending (merge = Arijit's explicit go; pushes to main auto-deploy prod)"
   },
   "gates": [
     "Arijit reviews the preview before merge (pushes to main auto-deploy prod, so merge = his explicit go)"
