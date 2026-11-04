@@ -1,42 +1,51 @@
-# The live agent's prompt
+# The agent's prompt
 
-`instructions.md` and `system-prompt.md` here are pulled from the dev agent by
-`scripts/sync-agent-prompt.mjs`. **Do not edit them.** Edit in Agent Studio and
-re-run the script; the diff then shows exactly what changed.
+Two files are the source of truth for what the agent should say:
+
+| File | What it is |
+|---|---|
+| `instructions.md` | The intended instructions. **Edit this**, then paste it whole into Agent Studio. |
+| `system-prompt.md` | The intended system prompt. Same. |
+| `*.live.md` | What the agent actually has. Written by the sync script; never edit. |
 
 ```
 node scripts/sync-agent-prompt.mjs
 ```
 
-Read-only — a GET with the search key, no writes to the agent.
+Read-only — a GET with the search key. It writes the `.live.md` copies and
+prints one line per prompt:
 
-## Why this exists
+```
+instructions: DIFFERS  intended 39,078 chars, live 36,301 chars
+system prompt: MATCHES  (9,063 chars)
+```
 
-The prompt is edited by hand in Agent Studio, and the copy in this repository
-was only updated when someone remembered. On 2026-11-04 it was nine days
-behind: six paste blocks had been applied to the agent and none to the file,
-so a 33,318-character copy was standing in for a 36,322-character prompt. Two
-diagnoses that week were reasoned against text that was no longer live.
+Exits non-zero while anything differs, so it can gate a check later.
 
-The old copy at `docs/workspace/on-air-2026-10-28/instructions.md` is deleted
-rather than left to rot beside this one.
+## The workflow
+
+1. Edit `instructions.md` here.
+2. Select all, paste it into the agent's instructions in Agent Studio, save.
+3. Run the script. `MATCHES` means it landed.
+4. Commit the change with whatever measurement prompted it.
+
+Paste the **whole file**, not a section. Sections were how this went wrong:
+a block would be drafted, believed applied, and the agent would never have
+seen it.
+
+## Why it is built this way
+
+The prompt is edited by hand in a web form, so the repository can only ever
+*claim* to know what the agent says. On 2026-11-04 the tracked copy was nine
+days and six paste blocks behind the live agent; later the same day, two
+edits believed to be applied turned out never to have reached it, and an hour
+went into diagnosing behaviour from text that was not running. The script
+replaces that guess with a one-line verdict.
 
 ## Paste blocks
 
-Drafts live in `docs/workspace/*/instructions-*.md` and
-`docs/workspace/*/system-prompt-*.md`. They are proposals, not the prompt —
-the prompt is here. After applying one, run the script and commit the result
-with the paste block that produced it, so the history shows which change
-landed when.
-
-Applied as of 2026-11-04:
-
-| Block | In the live prompt |
-|---|---|
-| On-air section, one-search rewrite | yes |
-| Never narrate the work | yes |
-| System prompt rewrite | yes (9,064 chars) |
-| Live jtv.com schedule links | no |
-| Bounded retry rule | no |
-| Group sizing, four or eight | no |
-| Education answers | no |
+`docs/workspace/*/instructions-*.md` hold the drafts and, more usefully, the
+measurement and reasoning behind each change — why a rule exists, what it
+replaced, what it cost. They are history, not the prompt. The prompt is
+`instructions.md`; every block that has survived review is already folded
+into it.

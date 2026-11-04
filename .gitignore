@@ -8,3 +8,6 @@
 .DS_Store
 .vercel
 .env*
+
+# Pulled from the live agent for comparison; not the source of truth.
+app/docs/agent/*.live.md

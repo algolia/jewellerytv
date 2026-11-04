@@ -1,10 +1,15 @@
-/* Pulls the dev agent's instructions and system prompt into the tracked tree.
+/* Pulls the dev agent's live prompt down and compares it with the one this
+ * repository intends.
  *
- * Both are edited by hand in Agent Studio, so the copies in this repository
- * drift the moment a paste block is applied — on 2026-11-04 the tracked
- * instructions were nine days and six applied blocks behind the live agent,
- * which made every reading of them unreliable. Run this after pasting
- * anything, and the diff shows exactly what changed.
+ * `docs/agent/instructions.md` and `system-prompt.md` are the intended
+ * prompt: hand-authored here, pasted into Agent Studio whole. This script
+ * writes what the agent actually has beside them as `*.live.md` and says
+ * whether the two match.
+ *
+ * It exists because they kept not matching. On 2026-11-04 the tracked
+ * instructions were nine days and six paste blocks behind, and a block
+ * believed to be applied turned out never to have reached the agent — twice.
+ * A one-line verdict is cheaper than finding out from a reply.
  *
  * Read-only: a GET with the search key, no writes to the agent.
  *
@@ -38,22 +43,43 @@ if (!response.ok) {
 }
 const agent = await response.json();
 
-const header = (what) =>
-  `<!-- Pulled from the live dev agent by scripts/sync-agent-prompt.mjs.\n` +
-  `     Do not edit here: edit in Agent Studio and re-run the script.\n` +
-  `     Agent ${agent.id} · model ${agent.model?.id ?? agent.model ?? 'unknown'} · updated ${agent.updatedAt} -->\n\n` +
-  `# ${what}\n\n`;
+/* Compared with whitespace at the ends collapsed, since a paste box tends to
+ * add or drop a trailing newline and that is not a difference worth
+ * reporting. */
+const settle = (text) => String(text ?? '').replace(/\r\n/g, '\n').trimEnd();
 
-const targets = [
-  ['docs/agent/instructions.md', 'Agent instructions', agent.instructions],
-  ['docs/agent/system-prompt.md', 'Agent system prompt', agent.systemPrompt],
+const pairs = [
+  ['instructions', 'docs/agent/instructions.md', agent.instructions],
+  ['system prompt', 'docs/agent/system-prompt.md', agent.systemPrompt],
 ];
-for (const [path, title, body] of targets) {
-  if (typeof body !== 'string') {
-    console.error(`${path}: agent has no ${title.toLowerCase()}`);
+
+let drifted = false;
+for (const [label, intendedPath, liveBody] of pairs) {
+  const livePath = intendedPath.replace(/\.md$/, '.live.md');
+  writeFileSync(resolve(here, '..', livePath), settle(liveBody) + '\n');
+
+  let intended = null;
+  try {
+    intended = settle(readFileSync(resolve(here, '..', intendedPath), 'utf8'));
+  } catch {
+    console.log(`${label}: no intended copy at ${intendedPath}`);
     continue;
   }
-  writeFileSync(resolve(here, '..', path), header(title) + body.trimEnd() + '\n');
-  console.log(`${path}  ${body.length.toLocaleString()} chars`);
+  const live = settle(liveBody);
+  if (intended === live) {
+    console.log(`${label}: MATCHES  (${live.length.toLocaleString()} chars)`);
+    continue;
+  }
+  drifted = true;
+  console.log(
+    `${label}: DIFFERS  intended ${intended.length.toLocaleString()} chars, ` +
+      `live ${live.length.toLocaleString()} chars`,
+  );
+  console.log(`  diff: git diff --no-index ${livePath} ${intendedPath}`);
 }
-console.log(`updated ${agent.updatedAt}`);
+
+console.log(`agent ${agent.id} · model ${agent.model?.id ?? agent.model ?? 'unknown'} · updated ${agent.updatedAt}`);
+if (drifted) {
+  console.log('\nPaste the intended file into Agent Studio, then run this again.');
+  process.exitCode = 1;
+}
