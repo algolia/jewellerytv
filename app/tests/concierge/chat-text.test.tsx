@@ -48,4 +48,14 @@ describe('reply-only text display', () => {
     );
     expect(dropped).toBe('');
   });
+
+  it('holds unclassifiable streaming text so narration never flashes on and off', () => {
+    const parts = [text('Let me show you some classic gift directions.')];
+    expect(isReplyPart(parts, 0, 'streaming')).toBe(false);
+  });
+
+  it('renders a finished no-tool turn in full', () => {
+    const parts = [text('Plain answer, no search needed.')];
+    expect(isReplyPart(parts, 0, 'ready')).toBe(true);
+  });
 });

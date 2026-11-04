@@ -10,23 +10,40 @@ import { compiler } from 'markdown-to-jsx';
  * comes after it in the message, i.e. it is part of the reply. Turns with
  * no tool call keep all their text.
  *
+ * Streaming rule (2026-11-04, the flash fix): while the turn is still
+ * streaming and no tool part exists yet, the text cannot be classified —
+ * it may be narration about to be followed by a tool. Rendering it live
+ * flashed narration on screen and cleared it when the tool arrived. So an
+ * unclassifiable streaming text renders nothing (the loader covers the
+ * window); when the stream completes with no tools, the full text renders.
+ *
  * Presentation only: raw transcript state, the agent and the tools are
  * untouched — the same line the original commit drew. */
 
 type MessagePart = { type?: string; text?: string };
 
-export function isReplyPart(parts: MessagePart[] | undefined, index: number): boolean {
+const isToolPart = (p: MessagePart | undefined) =>
+  typeof p?.type === 'string' && p.type.startsWith('tool-');
+
+export function isReplyPart(
+  parts: MessagePart[] | undefined,
+  index: number,
+  status?: string,
+): boolean {
   if (!parts) return true;
-  return !parts.slice(index + 1).some((p) => typeof p?.type === 'string' && p.type.startsWith('tool-'));
+  if (parts.slice(index + 1).some(isToolPart)) return false;
+  if (parts.some(isToolPart)) return true;
+  return status !== 'streaming';
 }
 
 type ChatTextProps = {
   part: { type?: string; text?: string };
   message?: { parts?: MessagePart[] };
   partIndex?: number;
+  status?: string;
 };
 
-export function ChatText({ part, message, partIndex = -1 }: ChatTextProps) {
-  if (!isReplyPart(message?.parts, partIndex)) return null;
+export function ChatText({ part, message, partIndex = -1, status }: ChatTextProps) {
+  if (!isReplyPart(message?.parts, partIndex, status)) return null;
   return <span>{compiler(part.text ?? '', { disableParsingRawHTML: true })}</span>;
 }
