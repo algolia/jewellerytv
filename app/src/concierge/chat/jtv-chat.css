@@ -506,9 +506,9 @@
  * entry field whatever the messages are doing. */
 .jtv-chat-loader {
   position: absolute;
-  right: 1.25rem;
-  bottom: 5.75rem;
-  left: 1.25rem;
+  right: 2.375rem;
+  bottom: 1rem;
+  left: 2.375rem;
   z-index: 3;
   display: flex;
   gap: 9px;
@@ -519,6 +519,7 @@
   overflow: hidden;
   color: var(--muted, #707070);
   font-size: 14px;
+  line-height: 42px;
   pointer-events: none;
   white-space: nowrap;
   text-overflow: ellipsis;
