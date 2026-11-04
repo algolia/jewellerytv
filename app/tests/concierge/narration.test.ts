@@ -18,6 +18,20 @@ describe('narration the shopper should not read', () => {
     }
   });
 
+  /* A four-search turn on "help me find a mother's day ring for my mom".
+   * Each block grades the search that just ran and then announces the next
+   * one, so the announcement is the second sentence rather than the first. */
+  it('catches an announcement behind a verdict on the last search', () => {
+    for (const text of [
+      'The search returned results with "mother" in product names but not traditional mothers rings with birthstone settings. Let me search more specifically:',
+      "That search found one piece but not what is typically called a mother's ring. Let me try another approach:",
+      'These results are mostly pendants and charms. Let me search specifically for mothers rings with multiple gemstones:',
+      'The catalog appears to focus more on mother-of-pearl rings rather than traditional mothers rings with multiple birthstones. Let me show you the best options we have:',
+    ]) {
+      expect(isNarration(text), text).toBe(true);
+    }
+  });
+
   /* Responding to the person before the shopping work is asked for by the
    * instructions, and reads nothing like a progress report. */
   it('leaves a warm opening alone', () => {
@@ -44,7 +58,7 @@ describe('narration the shopper should not read', () => {
    * announcing, so the length guard keeps it. */
   it('keeps anything long enough to carry content', () => {
     const long =
-      "Let me show you three directions here: the Ethiopian opals run milky and pale, the black " +
+      'Let me show you three directions here: the Ethiopian opals run milky and pale, the black ' +
       'opals are far darker with flashes of green and red, and the lab-created pieces sit well ' +
       'below both on price while looking close to the naturals.';
     expect(isNarration(long)).toBe(false);

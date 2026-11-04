@@ -29,17 +29,32 @@
  * one idiom that opens like narration and is not. */
 const ANNOUNCES =
   /^\s*(?:ok(?:ay)?[,!.]?\s+)?(?:now\s+)?(?:i'?ll|i will|i'?m going to|let me(?!\s+know\b)|i need to|i should|first,?\s+i'?ll)\b/i;
-const ACTION = /\b(search|look|check|find|pull|display|show|run|query|browse|correct|retry|start)\w*\b/i;
+const ACTION =
+  /\b(search|look|check|find|pull|display|show|run|query|browse|correct|retry|try|start)\w*\b/i;
 const MAX_LENGTH = 160;
+/* A dangling colon is the tell that the text is introducing work rather than
+ * saying something: a reply to the shopper does not end on one, because
+ * whatever the colon promised is a tool call rather than a sentence. It only
+ * ever widens the length guard, so a long block still has to announce an
+ * action before it is dropped. */
+const INTRODUCES_WORK = /:\s*$/;
+const MAX_LENGTH_WITH_COLON = 240;
 
 /** Whether a block of assistant text is the model narrating its own work. */
 export function isNarration(text: string | undefined): boolean {
   if (!text) return false;
   const trimmed = text.trim();
-  if (!trimmed || trimmed.length > MAX_LENGTH) return false;
-  if (!ANNOUNCES.test(trimmed)) return false;
-  /* The action verb has to be in the opening clause. "Let me know what you
-   * think once you have had a look" announces nothing. */
-  const opening = trimmed.split(/[.!?]/, 1)[0] ?? '';
-  return ACTION.test(opening);
+  const limit = INTRODUCES_WORK.test(trimmed) ? MAX_LENGTH_WITH_COLON : MAX_LENGTH;
+  if (!trimmed || trimmed.length > limit) return false;
+  /* Any sentence, not only the first. Measured 2026-11-04: on a four-search
+   * turn the announcement arrived second, behind a verdict on the search that
+   * had just run ("These results are mostly pendants and charms. Let me search
+   * specifically for mothers rings"). Judging the opening alone passed every
+   * one of those through.
+   *
+   * The action verb has to be in the same sentence as the announcement.
+   * "Let me know what you think once you have had a look" announces nothing. */
+  return trimmed
+    .split(/(?<=[.!?])\s+/)
+    .some((sentence) => ANNOUNCES.test(sentence) && ACTION.test(sentence));
 }
