@@ -9,6 +9,7 @@ import type { UIMessage } from 'instantsearch.js/es/lib/chat';
 import { DefaultChatTransport } from 'instantsearch.js/es/lib/ai-lite';
 import { ChatActions } from './chatActions';
 import { ChatLoader } from './chatLoader';
+import { ChatText } from './chatText';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { StarterChips } from './StarterChips';
 import { createGatedTools } from './gatedGroupedResults';
@@ -195,6 +196,13 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
           /* Text progress in the conversation, not the library's skeleton
            * bars. */
           loaderComponent={ChatLoader}
+          /* Reply-only display (the pre-merge contract): text the model
+           * writes before or between its tool calls is working narration and
+           * never renders; only the reply after the last tool call does. */
+          messagesProps={useMemo(
+            () => ({ assistantMessageProps: { textComponent: ChatText } }),
+            [],
+          )}
           tools={useMemo(() => createGatedTools((params) => chat.sendMessage({ text: params.text })), [chat])}
           layoutComponent={ChatInlineLayout}
           /* `key` on the starter chips: React keeps component state across the
