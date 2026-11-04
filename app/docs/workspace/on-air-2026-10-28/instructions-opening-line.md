@@ -64,3 +64,39 @@ request and narrates the turn).
 If its settings make `intro` mandatory, the model will write both and the gate
 will drop one. That is correct but wasteful. Turning the field off is the
 tidier end state, and nothing in the panel needs it.
+
+## Superseded in part, 2026-11-04 — do not paste as written
+
+Haiku 4.5 narrates far more than the models before it. A single turn:
+
+```
+I'll search our catalog for Gems en Vogue pieces.
+Let me correct that search with the right facet format.
+Let me search for Gems en Vogue pieces directly with the query.
+I notice these results are all pre-owned pieces. Let me search for the brand's new collection as well.
+Now let me display a selection from the new collection, organized by piece type.
+```
+
+The prompt already bans this and the ban does not hold — across models, and
+because the completion cache replays banned text verbatim for repeated
+questions. So it is now a display rule: **text that a tool call follows does
+not render**, and what the model writes after its last tool call is the
+reply.
+
+That rule cannot tell an opening line from narration. Both are text before a
+tool call; only their content differs, and the display cannot read content.
+So this block's central instruction — write the sentence in your reply,
+before the shelves — would now be hidden by the rule that fixes the
+narration.
+
+**The sentence should live in the display tool's `intro` instead.** The gate
+already shows it whenever the message carries no text the shopper will read,
+so there is still exactly one voice per turn and it still appears above the
+shelves.
+
+What is lost by moving it: the intro does not stream, so it cannot fill the
+display tool's four-second stall the way streamed message text could. The
+pending shelf and the "Choosing pieces…" loader cover that gap instead.
+
+Keep from this block: one sentence, carrying something, not a caption, not a
+count, not a restatement of the request. Change where it is written.

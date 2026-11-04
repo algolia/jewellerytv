@@ -392,3 +392,18 @@
   border-color: var(--blue, #0076a9);
   color: var(--blue, #0076a9);
 }
+
+/* Narration written before a tool call never renders.
+ *
+ * "I'll search our catalog…", "Let me correct that search…", "Now let me
+ * display a selection…" — the model talking to itself about work it is about
+ * to do. The prompt bans it and that is not enough: the completion cache
+ * replays banned text verbatim for repeated questions, and how much a model
+ * narrates varies by model (Haiku 4.5 narrates far more than the others). So
+ * it is a display rule, where no prompt or model can get around it.
+ *
+ * The rule is exactly "a text part that a tool call follows". What the model
+ * writes after its last tool call is the reply, and that is what shows. */
+.jtv-concierge .ais-ChatMessage-message > span:has(~ .ais-ChatMessage-tool) {
+  display: none;
+}
