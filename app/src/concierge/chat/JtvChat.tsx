@@ -1,5 +1,5 @@
-import { forwardRef, useCallback, useMemo } from 'react';
-import type { MouseEvent } from 'react';
+import { forwardRef, useCallback, useMemo, useState } from 'react';
+import type { ComponentProps, MouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { Maximize2, Minimize2, Plus, X } from 'lucide-react';
 import { liteClient } from 'algoliasearch/lite';
 import { Chat, ChatInlineLayout, InstantSearch } from 'react-instantsearch';
@@ -7,6 +7,8 @@ import type { ChatHandle } from 'react-instantsearch';
 import { Chat as ChatInstance } from 'instantsearch.js/es/lib/chat';
 import type { UIMessage } from 'instantsearch.js/es/lib/chat';
 import { DefaultChatTransport } from 'instantsearch.js/es/lib/ai-lite';
+import { ChatActions } from './chatActions';
+import { ChatLoader } from './chatLoader';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { StarterChips } from './StarterChips';
 import { createGatedTools } from './gatedGroupedResults';
@@ -41,6 +43,8 @@ type HeaderProps = {
   onClose: () => void;
   onClear?: () => void;
   canClear?: boolean;
+  /** Drags the panel: the shell's window controls, attached to the header. */
+  onHeaderPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void;
 };
 
 /* The widget owns `clearMessages` and hands it to whatever header it is given,
@@ -50,11 +54,13 @@ function createHeader(
   onPanelClose?: () => void,
   maximized?: boolean,
   onToggleMaximized?: () => void,
+  onHeaderPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void,
+  onNewDeal?: () => void,
 ) {
   return function JtvChatHeader({ onClose, onClear, canClear }: HeaderProps) {
     return (
-      <div className="jtv-concierge-header">
-        <h2>Jewelry concierge</h2>
+      <div className="jtv-concierge-header" onPointerDown={onHeaderPointerDown}>
+        <h2>JTV Concierge</h2>
         <div className="jtv-concierge-header-actions">
           {onToggleMaximized ? (
             <button
@@ -70,11 +76,16 @@ function createHeader(
           ) : null}
           <button
             type="button"
-            className="jtv-concierge-header-button"
+            className="jtv-concierge-header-button jtv-concierge-new-chat"
             aria-label="Start a new conversation"
             title="New conversation"
-            disabled={!canClear}
-            onClick={onClear}
+            /* Always active: on an empty panel there is nothing to clear, but
+             * the click still deals a fresh set of starter questions, which is
+             * how the previous panel behaved. */
+            onClick={() => {
+              onClear?.();
+              onNewDeal?.();
+            }}
           >
             <Plus size={18} />
           </button>
@@ -104,16 +115,21 @@ export type JtvChatProps = {
   maximized?: boolean;
   /** Toggles the shell between the default panel and full height. */
   onToggleMaximized?: () => void;
+  /** Drags the panel from the header (shell window controls). */
+  onHeaderPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void;
 };
 
 /* The ref exposes the widget's own handle (`setOpen`, `setInput`,
  * `sendMessage`), which is how the storefront's "Ask JTV" chip hands the
  * current search text to the panel. */
 export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
-  { context, onClose, maximized, onToggleMaximized },
+  { context, onClose, maximized, onToggleMaximized, onHeaderPointerDown },
   ref,
 ) {
   const { appId, apiKey, agentId } = useMemo(readConfig, []);
+
+  /* Bumped by "New conversation" so the starter chips re-deal. */
+  const [deal, setDeal] = useState(0);
 
   /* One instance per mount. Recreating it on every render would drop the
    * conversation and restart the stream. */
@@ -173,12 +189,28 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
           chat={chat}
           context={context}
           itemComponent={ProductCard}
+          /* Drops the library's default "Regenerate" action under every
+           * reply; copy and feedback actions pass through unchanged. */
+          actionsComponent={ChatActions}
+          /* Text progress in the conversation, not the library's skeleton
+           * bars. */
+          loaderComponent={ChatLoader}
           tools={useMemo(() => createGatedTools((params) => chat.sendMessage({ text: params.text })), [chat])}
           layoutComponent={ChatInlineLayout}
-          emptyComponent={StarterChips}
+          /* `key` on the starter chips: React keeps component state across the
+           * widget's clear (same element slot, same type), so "New
+           * conversation" showed the same nine questions every time. A deal
+           * counter bumped by the header's clear remounts the chips and
+           * re-rolls the set. */
+          emptyComponent={useMemo(
+            () => function JtvStarters(props: ComponentProps<typeof StarterChips>) {
+              return <StarterChips key={deal} {...props} />;
+            },
+            [deal],
+          )}
           headerComponent={useMemo(
-            () => createHeader(onClose, maximized, onToggleMaximized),
-            [onClose, maximized, onToggleMaximized],
+            () => createHeader(onClose, maximized, onToggleMaximized, onHeaderPointerDown, () => setDeal((d) => d + 1)),
+            [onClose, maximized, onToggleMaximized, onHeaderPointerDown],
           )}
           requiresSearch={false}
           /* Positions the chips as optional rather than as the only way in.

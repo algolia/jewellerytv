@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import type { ChatHandle } from 'react-instantsearch';
 import { JtvChat } from './chat/JtvChat';
+import { useConciergeWindowControls } from './useConciergeWindowControls';
 import { trackConciergeVisibility } from '../website/analytics';
 
 export interface ConciergeHandle {
@@ -90,9 +91,15 @@ export const Concierge = forwardRef<
    * class belongs to the shell, and reset on close so the next open starts
    * from the smaller panel again. */
   const [maximized, setMaximized] = useState(false);
+  /* The old panel was a window: drag by the header, resize by the corner,
+   * fluid anywhere on the screen (restored 2026-11-04 from the pre-merge
+   * implementation; presentation only, nothing about the agent changes). */
+  const controls = useConciergeWindowControls();
   return (
     <div
+      ref={controls.panelRef}
       className={maximized ? 'jtv-concierge jtv-concierge--maximized' : 'jtv-concierge'}
+      style={controls.style}
       data-open={open}
       data-maximized={maximized}
       hidden={!open}
@@ -106,12 +113,24 @@ export const Concierge = forwardRef<
         context={turnContext}
         maximized={maximized}
         onToggleMaximized={() => setMaximized((current) => !current)}
+        onHeaderPointerDown={controls.beginHeaderMove}
         onClose={() => {
           setMaximized(false);
           setOpen(false);
           onClose?.();
         }}
       />
+      {/* Resize grip, the old panel's corner control. Invisible until focused,
+        * so the panel carries no visible chrome it did not have before. */}
+      {!maximized ? (
+        <button
+          type="button"
+          className="jtv-concierge-resize"
+          aria-label="Resize the concierge panel"
+          onPointerDown={controls.beginResize}
+          onKeyDown={controls.handleResizeKeyDown}
+        />
+      ) : null}
     </div>
   );
 });
