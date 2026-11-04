@@ -1,15 +1,16 @@
-/* Does an on-air shelf say which broadcast its pieces came from?
+/* Is an on-air shelf one broadcast, and does it say which?
  *
- * The heading is the only place that can say it, and it is written by the
- * model, so the check has to be against the records rather than against the
- * words: a heading that names a day its tiles did not air on reads correct
- * and is not. So this reads both sides off the same stream — the search
- * output, which carries `date` and `seriesName` per hit, and the display
- * tool's input, which carries the headings and the objectIDs under them —
- * and joins them on objectID.
+ * Both halves are written by the model, so both have to be checked against
+ * the records rather than against the words: a heading that names a day its
+ * tiles did not air on reads correct and is not, and twelve tiles cut from a
+ * whole week look like a shelf until you ask where each piece came from. So
+ * this reads both sides off the same stream — the search output, which
+ * carries `date`, `showId` and `seriesName` per hit, and the display tool's
+ * input, which carries the headings and the objectIDs under them — and joins
+ * them on objectID.
  *
  * Caching is off; a cached turn would report its own replay rather than a
- * fresh decision. Two questions, two agent completions.
+ * fresh decision. Three questions, three agent completions.
  *
  * Shape borrowed from ../simplification-2026-10-28/compare-search-vs-grouped.mjs.
  *   node docs/workspace/on-air-group-headings-2026-11-04/verify-on-air-groups.mjs
@@ -31,9 +32,14 @@ const {
   VITE_JTV_AGENT_ID: agentId,
 } = env;
 
+/* `oneDay` is the shelf-scope expectation: a turn that names no day, or one
+ * day, should put every tile inside a single broadcast per group. A turn that
+ * names a span is allowed to range wider, but each group still belongs to one
+ * show. */
 const QUESTIONS = [
-  "What did Jennifer showcase on yesterday's show?",
-  'What did Misty feature this week?',
+  { ask: "What did Jennifer showcase on yesterday's show?", oneDay: true },
+  { ask: 'What has Misty been showing?', oneDay: true },
+  { ask: 'What did Misty feature this week?', oneDay: false },
 ];
 
 async function turn(question) {
@@ -90,7 +96,7 @@ async function turn(question) {
             records.set(hit.objectID, {
               date: hit.date,
               series: hit.seriesName,
-              show: hit.showTitle,
+              show: hit.showId,
               relative: hit.relativeDay,
             });
           }
@@ -132,8 +138,8 @@ function dayClaimedBy(title, dates, relatives) {
 
 let problems = 0;
 
-for (const question of QUESTIONS) {
-  const result = await turn(question);
+for (const { ask, oneDay } of QUESTIONS) {
+  const result = await turn(ask);
   console.log(`\n"${result.question}"  [${result.indices.join(', ') || '-'}]`);
   if (result.error) console.log(`  ERROR: ${result.error}`);
   if (!result.groups.length) {
@@ -142,21 +148,29 @@ for (const question of QUESTIONS) {
     continue;
   }
 
+  const shelfDates = new Set();
+
   for (const group of result.groups) {
     const ids = (group.results ?? []).map((entry) => entry?.objectID).filter(Boolean);
     const known = ids.map((id) => result.records.get(id)).filter(Boolean);
     const dates = new Set(known.map((record) => record.date).filter(Boolean));
+    const shows = new Set(known.map((record) => record.show).filter(Boolean));
     const series = new Set(known.map((record) => record.series).filter(Boolean));
     const relatives = new Set(known.map((record) => record.relative).filter(Boolean));
+    for (const date of dates) shelfDates.add(date);
 
     console.log(`\n  "${group.title ?? '(no heading)'}"  ${ids.length} pieces`);
     console.log(`    aired : ${[...dates].sort().join(', ') || 'unknown'}`);
-    console.log(`    series: ${[...series].join(' | ') || 'unknown'}`);
+    console.log(`    shows : ${shows.size} (${[...series].join(' | ') || 'unknown'})`);
 
     if (!group.title) {
       console.log('    ✗ no heading, so the shelf says nothing about the broadcast');
       problems += 1;
       continue;
+    }
+    if (shows.size > 1) {
+      console.log(`    ✗ one group, ${shows.size} broadcasts — a group is one show`);
+      problems += 1;
     }
     const { relativeClaims, monthClaims, spansDays } = dayClaimedBy(group.title, dates, relatives);
     const claimsADay = relativeClaims.length > 0 || monthClaims.length > 0;
@@ -165,9 +179,18 @@ for (const question of QUESTIONS) {
       problems += 1;
     }
     if (![...series].some((name) => name && group.title.includes(name))) {
-      console.log('    ✗ heading does not name the show or series behind these pieces');
+      console.log('    ✗ heading does not name the show behind these pieces');
       problems += 1;
     }
+  }
+
+  /* No day named, or one day named: the whole shelf is that day's broadcast.
+   * A turn that names a span is allowed to range. */
+  if (oneDay && shelfDates.size > 1) {
+    console.log(
+      `\n  ✗ shelf spans ${shelfDates.size} air dates: ${[...shelfDates].sort().join(', ')}`,
+    );
+    problems += 1;
   }
 }
 
