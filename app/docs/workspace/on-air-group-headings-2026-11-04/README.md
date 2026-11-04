@@ -13,14 +13,15 @@ named. **Then say which one** in the group heading — "Yesterday · Designer
 Styling - Off Park Collection" — which the display tool already renders and
 every record already has the fields for.
 
-One index-settings change, two paste blocks, no application change.
+The index-ranking change is applied; three paste blocks remain, and no
+application change.
 
 ## Contents
 
 | File                       | What it is                                                               |
 | -------------------------- | ------------------------------------------------------------------------ |
-| `README.md`                | The index-ranking change, paste blocks A and B, and where each goes      |
-| `verify-on-air-groups.mjs` | Two turns; prints each heading against the air dates behind its tiles    |
+| `README.md`                | The index-ranking change, paste blocks A, B and C, and where each goes   |
+| `verify-on-air-groups.mjs` | Three turns; prints each heading against the shows and dates behind it  |
 
 ## Observed data, sampled read-only on 2026-11-04
 
@@ -57,11 +58,11 @@ cannot (`recencyDays` "usable as `relativeDay:yesterday` or an exact
 `hosts:Misty` returns 9 hits, today's only. That claim has to go, because "the
 last few days" depends on it.
 
-**Nothing today sorts by recency.** `customRanking` is
-`["asc(positionInShow)", "desc(rating)"]` and there is no newest-first
-replica, so "the latest show" is not something the agent can ask the index
-for — it can only filter on a day it already knows. That is the one index
-change this needs.
+**Nothing sorted by recency, so that was changed first.** `customRanking` was
+`["asc(positionInShow)", "desc(rating)"]`, which left "the latest show"
+unsayable: the agent can only filter on a day it already knows, and which day
+is latest differs per host. See the next section — it is applied, and it is
+what lets the default cost one search.
 
 **On weekday names.** The headings below use the record's own `relativeDay`
 ("Yesterday") or its plain `date` ("3 November"), never "Monday". The agent
@@ -72,29 +73,42 @@ risk, it belongs on the records as a field rather than in the model's head.
 
 ---
 
-## Index change: make the most recent show reachable
+## Index change: applied 2026-11-04
 
-This is the one thing that is not agent configuration, and the only thing
-blocking the default. The agent cannot ask for "the latest show": there is no
-way to say it in a filter, because which day is latest differs per host —
-Misty's is today, Jennifer's is yesterday — and nothing sorts by recency.
-
-Put `recencyDays` at the front of the index's custom ranking:
+The agent could not ask for "the latest show" — which day is latest differs
+per host, Misty's is today and Jennifer's yesterday, and nothing sorted by
+recency. `recencyDays` is now at the front of the custom ranking, verified
+read-only:
 
 ```
 customRanking: ["asc(recencyDays)", "asc(positionInShow)", "desc(rating)"]
 ```
 
-Today it is `["asc(positionInShow)", "desc(rating)"]`. With the change, the
-first hit of any on-air search is from the most recent show that matches, and
-"the latest show" becomes a rule a model can follow without arithmetic: take
-the `showId` of the first result. Position within the show stays as the
-tiebreak, so the order inside a show is unchanged. This suits an index whose
-whole content is the last eight days.
+Position within a show stays as the tiebreak, so the order inside a show is
+unchanged. Two things follow, and the second is what shapes the prompt block.
 
-The alternative, if changing the ranking is unwelcome, is a newest-first
-replica declared as a second index entry — the same shape as
-`prod_catalog_newest` for new arrivals. More moving parts for the same result.
+**The latest show is the first hit's show.** No arithmetic, no lookup:
+
+| Host | First hit | Its day |
+| --- | --- | --- |
+| Misty | Moissanite Fire | today |
+| Jennifer | Designer Styling - Off Park Collection | yesterday |
+| Dawn | Southwest Style by JTV Sale & Clearance | today |
+| Melissa | Affordable Luxuries | today |
+
+**And it needs no second search.** Because the page now leads with the most
+recent show, its pieces are all at the top of the first page. Across all 24
+hosts in the window, at 24 hits a page, the fewest the latest show yields is
+eight — enough for two groups without asking the index again:
+
+| Latest show's share of page one | Hosts |
+| --- | --- |
+| 8 to 9 | Wendy, Tommy, Misty, Fatima, Charles |
+| 12 to 14 | Susan, Lissa, Jennifer, Mark, Melissa, Scott |
+| 17 to 24 | the other 13 |
+
+So the default is one search, then a filter the model applies to records it
+already holds. That is why block A sets `hitsPerPage` to 24 and not lower.
 
 ## Paste block A: the `on_air_products` index entry
 
@@ -161,11 +175,14 @@ one. Replace that bullet with everything between the markers.
 
 ---8<--- replace from here ---8<---
 
-- Do: show one day of broadcast, not a week of it. With no day named, that is
-  the most recent show, which is the show the first result belongs to: take its
-  `showId` and filter on it. When the shopper names a day, filter
-  `relativeDay` on their word for it, and when they name a span, filter
-  `recencyDays` with a comparison such as `recencyDays < 3`.
+- Do: show one broadcast, not a week of them. On-air results come back most
+  recent first, so with no day named the show you want is the one the first
+  result belongs to: keep the pieces that share its `showId` and leave the
+  rest. That is a choice you make among records you already have, not a second
+  search.
+- Do: search with the day on it when the shopper names one, rather than
+  filtering afterwards: `relativeDay` on their own word for it, or a
+  comparison such as `recencyDays < 3` for a span. One search either way.
 - Do: group what comes back by the show it aired on, not by style. One show is
   one group; a day that carried two or three of them is two or three groups.
 - Do: head each group with the day and the name in that order, separated by a
@@ -198,6 +215,22 @@ labels over pieces from broadcasts the shopper cannot identify).
 
 ---8<--- replace to here ---8<---
 
+## Paste block C: let one show fill a shelf
+
+`algolia_grouped_results` is configured `minResultsPerGroup: 4`,
+`maxResultsPerGroup: 4`. That was fine when a shelf was cut from a week and
+carved into three style groups. Now that a group is one broadcast, it caps a
+default turn at four tiles: one show, one group, four pieces, where the same
+question returns eight or twelve today.
+
+Set `maxResultsPerGroup` to **8** and leave the minimum at 4.
+
+The shelf is four tiles across, so eight is two clean rows and the app's own
+gate already expects it — it trims a ninth piece that would sit alone on a row
+(`gatedGroupedResults.tsx`, `trimOrphan`), and the system prompt already says
+to send "four pieces to a group, or eight". A single-show turn then shows
+eight, and a day carrying three shows still shows three groups.
+
 ## Nothing in the application
 
 The gate strips each group's `why` subtitle on purpose
@@ -213,8 +246,8 @@ That is a follow-up, not part of this.
 
 ## Verify
 
-Apply the ranking change and blocks A and B to the development agent, then
-from `app/`:
+The ranking change is in. Apply blocks A, B and C to the development agent,
+then from `app/`:
 
 ```sh
 node docs/workspace/on-air-group-headings-2026-11-04/verify-on-air-groups.mjs
