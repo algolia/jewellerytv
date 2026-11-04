@@ -6,7 +6,7 @@ import { Chat, ChatInlineLayout, InstantSearch } from 'react-instantsearch';
 import type { ChatHandle } from 'react-instantsearch';
 import { Chat as ChatInstance } from 'instantsearch.js/es/lib/chat';
 import type { UIMessage } from 'instantsearch.js/es/lib/chat';
-import { DefaultChatTransport } from 'instantsearch.js/es/lib/ai-lite';
+import { NarrationFilteringTransport } from './narrationFilter';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { StarterChips } from './StarterChips';
 import { createGatedTools } from './gatedGroupedResults';
@@ -120,7 +120,7 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
   const chat = useMemo(
     () =>
       new ChatInstance<UIMessage>({
-        transport: new DefaultChatTransport({
+        transport: new NarrationFilteringTransport({
           /* cache=true is the platform default, stated here so it reads as a
            * decision. It caches the whole response, not the prompt prefix:
            * measured 2026-10-29, an identical question returns a byte-identical

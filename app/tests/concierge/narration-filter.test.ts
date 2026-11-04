@@ -1,0 +1,85 @@
+import { describe, expect, it } from 'vitest';
+import { filterNarration } from '../../src/concierge/chat/narrationFilter';
+
+type Chunk = { type?: string; id?: string; delta?: string } & Record<string, unknown>;
+
+/** Feeds chunks through the filter and collects what survives. */
+async function run(chunks: Chunk[]): Promise<Chunk[]> {
+  const source = new ReadableStream<Chunk>({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(chunk);
+      controller.close();
+    },
+  });
+  const out: Chunk[] = [];
+  const reader = filterNarration(source).getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    out.push(value);
+  }
+  return out;
+}
+
+/** The deltas a text block would arrive in, a few words at a time. */
+const block = (id: string, text: string): Chunk[] => [
+  { type: 'text-start', id },
+  ...text.split(/(?<=\s)/).map((delta) => ({ type: 'text-delta', id, delta })),
+  { type: 'text-end', id },
+];
+
+const textOf = (chunks: Chunk[]) =>
+  chunks
+    .filter((chunk) => chunk.type === 'text-delta')
+    .map((chunk) => chunk.delta)
+    .join('');
+
+describe('the narration filter', () => {
+  it('drops a narration block entirely, start and end included', async () => {
+    const out = await run(block('a', "I'll search for garnet pendants for you."));
+    expect(out).toEqual([]);
+  });
+
+  it('lets a reply through, every word of it', async () => {
+    const reply = 'Opal runs deep here, from milky Ethiopian stones to the darker black opals.';
+    const out = await run(block('a', reply));
+    expect(textOf(out)).toBe(reply);
+    expect(out[0].type).toBe('text-start');
+    expect(out[out.length - 1].type).toBe('text-end');
+  });
+
+  /* The point of filtering here rather than in the display: nothing is
+   * emitted before the verdict, so no word ever renders and then vanishes. */
+  it('emits nothing at all until it has judged the block', async () => {
+    const out = await run([
+      { type: 'text-start', id: 'a' },
+      { type: 'text-delta', id: 'a', delta: "I'll " },
+      { type: 'text-delta', id: 'a', delta: 'search ' },
+    ]);
+    expect(out).toEqual([]);
+  });
+
+  it('keeps the reply when a turn narrates first', async () => {
+    const out = await run([
+      ...block('a', "I'll search for Judith Ripka jewelry."),
+      { type: 'tool-input-start', toolCallId: 's', toolName: 'algolia_search_index' },
+      ...block('b', 'Judith Ripka leans sculptural, with a lot of textured gold.'),
+    ]);
+    expect(textOf(out)).toBe('Judith Ripka leans sculptural, with a lot of textured gold.');
+    expect(out.some((chunk) => chunk.type === 'tool-input-start')).toBe(true);
+  });
+
+  it('never holds a non-text chunk', async () => {
+    const tool = { type: 'tool-output-available', toolCallId: 's', output: { hits: [] } };
+    expect(await run([tool])).toEqual([tool]);
+  });
+
+  /* A stream cut off mid-block must not swallow what it was holding. */
+  it('releases a half-judged block when the stream ends', async () => {
+    const out = await run([
+      { type: 'text-start', id: 'a' },
+      { type: 'text-delta', id: 'a', delta: 'Opal runs' },
+    ]);
+    expect(textOf(out)).toBe('Opal runs');
+  });
+});
