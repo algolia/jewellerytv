@@ -1,6 +1,6 @@
 <!-- Pulled from the live dev agent by scripts/sync-agent-prompt.mjs.
      Do not edit here: edit in Agent Studio and re-run the script.
-     Agent 8129ad66-170b-4bb5-926a-c81d2cb38f22 · model claude-haiku-4-5-20251001 · updated 2026-11-04T13:39:01.088624Z -->
+     Agent 8129ad66-170b-4bb5-926a-c81d2cb38f22 · model claude-haiku-4-5-20251001 · updated 2026-11-04T13:51:06.031741Z -->
 
 # Agent system prompt
 

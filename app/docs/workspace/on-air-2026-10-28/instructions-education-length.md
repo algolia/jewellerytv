@@ -102,3 +102,40 @@ questions when one was asked.
 The same question ran two blog searches, the first returning nothing. The
 narration those produced is now dropped before it renders, but the wasted
 step is real and belongs with the retry work.
+
+## Checked 2026-11-04 after the paste: neither edit reached the agent
+
+`scripts/sync-agent-prompt.mjs` run twice, before and after. The instructions
+body is **byte-identical** between the two — git reports the only change as
+the six header lines the script writes — and neither edit is present:
+
+| | in the live prompt |
+|---|---|
+| `# Education answers` section | no |
+| "This shape is for rules the shopper has to act on" | no |
+| the original "or how something works" | **still there** |
+
+So nothing reached the dev agent. Worth checking the paste went into Agent
+Studio rather than into the file: `docs/agent/instructions.md` is generated
+by the sync script and anything typed into it is overwritten on the next run.
+The prompt is edited in Agent Studio; the file only reports it.
+
+## The behaviour is unchanged, as expected
+
+"what is the difference between tungsten vs silver vs gold for wedding
+bands?" — 327 words, three bold metal labels, a closing trade-off paragraph.
+The same shape as the lab-grown answer, from the same rule.
+
+## Two other things that question exposed
+
+**It answered from its own knowledge and said so.** The reply opens *"Based
+on what I found and general jewelry knowledge, here's what matters…"*. The
+system prompt forbids exactly this — education claims require retrieved
+`blog` passages, and *"never complete the mechanics from your own
+knowledge"*. A reply that announces the breach is at least honest, but it is
+still a claim the records do not support.
+
+**Four blog searches in one turn.** Fifteen point nine seconds, four
+searches, one answer. The narration from them no longer renders, but four of
+five steps went on searching, and the bounded-retry block that would stop it
+is also not live.
