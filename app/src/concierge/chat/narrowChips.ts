@@ -27,6 +27,14 @@ const MAX_VALUES = 3;
  * choice; the accepted derive rule (deployed funnel, 2026-10-26) skips it. */
 const MAX_DISTINCT_VALUES = 24;
 
+/** Condition is a scope fact, not a narrowing question (Arijit, 2026-11-04:
+ * "pre-owned needs to be discarded and never included. That should be in
+ * code"). The display gate enforces the piece-level exclusion; this keeps the
+ * condition axis out of the offer entirely. Named here deliberately: it is
+ * hygiene on one attribute, not an offerable list, which is what the
+ * 2026-10-23 no-whitelist law bans. */
+const NON_OFFERABLE = new Set(['Catalog_Condition']);
+
 export type NarrowChip = { attribute: string; value: string; label: string };
 /** Chips keep their attribute so the panel can put each axis on its own row.
  * Run together, colour and price read as one undifferentiated list and the
@@ -100,7 +108,8 @@ export function narrowChipsFor(part: SearchPart | undefined): NarrowGroup[] {
   const applied = alreadyFiltered(part);
 
   const axes = Object.entries(facets)
-    .filter(([, values]) => {
+    .filter(([attribute, values]) => {
+      if (NON_OFFERABLE.has(attribute)) return false;
       const count = Object.keys(values).length;
       return count >= 2 && count <= MAX_DISTINCT_VALUES;
     })

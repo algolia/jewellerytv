@@ -109,7 +109,7 @@ test('a chip tap refines in place: one client search, no agent turn', async ({ p
   const params = JSON.parse(refineBodies[0]).requests[0];
   expect(params.query).toBe('two-tone rings');
   expect(params.facetFilters).toEqual(['Catalog_JewelryMaterialNavigationColor:"White"']);
-  expect(params.filters).toBe('Inventory_InStock:true');
+  expect(params.filters).toBe('Inventory_InStock:true AND NOT Catalog_Condition:"Pre-Owned"');
 
   /* The tap itself adds no shopper message and no reply. */
   expect(await panel.locator('.ais-ChatMessage').count()).toBe(userBubbles);

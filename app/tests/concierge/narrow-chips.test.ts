@@ -85,6 +85,25 @@ describe('the narrowing chips', () => {
     expect(narrowChipsFor(part).map((g) => g.attribute)).not.toContain('Catalog_Motif');
   });
 
+  /* Condition is a scope fact, never a narrowing question (Arijit,
+   * 2026-11-04): the gate refuses pre-owned pieces and the axis never offers
+   * "First Quality / Pre-Owned" as a choice. */
+  it('never offers the condition axis', () => {
+    const part = perIndex() as ReturnType<typeof perIndex> & {
+      output: { facets: Record<string, Record<string, number>> };
+    };
+    part.output = {
+      facets: {
+        ...facets,
+        Catalog_Condition: { 'First Quality': 300, 'Pre-Owned': 40 },
+      },
+    };
+    const chips = narrowChipsFor(part);
+    expect(chips.map((g) => g.attribute)).not.toContain('Catalog_Condition');
+    expect(labels(chips)).not.toContain('Pre-Owned');
+    expect(labels(chips)).not.toContain('First Quality');
+  });
+
   it('orders price bands by price, not count', () => {
     const price = narrowChipsFor(perIndex()).find((g) => g.attribute === 'Pricing_PriceRange');
     expect(price?.chips.map((c) => c.label)).toEqual(['Under $25', '$50 - $100', '$100 - $200']);
