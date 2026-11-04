@@ -27,7 +27,7 @@ const SET_SIZE = 9;
 export function StarterChips({ sendMessage, status }: StarterChipsProps) {
   /* One set per mount, re-rolled only when the shopper asks. Reshuffling on
    * every render would move a chip out from under the pointer. */
-  const [curated, setCurated] = useState(() =>
+  const [curated] = useState(() =>
     selectStarterSet(STARTER_QUESTION_POOL, [], Math.random, SET_SIZE),
   );
   const [live, setLive] = useState<string[]>([]);
@@ -59,13 +59,18 @@ export function StarterChips({ sendMessage, status }: StarterChipsProps) {
   const busy = status === 'submitted' || status === 'streaming';
   return (
     <div className="jtv-chat-starters">
-      <img className="jtv-chat-starters-logo" src="/assets/jtv-logo-full.png" alt="JTV" width="365" />
+      <img
+        className="jtv-chat-starters-logo"
+        src="/assets/jtv-logo-full.png"
+        alt="JTV"
+        width="365"
+      />
       <p className="jtv-chat-starters-lead">Not sure where to start? Try one of these.</p>
       {/* Staggered rather than stacked: the alternating indent is how JTV's
-        * own design reads, and it keeps nine chips from looking like a form.
-        * The offset is presentational, so the list stays a plain list. */}
+       * own design reads, and it keeps nine chips from looking like a form.
+       * The offset is presentational, so the list stays a plain list. */}
       {/* The old panel's organic chip cloud: one chip per row slot, centered
-        * wrap, even chips offset down. Presentation only. */}
+       * wrap, even chips offset down. Presentation only. */}
       <ul className="jtv-chat-starters-list">
         {labels.slice(0, SET_SIZE).map((label) => (
           <li key={label}>
