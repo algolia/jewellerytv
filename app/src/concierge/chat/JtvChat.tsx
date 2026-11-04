@@ -203,6 +203,12 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
             () => ({ assistantMessageProps: { textComponent: ChatText } }),
             [],
           )}
+          /* The model's reasoning ("thinking") stream never shows to a
+           * shopper: it renders while streaming and auto-collapses on
+           * completion — text that appears and then clears, which reads as a
+           * broken panel. Off also matches the old panel, which never showed
+           * it. */
+          showReasoning={false}
           tools={useMemo(() => createGatedTools((params) => chat.sendMessage({ text: params.text })), [chat])}
           layoutComponent={ChatInlineLayout}
           /* `key` on the starter chips: React keeps component state across the
