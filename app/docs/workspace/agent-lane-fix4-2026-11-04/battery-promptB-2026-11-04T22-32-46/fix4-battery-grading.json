@@ -1,0 +1,306 @@
+[
+ {
+  "journey": "J1-broad-browse-funnel",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me opal pieces that work for daily wear",
+    "tiles": 8,
+    "chipAxes": 3,
+    "groups": 2,
+    "boldClose": false,
+    "narrationOpeners": [
+     "I'll focus on mounted pieces (not loose stones) and items with protective settings. The Barse collection offers handcrafted pieces with durable bronze settings, and the Bella Luce pieces provide budget-friendly lab opal in protective settings.Everyday Essentials$69.99$49.99$26.99$9.99Artisan Statement Pieces$255.59$481.49$125.99$402.29Narrow it downWhiteYellowTwo-tone$50 - $100$100 - $200$200 - $50010% - 20% off50% - 60% off60% - 70% off"
+    ],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "I'll focus on mounted pieces (not loose stones) and items with protective settings. The Barse collection offer"
+   },
+   {
+    "step": 3,
+    "literal": "I stick to white metals only.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 0,
+    "firstWords": "Perfect!"
+   },
+   {
+    "step": 4,
+    "literal": "Which of these would you pick for everyday use?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 0,
+    "firstWords": "Perfect!"
+   },
+   {
+    "step": 5,
+    "literal": "How should I care for opals?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": true,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "Opals are beautiful but delicate—they need gentler care than many gemstones.Cleaning: Use lukewarm water and m"
+   }
+  ]
+ },
+ {
+  "journey": "J2-gift-correction",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "My mom is turning 70 next month and she loves sapp",
+    "tiles": 4,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "Classic Blue Sapphire Sets$79.99$298.79$485.09$899.09Narrow it down$100 - $200$200 - $500$1000 and aboveWhiteY"
+   },
+   {
+    "step": 2,
+    "literal": "She wears only white gold.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 0,
+    "firstWords": "Perfect—I found beautiful white gold sapphire pieces."
+   },
+   {
+    "step": 3,
+    "literal": "On second thought, yellow gold is her favorite.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 0,
+    "firstWords": "Perfect—I found beautiful white gold sapphire pieces."
+   },
+   {
+    "step": 4,
+    "literal": "Keep the budget under 400 dollars.",
+    "tiles": 8,
+    "chipAxes": 3,
+    "groups": 2,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "Sapphire Pendants$246.59$229.49$238.49$222.29Sapphire Earrings$397.79$174.08$352.79$305.09Narrow it downYellow"
+   },
+   {
+    "step": 5,
+    "literal": "Which would you personally choose and why?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "I'd choose the Sapphire 10K White Gold Earrings 1.10ctw. For a milestone birthday, earrings are perfect—elegan"
+   }
+  ]
+ },
+ {
+  "journey": "J3-style-brief",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me elegant, timeless jewelry",
+    "tiles": 4,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "Rings & Bracelets$404.09$137.99$109.06$350.09Narrow it down$200 - $500$500 - $1000$1000 and above10% - 20% off"
+   },
+   {
+    "step": 3,
+    "literal": "It is for my mother in law, who is very hard to sh",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "Pearl necklaces, elegant bands, and refined gemstone pieces make thoughtful gifts for someone discerning. Thes"
+   },
+   {
+    "step": 4,
+    "literal": "What would suit a woman with classic taste?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "A woman with classic taste gravitates toward enduring designs and quality materials. Based on what we're showi"
+   }
+  ]
+ },
+ {
+  "journey": "J4-verbatim-thin",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me marcasite necklaces in sterling silver",
+    "tiles": 3,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "I found marcasite sterling silver necklaces.Marcasite Sterling Silver Necklaces$79.99$84.99$110.69Narrow it do"
+   },
+   {
+    "step": 2,
+    "literal": "Marcasite only, nothing else.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "Our catalog has three sterling silver necklaces with marcasite, though marcasite appears as an accent stone in"
+   },
+   {
+    "step": 3,
+    "literal": "Alright, show me any silver necklaces you carry.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 0,
+    "firstWords": "Perfect! We carry hundreds of silver necklaces."
+   },
+   {
+    "step": 4,
+    "literal": "How do I stop sterling silver from tarnishing?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 0,
+    "firstWords": "Perfect! We carry hundreds of silver necklaces."
+   }
+  ]
+ },
+ {
+  "journey": "J5-education",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "What's the difference between lab-grown and mined ",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": true,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 3,
+    "firstWords": "Lab-grown and mined diamonds are chemically identical — both are pure carbon crystallized into diamond form — "
+   },
+   {
+    "step": 2,
+    "literal": "Nice. Show me lab-grown diamond studs.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 3,
+    "literal": "So the sparkle is truly identical?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   }
+  ]
+ },
+ {
+  "journey": "J6-two-meanings",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "I want wedding ring sets",
+    "tiles": 8,
+    "chipAxes": 3,
+    "groups": 2,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [
+     "count"
+    ],
+    "suggestionCount": 3,
+    "firstWords": "Classic Diamond Bridal Sets$5,939.09$3,599.99$3,486.59$2,631.59Moissanite Ring Sets$562.49$562.49$329.99$229.4"
+   },
+   {
+    "step": 3,
+    "literal": "My budget is 800 dollars.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 4,
+    "literal": "She loves vintage-looking pieces.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "leaks": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   }
+  ]
+ }
+]
