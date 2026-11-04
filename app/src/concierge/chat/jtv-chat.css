@@ -154,6 +154,20 @@
   line-height: 1.55;
 }
 
+/* The library caps a shopper bubble at 70% of the column, which wraps even
+ * short messages into a two-line box ("help me find a gift for mom", measured
+ * live 2026-11-04). Size the bubble to its words — width:max-content is what
+ * makes the text measure on one line; the flex row alone shrink-wraps narrower
+ * — capped at the full column so a genuinely long message still wraps rather
+ * than overflowing. */
+.jtv-concierge .ais-ChatMessage[data-role='user'] .ais-ChatMessage-container {
+  max-width: 100%;
+}
+.jtv-concierge .ais-ChatMessage[data-role='user'] .ais-ChatMessage-message {
+  width: max-content;
+  max-width: 100%;
+}
+
 .jtv-concierge .ais-ChatPrompt {
   flex: 0 0 auto;
   padding: 12px 20px;

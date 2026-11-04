@@ -23,6 +23,10 @@ describe('sentence-level narration filter', () => {
      * selection of two-tone rings." — the display announcement. */
     expect(keepSentence("Now I'll display the selection of two-tone rings.")).toBe(false);
     expect(keepSentence('Now I will narrow these to the stones she asked about.')).toBe(false);
+    /* Measured on Arijit's "elegant and timeless" turn: the promise and the
+     * search report, back to back. */
+    expect(keepSentence("I'll find something elegant and timeless for your mom.")).toBe(false);
+    expect(keepSentence('The search picked up watches alongside necklaces.')).toBe(false);
   });
 
   it('keeps the human moment, the guidance and the closing question', () => {
