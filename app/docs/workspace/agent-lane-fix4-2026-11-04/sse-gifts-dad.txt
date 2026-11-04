@@ -1,0 +1,495 @@
+data: {"type": "start", "messageId": "alg_msg_JoMNghVI7Q9KLVSY", "messageMetadata": {"groupedResultsEnabled": true}}
+
+data: {"type": "start-step"}
+
+data: {"type": "text-start", "id": "alg_msg_JoMNghVI7Q9KLVSY"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": "I"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": "'ll"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " search"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " for jewelry"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " gifts"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " for dad."}
+
+data: {"type": "text-end", "id": "alg_msg_JoMNghVI7Q9KLVSY"}
+
+data: {"type": "tool-input-start", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "toolName": "algolia_search_index_prod_catalog"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "{\"queri"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "es\": [{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "\"query\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": ":\"men's"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": " jewelr"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "y dad g"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "ift\",\"f"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "acet_Ca"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "talog_T"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "argetCo"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "nsumer\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": ":[\"Men\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "]}]"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": ", \"user"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "Intent\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": ": \"User"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": " wants "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "to find"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": " jewelr"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "y gifts"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": " for th"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "eir dad"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": ". Searc"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "hing fo"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "r men's"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": " jewelr"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "y with "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "a targe"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "t consu"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "mer fil"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "ter to "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "ensure "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "results"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": " are ap"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "propria"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "te for "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "men.\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": ", \"orig"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "inalQue"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "ry\": \"g"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "ifts fo"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "r dad\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": ", \"sess"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "ionId\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": " \"550e8"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "400-e29"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "b-41d4-"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "a716-44"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "6655440"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "inputTextDelta": "000\"}"}
+
+data: {"type": "tool-input-available", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "toolName": "algolia_search_index_prod_catalog", "input": {"queries": [{"query": "men's jewelry dad gift", "facet_Catalog_TargetConsumer": ["Men"]}], "userIntent": "User wants to find jewelry gifts for their dad. Searching for men's jewelry with a target consumer filter to ensure results are appropriate for men.", "originalQuery": "gifts for dad", "sessionId": "550e8400-e29b-41d4-a716-446655440000"}}
+
+data: {"type": "tool-output-available", "toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "output": {"hits": [{"Pricing_ActivePrice": 29.99, "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "All Metal Jewelry", "All Metal Necklaces", "All Yellow Metal Jewelry", "All Yellow Metal Necklaces", "Brands", "Chain Necklaces", "Fashion Jewelry", "Fashion Necklaces", "Father's Day", "Holiday Gift Guide", "Invicta", "Invicta Jewelry", "Jewelry", "Link Jewelry", "Link Necklaces", "Men's All Metal Necklaces", "Men's Chains", "Men's Jewelry", "Men's Necklaces", "Necklaces", "Stainless Steel Chains", "Stainless Steel Jewelry", "Stainless Steel Necklaces", "Yellow Chains"], "Catalog_TitleDescription": "Invicta Jewelry Men's Beveled Edge Large Oval Link Yellow Steel Chain Necklace (10mm) - 24\"", "Pricing_PriceRange": "$25 - $50", "_enrichments": {"emotional_appeal ": "masculine elegant", "gift_recipient": "father", "material_finish": "stainless steel, polished", "occasion": {"occasion": "everyday, special occasion, gift"}, "quick_semantic": "necklace, yellow steel, men's jewelry, link chain", "style_aesthetic": "bold masculine", "target_persona": {"target_persona": "fashion-forward man"}, "use_case": "statement piece, gift for men"}, "objectID": "1836XB", "Catalog_LongDescription": "Need an accessory to offset your favorite Invicta watch? Then look no further than this Invicta Jewelry necklace! The large rounded Nautical Oval Link chain necklace will pair perfectly with your favorite accessories. The heavy stainless steel link necklace fastens with a lobster clasp. The 10 millimeters width link chain has a length of 24 inches and is available in two color options. Grab the matching chain bracelet and complete the look!", "Media_Images": ["https://images.jtv.com/jewelry/JTV-1836XB-1.jpg", "https://images.jtv.com/jewelry/JTV-1836XB-2.jpg", "https://images.jtv.com/jewelry/JTV-1836XB-3.jpg", "https://images.jtv.com/jewelry/JTV-1836XB-4.jpg", "https://images.jtv.com/jewelry/JTV-1836XB-5.jpg", "https://images.jtv.com/jewelry/JTV-1836XB-6.jpg", "https://images.jtv.com/jewelry/JTV-1836XB-7.jpg"]}, {"Media_Images": ["https://images.jtv.com/jewelry/JTV-1831KA-1.jpg", "https://images.jtv.com/jewelry/JTV-1831KA-2.jpg", "https://images.jtv.com/jewelry/JTV-1831KA-3.jpg", "https://images.jtv.com/jewelry/JTV-1831KA-4.jpg", "https://images.jtv.com/jewelry/JTV-1831KA-5.jpg", "https://images.jtv.com/jewelry/JTV-1831KA-6.jpg", "https://images.jtv.com/jewelry/JTV-1831KA-7.jpg"], "Pricing_ActivePrice": 24.99, "Pricing_PriceRange": "Under $25", "_enrichments": {"emotional_appeal ": "bold and adventurous", "gift_recipient": "father, graduate", "material_finish": "stainless steel, polished", "occasion": {"occasion": "everyday, casual outings, gifting"}, "quick_semantic": "men's bracelet, stainless steel, nautical, bold", "style_aesthetic": "masculine nautical", "target_persona": {"target_persona": "modern man, adventurous spirit"}, "use_case": "casual accessory, everyday wear, gift option"}, "objectID": "1831KA", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "All Metal Bracelets", "All Metal Jewelry", "All Metal Link Bracelets", "All White Metal Bracelets", "All White Metal Jewelry", "Bracelets", "Brands", "Fashion Bracelets", "Fashion Jewelry", "Father's Day", "Graduation Jewelry", "Holiday Gift Guide", "Invicta", "Invicta Jewelry", "Jewelry", "Link Bracelets", "Link Jewelry", "Men's All Metal Bracelets", "Men's Bracelets", "Men's Jewelry", "Men's Link Bracelets", "Stainless Steel Bracelets", "Stainless Steel Jewelry"], "Catalog_LongDescription": "Need an accessory to offset your favorite Invicta watch? Then look no further than this Invicta Jewelry bracelet! The link bracelet will pair perfectly with your favorite Invicta accessories. The heavy stainless steel link bracelet fastens with a large lobster clasp. The 10 millimeters width link bracelet has a length of 9 inches and is available in two color options. Grab the matching chain necklace and complete the look!", "Catalog_TitleDescription": "Invicta Jewelry Men's Beveled Edge Large Nautical Oval Link Chain Steel Bracelet (10mm) - 9\""}, {"Pricing_PriceRange": "Under $25", "_enrichments": {"emotional_appeal ": "masculine sophistication", "gift_recipient": "father", "material_finish": "red tiger eye, onyx, hematite, elastic", "occasion": {"occasion": "everyday, casual, special occasion"}, "quick_semantic": "bracelet, men's jewelry, tiger eye, gemstone, stretch", "style_aesthetic": "bohemian chic", "target_persona": {"target_persona": "fashion-forward man"}, "use_case": "everyday staple"}, "Catalog_LongDescription": "Wear this stylish stretch bracelet with any style. The bracelet has 5 natural stones, paired with 10 Onyx stones and 5 Hematite stones, for a total of 20 natural stone beads. The bracelet has a wearable length of 8.5 inches with an inner circumference of 7.5 inches. The stones have a width of 10 millimeters or 3/8 inches. Pair this bracelet with your favorite Invicta watch or accessories!", "Catalog_TitleDescription": "Invicta Jewelry Men's Red Tiger Eye with Onyx and Hematite Stone Bead Stretch Bracelet (10mm)", "objectID": "13L33B", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Bracelets", "Brands", "Color Gemstone Bracelets", "Color Gemstone Jewelry", "Fashion Bracelets", "Fashion Jewelry", "Father's Day", "Gemstone Jewelry", "Holiday Gift Guide", "Invicta", "Invicta Jewelry", "Jewelry", "Men's Bracelets", "Men's Color Gemstone Jewelry", "Men's Jewelry", "Quartz Bracelets", "Quartz Jewelry", "Red Gemstone Bracelets", "Red Gemstone Jewelry", "Stretch Bracelets", "Tigers Eye Jewelry"], "Media_Images": ["https://images.jtv.com/jewelry/JTV-13L33B-1.jpg", "https://images.jtv.com/jewelry/JTV-13L33B-2.jpg", "https://images.jtv.com/jewelry/JTV-13L33B-3.jpg", "https://images.jtv.com/jewelry/JTV-13L33B-4.jpg", "https://images.jtv.com/jewelry/JTV-13L33B-5.jpg"], "Pricing_ActivePrice": 22.99}, {"Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Bella Luce Jewelry", "Bella Luce Men's Jewelry", "Cufflinks", "Fashion Accessories", "Father's Day", "Gifts", "Jewelry", "Men's Accessories", "Men's Gifts", "Wedding Gifts"], "Catalog_TitleDescription": "White Cubic Zirconia And Black Enamel Stainless Steel Boxed Set", "Pricing_PriceRange": "$200 - $500", "_enrichments": {"emotional_appeal ": "sophisticated", "gift_recipient": "father, husband, brother", "material_finish": "stainless steel, polished with black enamel", "occasion": {"occasion": "wedding, formal events, business meetings"}, "quick_semantic": "cufflinks, stainless steel, black enamel, gift", "style_aesthetic": "modern elegant", "target_persona": {"target_persona": "stylish man, professional male"}, "use_case": "formal accessory, gift for him, special occasion"}, "Catalog_LongDescription": "Bella Luce \u00ae white diamond simulant and black enamel stainless steel key ring, money clip, cuff links, and tie bar set. The key ring measures approximately 2 9/16\"L x 1 1/4\"W, money clip measures 2 3/16\"L x 3/4\"W, cuff links measures 5/8\"L x 5/8\"W and tie bar measures 2 3/16\"L x 1/4\"W. The diamond equivalent weight is 0.28ctw.", "Media_Images": ["https://images.jtv.com/jewelry/JTV-13GD2A-1.jpg", "https://images.jtv.com/jewelry/JTV-13GD2A-2.jpg", "https://images.jtv.com/jewelry/JTV-13GD2A-3.jpg", "https://images.jtv.com/jewelry/JTV-13GD2A-4.jpg", "https://images.jtv.com/jewelry/JTV-13GD2A-5.jpg", "https://images.jtv.com/jewelry/JTV-13GD2A-6.jpg", "https://images.jtv.com/jewelry/JTV-13GD2A-7.jpg", "https://images.jtv.com/jewelry/JTV-13GD2A-8.jpg"], "Pricing_ActivePrice": 373.49, "objectID": "13GD2A"}, {"Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "All Metal Bracelets", "All Metal Jewelry", "All Metal Link Bracelets", "Bracelets", "Brands", "Fashion Bracelets", "Fashion Jewelry", "Father's Day", "Graduation Jewelry", "Holiday Gift Guide", "Invicta", "Invicta Jewelry", "Jewelry", "Link Bracelets", "Link Jewelry", "Men's All Metal Bracelets", "Men's Bracelets", "Men's Jewelry", "Men's Link Bracelets", "Stainless Steel Bracelets", "Stainless Steel Jewelry"], "Catalog_LongDescription": "Complete your look when wearing this Invicta Jewelry Men's Stainless Steel Franco Chain Bracelet. The rounded Franco chain is crafted with durable stainless steel and has a polished finish. The 8.5 inch Franco bracelet has a width and thickness of 6mm and fastens with a lobster clasp. The open solid Franco links give this piece a total weight of 25 grams. Pair this Franco bracelet with your favorite Invicta Watch or accessories.", "Catalog_TitleDescription": "Invicta Jewelry Men's Black Plated Franco Chain Bracelet (6mm) - 8.5\"", "Media_Images": ["https://images.jtv.com/jewelry/JTV-139K0C-1.jpg", "https://images.jtv.com/jewelry/JTV-139K0C-2.jpg", "https://images.jtv.com/jewelry/JTV-139K0C-3.jpg", "https://images.jtv.com/jewelry/JTV-139K0C-4.jpg", "https://images.jtv.com/jewelry/JTV-139K0C-5.jpg", "https://images.jtv.com/jewelry/JTV-139K0C-6.jpg", "https://images.jtv.com/jewelry/JTV-139K0C-7.jpg", "https://images.jtv.com/jewelry/JTV-139K0C-8.jpg", "https://images.jtv.com/jewelry/JTV-139K0C-9.jpg"], "Pricing_PriceRange": "Under $25", "_enrichments": {"emotional_appeal ": "masculine, stylish", "gift_recipient": "father, graduate", "material_finish": "black plated stainless steel, polished", "occasion": {"occasion": "everyday, casual, gifting"}, "quick_semantic": "men's bracelet, stainless steel, fashion accessory", "style_aesthetic": "bold modern", "target_persona": {"target_persona": "fashion-forward men"}, "use_case": "gift for dad, personal accessory, daily wear"}, "Pricing_ActivePrice": 19.99, "objectID": "139K0C"}, {"Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "All Metal Jewelry", "All Metal Necklaces", "All White Metal Jewelry", "All White Metal Necklaces", "Brands", "Chain Necklaces", "Fashion Jewelry", "Fashion Necklaces", "Father's Day", "Holiday Gift Guide", "Invicta", "Invicta Jewelry", "Jewelry", "Link Jewelry", "Link Necklaces", "Men's All Metal Necklaces", "Men's Chains", "Men's Jewelry", "Men's Necklaces", "Necklaces", "Rope Chains", "Stainless Steel Chains", "Stainless Steel Jewelry", "Stainless Steel Necklaces", "White Chains"], "Catalog_LongDescription": "Grab this Rope chain and pair it with your favorite pendant, or wear it alone as a dainty stylish chain. The chain has an end to end length of 24 inches, with a width of 3 millimeters. The Rope chain fastens with a lobster claw clasp. Pair this necklace with your favorite Invicta watch or accessories!", "Pricing_PriceRange": "Under $25", "Catalog_TitleDescription": "Invicta Jewelry Men's Rope Chain Stainless Steel Necklace (3mm) - 24\"", "Media_Images": ["https://images.jtv.com/jewelry/JTV-115VVA-1.jpg", "https://images.jtv.com/jewelry/JTV-115VVA-2.jpg", "https://images.jtv.com/jewelry/JTV-115VVA-3.jpg", "https://images.jtv.com/jewelry/JTV-115VVA-4.jpg"], "Pricing_ActivePrice": 19.99, "_enrichments": {"emotional_appeal ": "masculine ruggedness", "gift_recipient": "dad, husband, boyfriend", "material_finish": "stainless steel, polished", "occasion": {"occasion": "everyday, casual, gifts"}, "quick_semantic": "men's jewelry, stainless steel, rope chain, necklace", "style_aesthetic": "modern industrial", "target_persona": {"target_persona": "fashion-forward man"}, "use_case": "everyday accessory, gift for him"}, "objectID": "115VVA"}, {"Pricing_ActivePrice": 60.29, "objectID": "1447PA", "Catalog_TitleDescription": "Stainless Steel Polished Black Enameled Dad Rectangle Cufflinks", "Pricing_PriceRange": "$50 - $100", "_enrichments": {"emotional_appeal ": "thoughtful gift", "gift_recipient": "dad", "material_finish": "stainless steel, polished with black enamel", "occasion": {"occasion": "father's day, birthday, wedding, everyday"}, "quick_semantic": "cufflinks, stainless steel, dad gift, polished", "style_aesthetic": "modern sleek", "target_persona": {"target_persona": "style-conscious dad"}, "use_case": "gift for dad"}, "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Cufflinks", "Fashion Accessories", "Gifts", "Jewelry", "Men's Accessories", "Men's Gifts", "Wedding Gifts"], "Catalog_LongDescription": "Stainless steel rectangle cuff links with black enameled script \"DAD\" and polished finish. Measures approximately 13/16\"L x 9/16\"W.", "Media_Images": ["https://images.jtv.com/jewelry/JTV-1447PA-1.jpg"]}, {"Catalog_TitleDescription": "Black Enamel Stainless Steel Polished Fleur De Lis Cuff Links", "Media_Images": ["https://images.jtv.com/jewelry/silver/JTV-SSW337-1.jpg"], "_enrichments": {"emotional_appeal ": "sophisticated", "gift_recipient": "father, groom, husband", "material_finish": "stainless steel, polished", "occasion": {"occasion": "wedding, formal events, everyday, gifts"}, "quick_semantic": "cufflinks, stainless steel, black enamel, fleur de lis", "style_aesthetic": "elegant classic", "target_persona": {"target_persona": "stylish man"}, "use_case": "formal attire accessory"}, "objectID": "SSW337", "Pricing_ActivePrice": 70.19, "Pricing_PriceRange": "$50 - $100", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Cufflinks", "Fashion Accessories", "Father's Day", "Gifts", "Jewelry", "Men's Accessories", "Men's Gifts", "Wedding Gifts"], "Catalog_LongDescription": "Black enamel stainless steel polished fleur de lis cuff links. Measure approximately 3/4\"L x  3/4\"W and have bullet backings."}, {"_enrichments": {"emotional_appeal ": "sophisticated", "gift_recipient": "father, husband, boyfriend", "material_finish": "stainless steel, polished", "occasion": {"occasion": "wedding, office, formal events"}, "quick_semantic": "cufflinks, geometric, stainless steel, men's accessories", "style_aesthetic": "modern geometric", "target_persona": {"target_persona": "young professional, stylish man"}, "use_case": "formal accessory, gift for him"}, "objectID": "SSW323", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Cufflinks", "Fashion Accessories", "Father's Day", "Gifts", "Jewelry", "Men's Accessories", "Men's Gifts", "Wedding Gifts"], "Pricing_PriceRange": "$50 - $100", "Catalog_LongDescription": "Stainless steel geometric cuff links. Measure approximately 5/8\"L x  5/8\"W and have bullet backings.", "Catalog_TitleDescription": "Stainless Steel Geometric Cuff Links", "Media_Images": ["https://images.jtv.com/jewelry/silver/JTV-SSW323-1.jpg"], "Pricing_ActivePrice": 88.19}, {"objectID": "1ZC68A", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Cufflinks", "Fashion Accessories", "Father's Day", "Gifts", "Jewelry", "Men's Accessories", "Men's Gifts", "Wedding Gifts"], "Catalog_LongDescription": "Titanium cuff links with polished and hammered finish. Measures approximately 5/8\"L x 5/8\"W.", "Catalog_TitleDescription": "Titanium Polished and Hammered Cuff Links", "Media_Images": ["https://images.jtv.com/jewelry/JTV-1ZC68A-1.jpg"], "Pricing_ActivePrice": 80.99, "Pricing_PriceRange": "$50 - $100", "_enrichments": {"emotional_appeal ": "sophisticated", "gift_recipient": "father, husband, groom", "material_finish": "titanium, polished and hammered", "occasion": {"occasion": "wedding, formal events, business meetings"}, "quick_semantic": "cufflinks, titanium, polished, hammered", "style_aesthetic": "modern elegant", "target_persona": {"target_persona": "style-conscious man"}, "use_case": "special occasion accessory"}}, {"Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Apparel", "Bridal and Wedding Jewelry", "Cross Jewelry", "Fashion Accessories", "Father's Day", "Gifts", "Groomsman Gifts", "Holiday Gift Guide", "Jewelry", "Men's Accessories", "Men's Gifts", "Travel Accessories", "Wallets"], "Catalog_TitleDescription": "Faux Leather Lords Prayer Wallet with 18K Gold Over Stainless Steel Our Father Prayer Cross Pendant", "Media_Images": ["https://images.jtv.com/jewelry/JTV-1Y344A-1.jpg"], "Pricing_PriceRange": "$50 - $100", "_enrichments": {"emotional_appeal ": "thoughtful, spiritual", "gift_recipient": "dad, groomsman, husband", "material_finish": "faux leather, 18K gold over stainless steel", "occasion": {"occasion": "everyday, religious events, gifting"}, "quick_semantic": "wallet, cross pendant, faux leather, gift for dad", "style_aesthetic": "modern, rustic masculine", "target_persona": {"target_persona": "men, spiritual seekers"}, "use_case": "everyday use, special occasion gift, keepsake"}, "Catalog_LongDescription": "Men's black faux leather Lords Prayer wallet with 18k gold over stainless steel Our Father prayer spinner cross pendant. Wallet measures approximately 4.25\" L x 3.5\" W. 24\" L chain, pendant: 2\" L x 1\" W", "Pricing_ActivePrice": 58.49, "objectID": "1Y344A"}, {"Catalog_LongDescription": "Men's Vegan Leather American Flag Wallet and Monochrome American Flag PendantMeasures approximately 4.5\" L x 3.5\" W/24\" L chain, pendt: 1.8\" L x 0.9\" W", "Pricing_PriceRange": "$50 - $100", "objectID": "1W12AB", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Apparel", "Fashion Accessories", "Father's Day", "Gifts", "Men's Accessories", "Men's Gifts", "Patriotic Jewelry", "Travel Accessories", "Wallets"], "Catalog_TitleDescription": "Brown Leather American Flag Wallet and Monochrome American Flag Pendant", "Media_Images": ["https://images.jtv.com/jewelry/JTV-1W12AB-1.jpg"], "Pricing_ActivePrice": 58.49, "_enrichments": {"emotional_appeal ": "patriotic, thoughtful", "gift_recipient": "father, husband, patriotic friend", "material_finish": "genuine leather, smooth", "occasion": {"occasion": "everyday, casual outings, Father's Day"}, "quick_semantic": "wallet, leather, American flag, gift", "style_aesthetic": "classic patriotic", "target_persona": {"target_persona": "patriotic man, gift buyer"}, "use_case": "everyday use, gift for dad, special occasion"}}], "nbHits": 12, "facets": {"Catalog_BasicMaterialInformationPrimary.BasicMaterialColor": {"Black": 2, "Brown": 2}, "Catalog_Condition": {"First Quality": 29}, "Catalog_JewelryMaterialNavigationColor": {"Black": 2, "Gray": 2, "No Color": 1, "Two-tone": 3, "White": 13, "Yellow": 3}, "Catalog_TargetConsumer": {"Men": 29}, "Pricing_DiscountPercentRange": {"10% - 20% off": 22, "20% - 30% off": 1, "30% - 40% off": 5}, "Pricing_PriceRange": {"$200 - $500": 4, "$25 - $50": 4, "$50 - $100": 17, "Under $25": 4}}, "queryIDs": ["3b56091fb20592e063aa9942c03c510e"]}}
+
+data: {"type": "data-tool-output-metadata", "data": {"toolCallId": "toolu_01XwGqsCDXbNfxnFqtzAWUmw", "metadata": {"com.algolia/resolved-search-params": [{"query": "men's jewelry dad gift", "attributesToHighlight": [], "responseFields": ["hits", "nbHits", "page", "nbPages", "hitsPerPage", "facets"], "facets": ["Pricing_PriceRange", "Catalog_JewelryMaterialNavigationColor", "Catalog_TargetConsumer", "Pricing_DiscountPercentRange", "Catalog_BasicMaterialInformationPrimary.BasicMaterialColor", "Catalog_BagTypes", "Catalog_Condition"], "clickAnalytics": true, "distinct": false, "page": 0, "hitsPerPage": 12, "attributesToRetrieve": ["Catalog_TitleDescription", "Media_Images", "Catalog_LongDescription", "Catalog_ConsumerProductCategoryDisplayNames", "_enrichments", "Pricing_PriceRange", "Pricing_ActivePrice"], "disableNeuralSearch": false, "filters": "Inventory_InStock:true AND Catalog_Condition:'First Quality'", "facetFilters": [["Catalog_TargetConsumer:Men"]], "numericFilters": []}]}}, "transient": true}
+
+data: {"type": "finish-step"}
+
+data: {"type": "start-step"}
+
+data: {"type": "text-start", "id": "alg_msg_JoMNghVI7Q9KLVSY"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": "Now"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " I"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": "'ll"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " display"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " a"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " cu"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": "rated selection"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " of dad"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " gifts"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " across"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " different price"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " points"}
+
+data: {"type": "text-delta", "id": "alg_msg_JoMNghVI7Q9KLVSY", "delta": " and styles."}
+
+data: {"type": "text-end", "id": "alg_msg_JoMNghVI7Q9KLVSY"}
+
+data: {"type": "tool-input-start", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "toolName": "algolia_grouped_results"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "{\"intro"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\": \"Her"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "e are s"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ome pop"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ular gi"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ft idea"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "s for d"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ad, fro"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "m casua"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "l every"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "day pie"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ces to "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "somethi"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ng more"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": " formal"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ".\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ", \"grou"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ps\": [{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"title\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ":\"Every"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "day Ess"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "entials"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\",\"why\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ":\"Affor"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "dable, "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "wearabl"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "e piece"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "s for d"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "aily us"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "e\",\"res"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ults\":["}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "tID\":\"1"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "39K0C\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"why\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "Bold bl"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ack Fra"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "nco cha"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "in brac"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "elet\"},"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "tID\":\"1"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "15VVA\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"why\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "Versati"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "le rope"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": " chain "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "he can "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "wear al"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "one\"},{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"object"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ID\":\"13"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "L33B\",\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "why\":\"S"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "tylish "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "gemston"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "e stret"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ch brac"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "elet\"},"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "tID\":\"1"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "836XB\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"why\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "Stateme"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "nt link"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": " chain "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "necklac"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "e\"}]},{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"title\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ":\"Forma"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "l & Spe"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "cial Oc"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "casion\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ",\"why\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"Polish"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ed piec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "es perf"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ect for"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": " dressi"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ng up\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"result"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "s\":[{\"o"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "bjectID"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\":\"1447"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "PA\",\"wh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "y\":\"Cla"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ssic DA"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "D cuffl"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "inks gi"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ft\"},{\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "objectI"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "D\":\"SSW"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "323\",\"w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "hy\":\"Mo"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "dern ge"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ometric"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": " cuffli"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "nks\"},{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"object"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ID\":\"1Z"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "C68A\",\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "why\":\"T"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "itanium"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": " hammer"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ed cuff"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "links\"}"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ",{\"obje"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ctID\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "13GD2A\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ",\"why\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"Luxury"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": " access"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ory box"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ed set\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "}]},{\"t"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "itle\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "Practic"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "al Gift"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "s\",\"why"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\":\"Func"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "tional "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "pieces "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "he'll u"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "se ever"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "y day\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"result"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "s\":[{\"o"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "bjectID"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\":\"1Y34"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "4A\",\"wh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "y\":\"Wal"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "let wit"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "h meani"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ngful c"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ross pe"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ndant\"}"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ",{\"obje"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ctID\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "1W12AB\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": ",\"why\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"Patrio"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "tic lea"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "ther wa"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "llet an"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "d penda"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "nt\"},{\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "objectI"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "D\":\"183"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "1KA\",\"w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "hy\":\"Du"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "rable s"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "tainles"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "s steel"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": " link b"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "racelet"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "inputTextDelta": "\"}]}]}"}
+
+data: {"type": "tool-input-available", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "toolName": "algolia_grouped_results", "input": {"intro": "Here are some popular gift ideas for dad, from casual everyday pieces to something more formal.", "groups": [{"title": "Everyday Essentials", "why": "Affordable, wearable pieces for daily use", "results": [{"objectID": "139K0C", "why": "Bold black Franco chain bracelet"}, {"objectID": "115VVA", "why": "Versatile rope chain he can wear alone"}, {"objectID": "13L33B", "why": "Stylish gemstone stretch bracelet"}, {"objectID": "1836XB", "why": "Statement link chain necklace"}]}, {"title": "Formal & Special Occasion", "why": "Polished pieces perfect for dressing up", "results": [{"objectID": "1447PA", "why": "Classic DAD cufflinks gift"}, {"objectID": "SSW323", "why": "Modern geometric cufflinks"}, {"objectID": "1ZC68A", "why": "Titanium hammered cufflinks"}, {"objectID": "13GD2A", "why": "Luxury accessory boxed set"}]}, {"title": "Practical Gifts", "why": "Functional pieces he'll use every day", "results": [{"objectID": "1Y344A", "why": "Wallet with meaningful cross pendant"}, {"objectID": "1W12AB", "why": "Patriotic leather wallet and pendant"}, {"objectID": "1831KA", "why": "Durable stainless steel link bracelet"}]}]}}
+
+data: {"type": "tool-output-available", "toolCallId": "toolu_01UcLKMBjFiaswf2e1uSkeNm", "output": {"status": "success"}}
+
+data: {"type": "data-suggestions", "data": {"suggestions": ["Show me gifts under $50", "What are popular dad gift ideas?", "Suggest gifts for outdoorsy dads"]}}
+
+data: {"type": "finish-step"}
+
+data: {"type": "finish"}
+
+data: [DONE]
