@@ -58,7 +58,7 @@ function createHeader(
   onHeaderPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void,
   onNewDeal?: () => void,
 ) {
-  return function JtvChatHeader({ onClose, onClear, canClear }: HeaderProps) {
+  return function JtvChatHeader({ onClose, onClear, canClear: _canClear }: HeaderProps) {
     return (
       <div className="jtv-concierge-header" onPointerDown={onHeaderPointerDown}>
         <h2>JTV Concierge</h2>
@@ -209,7 +209,7 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
            * broken panel. Off also matches the old panel, which never showed
            * it. */
           showReasoning={false}
-          tools={useMemo(() => createGatedTools((params) => chat.sendMessage({ text: params.text })), [chat])}
+          tools={useMemo(() => createGatedTools(), [])}
           layoutComponent={ChatInlineLayout}
           /* `key` on the starter chips: React keeps component state across the
            * widget's clear (same element slot, same type), so "New
@@ -217,13 +217,17 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
            * counter bumped by the header's clear remounts the chips and
            * re-rolls the set. */
           emptyComponent={useMemo(
-            () => function JtvStarters(props: ComponentProps<typeof StarterChips>) {
-              return <StarterChips key={deal} {...props} />;
-            },
+            () =>
+              function JtvStarters(props: ComponentProps<typeof StarterChips>) {
+                return <StarterChips key={deal} {...props} />;
+              },
             [deal],
           )}
           headerComponent={useMemo(
-            () => createHeader(onClose, maximized, onToggleMaximized, onHeaderPointerDown, () => setDeal((d) => d + 1)),
+            () =>
+              createHeader(onClose, maximized, onToggleMaximized, onHeaderPointerDown, () =>
+                setDeal((d) => d + 1),
+              ),
             [onClose, maximized, onToggleMaximized, onHeaderPointerDown],
           )}
           requiresSearch={false}

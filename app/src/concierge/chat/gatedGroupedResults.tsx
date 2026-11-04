@@ -1,10 +1,17 @@
-import { createElement, Fragment, useEffect, useRef } from 'react';
+import { createElement, Fragment, useEffect, useRef, useState } from 'react';
 import { createDefaultTools, GroupedResultsToolType } from 'react-instantsearch';
 import type { Tool, Tools } from 'react-instantsearch';
 import { createGroupedResultsToolComponent } from 'instantsearch-ui-components';
 import { recordDisplayEvent } from '../../shared/telemetry';
+import { searchClient } from '../../shared/client';
 import { ProductCard, type JtvHit } from './ProductCard';
-import { narrowChipsFor, type NarrowChip, type NarrowGroup } from './narrowChips';
+import { narrowChipsFor, type NarrowGroup } from './narrowChips';
+import {
+  buildRefineParams,
+  extractTurnRefine,
+  type ChipSelection,
+  type SearchPart,
+} from './refineSearch';
 
 /* The one display gate.
  *
@@ -33,52 +40,60 @@ function hasImage(record: Record<string, unknown> | undefined): boolean {
 }
 
 /* A shelf is four across, so a group of four fills a row and a group of eight
- * fills two. Measured over 18 groups from ten questions: one came back with a
- * single piece and one with two, which render as a heading above a row that is
- * mostly empty space. Anything under three is folded into its neighbour — the
- * pieces stay, the heading goes, because a heading over one tile claims a
- * direction the shelf does not show. */
-const MIN_GROUP = 3;
+ * fills two. The shape is the shopper's contract (Arijit, 2026-11-04, ending
+ * the 3-vs-4 lottery): every group is complete rows of four. Groups too small
+ * to fill a row fold into a neighbour; a remainder beyond a full row is
+ * dropped and logged; a shelf too thin to fill one row renders as it is
+ * rather than emptying. */
 const COLUMNS = 4;
 
-/* The shelf is four across, so a group of five is a full row and one piece
- * stranded underneath it — the shape the team flagged. A remainder of two or
- * three reads as a partial row, which is fine; a remainder of one reads as a
- * mistake.
- *
- * Trimming is the lesser evil, and it is bounded: at most one piece, and only
- * when that piece would otherwise sit alone. Dropping it is logged like any
- * other refusal. The agent's max-per-group setting should mean this never
- * fires; this is the guarantee for when it does. */
-function trimOrphan(results: GroupResult[]): { results: GroupResult[]; orphan?: string } {
-  if (results.length <= COLUMNS || results.length % COLUMNS !== 1) return { results };
-  const last = results[results.length - 1];
-  const objectID = typeof last?.objectID === 'string' ? last.objectID : 'unknown';
-  return { results: results.slice(0, -1), orphan: objectID };
+/* Trims a group down to its last complete row. Bounded by construction: it
+ * can only remove the one to three pieces that would sit in a partial row,
+ * and every removal is logged like any other refusal. */
+function trimToCompleteRows(results: GroupResult[]): {
+  results: GroupResult[];
+  dropped: GroupResult[];
+} {
+  const fullRows = Math.floor(results.length / COLUMNS) * COLUMNS;
+  if (fullRows === results.length) return { results, dropped: [] };
+  return { results: results.slice(0, fullRows), dropped: results.slice(fullRows) };
 }
 
-function foldSmallGroups(groups: Group[]): Group[] {
+/* A group too small to fill a row keeps its pieces but not its own row:
+ * a trailing one folds back into the group before it, a leading one folds
+ * forward into the group after it. A lone small group has nowhere to fold, so
+ * it stays — a thin shelf beats an empty one. */
+function foldSmallGroups(groups: Group[]): { folded: Group[]; foldedAway: GroupResult[] } {
   const folded: Group[] = [];
+  const foldedAway: GroupResult[] = [];
   for (const group of groups) {
     const results = Array.isArray(group.results) ? group.results : [];
     const previous = folded[folded.length - 1];
-    /* Fold backwards where there is somewhere to fold to. A small first group
-     * has nowhere to go, so it keeps its pieces and loses only its heading. */
-    if (results.length < MIN_GROUP && previous) {
+    if (results.length < COLUMNS && previous) {
       previous.results = [...(previous.results ?? []), ...results];
       continue;
     }
-    if (results.length < MIN_GROUP && groups.length > 1) {
+    if (results.length < COLUMNS && groups.length > 1) {
+      /* Leading small group: merge forward. The next group keeps its heading;
+       * this one's heading goes, because a heading over pieces that moved
+       * claims a direction the shelf no longer shows. */
+      const next = groups[groups.indexOf(group) + 1];
+      if (next && Array.isArray(next.results)) {
+        next.results = [...results, ...next.results];
+        continue;
+      }
+      /* No next group after all (malformed tail): keep the pieces. */
       folded.push({ ...group, title: undefined, results });
       continue;
     }
     folded.push({ ...group, results });
   }
-  return folded;
+  return { folded, foldedAway };
 }
 
-/** Returns the input with ineligible pieces, emptied groups and, usually, the
- * tool's own intro removed.
+/** Returns the input with ineligible pieces dropped, small groups folded and
+ * every group ending on a complete row, and, usually, the tool's own intro
+ * removed.
  *
  * The intro is normally a second voice: the model writes its reply in the
  * message and then says the same thing again above the shelves (measured
@@ -120,17 +135,38 @@ export function gateGroups(
     });
     /* A group whose pieces were all refused renders as a bare heading. */
     if (!items.length) continue;
-    const { results: fitted, orphan } = trimOrphan(items);
-    if (orphan) dropped.push(`${orphan}:orphan_row`);
     /* The group's `why` renders as a second line under the heading, and it
      * restates the heading in vaguer words — "Featured products" over
      * "Different jewelry and accessory styles". Two lines of chrome above
      * every shelf, on a rail this narrow, for nothing the pieces do not
      * already show. Dropped like the intro. */
-    kept.push({ ...group, why: undefined, results: fitted });
+    kept.push({ ...group, why: undefined, results: items });
   }
+
+  const { folded, foldedAway } = foldSmallGroups(kept);
+  for (const piece of foldedAway) {
+    if (typeof piece.objectID === 'string') dropped.push(`${piece.objectID}:folded`);
+  }
+
+  /* Complete rows, except where the shelf is too thin to fill one: a lone
+   * group under four pieces renders as it is rather than trimming to zero. */
+  const shaped =
+    folded.length === 1 && (folded[0].results?.length ?? 0) < COLUMNS
+      ? folded
+      : folded.map((group) => {
+          const { results, dropped: trimmed } = trimToCompleteRows(group.results ?? []);
+          for (const piece of trimmed) {
+            if (typeof piece.objectID === 'string') dropped.push(`${piece.objectID}:orphan_row`);
+          }
+          return { ...group, results };
+        });
+
   return {
-    input: { ...input, intro: keepIntro ? input.intro : undefined, groups: foldSmallGroups(kept) },
+    input: {
+      ...input,
+      intro: keepIntro ? input.intro : undefined,
+      groups: shaped.filter((g) => (g.results?.length ?? 0) > 0),
+    },
     dropped,
   };
 }
@@ -202,14 +238,53 @@ function messageCarriesText(owner: OwnerMessage | undefined): boolean {
   );
 }
 
-/* The search that produced this shelf, so its facet counts can become chips.
- * The last one in the message: a turn that searches twice has narrowed as it
- * went, and the later counts describe what is actually on screen. */
-function searchPartOf(owner: OwnerMessage | undefined): MessagePart | undefined {
+/* The search that produced this shelf, so its facet counts can become chips
+ * and its query and constraints can carry the refine. The last one in the
+ * message: a turn that searches twice has narrowed as it went, and the later
+ * counts describe what is actually on screen. */
+function searchPartOf(owner: OwnerMessage | undefined): SearchPart | undefined {
   const searches = (owner?.parts ?? []).filter((part) =>
     String(part?.type ?? '').includes('algolia_search_index'),
   );
   return searches[searches.length - 1];
+}
+
+/* The facet funnel (restored 2026-11-04; the deployed 2026-10-26 design).
+ *
+ * A chip tap refines the shelf in place: one client search that re-issues the
+ * turn's own query and constraints with the selections ANDed on top, no agent
+ * turn. The 2026-11-02 middle ground sent the tap as a shopper question — a
+ * full completion per tap, twenty seconds, and the funnel became a fresh
+ * search every time. The old bug class this replaces is the refine rebuilt
+ * from partial state (2026-10-26 platinum-over-budget receipt), which is why
+ * the params come from `extractTurnRefine` on the message's own search part,
+ * never reassembled from screen state.
+ *
+ * The in-stock filter mirrors the agent's own search so a deeper funnel level
+ * never shows a piece the first level excluded. VERIFY against live turns
+ * before merge: the 2026-11-03 tool-config snapshot shows no `filters` key,
+ * so parity with the agent's search must be confirmed from real traffic. */
+const IN_STOCK_FILTER = 'Inventory_InStock:true';
+const REFINE_HITS = 8;
+const REFINE_FIELDS = [
+  'objectID',
+  'Catalog_TitleDescription',
+  'Media_Images',
+  'Pricing_PriceRange',
+  'Pricing_ActivePrice',
+];
+
+type FunnelState = {
+  selections: ChipSelection[];
+  loading: boolean;
+  /** The refined shelf; null while loading, and the grouped shelf stands in. */
+  hits: JtvHit[] | null;
+  chips: NarrowGroup[];
+};
+
+function hitToTile(raw: Record<string, unknown>): JtvHit | null {
+  if (typeof raw.objectID !== 'string' || !hasImage(raw)) return null;
+  return raw as JtvHit;
 }
 
 function NarrowChips({
@@ -217,7 +292,7 @@ function NarrowChips({
   onPick,
 }: {
   groups: NarrowGroup[];
-  onPick: (chip: NarrowChip) => void;
+  onPick: (chip: { attribute: string; value: string }) => void;
 }) {
   return (
     <div className="jtv-chat-narrow">
@@ -226,7 +301,11 @@ function NarrowChips({
         <ul key={group.attribute} className="jtv-chat-narrow-list">
           {group.chips.map((chip) => (
             <li key={chip.label}>
-              <button type="button" className="jtv-chat-narrow-chip" onClick={() => onPick(chip)}>
+              <button
+                type="button"
+                className="jtv-chat-narrow-chip"
+                onClick={() => onPick({ attribute: chip.attribute, value: chip.value })}
+              >
                 {chip.label}
               </button>
             </li>
@@ -247,11 +326,7 @@ function GroupGrid({ items }: { items: JtvHit[] }) {
   );
 }
 
-/** `sendMessage` is the chat instance's, closed over here because the tool
- * context does not carry it — the same route the header's close control
- * takes. Without it the chips render disabled rather than lying about what a
- * click will do. */
-export function createGatedTools(sendMessage?: (params: { text: string }) => void): Tools {
+export function createGatedTools(): Tools {
   const defaults = createDefaultTools<JtvHit>(ProductCard);
   const grouped = defaults[GroupedResultsToolType] as Tool;
   const Gated: NonNullable<Tool['layoutComponent']> = (props) => {
@@ -264,16 +339,94 @@ export function createGatedTools(sendMessage?: (params: { text: string }) => voi
     });
     if (dropped.length) recordDisplayEvent('stage-ok', `gate dropped ${dropped.join(', ')}`);
     const gatedMessage = { ...message, input };
+    const [funnel, setFunnel] = useState<FunnelState | null>(null);
+
     /* Nothing to lay out yet: the tool is mid-stream and no group has arrived.
      * The library renders an empty block here, which is the dead gap. */
-    if (message?.state === 'input-streaming' && !input.groups?.length) {
+    if (message?.state === 'input-streaming' && !input.groups?.length && !funnel) {
       return <GroupSkeleton />;
     }
     /* Chips only once the shelf has settled. Offering a refinement while the
      * pieces are still arriving invites a click that cancels the turn that
-     * would have answered it. */
+     * would have answered it. A multi-query turn is multi-scope: its counts
+     * are per direction, so chips would refine a direction the tiles do not
+     * show (the accepted single-scope rule). */
     const settled = message?.state !== 'input-streaming';
-    const chipGroups = settled && sendMessage ? narrowChipsFor(searchPartOf(owner)) : [];
+    const turn = extractTurnRefine(searchPartOf(owner));
+    const chipGroups = settled && !turn.multiScope ? narrowChipsFor(searchPartOf(owner)) : [];
+
+    const refine = async (selection: ChipSelection) => {
+      if (!turn.queryText && !turn.turnFilters.length) return;
+      const selections = [...(funnel?.selections ?? []), selection];
+      setFunnel({ selections, loading: true, hits: null, chips: [] });
+      try {
+        const response = await searchClient.search([
+          {
+            indexName: 'prod_catalog',
+            params: {
+              ...buildRefineParams(turn, selections),
+              filters: IN_STOCK_FILTER,
+              hitsPerPage: REFINE_HITS,
+              attributesToRetrieve: REFINE_FIELDS,
+            },
+          },
+        ]);
+        const result = (response as { results?: Record<string, unknown>[] })?.results?.[0] ?? {};
+        const hits = ((result.hits as unknown[] | undefined) ?? [])
+          .map((hit) => hitToTile(hit as Record<string, unknown>))
+          .filter((hit): hit is JtvHit => hit !== null);
+        /* The next axis comes from the refine's own counts, with the values
+         * already picked excluded so the funnel only ever deepens. */
+        const facets = (result.facets as Record<string, Record<string, number>> | undefined) ?? {};
+        const refinePart: SearchPart = {
+          toolName: 'algolia_search_index_prod_catalog',
+          input: {
+            queries: [
+              {
+                query: turn.queryText,
+                ...Object.fromEntries(selections.map((s) => [`facet_${s.attribute}`, [s.value]])),
+              },
+            ],
+          },
+          output: { facets },
+        };
+        setFunnel({ selections, loading: false, hits, chips: narrowChipsFor(refinePart) });
+        recordDisplayEvent(
+          'stage-ok',
+          `funnel refine ${selections.map((s) => `${s.attribute}:${s.value}`).join(' + ')} -> ${hits.length} pieces`,
+        );
+      } catch (error) {
+        /* The unrefined shelf stays on screen; a failed refine is a logged
+         * no-op, never a dead panel. */
+        recordDisplayEvent('stage-failed', `funnel refine failed: ${String(error)}`);
+        setFunnel(null);
+      }
+    };
+
+    if (funnel?.loading) {
+      return (
+        <div className="jtv-chat-refine">
+          <GroupSkeleton />
+        </div>
+      );
+    }
+    if (funnel?.hits) {
+      return (
+        <div className="jtv-chat-refine">
+          <GroupGrid items={funnel.hits} />
+          <div className="jtv-chat-narrow">
+            <button
+              type="button"
+              className="jtv-chat-narrow-chip jtv-chat-narrow-back"
+              onClick={() => setFunnel(null)}
+            >
+              Back to all
+            </button>
+          </div>
+          {funnel.chips.length ? <NarrowChips groups={funnel.chips} onPick={refine} /> : null}
+        </div>
+      );
+    }
     return (
       <>
         <GroupedResultsUI
@@ -284,9 +437,7 @@ export function createGatedTools(sendMessage?: (params: { text: string }) => voi
           }}
           groupCarouselComponent={({ items }) => <GroupGrid items={items as JtvHit[]} />}
         />
-        {chipGroups.length ? (
-          <NarrowChips groups={chipGroups} onPick={(chip) => sendMessage?.({ text: chip.ask })} />
-        ) : null}
+        {chipGroups.length ? <NarrowChips groups={chipGroups} onPick={refine} /> : null}
       </>
     );
   };

@@ -1,0 +1,26 @@
+{
+  "run": "funnel-inline-refine-2026-11-04",
+  "branch": "funnel/inline-refine-index-chips",
+  "base": "a714de6 (main + 8 local display commits, included per Arijit's order)",
+  "path": "light",
+  "scopeClassification": "No schema change, no new dependency, no new external surface: the refine reuses the browser's existing read-only search client against prod_catalog, the same client the storefront grid already uses. Not security-sensitive; no new key.",
+  "goal": "Restore the inline facet funnel on the simplified architecture: chips refine the shelf in place (no agent turn), chips derive from the index's own facet counts (no hardcoded list), and the shelf shows complete rows of four.",
+  "fixes": {
+    "1_inline_funnel": "Port buildFacetRefineParams + turn-constraint extraction from 5948289 into the grouped display. Chip tap = one client search (turn query + facet_<Attribute>/facet_filters constraints + selections ANDed + Inventory_InStock:true), shelf swaps, Back restores.",
+    "2_index_derived_chips": "Delete the OFFERABLE whitelist in narrowChips.ts; derive attributes from the search's own facet counts, most-discriminative first, cap 3 axes x 3 values, one row per axis, price bands in price order (the accepted 2026-10-26 design).",
+    "3_deterministic_rows": "Gate guarantees complete rows of four: fold small groups, trim each group to a multiple of 4 (logged), thin shelves under 4 pieces render as-is. Agent-side count contract ships later with the agent lane (fix 4), not this branch."
+  },
+  "stages": {
+    "intake": "done",
+    "plan": "done",
+    "build": "in_progress",
+    "verify": "pending",
+    "stagingPreview": "pending",
+    "finish": "pending"
+  },
+  "gates": [
+    "Arijit reviews the preview before merge (pushes to main auto-deploy prod, so merge = his explicit go)"
+  ],
+  "rollback": "Redeploy previous production commit (Vercel rollback to the pre-merge deployment); the branch is app-only, no agent or index change, so rollback is a pure frontend redeploy",
+  "agentLaneDeferred": "Fix 4 (whole-prompt voice rewrite) and the agent tool count contract are a separate serialized lane with Arijit's draft review before any agent write"
+}
