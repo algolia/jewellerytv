@@ -1,61 +1,60 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { ChatText, isReplyPart } from '../../src/concierge/chat/chatText';
+import { ChatText, textDisplay } from '../../src/concierge/chat/chatText';
 
-/* Reply-only display, ported from the pre-merge panel (78aa714): text the
- * model writes before or between its tool calls is working narration and
- * never renders; only text after the last tool call — the reply — does. The
- * simplification deleted that enforcement and the model's processing leaked
- * into the conversation ("That search returned just one result, let me
- * search again…"). */
+/* Display contract (Arijit, 2026-11-04): the opening voice above the shelf
+ * stays, the closing line stays, mid-turn processing narration never
+ * renders. The old panel enforced this in code; the simplification deleted
+ * the enforcement. */
 
 const tool = { type: 'tool-algolia_grouped_results', toolCallId: 't1' };
 const text = (s: string) => ({ type: 'text', text: s });
 
-describe('reply-only text display', () => {
-  it('keeps all text when the turn called no tools', () => {
-    const parts = [text('Plain answer, no search needed.')];
-    expect(isReplyPart(parts, 0)).toBe(true);
-  });
-
-  it('drops narration written before the first tool call', () => {
-    const parts = [text('Let me search for graduation pieces.'), tool, text('Here are the pieces.')];
-    expect(isReplyPart(parts, 0)).toBe(false);
+describe('assistant text display contract', () => {
+  it('keeps the opening voice written before the first tool call', () => {
+    const parts = [text('What a wonderful milestone to celebrate!'), tool];
+    expect(textDisplay(parts, 0)).toBe('open');
   });
 
   it('drops narration between tool calls', () => {
-    const parts = [
-      tool,
-      text('That search returned just one result, let me search again.'),
-      tool,
-      text('Great selection — here it is.'),
-    ];
-    expect(isReplyPart(parts, 1)).toBe(false);
+    const parts = [tool, text('That search returned just one result, let me search again.'), tool];
+    expect(textDisplay(parts, 1)).toBe('narration');
   });
 
-  it('keeps the reply written after the last tool call', () => {
-    const parts = [text('narration'), tool, text('reply')];
-    expect(isReplyPart(parts, 2)).toBe(true);
+  it('keeps the closing written after the last tool call', () => {
+    const parts = [tool, text('Do you have a ballpark in mind?')];
+    expect(textDisplay(parts, 1, 'ready')).toBe('closing');
   });
 
-  it('renders the reply text with markdown and nothing for narration', () => {
+  it('holds trailing text while streaming so narration never flashes then clears', () => {
+    const parts = [tool, text('Great! Now I have a strong selection.')];
+    expect(textDisplay(parts, 1, 'streaming')).toBe('narration');
+  });
+
+  it("drops a process-talk opening (\"I'll search for…\")", () => {
+    const parts = [text("I'll search for engagement rings within your budget."), tool];
+    expect(textDisplay(parts, 0)).toBe('narration');
+  });
+
+  it("keeps a genuine opening that starts with the shopper's moment", () => {
+    const parts = [text('What a wonderful milestone to celebrate!'), tool];
+    expect(textDisplay(parts, 0)).toBe('open');
+  });
+
+  it('keeps all text on a turn with no tool calls', () => {
+    const parts = [text('Plain answer.'), text('Second paragraph.')];
+    expect(textDisplay(parts, 0, 'ready')).toBe('open');
+    expect(textDisplay(parts, 1, 'streaming')).toBe('open');
+  });
+
+  it('renders the kept parts with markdown and drops narration at render time', () => {
     const html = renderToStaticMarkup(
-      <ChatText part={text('[Chain](/product/ABC123)')} message={{ parts: [tool, text('[Chain](/product/ABC123)')] }} partIndex={1} />,
+      <ChatText part={text('[Chain](/product/ABC123)')} message={{ parts: [text('open'), tool, text('[Chain](/product/ABC123)')] }} partIndex={2} status="ready" />,
     );
     expect(html).toContain('/product/ABC123');
     const dropped = renderToStaticMarkup(
-      <ChatText part={text('Let me search.')} message={{ parts: [text('Let me search.'), tool] }} partIndex={0} />,
+      <ChatText part={text('That search returned one result.')} message={{ parts: [tool, text('That search returned one result.'), tool] }} partIndex={1} />,
     );
     expect(dropped).toBe('');
-  });
-
-  it('holds unclassifiable streaming text so narration never flashes on and off', () => {
-    const parts = [text('Let me show you some classic gift directions.')];
-    expect(isReplyPart(parts, 0, 'streaming')).toBe(false);
-  });
-
-  it('renders a finished no-tool turn in full', () => {
-    const parts = [text('Plain answer, no search needed.')];
-    expect(isReplyPart(parts, 0, 'ready')).toBe(true);
   });
 });
