@@ -499,3 +499,64 @@
 .jtv-concierge .ais-ChatPrompt-disclaimer {
   display: none;
 }
+
+/* Turn status: the old panel's .connected-progress pattern, ported — three
+ * pulsing dots and the phase text, overlaid on the composer zone. Absolute
+ * against the panel (the nearest positioned ancestor) so it pins above the
+ * entry field whatever the messages are doing. */
+.jtv-chat-loader {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 5.75rem;
+  left: 1.25rem;
+  z-index: 3;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 0 12px;
+  overflow: hidden;
+  color: var(--muted, #707070);
+  font-size: 14px;
+  pointer-events: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.jtv-chat-loader-dots {
+  display: inline-flex;
+  flex: none;
+  gap: 3px;
+  align-items: center;
+}
+
+.jtv-chat-loader-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--blue, #0076a9);
+  animation: jtv-status-pulse 1.4s ease-in-out infinite;
+}
+
+.jtv-chat-loader-dots i:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.jtv-chat-loader-dots i:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes jtv-status-pulse {
+  0%,
+  70%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  35% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}

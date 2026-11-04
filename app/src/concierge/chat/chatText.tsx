@@ -1,70 +1,49 @@
 import { compiler } from 'markdown-to-jsx';
 
-/* Display contract for assistant text, settled from Arijit's screenshots
- * (2026-11-04): the opening voice above the shelf stays, the closing line
- * after the shelf stays, and the model's mid-turn processing narration
- * ("That search returned just one result, let me search again", "Great! Now
- * I have a strong selection") never renders — it is the model talking about
- * its work, and the shopper does not care. The pre-merge panel enforced
- * this in code (78aa714); the simplification deleted the enforcement.
+/* Display contract for assistant text (presentation only — the agent, tools
+ * and transcript are untouched).
  *
- * Rules per text part:
- *  - no tool part before it  -> the opening voice: always renders.
- *  - a tool part before AND after -> narration between tool calls: never renders.
- *  - a tool part before, none after -> the closing: renders once the stream
- *    completes (holding it while streaming hides narration that is about to
- *    be followed by another tool, so nothing flashes on and then clears).
+ * Measured live 2026-11-04: this model writes ALL of its text before the
+ * display tool — the shopper's opening moment and its own processing
+ * narration interleaved in the same stream ("Congratulations on your
+ * engagement! … Let me show you…", "That search returned just one result…",
+ * "The search gave me ornaments…") — and nothing after it. A reply-only
+ * position filter therefore renders nothing, and keeping whole parts leaks
+ * the processing. The contract that survives both is sentence-level:
  *
- * Presentation only: raw transcript state, the agent and the tools are
- * untouched. */
+ *  - sentences that narrate the model's own work (search reports, curation
+ *    talk, "Let me show you") never render;
+ *  - everything else (the human moment, the guidance, the closing question)
+ *    renders exactly as written.
+ *
+ * The sentence classes come from Arijit's callouts ("Who cares?" — the model
+ * declaring what it is about to do) and the prompt's own narration bans,
+ * which this model violates even with worked examples. Dropping is render
+ * filtering, not rewriting: the words are the model's, the transcript keeps
+ * every part. */
 
-type MessagePart = { type?: string; text?: string };
+const PROCESS_SENTENCE =
+  /^\s*(i'll search|i will search|let me|let's|i will show|great!|that search returned|the search gave|the search returned|the results (?:are|show|lean)|now i have)\b/i;
 
-const isToolPart = (p: MessagePart | undefined) =>
-  typeof p?.type === 'string' && p.type.startsWith('tool-');
-
-/* Process-talk openings, measured live 2026-11-04: "I'll search for
- * engagement rings within your budget", "Let me show you some classic gift
- * directions", "Great! Now I have a strong selection". The prompt bans them
- * (rule, worked example, verbatim test) and the model writes them anyway;
- * the display drops the sentence class the way it drops between-tool
- * narration. First-sentence match only: a genuine opening never starts with
- * a verb phrase about the model's own work. */
-const PROCESS_OPENING =
-  /^\s*(i'll search|i will search|let me|let's |i will show|great!|that search returned)/i;
-
-export function isProcessOpening(part: MessagePart | undefined): boolean {
-  const firstSentence = (part?.text ?? '').split(/[.!?]/)[0] ?? '';
-  return PROCESS_OPENING.test(firstSentence);
+export function keepSentence(sentence: string): boolean {
+  return !PROCESS_SENTENCE.test(sentence);
 }
 
-export function textDisplay(
-  parts: MessagePart[] | undefined,
-  index: number,
-  status?: string,
-): 'open' | 'narration' | 'closing' {
-  if (!parts) return 'open';
-  const part = parts[index];
-  const before = parts.slice(0, index).some(isToolPart);
-  const after = parts.slice(index + 1).some(isToolPart);
-  if (!before) {
-    /* The opening voice — unless it opens with process talk. */
-    return isProcessOpening(part) ? 'narration' : 'open';
-  }
-  if (after) return 'narration';
-  /* Closing text: hidden only while the stream could still add another tool
-   * call; a narration part would then be reclassified, a reply part stays. */
-  return status === 'streaming' ? 'narration' : 'closing';
+export function displayText(raw: string | undefined): string {
+  if (!raw) return '';
+  /* Split keeping the trailing delimiter with each sentence. */
+  const pieces = raw.match(/[^.!?]+[.!?]*\s*/g) ?? [raw];
+  const kept = pieces.filter(keepSentence);
+  if (!kept.length) return '';
+  return kept.join('').trim();
 }
 
 type ChatTextProps = {
   part: { type?: string; text?: string };
-  message?: { parts?: MessagePart[] };
-  partIndex?: number;
-  status?: string;
 };
 
-export function ChatText({ part, message, partIndex = -1, status }: ChatTextProps) {
-  if (textDisplay(message?.parts, partIndex, status) === 'narration') return null;
-  return <span>{compiler(part.text ?? '', { disableParsingRawHTML: true })}</span>;
+export function ChatText({ part }: ChatTextProps) {
+  const text = displayText(part?.text);
+  if (!text) return null;
+  return <span>{compiler(text, { disableParsingRawHTML: true })}</span>;
 }

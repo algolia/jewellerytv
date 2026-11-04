@@ -1,60 +1,59 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { ChatText, textDisplay } from '../../src/concierge/chat/chatText';
+import { ChatText, displayText, keepSentence } from '../../src/concierge/chat/chatText';
 
-/* Display contract (Arijit, 2026-11-04): the opening voice above the shelf
- * stays, the closing line stays, mid-turn processing narration never
- * renders. The old panel enforced this in code; the simplification deleted
- * the enforcement. */
+/* Display contract (Arijit, 2026-11-04): the model writes its voice AND its
+ * processing narration interleaved, all before the display tool. Sentences
+ * that narrate the model's own work never render; the human moment, the
+ * guidance and the closing question render exactly as written. */
 
-const tool = { type: 'tool-algolia_grouped_results', toolCallId: 't1' };
 const text = (s: string) => ({ type: 'text', text: s });
 
-describe('assistant text display contract', () => {
-  it('keeps the opening voice written before the first tool call', () => {
-    const parts = [text('What a wonderful milestone to celebrate!'), tool];
-    expect(textDisplay(parts, 0)).toBe('open');
+describe('sentence-level narration filter', () => {
+  it('drops the measured process sentences', () => {
+    expect(keepSentence("I'll search for what's new and holiday-focused across our catalog to start.")).toBe(false);
+    expect(keepSentence('That search returned just one result, which is too narrow for graduation choices.')).toBe(false);
+    expect(keepSentence('Great! Now I have a strong selection of pieces across styles and budgets.')).toBe(false);
+    expect(keepSentence('The search gave me ornaments and holiday charms alongside everyday pieces.')).toBe(false);
+    expect(keepSentence('The results lean heavily on lab-created strontium titanate alternatives.')).toBe(false);
+    expect(keepSentence('The results are heavy on lab-created strontium titanate alternatives.')).toBe(false);
+    expect(keepSentence('Let me curate the best gift-worthy options for graduation.')).toBe(false);
+    expect(keepSentence("Let me show you some classic gift directions that work beautifully for the occasion.")).toBe(false);
   });
 
-  it('drops narration between tool calls', () => {
-    const parts = [tool, text('That search returned just one result, let me search again.'), tool];
-    expect(textDisplay(parts, 1)).toBe('narration');
+  it('keeps the human moment, the guidance and the closing question', () => {
+    expect(keepSentence('What a wonderful milestone to celebrate!')).toBe(true);
+    expect(keepSentence('Graduation calls for something meaningful they can keep, and jewelry hits that note perfectly.')).toBe(true);
+    expect(keepSentence("Congratulations on your engagement!")).toBe(true);
+    expect(keepSentence("What matters most to you in a gift, a special-occasion piece, or a keepsake?")).toBe(true);
   });
 
-  it('keeps the closing written after the last tool call', () => {
-    const parts = [tool, text('Do you have a ballpark in mind?')];
-    expect(textDisplay(parts, 1, 'ready')).toBe('closing');
+  it('filters a full measured turn, keeping the voice', () => {
+    const raw = [
+      'What a wonderful milestone to celebrate!',
+      'Graduation calls for something meaningful they can keep, and jewelry hits that note perfectly. Let me show you some classic gift directions that work beautifully for the occasion.',
+      'That search returned just one result, which is too narrow for graduation choices. Let me search again to show you what we carry across different styles and budgets.',
+      'Great! Now I have a strong selection of pieces across styles and budgets. Let me curate the best gift-worthy options for graduation.',
+    ].join(' ');
+    const out = displayText(raw);
+    expect(out).toContain('What a wonderful milestone to celebrate!');
+    expect(out).toContain('Graduation calls for something meaningful');
+    expect(out).not.toContain('That search returned');
+    expect(out).not.toContain('Great!');
+    expect(out).not.toContain('Let me');
   });
 
-  it('holds trailing text while streaming so narration never flashes then clears', () => {
-    const parts = [tool, text('Great! Now I have a strong selection.')];
-    expect(textDisplay(parts, 1, 'streaming')).toBe('narration');
-  });
-
-  it("drops a process-talk opening (\"I'll search for…\")", () => {
-    const parts = [text("I'll search for engagement rings within your budget."), tool];
-    expect(textDisplay(parts, 0)).toBe('narration');
-  });
-
-  it("keeps a genuine opening that starts with the shopper's moment", () => {
-    const parts = [text('What a wonderful milestone to celebrate!'), tool];
-    expect(textDisplay(parts, 0)).toBe('open');
-  });
-
-  it('keeps all text on a turn with no tool calls', () => {
-    const parts = [text('Plain answer.'), text('Second paragraph.')];
-    expect(textDisplay(parts, 0, 'ready')).toBe('open');
-    expect(textDisplay(parts, 1, 'streaming')).toBe('open');
-  });
-
-  it('renders the kept parts with markdown and drops narration at render time', () => {
+  it('renders nothing when every sentence is narration', () => {
     const html = renderToStaticMarkup(
-      <ChatText part={text('[Chain](/product/ABC123)')} message={{ parts: [text('open'), tool, text('[Chain](/product/ABC123)')] }} partIndex={2} status="ready" />,
+      <ChatText part={text("I'll search for engagement rings. Let me narrow it down.")} />,
+    );
+    expect(html).toBe('');
+  });
+
+  it('renders kept sentences with markdown intact', () => {
+    const html = renderToStaticMarkup(
+      <ChatText part={text('Lovely choice. See [this chain](/product/ABC123) and tell me what you think.')} />,
     );
     expect(html).toContain('/product/ABC123');
-    const dropped = renderToStaticMarkup(
-      <ChatText part={text('That search returned one result.')} message={{ parts: [tool, text('That search returned one result.'), tool] }} partIndex={1} />,
-    );
-    expect(dropped).toBe('');
   });
 });

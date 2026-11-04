@@ -6,13 +6,21 @@ type ChatLoaderProps = {
   inline?: boolean;
 };
 
-/* The library's default loader draws two grey skeleton bars under the status
- * word — the "dumb gray progress bar" Arijit rejected (2026-11-04). The
- * previous panel spoke its progress as a line of text in the conversation,
- * so this loader renders only the phase-aware status the widget already
- * computes (Searching… / Choosing pieces… / Thinking…). Presentation only:
- * the wiring, phases and text rules are the library's and loaderText's. */
+/* The turn status, shown the old panel's way: three pulsing dots and the
+ * phase text, overlaid on the composer zone (the old .connected-progress
+ * pattern) instead of a skeleton block in the message stream. The loader
+ * element is absolutely positioned from the panel so it pins above the
+ * entry field regardless of scroll. */
 export function ChatLoader({ translations, context }: ChatLoaderProps) {
-  const text = translations?.loaderText || loaderTextFor(context);
-  return <p className="jtv-chat-loader">{text}</p>;
+  const label = translations?.loaderText || loaderTextFor(context);
+  return (
+    <p className="jtv-chat-loader" role="status">
+      <span className="jtv-chat-loader-dots" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
+      {label}
+    </p>
+  );
 }
