@@ -193,22 +193,12 @@ function ownerOf(messages: Array<OwnerMessage> | undefined, part: unknown) {
   return messages?.find((message) => message?.parts?.some((candidate) => candidate === part));
 }
 
-/* Only text the shopper will actually read counts. Narration before a tool
- * call is hidden by the display rule in jtv-chat.css, so a turn whose only
- * prose is narration has no voice of its own and the tool's intro fills in —
- * counting the hidden text instead would drop the intro and leave silence. */
 function messageCarriesText(owner: OwnerMessage | undefined): boolean {
-  const parts = owner?.parts ?? [];
-  const lastTool = parts.map((part) => String(part?.type ?? '')).reduce(
-    (last, type, index) => (type.startsWith('tool-') ? index : last),
-    -1,
-  );
-  return parts.some(
-    (candidate, index) =>
-      index > lastTool &&
-      candidate?.type === 'text' &&
-      typeof candidate.text === 'string' &&
-      candidate.text.trim(),
+  return Boolean(
+    owner?.parts?.some(
+      (candidate) =>
+        candidate?.type === 'text' && typeof candidate.text === 'string' && candidate.text.trim(),
+    ),
   );
 }
 

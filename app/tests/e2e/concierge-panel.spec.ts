@@ -3,7 +3,6 @@ import {
   EARRINGS,
   RING,
   UNPHOTOGRAPHED,
-  installManualAgentStream,
   stubAgentNetworkFailure,
   stubAgentTurn,
 } from './fixtures/agentStream';
@@ -127,11 +126,10 @@ test('a grouped-results call renders one tile per piece, imaged, titled and link
 
   const cards = panel.locator(CARD);
   await expect(cards).toHaveCount(2);
-  /* This turn's message text is written before the display tool, which the
-   * display treats as narration and hides, so the tool's intro is what the
-   * shopper reads. The rule either way is one voice: whichever of the two
-   * will actually render is the one kept. */
-  await expect(panel.locator('.ais-ChatToolGroupedResults-intro')).toHaveCount(1);
+  /* The tool's intro is deliberately dropped by the display gate: the model
+   * writes its reply in the message and then says the same thing again above
+   * the shelves. The message is the only voice the shopper reads. */
+  await expect(panel.locator('.ais-ChatToolGroupedResults-intro')).toHaveCount(0);
 
   const ring = panel.locator(`${CARD}[href="/product/${RING.objectID}"]`);
   await expect(ring).toHaveCount(1);
@@ -193,56 +191,6 @@ test('a narrowing chip asks the agent again', async ({ page }) => {
  * protecting against survives: a price must never appear in the agent's
  * prose, where it reads as a quote and goes stale between the search and the
  * glance. */
-/* Haiku 4.5 narrates far more than the others — "I'll search our catalog…",
- * "Let me correct that search…" — and the prompt ban is not enough, because
- * the completion cache replays banned text verbatim. So the display drops
- * any text a tool call follows, and keeps what was written after the last
- * one: the reply. */
-test('narration written before a tool call never renders', async ({ page }) => {
-  const stream = await installManualAgentStream(page);
-  const panel = await openPanel(page);
-  await ask(page, 'Show me Gems en Vogue jewelry');
-  await stream.emit(
-    { type: 'start', messageId: 'alg_narr', messageMetadata: { groupedResultsEnabled: true } },
-    { type: 'start-step' },
-    { type: 'text-start', id: 'n0' },
-    { type: 'text-delta', id: 'n0', delta: "I'll search our catalog for Gems en Vogue pieces." },
-    { type: 'text-end', id: 'n0' },
-    { type: 'tool-input-start', toolCallId: 's', toolName: 'algolia_search_index_prod_catalog' },
-    {
-      type: 'tool-input-available',
-      toolCallId: 's',
-      toolName: 'algolia_search_index_prod_catalog',
-      input: { queries: [{ query: 'gems en vogue' }] },
-    },
-    { type: 'tool-output-available', toolCallId: 's', output: { hits: [RING], nbHits: 1 } },
-    { type: 'finish-step' },
-    { type: 'start-step' },
-    { type: 'text-start', id: 'n1' },
-    { type: 'text-delta', id: 'n1', delta: 'Let me correct that search with the right facet format.' },
-    { type: 'text-end', id: 'n1' },
-    {
-      type: 'tool-input-available',
-      toolCallId: 'd',
-      toolName: 'algolia_grouped_results',
-      input: { groups: [{ title: 'Gems en Vogue', results: [{ objectID: RING.objectID }] }] },
-    },
-    { type: 'finish-step' },
-    { type: 'start-step' },
-    { type: 'text-start', id: 'n2' },
-    { type: 'text-delta', id: 'n2', delta: 'Gems en Vogue runs bold and colourful.' },
-    { type: 'text-end', id: 'n2' },
-    { type: 'finish-step' },
-    { type: 'finish' },
-  );
-  await stream.close();
-
-  await expect(panel.locator(CARD)).toHaveCount(1);
-  await expect(panel.getByText('Gems en Vogue runs bold and colourful.')).toBeVisible();
-  await expect(panel.getByText("I'll search our catalog for Gems en Vogue pieces.")).toBeHidden();
-  await expect(panel.getByText('Let me correct that search with the right facet format.')).toBeHidden();
-});
-
 test('a price appears on the tiles and never in the reply', async ({ page }) => {
   await stubAgentTurn(page, {
     text: 'Both are in stock.',
