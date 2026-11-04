@@ -85,18 +85,30 @@ async function send(page, text) {
   await ta.press('Enter');
 }
 
-/* The composer disables while the turn runs; settle time lets tiles land. */
-async function waitTurnDone(page, settleMs = 3500) {
-  await page.waitForFunction(
-    () => {
-      const ta = document.querySelector('.ais-ChatPrompt-textarea');
-      const send = document.querySelector('.ais-ChatPrompt textarea ~ button, [class*="send"]');
-      const busy = document.querySelector('.ais-ChatMessageLoader');
-      return ta && !ta.disabled && !busy;
-    },
-    undefined,
-    { timeout: 150000 },
-  ).catch(() => {});
+/* The composer never disables in this UI, so "done" is measured on the
+ * transcript: a shelf or reply text has landed, the skeleton is gone, and the
+ * last assistant message's text is unchanged across two polls (the reply
+ * streams after the tiles, so tiles alone are not done). */
+async function waitTurnDone(page, settleMs = 3000) {
+  const read = () => page.evaluate(() => {
+    const msgs = [...document.querySelectorAll('.ais-ChatMessage')];
+    const lastAssistant = [...msgs].reverse().find((m) => m.getAttribute('data-role') !== 'user');
+    return {
+      skeleton: !!document.querySelector('.jtv-chat-skeleton'),
+      cards: lastAssistant ? lastAssistant.querySelectorAll('a.jtv-chat-card').length : 0,
+      textLen: lastAssistant ? (lastAssistant.textContent ?? '').trim().length : 0,
+    };
+  });
+  const stable = async () => {
+    const a = await read();
+    await page.waitForTimeout(1800);
+    const b = await read();
+    return !b.skeleton && (b.cards > 0 || b.textLen > 60) && a.textLen === b.textLen && a.cards === b.cards;
+  };
+  const started = Date.now();
+  while (Date.now() - started < 150000) {
+    if (await stable()) break;
+  }
   await page.waitForTimeout(settleMs);
 }
 
@@ -107,12 +119,8 @@ async function readTurn(page) {
     );
     const lastAssistant = [...msgs].reverse().find((m) => m.getAttribute('data-role') !== 'user');
     const userCount = msgs.filter((m) => m.getAttribute('data-role') === 'user').length;
-    const textParts = lastAssistant
-      ? [...lastAssistant.querySelectorAll('.ais-ChatMessage-text, [class*="text"]')]
-          .map((n) => n.textContent?.trim() ?? '')
-          .filter((t) => t.length > 0)
-      : [];
-    const replyText = lastAssistant?.textContent?.trim() ?? '';
+    const replyText = lastAssistant?.querySelector('.ais-ChatMessage-message')?.textContent?.trim()
+      ?? lastAssistant?.textContent?.trim() ?? '';
     const bolds = lastAssistant ? [...lastAssistant.querySelectorAll('strong')].map((b) => b.textContent?.trim() ?? '') : [];
     const tiles = lastAssistant ? lastAssistant.querySelectorAll('a.jtv-chat-card').length : 0;
     const chips = lastAssistant
@@ -126,7 +134,7 @@ async function readTurn(page) {
     const suggestions = [...document.querySelectorAll('.ais-ChatPromptSuggestions button, [class*="uggestion"] button')]
       .map((b) => b.textContent?.trim() ?? '')
       .filter(Boolean);
-    return { replyHead: textParts[0] ?? replyText.slice(0, 160), replyText, bolds, tiles, chips, groups, suggestions, userCount };
+    return { replyHead: replyText.slice(0, 200), replyText, bolds, tiles, chips, groups, suggestions, userCount };
   });
 }
 
