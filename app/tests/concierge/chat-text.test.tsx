@@ -27,6 +27,14 @@ describe('sentence-level narration filter', () => {
      * search report, back to back. */
     expect(keepSentence("I'll find something elegant and timeless for your mom.")).toBe(false);
     expect(keepSentence('The search picked up watches alongside necklaces.')).toBe(false);
+    /* Measured in the fix-4 battery, 2026-11-04: the display announcement with
+     * "Now" in front of it, the help promise, and the shelf announcement. */
+    expect(keepSentence('Now let me display a curated selection of these elegant, timeless pieces.')).toBe(false);
+    expect(keepSentence("I'll help you find the perfect wedding ring sets.")).toBe(false);
+    expect(keepSentence('Here are some sterling silver necklaces across different styles and price points:')).toBe(false);
+    /* "Here are" with real content stays: the ban is the shelf announcement,
+     * not every list opener. */
+    expect(keepSentence('Here are three things to know about opals.')).toBe(true);
   });
 
   it('keeps the human moment, the guidance and the closing question', () => {

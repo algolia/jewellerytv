@@ -28,7 +28,7 @@ import { compiler } from 'markdown-to-jsx';
  * run would slip through the filter. Every alternative is a phrase or ends
  * in "!", so a bare prefix match is already exact enough. */
 const PROCESS_SENTENCE =
-  /^\s*(i'll search|i'll find|i will search|i will find|i will show|let me|let's|great!|that search returned|the search gave|the search returned|the search picked|the results (?:are|show|lean)|now i have|now i'll|now i will)/i;
+  /^\s*(i'll search|i'll find|i'll help|i will search|i will find|i will show|let me|now let me|let's|great!|that search returned|the search gave|the search returned|the search picked|the results (?:are|show|lean)|now i have|now i'll|now i will|here are some)/i;
 
 export function keepSentence(sentence: string): boolean {
   return !PROCESS_SENTENCE.test(sentence);

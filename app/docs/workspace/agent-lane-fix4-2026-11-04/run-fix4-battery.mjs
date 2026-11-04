@@ -162,9 +162,21 @@ for (const j of JOURNEYS) {
         await shot(page, `${j.name}-t${i + 1}-tap`);
         continue;
       }
+      const before = await page.evaluate(() => document.querySelectorAll('.ais-ChatMessage').length);
       await send(page, step.say);
+      /* The turn must actually advance: one more message, then stability. If
+       * the send dies (dead turn), record it rather than grading stale state. */
+      await page
+        .waitForFunction(
+          (n) => document.querySelectorAll('.ais-ChatMessage').length > n,
+          before,
+          { timeout: 30000 },
+        )
+        .catch(() => {});
+      const afterSend = await page.evaluate(() => document.querySelectorAll('.ais-ChatMessage').length);
       await waitTurnDone(page);
       const turn = await readTurn(page);
+      turn.turnAdvanced = afterSend > before;
       const openers = turn.replyText
         .split(/\n+/)
         .filter((line) => NARRATION.test(line.trim()))
