@@ -558,6 +558,14 @@
   animation-delay: 0.16s;
 }
 
+/* Arijit, 2026-11-04: the mood placeholder is an impression, not text, and it
+ * yields the moment the entry area is occupied. While the turn status is up
+ * the placeholder goes transparent (the status reads alone); typed text hides
+ * it natively, which is the same rule from the shopper's side. */
+.jtv-concierge:has(.jtv-chat-loader) .ais-ChatPrompt-textarea::placeholder {
+  color: transparent;
+}
+
 .jtv-chat-loader-dots i:nth-child(3) {
   animation-delay: 0.32s;
 }
