@@ -151,6 +151,18 @@
   padding-inline: 1.25rem;
 }
 
+/* Links in a reply read as plain text without this. The storefront's reset
+ * (`website/styles.css`) strips every anchor to `color: inherit` with no
+ * underline until hover, which is right for a nav bar and wrong here: a
+ * replay page or a care guide is often the one thing in a reply the shopper
+ * can act on, and a hover underline does not exist on touch. Scoped to the
+ * message text so the tiles keep their deliberately unstyled titles. */
+.jtv-concierge .ais-ChatMessage-message a {
+  color: var(--blue, #0076a9);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Groups: a grid, not a carousel. At this width a row of cards hides most of
  * a shelf behind arrows, and the shopper cannot see what they are choosing
  * between.
