@@ -22,8 +22,13 @@ import { compiler } from 'markdown-to-jsx';
  * filtering, not rewriting: the words are the model's, the transcript keeps
  * every part. */
 
+/* No trailing `\b` on purpose: after a punctuation-bearing alternative such
+ * as `great!` a word boundary can never hold — "!" and the space (or end of
+ * string) after it are both non-word — so "Great!" at the end of a sentence
+ * run would slip through the filter. Every alternative is a phrase or ends
+ * in "!", so a bare prefix match is already exact enough. */
 const PROCESS_SENTENCE =
-  /^\s*(i'll search|i will search|let me|let's|i will show|great!|that search returned|the search gave|the search returned|the results (?:are|show|lean)|now i have)\b/i;
+  /^\s*(i'll search|i will search|let me|let's|i will show|great!|that search returned|the search gave|the search returned|the results (?:are|show|lean)|now i have)/i;
 
 export function keepSentence(sentence: string): boolean {
   return !PROCESS_SENTENCE.test(sentence);

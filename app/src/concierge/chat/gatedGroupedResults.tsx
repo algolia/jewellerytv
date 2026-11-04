@@ -3,7 +3,6 @@ import { createDefaultTools, GroupedResultsToolType } from 'react-instantsearch'
 import type { Tool, Tools } from 'react-instantsearch';
 import { createGroupedResultsToolComponent } from 'instantsearch-ui-components';
 import { recordDisplayEvent } from '../../shared/telemetry';
-import { searchClient } from '../../shared/client';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { narrowChipsFor, type NarrowGroup } from './narrowChips';
 import {
@@ -360,6 +359,10 @@ export function createGatedTools(): Tools {
       const selections = [...(funnel?.selections ?? []), selection];
       setFunnel({ selections, loading: true, hits: null, chips: [] });
       try {
+        /* Imported here, not at module scope: `shared/client` throws at import
+         * when the build env carries no Algolia keys, and the gate's unit
+         * tests run without them. The refine is the only caller. */
+        const { searchClient } = await import('../../shared/client');
         const response = await searchClient.search([
           {
             indexName: 'prod_catalog',
