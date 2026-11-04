@@ -13,11 +13,16 @@
   "stages": {
     "intake": "done",
     "plan": "done",
-    "build": "done (commits 70a1252 + 6269fa5; gate: tsc 0, eslint 0, unit 143/149 with 6 pre-existing on base verified, e2e 32/34 with 2 pre-existing on base verified)",
-    "verify": "pending (preview battery on the Vercel preview once CI/build lands)",
-    "stagingPreview": "PR 54 open, awaiting Vercel preview + Arijit review",
+    "build": "done (70a1252 + 6269fa5 + 997da03 lineage; gate: tsc 0, eslint 0, unit 149/149, e2e 34/34 excluding 2 pre-existing base failures now fixed in CI env, CI verify PASS)",
+    "verify": "done (connected battery pass 2 all-pass, BATTERY.md; pass 1 found 2 defects, fixed and re-verified)",
+    "stagingPreview": "PR 54 open, CI green; Vercel PR preview NOT built (no Vercel statuses on any commit since Nov 3) — Arijit reviews on local dev or checks the Vercel dashboard",
     "finish": "pending (merge = Arijit's explicit go; pushes to main auto-deploy prod)"
   },
+  "openItems": [
+    "In-stock parity: refine carries Inventory_InStock:true; confirm the live agent's search carries the same filter before merge (2026-11-03 tool snapshot shows no filters key)",
+    "Prose above the refined shelf describes the unrefined shelf — accepted tradeoff, confirm in review",
+    "Vercel Git integration posts no PR previews/statuses despite the 2026-11-03 Git-sync decision — main deploy evidence exists only via live behavior"
+  ],
   "gates": [
     "Arijit reviews the preview before merge (pushes to main auto-deploy prod, so merge = his explicit go)"
   ],
