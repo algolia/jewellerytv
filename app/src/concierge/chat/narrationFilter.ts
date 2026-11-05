@@ -9,40 +9,86 @@ import { isNarration } from './narration';
  * reverted. So it happens here, in the transport, on the chunk stream between
  * the network and the chat store.
  *
- * Each text block is held until there is enough of it to judge: about fifty
- * characters, or the end of the first sentence, or the end of the block,
- * whichever comes first. Narration is recognisable long before then — "I'll
- * search for garnet pendants" is twenty-seven. If the block is narration, it
- * and every delta after it are dropped and the transcript never sees it. If
- * it is not, the held text is released in one chunk and the rest streams
- * through as it arrives, so a reply starts rendering a few tokens later than
- * it would have and nothing else changes.
+ * The unit is the sentence, not the block. An earlier cut judged each block
+ * once, on its first fifty characters or its first sentence, and released
+ * everything after that verdict unexamined. Measured 2026-11-05 on the class
+ * battery, that is how two blocks reached the shopper:
+ *
+ *   "Perfect! Now I'll display these gold hoops."
+ *   "I see these results are mostly silver with gold overlay and gemstones.
+ *    Let me search for solid sterling silver hoops instead."
+ *
+ * Both open with something that is not narration — a one-word interjection,
+ * a sentence about the results — so both were released at the first full
+ * stop, and the announcement that followed streamed straight through. The
+ * model writes the human moment and the narration in one block, so a verdict
+ * per block can only be wrong in one direction or the other.
+ *
+ * So each sentence is held until it is complete, judged on its own, and then
+ * either emitted or dropped. A block whose every sentence is narration never
+ * opens: no `text-start`, no `text-end`, nothing in the transcript. A block
+ * that mixes them renders the half that speaks to the shopper.
+ *
+ * The cost is that text arrives a sentence at a time rather than a word at a
+ * time. That is the same granularity the reply is written in, and the panel
+ * already waits seconds on the display tool, so it reads as prose appearing
+ * rather than as a stall.
  *
  * Non-text chunks are never held: tool calls, data parts and the rest pass
  * through untouched. */
 
-const DECIDE_AT = 48;
+/** A sentence and its trailing space, which is how the text is re-joined. */
+const SENTENCE = /[^.!?]+[.!?]+\s*/;
 
 type Chunk = { type?: string; id?: string; delta?: string } & Record<string, unknown>;
 
-type Pending = { start: Chunk; text: string };
+type Pending = {
+  /** Held until the first surviving sentence, so a fully narrated block
+   * never opens a part in the transcript at all. */
+  start: Chunk | null;
+  /** Text arrived but not yet ending on a sentence boundary. */
+  buffer: string;
+  opened: boolean;
+};
 
 export function filterNarration(stream: ReadableStream<Chunk>): ReadableStream<Chunk> {
   const pending = new Map<string, Pending>();
-  const suppressed = new Set<string>();
 
-  /* Judge a held block, then either release what is held or mark the id
-   * suppressed for the rest of its deltas. */
-  function settle(id: string, controller: TransformStreamDefaultController<Chunk>) {
+  /** Emits one sentence, opening the part first if this is the first to
+   * survive. Narration is dropped without a trace. */
+  function emit(
+    id: string,
+    held: Pending,
+    sentence: string,
+    controller: TransformStreamDefaultController<Chunk>,
+  ) {
+    if (!sentence.trim() || isNarration(sentence)) return;
+    if (!held.opened) {
+      if (held.start) controller.enqueue(held.start);
+      held.opened = true;
+    }
+    controller.enqueue({ type: 'text-delta', id, delta: sentence });
+  }
+
+  /** Drains every complete sentence out of the buffer, leaving the tail. */
+  function drain(id: string, held: Pending, controller: TransformStreamDefaultController<Chunk>) {
+    for (;;) {
+      const match = SENTENCE.exec(held.buffer);
+      if (!match || match.index !== 0) break;
+      held.buffer = held.buffer.slice(match[0].length);
+      emit(id, held, match[0], controller);
+    }
+  }
+
+  /** The block has ended: the tail is a last sentence without punctuation,
+   * judged the same way. */
+  function close(id: string, controller: TransformStreamDefaultController<Chunk>, end?: Chunk) {
     const held = pending.get(id);
     if (!held) return;
     pending.delete(id);
-    if (isNarration(held.text)) {
-      suppressed.add(id);
-      return;
-    }
-    controller.enqueue(held.start);
-    if (held.text) controller.enqueue({ type: 'text-delta', id, delta: held.text });
+    drain(id, held, controller);
+    if (held.buffer) emit(id, held, held.buffer, controller);
+    if (held.opened && end) controller.enqueue(end);
   }
 
   return stream.pipeThrough(
@@ -51,30 +97,25 @@ export function filterNarration(stream: ReadableStream<Chunk>): ReadableStream<C
         const id = typeof chunk?.id === 'string' ? chunk.id : undefined;
 
         if (chunk?.type === 'text-start' && id) {
-          pending.set(id, { start: chunk, text: '' });
+          pending.set(id, { start: chunk, buffer: '', opened: false });
           return;
         }
 
         if (chunk?.type === 'text-delta' && id) {
-          if (suppressed.has(id)) return;
           const held = pending.get(id);
+          /* A delta with no start before it: nothing to judge against, so it
+           * passes rather than disappearing. */
           if (!held) {
             controller.enqueue(chunk);
             return;
           }
-          held.text += chunk.delta ?? '';
-          if (held.text.length >= DECIDE_AT || /[.!?]/.test(held.text)) settle(id, controller);
+          held.buffer += chunk.delta ?? '';
+          drain(id, held, controller);
           return;
         }
 
         if (chunk?.type === 'text-end' && id) {
-          /* A block shorter than the threshold reaches its end undecided. */
-          if (pending.has(id)) settle(id, controller);
-          if (suppressed.has(id)) {
-            suppressed.delete(id);
-            return;
-          }
-          controller.enqueue(chunk);
+          close(id, controller, chunk);
           return;
         }
 
@@ -82,7 +123,7 @@ export function filterNarration(stream: ReadableStream<Chunk>): ReadableStream<C
       },
       /* A stream that ends mid-block must not swallow what it was holding. */
       flush(controller) {
-        for (const id of [...pending.keys()]) settle(id, controller);
+        for (const id of [...pending.keys()]) close(id, controller);
       },
     }),
   );
