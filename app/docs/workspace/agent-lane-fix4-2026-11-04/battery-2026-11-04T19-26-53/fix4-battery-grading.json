@@ -1,0 +1,280 @@
+[
+ {
+  "journey": "J1-broad-browse-funnel",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me opal jewelry for everyday wear",
+    "tiles": 8,
+    "chipAxes": 3,
+    "groups": 2,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Delicate & Everyday$9.99$49.99$26.99$69.99Handcrafted Statement Pieces$125.99$255.59$481.49$402.29Narrow it do"
+   },
+   {
+    "step": 3,
+    "literal": "I only wear white metals, if that helps.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 4,
+    "literal": "Which of these would you pick for daily wear?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 5,
+    "literal": "What should I know about caring for opals?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": true,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Opals need gentle care because they're softer and more porous than many gemstones. Here are the key things to "
+   }
+  ]
+ },
+ {
+  "journey": "J2-gift-correction",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "It is my mom's 70th birthday next month and she lo",
+    "tiles": 4,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "I found some beautiful sapphire pieces.Sapphire Earrings & Rings$19.99$19.99$19.99$29.99Narrow it downWomenMen"
+   },
+   {
+    "step": 2,
+    "literal": "She only wears white gold.",
+    "tiles": 4,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Perfect!Sapphire Rings$3,846.59$2,414.69$1,204.19$1,783.79Narrow it downWomenMenGirlsWhiteYellowRose$200 - $50"
+   },
+   {
+    "step": 3,
+    "literal": "Actually, she prefers yellow gold after all.",
+    "tiles": 4,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Perfect! Here are beautiful yellow gold sapphire pieces ideal for her 70th birthday:Sapphire Earrings & Rings$"
+   },
+   {
+    "step": 4,
+    "literal": "Let us keep it under 400 dollars.",
+    "tiles": 8,
+    "chipAxes": 3,
+    "groups": 2,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Great options within your budget! Here are beautiful sapphire pieces in yellow gold under $400:Sapphire Neckla"
+   },
+   {
+    "step": 5,
+    "literal": "Which one would you choose and why?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "I'd lean toward CLG935 for a few reasons. The color-change sapphire is special—it shifts subtly depending on t"
+   }
+  ]
+ },
+ {
+  "journey": "J3-style-brief",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me elegant and timeless pieces",
+    "tiles": 4,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Sophisticated Classics$404.09$350.09$89.99$137.99Narrow it downBlueGrayWomenMenGirls$200 - $500$500 - $1000$10"
+   },
+   {
+    "step": 3,
+    "literal": "It is a gift for my mother in law, she is impossib",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "I'd love to help you find something she'll treasure. To narrow this down, tell me a bit about her style—does s"
+   },
+   {
+    "step": 4,
+    "literal": "What would you say suits a woman who wears mostly ",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "For a woman who loves classic styles, I'd focus on timeless pieces that work with everything—elegant simplicit"
+   }
+  ]
+ },
+ {
+  "journey": "J4-verbatim-thin",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me sterling silver necklaces with marcasite s",
+    "tiles": 3,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "I found sterling silver necklaces with marcasite stones.Sterling Silver Marcasite Necklaces$79.99$110.69$84.99"
+   },
+   {
+    "step": 2,
+    "literal": "Only marcasite, nothing else will do.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "I found only three sterling silver necklaces with marcasite in our catalog, and all of them pair marcasite wit"
+   },
+   {
+    "step": 3,
+    "literal": "Fine, show me whatever silver necklaces you do hav",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 4,
+    "literal": "How do I keep sterling silver from tarnishing?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   }
+  ]
+ },
+ {
+  "journey": "J5-education",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "What is the difference between lab grown and natur",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": true,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Lab-grown and natural diamonds are chemically identical—both are pure carbon crystallized into diamond form—bu"
+   },
+   {
+    "step": 2,
+    "literal": "Interesting. Show me lab grown diamond studs.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "I found a nice collection of lab-grown diamond studs at various price points and styles."
+   },
+   {
+    "step": 3,
+    "literal": "Are they really identical in sparkle?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "I found a nice collection of lab-grown diamond studs at various price points and styles."
+   }
+  ]
+ },
+ {
+  "journey": "J6-two-meanings",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "I am shopping for wedding ring sets",
+    "tiles": 4,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Moissanite Sets$5,939.09$3,599.99$109.99$329.99Narrow it downWomenMenWhiteYellowRose10% - 20% off50% - 60% off"
+   },
+   {
+    "step": 3,
+    "literal": "My budget is 800 dollars.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 4,
+    "literal": "She wants something vintage looking.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   }
+  ]
+ }
+]

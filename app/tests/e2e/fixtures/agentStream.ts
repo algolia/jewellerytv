@@ -92,6 +92,10 @@ export type AgentTurn = {
   messageId?: string;
   indexName?: string;
   query?: string;
+  /** The turn's own facet constraints, as `facet_<Attribute>` keys on the
+   * query object — the shape the per-index search tool carries them in, and
+   * what a chip refine re-issues. */
+  turnFilters?: Record<string, string[]>;
 };
 
 export type AgentEvent = Record<string, unknown>;
@@ -114,7 +118,9 @@ export function agentTurnEvents(turn: AgentTurn = {}): AgentEvent[] {
       type: 'tool-input-available',
       toolCallId: 'call_search',
       toolName,
-      input: { queries: [{ query: turn.query ?? '' }] },
+      input: {
+        queries: [{ query: turn.query ?? '', ...(turn.turnFilters ?? {}) }],
+      },
     });
     /* The record store the grouped tool hydrates from is built from tool
      * outputs that carry `hits` (`collectChatRecords`). A piece the agent

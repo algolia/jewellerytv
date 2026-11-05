@@ -1,0 +1,286 @@
+[
+ {
+  "journey": "J1-broad-browse-funnel",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me opal jewelry for everyday wear",
+    "tiles": 8,
+    "chipAxes": 3,
+    "groups": 2,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Opal brings warmth and color to everyday wear. You'll find pieces ranging from delicate pendants and earrings "
+   },
+   {
+    "step": 3,
+    "literal": "I only wear white metals, if that helps.",
+    "tiles": 8,
+    "chipAxes": 1,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "Opal brings warmth and color to everyday wear. You'll find pieces ranging from delicate pendants and earrings "
+   },
+   {
+    "step": 4,
+    "literal": "Which of these would you pick for daily wear?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 5,
+    "literal": "What should I know about caring for opals?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Opals are softer than many gemstones, ranking 5.5 to 6.5 on the Mohs Hardness Scale, so they need gentler hand"
+   }
+  ]
+ },
+ {
+  "journey": "J2-gift-correction",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "It is my mom's 70th birthday next month and she lo",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "What a wonderful milestone—happy 70th birthday to your mom!Sapphires are a beautiful choice for her, and we ha"
+   },
+   {
+    "step": 2,
+    "literal": "She only wears white gold.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "What a wonderful milestone—happy 70th birthday to your mom!Sapphires are a beautiful choice for her, and we ha"
+   },
+   {
+    "step": 3,
+    "literal": "Actually, she prefers yellow gold after all.",
+    "tiles": 8,
+    "chipAxes": 3,
+    "groups": 2,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Good thing you mentioned that—let me pull up sapphire pieces in yellow gold instead.Perfect. Now let me show y"
+   },
+   {
+    "step": 4,
+    "literal": "Let us keep it under 400 dollars.",
+    "tiles": 8,
+    "chipAxes": 3,
+    "groups": 2,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Now let me show you what works within your budget:Statement Rings$227.79$231.19$99.99$192.94Pendants & Delicat"
+   },
+   {
+    "step": 5,
+    "literal": "Which one would you choose and why?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "I'd lean toward the Orange Lab Created Padparadscha Sapphire With White Zircon 18k Yellow Gold Over Silver Rin"
+   }
+  ]
+ },
+ {
+  "journey": "J3-style-brief",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me elegant and timeless pieces",
+    "tiles": 4,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Now let me display a curated selection of these elegant, timeless pieces.Sophisticated Everyday Jewelry$404.09"
+   },
+   {
+    "step": 3,
+    "literal": "It is a gift for my mother in law, she is impossib",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "I understand—mother-in-laws can be tricky! These elegant pieces work well because they're sophisticated withou"
+   },
+   {
+    "step": 4,
+    "literal": "What would you say suits a woman who wears mostly ",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "For someone classic in style, I'd focus on pieces that are refined and understated—timeless shapes, quality ma"
+   }
+  ]
+ },
+ {
+  "journey": "J4-verbatim-thin",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me sterling silver necklaces with marcasite s",
+    "tiles": 3,
+    "chipAxes": 2,
+    "groups": 1,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Great find! I've got three sterling silver necklaces with marcasite stones:Marcasite Necklaces$84.99$110.69$79"
+   },
+   {
+    "step": 2,
+    "literal": "Only marcasite, nothing else will do.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "I understand — you want sterling silver necklaces where marcasite is the primary decorative stone, not just an"
+   },
+   {
+    "step": 3,
+    "literal": "Fine, show me whatever silver necklaces you do hav",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [
+     "Here are some sterling silver necklaces across different styles and price points:"
+    ],
+    "suggestionCount": 0,
+    "firstWords": "Here are some sterling silver necklaces across different styles and price points:"
+   },
+   {
+    "step": 4,
+    "literal": "How do I keep sterling silver from tarnishing?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [
+     "Here are some sterling silver necklaces across different styles and price points:"
+    ],
+    "suggestionCount": 0,
+    "firstWords": "Here are some sterling silver necklaces across different styles and price points:"
+   }
+  ]
+ },
+ {
+  "journey": "J5-education",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "What is the difference between lab grown and natur",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 3,
+    "firstWords": "Lab-grown diamonds are created in a controlled environment over weeks using technology that replicates how nat"
+   },
+   {
+    "step": 2,
+    "literal": "Interesting. Show me lab grown diamond studs.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 3,
+    "literal": "Are they really identical in sparkle?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   }
+  ]
+ },
+ {
+  "journey": "J6-two-meanings",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "I am shopping for wedding ring sets",
+    "tiles": 8,
+    "chipAxes": 3,
+    "groups": 2,
+    "boldClose": false,
+    "narrationOpeners": [
+     "I'll help you find the perfect wedding ring sets.Now let me display a curated selection of these wedding ring sets:Classic Diamond Sets$5,939.09$3,599.99$3,486.59$2,631.59Modern Alternatives$329.99$562.49$933.29$229.49Narrow it downWomenMenWhiteYellowRose10% - 20% off60% - 70% off50% - 60% off"
+    ],
+    "suggestionCount": 3,
+    "firstWords": "I'll help you find the perfect wedding ring sets.Now let me display a curated selection of these wedding ring "
+   },
+   {
+    "step": 3,
+    "literal": "My budget is 800 dollars.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "Now let me display the best options within your budget:"
+   },
+   {
+    "step": 4,
+    "literal": "She wants something vintage looking.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "Now let me display the best options within your budget:"
+   }
+  ]
+ }
+]

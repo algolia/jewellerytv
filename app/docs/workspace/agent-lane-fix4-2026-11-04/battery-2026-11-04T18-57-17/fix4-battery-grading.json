@@ -1,0 +1,280 @@
+[
+ {
+  "journey": "J1-broad-browse-funnel",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me opal jewelry for everyday wear",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 3,
+    "literal": "I only wear white metals, if that helps.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 4,
+    "literal": "Which of these would you pick for daily wear?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "I'm not seeing opal pieces in those results—the search picked up jewelry-making supplies and Star Wars collect"
+   },
+   {
+    "step": 5,
+    "literal": "What should I know about caring for opals?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "I'm not seeing opal pieces in those results—the search picked up jewelry-making supplies and Star Wars collect"
+   }
+  ]
+ },
+ {
+  "journey": "J2-gift-correction",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "It is my mom's 70th birthday next month and she lo",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "How wonderful—70 years is such a milestone, and how lovely that you're celebrating her with something she love"
+   },
+   {
+    "step": 2,
+    "literal": "She only wears white gold.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "How wonderful—70 years is such a milestone, and how lovely that you're celebrating her with something she love"
+   },
+   {
+    "step": 3,
+    "literal": "Actually, she prefers yellow gold after all.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "Good thing you mentioned that—that changes things nicely."
+   },
+   {
+    "step": 4,
+    "literal": "Let us keep it under 400 dollars.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "Good thing you mentioned that—that changes things nicely."
+   },
+   {
+    "step": 5,
+    "literal": "Which one would you choose and why?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "I'd lean toward Dark Blue Sapphire 18k Yellow Gold Over Sterling Silver Necklace and Earrings 2 Piece Jewelry "
+   }
+  ]
+ },
+ {
+  "journey": "J3-style-brief",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me elegant and timeless pieces",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 3,
+    "literal": "It is a gift for my mother in law, she is impossib",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "I found one piece in the results that isn't jewelry—a fragrance—so I'm setting that aside. The rest"
+   },
+   {
+    "step": 4,
+    "literal": "What would you say suits a woman who wears mostly ",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   }
+  ]
+ },
+ {
+  "journey": "J4-verbatim-thin",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "Show me sterling silver necklaces with marcasite s",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 2,
+    "literal": "Only marcasite, nothing else will do.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "Let"
+   },
+   {
+    "step": 3,
+    "literal": "Fine, show me whatever silver necklaces you do hav",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   },
+   {
+    "step": 4,
+    "literal": "How do I keep sterling silver from tarnishing?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   }
+  ]
+ },
+ {
+  "journey": "J5-education",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "What is the difference between lab grown and natur",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "Lab-grown diamonds are chemically and optically identical to mined ones—the same hardness, sparkle and durabil"
+   },
+   {
+    "step": 2,
+    "literal": "Interesting. Show me lab grown diamond studs.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "Lab-grown diamonds are chemically and optically identical to mined ones—the same hardness, sparkle and durabil"
+   },
+   {
+    "step": 3,
+    "literal": "Are they really identical in sparkle?",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "Yes, in terms of the physics of sparkle—the way light bounces and refracts through the crystal structure—lab-g"
+   }
+  ]
+ },
+ {
+  "journey": "J6-two-meanings",
+  "error": null,
+  "turns": [
+   {
+    "step": 1,
+    "literal": "I am shopping for wedding ring sets",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "What an exciting step! I'd love to help you find the perfect set."
+   },
+   {
+    "step": 3,
+    "literal": "My budget is 800 dollars.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": "What an exciting step! I'd love to help you find the perfect set.Now let me show you what we have and get a se"
+   },
+   {
+    "step": 4,
+    "literal": "She wants something vintage looking.",
+    "tiles": 0,
+    "chipAxes": 0,
+    "groups": 0,
+    "boldClose": false,
+    "narrationOpeners": [],
+    "suggestionCount": 0,
+    "firstWords": ""
+   }
+  ]
+ }
+]

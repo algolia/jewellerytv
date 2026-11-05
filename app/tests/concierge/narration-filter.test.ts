@@ -74,6 +74,34 @@ describe('the narration filter', () => {
     expect(await run([tool])).toEqual([tool]);
   });
 
+  /* Both measured on the class battery, 2026-11-05. The block-at-a-time
+   * filter released each at its first full stop, because what stood there
+   * was an interjection and a sentence about the results, and the
+   * announcement behind it then streamed through unexamined. */
+  it('drops narration that follows a human opening in the same block', async () => {
+    const out = await run(block('a', "Perfect! Now I'll display these gold hoops."));
+    expect(textOf(out)).toBe('Perfect! ');
+  });
+
+  it('drops narration that follows a verdict on the search', async () => {
+    const out = await run(
+      block(
+        'a',
+        'I see these results are mostly silver with gold overlay and gemstones. Let me search for solid sterling silver hoops instead.',
+      ),
+    );
+    expect(textOf(out)).toBe(
+      'I see these results are mostly silver with gold overlay and gemstones. ',
+    );
+  });
+
+  it('keeps the human sentence when the narration comes first', async () => {
+    const out = await run(
+      block('a', "I'll show you a few. These sapphires run deep blue and warm up under lamplight."),
+    );
+    expect(textOf(out)).toBe('These sapphires run deep blue and warm up under lamplight.');
+  });
+
   /* A stream cut off mid-block must not swallow what it was holding. */
   it('releases a half-judged block when the stream ends', async () => {
     const out = await run([
