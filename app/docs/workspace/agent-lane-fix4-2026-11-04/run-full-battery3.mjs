@@ -47,7 +47,9 @@ const JOURNEYS = [
   { name: 'C14-product-by-name', steps: [ { say: 'Show me some opal pendants' }, { tap: null }, { say: 'Would the first one work for every day?' } ] },
 ];
 
-const browser = await chromium.launch({ headless: true });
+/* Installed Chrome, not a downloaded bundle: the convention the other
+ * probes in this repo follow, so a run needs no `npx playwright install`. */
+const browser = await chromium.launch({ headless: true, channel: 'chrome' });
 const receipts = { startedAt: new Date().toISOString(), app: APP, devAgent: S.devAgentId, journeys: [] };
 
 async function newPanel(page) {
