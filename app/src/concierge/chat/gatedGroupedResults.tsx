@@ -276,7 +276,11 @@ function searchPartOf(owner: OwnerMessage | undefined): SearchPart | undefined {
  * piece the first level could not. Arijit, 2026-11-04: no pre-owned code in
  * the app; the agent configuration filters it. */
 const REFINE_FILTERS = 'Inventory_InStock:true';
-const REFINE_HITS = 8;
+/* The unfiltered shelf shows three complete rows of four (Arijit, 2026-11-05:
+ * "2 rows product only, not 3 rows"). A refine that fetches eight erases a
+ * third of the shelf by page size alone — tiles the shopper was reading
+ * vanish when they apply a filter. The refine fetches the same twelve. */
+const REFINE_HITS = 12;
 const REFINE_FIELDS = [
   'objectID',
   'Catalog_TitleDescription',
@@ -342,6 +346,78 @@ function GroupGrid({ items }: { items: JtvHit[] }) {
       ))}
     </div>
   );
+}
+
+/* The refined shelf keeps the agent's shelf shape (Arijit, 2026-11-05: "the
+ * tile disappears when the filter is applied" — the refined view collapsed
+ * twelve headed tiles into eight heading-less ones, and the gray product pane
+ * with them, because the pane styles hook on the grouped-results class).
+ *
+ * Every refined hit maps back to the agent's OWN group by objectID, so the
+ * surviving groups render under their original titles in the agent's order,
+ * with the same complete-rows-of-four law. Hits outside every original group
+ * — the refine re-searches the index, so it can return pieces the agent never
+ * showed — land in one trailing section under a fixed UI label. It is chrome
+ * for a client-assembled remainder, not agent speech: no family is invented,
+ * and the agent's titles stay attached to their own members only. */
+export function regroupRefinedHits(
+  hits: JtvHit[],
+  originalGroups: Group[],
+): { title?: string; results: JtvHit[] }[] {
+  const memberOf = new Map<string, string>();
+  for (const group of originalGroups) {
+    const title = typeof group?.title === 'string' ? group.title : '';
+    if (!title) continue;
+    for (const result of Array.isArray(group?.results) ? group.results : []) {
+      if (typeof result?.objectID === 'string' && !memberOf.has(result.objectID)) {
+        memberOf.set(result.objectID, title);
+      }
+    }
+  }
+  const surviving = new Map<string, JtvHit[]>();
+  const leftovers: JtvHit[] = [];
+  for (const hit of hits) {
+    const title = memberOf.get(hit.objectID);
+    if (!title) leftovers.push(hit);
+    else surviving.set(title, [...(surviving.get(title) ?? []), hit]);
+  }
+  const groups: { title?: string; results: JtvHit[] }[] = [];
+  for (const group of originalGroups) {
+    const title = typeof group?.title === 'string' ? group.title : '';
+    if (title && surviving.has(title)) {
+      groups.push({ title, results: surviving.get(title)! });
+      surviving.delete(title);
+    }
+  }
+  if (leftovers.length) groups.push({ title: 'More picks', results: leftovers });
+  return groups;
+}
+
+/* Exported for the display-gate tests: the refined shelf's fold must never
+ * land a surviving title on the wrong pieces. */
+export function shapeRefinedGroups(
+  groups: { title?: string; results: JtvHit[] }[],
+): { title?: string; results: JtvHit[] }[] {
+  const byId = new Map<string, JtvHit>();
+  for (const group of groups) for (const hit of group.results) byId.set(hit.objectID, hit);
+  const foldable: Group[] = groups.map((group) => ({
+    title: group.title,
+    results: group.results.map((hit) => ({ objectID: hit.objectID })),
+  }));
+  const { folded } = foldSmallGroups(foldable);
+  const shaped =
+    folded.length === 1 && (folded[0].results?.length ?? 0) < COLUMNS
+      ? folded
+      : folded.map((group) => ({
+          ...group,
+          results: trimToCompleteRows(group.results ?? []).results,
+        }));
+  return shaped.map((group) => ({
+    title: typeof group.title === 'string' ? group.title : undefined,
+    results: (group.results ?? [])
+      .map((result) => byId.get(String(result.objectID)))
+      .filter((hit): hit is JtvHit => hit !== undefined),
+  }));
 }
 
 export function createGatedTools(): Tools {
@@ -456,6 +532,11 @@ export function createGatedTools(): Tools {
       );
     }
     if (funnel?.hits) {
+      /* The refined shelf wears the same grouped-results structure and classes
+       * as the unfiltered one: the product pane's gray tile and the heading
+       * styles both hook on `ais-ChatToolGroupedResults`, so without them the
+       * second screen lost its shape entirely (Arijit, 2026-11-05). */
+      const refined = shapeRefinedGroups(regroupRefinedHits(funnel.hits, input.groups ?? []));
       return (
         <div className="jtv-chat-refine">
           {/* The applied selections lead the refined shelf as active chips —
@@ -484,7 +565,19 @@ export function createGatedTools(): Tools {
               </ul>
             </div>
           ) : null}
-          <GroupGrid items={funnel.hits} />
+          <div className="ais-ChatToolGroupedResults">
+            {refined.map((group, index) => (
+              <div
+                key={group.title ?? `refined-${index}`}
+                className="ais-ChatToolGroupedResults-group"
+              >
+                {group.title ? (
+                  <div className="ais-ChatToolGroupedResults-groupTitle">{group.title}</div>
+                ) : null}
+                <GroupGrid items={group.results} />
+              </div>
+            ))}
+          </div>
           {funnel.chips.length ? <NarrowChips groups={funnel.chips} onPick={refine} /> : null}
           <div className="jtv-chat-narrow">
             <button

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { gateGroups, messageCarriesText } from '../../src/concierge/chat/gatedGroupedResults';
+import {
+  gateGroups,
+  messageCarriesText,
+  regroupRefinedHits,
+  shapeRefinedGroups,
+} from '../../src/concierge/chat/gatedGroupedResults';
 
 /* The gate is the only place a piece can be refused now, so these cases are
  * the whole contract. The failure this replaces was silent: four layers each
@@ -254,5 +259,59 @@ describe('the group subtitle', () => {
     );
     expect(input.groups?.[0].title).toBe('Featured products');
     expect(input.groups?.[0].why).toBeUndefined();
+  });
+});
+
+/* The refined shelf keeps the agent's own shelf shape: the shopper's complaint
+ * (2026-11-05) was that applying a filter collapsed twelve headed tiles into
+ * eight heading-less ones. Every refined hit maps back to the agent's group by
+ * objectID; leftovers land in one trailing section under a fixed UI label. */
+describe('the refined shelf regroup', () => {
+  const hit = (id: string) => ({ objectID: id }) as never;
+  const originals = [
+    { title: 'Classic', results: [{ objectID: 'a' }, { objectID: 'b' }, { objectID: 'c' }, { objectID: 'd' }] },
+    { title: 'Modern', results: [{ objectID: 'e' }, { objectID: 'f' }] },
+  ];
+
+  it('renders survivors under their original titles in the agent order', () => {
+    const groups = regroupRefinedHits([hit('e'), hit('a'), hit('b'), hit('f')], originals);
+    expect(groups.map((g) => g.title)).toEqual(['Classic', 'Modern']);
+    expect(groups[0].results.map((h) => h.objectID)).toEqual(['a', 'b']);
+    expect(groups[1].results.map((h) => h.objectID)).toEqual(['e', 'f']);
+  });
+
+  it('puts hits the agent never showed under one trailing label', () => {
+    const groups = regroupRefinedHits([hit('x'), hit('a'), hit('y')], originals);
+    expect(groups.map((g) => g.title)).toEqual(['Classic', 'More picks']);
+    expect(groups[1].results.map((h) => h.objectID)).toEqual(['x', 'y']);
+  });
+
+  it('invents no family when nothing matches the original groups', () => {
+    const groups = regroupRefinedHits([hit('x'), hit('y')], originals);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].title).toBe('More picks');
+  });
+});
+
+/* The fold law runs on the refined groups too, and the hits travel by
+ * objectID: a folded heading must never land on the wrong pieces. */
+describe('the refined shelf shape', () => {
+  const hit = (id: string) => ({ objectID: id }) as never;
+
+  it('folds a trailing two-piece group forward and keeps the title honest', () => {
+    const shaped = shapeRefinedGroups([
+      { title: 'First', results: [hit('a'), hit('b'), hit('c'), hit('d')] },
+      { title: 'Second', results: [hit('e'), hit('f')] },
+    ]);
+    expect(shaped).toHaveLength(1);
+    expect(shaped[0].title).toBe('First');
+    expect(shaped[0].results.map((h) => h.objectID)).toEqual(['a', 'b', 'c', 'd']);
+  });
+
+  it('keeps a lone thin group with its title rather than emptying it', () => {
+    const shaped = shapeRefinedGroups([{ title: 'Only', results: [hit('a'), hit('b')] }]);
+    expect(shaped).toHaveLength(1);
+    expect(shaped[0].title).toBe('Only');
+    expect(shaped[0].results).toHaveLength(2);
   });
 });
