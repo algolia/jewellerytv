@@ -22,14 +22,17 @@ describe('whether the turn status stays up', () => {
     ).toBe(true);
   });
 
-  it('stands down while the words are still arriving', () => {
+  /* The transport emits a sentence at a time, so streaming text has gaps
+   * in it too: 8 characters at 10691ms and 26 at 11418ms on the measured
+   * turn, with nothing moving in between. */
+  it('holds while the words are still arriving', () => {
     expect(
       keepLoaderUp({
         defaultValue: false,
         status: 'streaming',
         message: { parts: [text('streaming')] },
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('stands down once the turn is over', () => {
@@ -41,14 +44,42 @@ describe('whether the turn status stays up', () => {
     }
   });
 
-  /* A tool part carries its own affordance — the shelf skeleton — so the
-   * loader would be a second one saying the same thing. */
-  it('leaves a running tool to speak for itself', () => {
+  /* Measured 2026-11-05: the skeleton stood alone from 4731ms to 8895ms on
+   * "What did Misty feature this week?". It shows the shape of what is
+   * coming, not that anything is happening, so the status holds over it. */
+  it('holds over the shelf skeleton, which does not move', () => {
     expect(
       keepLoaderUp({
         defaultValue: false,
         status: 'streaming',
         message: { parts: [text('done'), tool('algolia_grouped_results', 'input-streaming')] },
+      }),
+    ).toBe(true);
+  });
+
+  it('stands down once the first group lands and tiles start filling in', () => {
+    expect(
+      keepLoaderUp({
+        defaultValue: false,
+        status: 'streaming',
+        message: {
+          parts: [
+            text('done'),
+            { ...tool('algolia_grouped_results', 'input-streaming'), input: { groups: [{}] } },
+          ],
+        },
+      }),
+    ).toBe(false);
+  });
+
+  /* The search tool renders nothing of its own, and it is fast; the library
+   * already keeps the loader up for it through `defaultValue`. */
+  it('leaves other tools to the library', () => {
+    expect(
+      keepLoaderUp({
+        defaultValue: false,
+        status: 'streaming',
+        message: { parts: [tool('algolia_search_index_prod_catalog', 'output-available')] },
       }),
     ).toBe(false);
   });
