@@ -140,7 +140,7 @@ which already grades the behaviours the checklist asks about. Run it once with
 run it again, and compare pass counts and turn durations. If compliance is
 flat, the block is latency with no return.
 
-## 4. The restructure dropped the ban on report styling (§3)
+## 4. Too many blocks, not the wrong format (§3)
 
 Measured 2026-11-05, "What outfits match gold hoops best?" — 1,328
 characters, seven paragraphs, fourteen sentences, four bold section labels
@@ -149,27 +149,30 @@ characters, seven paragraphs, fourteen sentences, four bold section labels
 
 Two causes, and neither is the model being wordy for no reason.
 
-**The prohibition that forbade this shape is gone.** The prompt the
-restructure replaced carried it twice:
+**Nothing limits how many blocks an answer has.** The prompt the restructure
+replaced banned the format outright — "Don't: use headings, section labels,
+italics, report styling" — and that is not what we want back: labelled
+sections are fine, and §10 depends on them for policy steps. Four parallel
+ones for a question about hoops are not. Elias, 2026-11-05: "I'm ok with the
+headings, section labels but I don't know that we need that many blocks for
+any question."
 
-> - Don't: use headings, section labels, italics, report styling.
->
-> - Don't: use bold section labels, headers or a list. Those are for rules
->   with deadlines and fees. A comparison has one answer and some nuance, and
->   sections make three sentences look like a document.
-
-§3's "Avoid:" list has eight items and none of them is this one. The
-principle survived in the Why line — "Bold is reserved so the one action we
-want stands out" — but a reason with no rule attached is not an instruction,
-and the model bolded four labels without breaking any rule it was given. Add
-to the "Avoid:" list:
+So the rule is a count, not a prohibition. §3's "Avoid:" list has eight items
+and nothing about quantity; add a ninth:
 
 ---8<--- paste from here ---8<---
 
-- Headings, bold section labels, and lists, outside a policy answer with
-  steps or conditions. Sections make three sentences look like a document.
+- More than two labelled sections in one answer. A label earns its place
+  when the block under it says something the others do not; if the labels
+  could be deleted and the answer still reads, they were decoration. A policy
+  answer with steps or conditions is the exception, and even there the steps
+  are the list, not four headed essays.
 
 ---8<--- paste to here ---8<---
+
+Two rather than three because the measured failures are four and five labels,
+and because §3's length limits leave room for little else: a 2-to-3-sentence
+answer with three headings is one sentence per heading.
 
 **And the question is not in the length table.** §3 sizes five kinds of
 answer: discovery, product questions, comparisons, education, policies.
@@ -179,8 +182,9 @@ different place. Add a row:
 
 ---8<--- paste from here ---8<---
 
-- **Styling and wear advice:** usually 2 to 3 sentences, and show the pieces
-  rather than describing the looks in prose.
+- **Styling and wear advice:** usually 2 to 3 sentences, or two short
+  labelled blocks where the directions are genuinely different, and show the
+  pieces rather than describing the looks in prose.
 
 ---8<--- paste to here ---8<---
 
