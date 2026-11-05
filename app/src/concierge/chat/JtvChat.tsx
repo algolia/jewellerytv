@@ -9,6 +9,7 @@ import type { UIMessage } from 'instantsearch.js/es/lib/chat';
 import { NarrationFilteringTransport } from './narrationFilter';
 import { ChatActions } from './chatActions';
 import { ChatLoader } from './chatLoader';
+import { keepLoaderUp } from './loaderVisibility';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { StarterChips } from './StarterChips';
 import { createGatedTools } from './gatedGroupedResults';
@@ -197,6 +198,10 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
            * the loaderPosition the reference UX uses (Arijit, 2026-11-05). */
           loaderComponent={ChatLoader}
           loaderPosition="message-inline"
+          /* The status holds through the gap between the model's last
+           * sentence and the display tool's first byte — see
+           * `loaderVisibility.ts`, where that gap is measured. */
+          messagesProps={useMemo(() => ({ shouldShowLoader: keepLoaderUp }), [])}
           /* No display-side text filter. Narration is dropped upstream by the
            * transport (`narrationFilter.ts`), which is the only place it can
            * be dropped without the shopper watching it appear and vanish, and
