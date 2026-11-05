@@ -20,5 +20,15 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - run: npm ci
       - run: npm run typecheck
+      # Placeholder keys, not secrets: `shared/client.ts` throws when the
+      # runtime env is empty, which made every suite that (transitively)
+      # imports it fail in CI before any test ran. The unit suite mocks all
+      # network access, so the values are never used. The build does not
+      # execute app code, so it needs no env; the real keys ride Vercel's
+      # project env at deploy time.
       - run: npm test
+        env:
+          VITE_ALGOLIA_APP_ID: ci-placeholder-app-id
+          VITE_ALGOLIA_SEARCH_API_KEY: ci-placeholder-search-key
+          VITE_JTV_AGENT_ID: ci-placeholder-agent-id
       - run: npm run build

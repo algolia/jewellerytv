@@ -60,30 +60,33 @@ describe('the empty state', () => {
     const html = renderToStaticMarkup(<StarterChips sendMessage={() => undefined} />);
     expect(html.match(/class="jtv-chat-starter"/g)).toHaveLength(9);
     expect(html).toContain('Not sure where to start? Try one of these.');
-    expect(html).toContain('/assets/jtv-logo.png');
+    /* The full wordmark, per the accepted welcome-screen design. */
+    expect(html).toContain('/assets/jtv-logo-full.png');
   });
 
-  /* Mid-turn everything goes down, "Show more" included: dealing a new set
-   * under a streaming answer would move the panel while it is being read. */
-  it('disables the chips and the re-roll mid-turn', () => {
+  /* Mid-turn everything goes down: dealing a new set under a streaming answer
+   * would move the panel while it is being read. There is no re-roll control
+   * in the accepted design; the nine chips are the whole surface. */
+  it('disables the chips mid-turn', () => {
     const html = renderToStaticMarkup(
       <StarterChips sendMessage={() => undefined} status="streaming" />,
     );
-    expect(html.match(/disabled=""/g)).toHaveLength(10);
+    expect(html.match(/disabled=""/g)).toHaveLength(9);
   });
 
-  /* Without a sender the chips can do nothing, but "Show more" still can:
-   * it only deals from the local pool. */
+  /* Without a sender the chips can do nothing, so they render disabled
+   * rather than lying about what a click will do. */
   it('disables the chips when the widget hands over no sender', () => {
     const html = renderToStaticMarkup(<StarterChips />);
     expect(html.match(/disabled=""/g)).toHaveLength(9);
-    expect(html).toContain('Show more');
   });
 
-  /* The stagger is JTV's own layout; every other row sits right. */
-  it('staggers the rows left and right', () => {
+  /* The stagger is JTV's own layout: one centered list, the offset applied
+   * presentationally in CSS to the even slots. */
+  it('lays the starters out as the centered staggered list', () => {
     const html = renderToStaticMarkup(<StarterChips sendMessage={() => undefined} />);
-    expect(html.match(/jtv-chat-starter-row--right/g)).toHaveLength(4);
+    expect(html).toContain('jtv-chat-starters-list');
+    expect(html.match(/class="jtv-chat-starter"/g)).toHaveLength(9);
   });
 });
 
@@ -91,10 +94,8 @@ describe('the empty state', () => {
  * than written down, which is the whole point: a label that names a series
  * only appears because the index says that series aired. */
 describe('the live starters', () => {
-  it('names the week\'s series and host', () => {
-    expect(
-      signalsToLabels({ series: ['Jewel School'], hosts: ['Melissa'] }),
-    ).toEqual([
+  it("names the week's series and host", () => {
+    expect(signalsToLabels({ series: ['Jewel School'], hosts: ['Melissa'] })).toEqual([
       'What was on Jewel School this week?',
       'What did Melissa feature this week?',
     ]);

@@ -163,17 +163,28 @@ test('the tool intro is shown when the reply carries no text of its own', async 
   await expect(panel.getByText('A varied first look at opal jewelry.')).toBeVisible();
 });
 
-/* Settled 2026-11-02: a chip asks the agent again rather than filtering the
- * tiles, so the reply, the grouping and the pieces still agree afterwards. */
-test('a narrowing chip asks the agent again', async ({ page }) => {
+/* Arijit's 2026-11-04 order reverses the 2026-11-02 settlement: a chip is a
+ * filter, not a question. The tap refines the shelf in place and puts nothing
+ * in the transcript — no shopper message, no agent turn. The full funnel
+ * contract (turn constraints carried, Back restore, deepened axes, failure
+ * behavior) is pinned in `concierge-funnel.spec.ts`. */
+test('a narrowing chip refines the shelf without a new turn', async ({ page }) => {
   await stubAgentTurn(page, {
     text: 'Opal runs deep here.',
     hits: [RING, EARRINGS],
+    query: 'opal jewelry',
     groups: [{ title: 'Opal rings', objectIDs: [RING.objectID, EARRINGS.objectID] }],
     facets: {
-      Catalog_JewelryMaterialNavigationColor: { White: 400, Yellow: 300 },
+      Catalog_JewelryMaterialNavigationColor: { White: 400, Yellow: 300, Rose: 120 },
     },
   });
+  await page.route(/indexes\/\*\/queries/, (route) =>
+    route.fulfill({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ results: [{ hits: [RING], nbHits: 1, facets: {} }] }),
+    }),
+  );
   const panel = await openPanel(page);
   await ask(page, 'Show me opal jewelry');
   await expect(panel.locator(CARD)).toHaveCount(2);
@@ -182,8 +193,10 @@ test('a narrowing chip asks the agent again', async ({ page }) => {
   await expect(chip).toBeVisible();
   await chip.click();
 
-  // The chip's whole job is to put a new question in the transcript.
-  await expect(panel.getByText('Show me the white ones')).toBeVisible();
+  // The chip's whole job is to filter what is on screen.
+  const messages = panel.locator('.ais-ChatMessage');
+  await expect(messages).toHaveCount(2);
+  await expect(panel.locator('a.jtv-chat-card')).toHaveCount(1);
 });
 
 /* The tile label is the price now, so the old guard — no currency anywhere in
@@ -201,9 +214,9 @@ test('a price appears on the tiles and never in the reply', async ({ page }) => 
   await ask(page, 'What do you have in stock?');
   await expect(panel.locator(CARD)).toHaveCount(2);
 
-  await expect(panel.locator(`${CARD}[href="/product/${RING.objectID}"] .jtv-chat-card-title`)).toHaveText(
-    '$189.99',
-  );
+  await expect(
+    panel.locator(`${CARD}[href="/product/${RING.objectID}"] .jtv-chat-card-title`),
+  ).toHaveText('$189.99');
 
   const prose = (await panel.locator('.ais-ChatMessage-text').allInnerTexts()).join(' ');
   expect(prose).not.toMatch(/[$£€]\s?\d/);

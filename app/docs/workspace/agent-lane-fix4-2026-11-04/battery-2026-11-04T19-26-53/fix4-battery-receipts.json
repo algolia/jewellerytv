@@ -1,0 +1,535 @@
+{
+ "startedAt": "2026-11-04T19:26:53.738Z",
+ "app": "http://localhost:5173/",
+ "devAgent": "8129ad66-170b-4bb5-926a-c81d2cb38f22",
+ "journeys": [
+  {
+   "name": "J1-broad-browse-funnel",
+   "turns": [
+    {
+     "replyHead": "Delicate & Everyday$9.99$49.99$26.99$69.99Handcrafted Statement Pieces$125.99$255.59$481.49$402.29Narrow it downWomenMenGirlsWhiteYellowTwo-tone$50 - $100$100 - $200$200 - $500",
+     "replyText": "Delicate & Everyday$9.99$49.99$26.99$69.99Handcrafted Statement Pieces$125.99$255.59$481.49$402.29Narrow it downWomenMenGirlsWhiteYellowTwo-tone$50 - $100$100 - $200$200 - $500",
+     "bolds": [],
+     "tiles": 8,
+     "chips": [
+      "Women",
+      "Men",
+      "Girls",
+      "White",
+      "Yellow",
+      "Two-tone",
+      "$50 - $100",
+      "$100 - $200",
+      "$200 - $500"
+     ],
+     "groups": [
+      "Delicate & Everyday",
+      "Handcrafted Statement Pieces"
+     ],
+     "suggestions": [
+      "What are the best opal cuts?",
+      "Show me affordable opal jewelry options",
+      "How do I care for opals?"
+     ],
+     "userCount": 1,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "Show me opal jewelry for everyday wear"
+    },
+    {
+     "step": 2,
+     "kind": "tap",
+     "tapped": "Women",
+     "screenshot": "J1-broad-browse-funnel-t2-tap"
+    },
+    {
+     "replyHead": "",
+     "replyText": "",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [],
+     "userCount": 2,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 3,
+     "kind": "say",
+     "literal": "I only wear white metals, if that helps."
+    },
+    {
+     "replyHead": "",
+     "replyText": "",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [],
+     "userCount": 2,
+     "turnAdvanced": false,
+     "narrationOpeners": [],
+     "step": 4,
+     "kind": "say",
+     "literal": "Which of these would you pick for daily wear?"
+    },
+    {
+     "replyHead": "Opals need gentle care because they're softer and more porous than many gemstones. Here are the key things to know:Avoid water and heat. Opals can crack or become cloudy if exposed to sudden temperatu",
+     "replyText": "Opals need gentle care because they're softer and more porous than many gemstones. Here are the key things to know:Avoid water and heat. Opals can crack or become cloudy if exposed to sudden temperature changes or prolonged moisture. Remove opal jewelry before showering, swimming, or doing dishes. Heat from direct sunlight or warm climates can also cause damage.Keep them dry. If your opal gets wet, pat it gently with a soft cloth and let it air dry at room temperature—never use heat to dry it.Clean carefully. Use only a soft, damp cloth to wipe opals. Avoid ultrasonic cleaners, steam cleaners, and harsh chemicals, which can damage the stone.Limit everyday wear. Because opals are delicate, they're best suited for special occasions or low-impact everyday pieces like pendants rather than rings or bracelets that get bumped frequently.Store properly. Keep opals away from direct sunlight and heat. A cool, slightly humid environment is ideal—some people store opals in sealed bags with a damp cotton ball to prevent them from drying out.If you're looking for something you can wear daily without worry, a lab-created opal like the ones in our Bella Luce collection tends to be more durable than natural opal, though it still benefits from the same gentle care.",
+     "bolds": [
+      "Avoid water and heat.",
+      "Keep them dry.",
+      "Clean carefully.",
+      "Limit everyday wear.",
+      "Store properly."
+     ],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [
+      "What white metal opal pendants do you have?",
+      "Are lab-created opals better for daily wear?",
+      "Show me opal engagement rings in white gold"
+     ],
+     "userCount": 3,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 5,
+     "kind": "say",
+     "literal": "What should I know about caring for opals?"
+    }
+   ]
+  },
+  {
+   "name": "J2-gift-correction",
+   "turns": [
+    {
+     "replyHead": "I found some beautiful sapphire pieces.Sapphire Earrings & Rings$19.99$19.99$19.99$29.99Narrow it downWomenMenGirls$100 - $200$200 - $500$1000 and aboveWhiteYellowRose",
+     "replyText": "I found some beautiful sapphire pieces.Sapphire Earrings & Rings$19.99$19.99$19.99$29.99Narrow it downWomenMenGirls$100 - $200$200 - $500$1000 and aboveWhiteYellowRose",
+     "bolds": [],
+     "tiles": 4,
+     "chips": [
+      "Women",
+      "Men",
+      "Girls",
+      "$100 - $200",
+      "$200 - $500",
+      "$1000 and above",
+      "White",
+      "Yellow",
+      "Rose"
+     ],
+     "groups": [
+      "Sapphire Earrings & Rings"
+     ],
+     "suggestions": [
+      "What sapphire gifts suit seniors?",
+      "Show me sapphire jewelry under $500",
+      "Do you have sapphire birthstone gifts?"
+     ],
+     "userCount": 1,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "It is my mom's 70th birthday next month and she loves sapphires."
+    },
+    {
+     "replyHead": "Perfect!Sapphire Rings$3,846.59$2,414.69$1,204.19$1,783.79Narrow it downWomenMenGirlsWhiteYellowRose$200 - $500$500 - $1000$1000 and above",
+     "replyText": "Perfect!Sapphire Rings$3,846.59$2,414.69$1,204.19$1,783.79Narrow it downWomenMenGirlsWhiteYellowRose$200 - $500$500 - $1000$1000 and above",
+     "bolds": [],
+     "tiles": 4,
+     "chips": [
+      "Women",
+      "Men",
+      "Girls",
+      "White",
+      "Yellow",
+      "Rose",
+      "$200 - $500",
+      "$500 - $1000",
+      "$1000 and above"
+     ],
+     "groups": [
+      "Sapphire Rings"
+     ],
+     "suggestions": [
+      "What sapphire jewelry styles are most popular?",
+      "Can you find white gold sapphire rings?",
+      "What's your budget for this gift?"
+     ],
+     "userCount": 2,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 2,
+     "kind": "say",
+     "literal": "She only wears white gold."
+    },
+    {
+     "replyHead": "Perfect! Here are beautiful yellow gold sapphire pieces ideal for her 70th birthday:Sapphire Earrings & Rings$885.59$879.99$314.99$962.24Narrow it downWomenGirlsMenYellowWhiteTwo-tone$100 - $200$200 -",
+     "replyText": "Perfect! Here are beautiful yellow gold sapphire pieces ideal for her 70th birthday:Sapphire Earrings & Rings$885.59$879.99$314.99$962.24Narrow it downWomenGirlsMenYellowWhiteTwo-tone$100 - $200$200 - $500$1000 and above",
+     "bolds": [],
+     "tiles": 4,
+     "chips": [
+      "Women",
+      "Girls",
+      "Men",
+      "Yellow",
+      "White",
+      "Two-tone",
+      "$100 - $200",
+      "$200 - $500",
+      "$1000 and above"
+     ],
+     "groups": [
+      "Sapphire Earrings & Rings"
+     ],
+     "suggestions": [
+      "Show me sapphire rings in yellow gold",
+      "What are popular sapphire jewelry styles for women?",
+      "Do you have sapphire necklaces in yellow gold?"
+     ],
+     "userCount": 3,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 3,
+     "kind": "say",
+     "literal": "Actually, she prefers yellow gold after all."
+    },
+    {
+     "replyHead": "Great options within your budget! Here are beautiful sapphire pieces in yellow gold under $400:Sapphire Necklaces$314.99$303.65$207.07$483.56Sapphire Earrings & Rings$180.76$224.99$308.06$271.74Narrow",
+     "replyText": "Great options within your budget! Here are beautiful sapphire pieces in yellow gold under $400:Sapphire Necklaces$314.99$303.65$207.07$483.56Sapphire Earrings & Rings$180.76$224.99$308.06$271.74Narrow it downWomenGirlsMenYellowWhiteTwo-tone",
+     "bolds": [],
+     "tiles": 8,
+     "chips": [
+      "Women",
+      "Girls",
+      "Men",
+      "Yellow",
+      "White",
+      "Two-tone"
+     ],
+     "groups": [
+      "Sapphire Necklaces",
+      "Sapphire Earrings & Rings"
+     ],
+     "suggestions": [
+      "Show me sapphire jewelry under $400",
+      "What yellow gold sapphire rings are available?",
+      "Can you recommend vintage sapphire pieces?"
+     ],
+     "userCount": 4,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 4,
+     "kind": "say",
+     "literal": "Let us keep it under 400 dollars."
+    },
+    {
+     "replyHead": "I'd lean toward CLG935 for a few reasons. The color-change sapphire is special—it shifts subtly depending on the light, which makes it interesting to wear and a meaningful conversation starter. At $31",
+     "replyText": "I'd lean toward CLG935 for a few reasons. The color-change sapphire is special—it shifts subtly depending on the light, which makes it interesting to wear and a meaningful conversation starter. At $314.99, it's a generous gift without stretching your budget, and a pendant is versatile for everyday wear and special occasions alike. The chain is included, so it's ready to gift as-is.If",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [],
+     "userCount": 5,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 5,
+     "kind": "say",
+     "literal": "Which one would you choose and why?"
+    }
+   ]
+  },
+  {
+   "name": "J3-style-brief",
+   "turns": [
+    {
+     "replyHead": "Sophisticated Classics$404.09$350.09$89.99$137.99Narrow it downBlueGrayWomenMenGirls$200 - $500$500 - $1000$1000 and above",
+     "replyText": "Sophisticated Classics$404.09$350.09$89.99$137.99Narrow it downBlueGrayWomenMenGirls$200 - $500$500 - $1000$1000 and above",
+     "bolds": [],
+     "tiles": 4,
+     "chips": [
+      "Blue",
+      "Gray",
+      "Women",
+      "Men",
+      "Girls",
+      "$200 - $500",
+      "$500 - $1000",
+      "$1000 and above"
+     ],
+     "groups": [
+      "Sophisticated Classics"
+     ],
+     "suggestions": [
+      "Show me classic jewelry collections",
+      "What styles are considered timeless?",
+      "How do I care for elegant pieces?"
+     ],
+     "userCount": 1,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "Show me elegant and timeless pieces"
+    },
+    {
+     "step": 2,
+     "kind": "tap",
+     "tapped": "Blue",
+     "screenshot": "J3-style-brief-t2-tap"
+    },
+    {
+     "replyHead": "I'd love to help you find something she'll treasure. To narrow this down, tell me a bit about her style—does she prefer classic and understated, or something more distinctive? And is there a particula",
+     "replyText": "I'd love to help you find something she'll treasure. To narrow this down, tell me a bit about her style—does she prefer classic and understated, or something more distinctive? And is there a particular type of jewelry she gravitates toward, like necklaces, bracelets, or earrings?",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [
+      "What about timeless pieces under $500?",
+      "Show me versatile jewelry she can wear daily",
+      "Do you have personalized or engraved options?"
+     ],
+     "userCount": 2,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 3,
+     "kind": "say",
+     "literal": "It is a gift for my mother in law, she is impossible to shop for."
+    },
+    {
+     "replyHead": "For a woman who loves classic styles, I'd focus on timeless pieces that work with everything—elegant simplicity is what makes them last. Think refined materials like pearls, quality gold or silver, an",
+     "replyText": "For a woman who loves classic styles, I'd focus on timeless pieces that work with everything—elegant simplicity is what makes them last. Think refined materials like pearls, quality gold or silver, and understated designs that never look dated.Does she have any gemstone preferences, like pearls, diamonds, or sapphires? And does she tend to wear warm metals like gold, or cooler tones like silver and platinum?",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [
+      "Does she prefer gold or silver jewelry?",
+      "What's a good budget for this gift?",
+      "Show me elegant necklaces for classic style"
+     ],
+     "userCount": 3,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 4,
+     "kind": "say",
+     "literal": "What would you say suits a woman who wears mostly classic things?"
+    }
+   ]
+  },
+  {
+   "name": "J4-verbatim-thin",
+   "turns": [
+    {
+     "replyHead": "I found sterling silver necklaces with marcasite stones.Sterling Silver Marcasite Necklaces$79.99$110.69$84.99Narrow it down$50 - $100$100 - $20010% - 20% off40% - 50% off70% - 80% off",
+     "replyText": "I found sterling silver necklaces with marcasite stones.Sterling Silver Marcasite Necklaces$79.99$110.69$84.99Narrow it down$50 - $100$100 - $20010% - 20% off40% - 50% off70% - 80% off",
+     "bolds": [],
+     "tiles": 3,
+     "chips": [
+      "$50 - $100",
+      "$100 - $200",
+      "10% - 20% off",
+      "40% - 50% off",
+      "70% - 80% off"
+     ],
+     "groups": [
+      "Sterling Silver Marcasite Necklaces"
+     ],
+     "suggestions": [
+      "What are marcasite stones and their properties?",
+      "Show me matching marcasite earrings or bracelets",
+      "What's the care and maintenance for marcasite jewelry?"
+     ],
+     "userCount": 1,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "Show me sterling silver necklaces with marcasite stones"
+    },
+    {
+     "replyHead": "I found only three sterling silver necklaces with marcasite in our catalog, and all of them pair marcasite with other primary gemstones (emerald, topaz, and turquoise). We don't currently carry sterli",
+     "replyText": "I found only three sterling silver necklaces with marcasite in our catalog, and all of them pair marcasite with other primary gemstones (emerald, topaz, and turquoise). We don't currently carry sterling silver necklaces where marcasite is the only stone. Would you like to see marcasite jewelry in other styles, or would one of these mixed-gemstone pieces work for you?",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [
+      "Show me sterling silver marcasite bracelets instead",
+      "What other gemstones pair well with marcasite?",
+      "Do you have marcasite earrings in stock?"
+     ],
+     "userCount": 2,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 2,
+     "kind": "say",
+     "literal": "Only marcasite, nothing else will do."
+    },
+    {
+     "replyHead": "",
+     "replyText": "",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [],
+     "userCount": 3,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 3,
+     "kind": "say",
+     "literal": "Fine, show me whatever silver necklaces you do have."
+    },
+    {
+     "replyHead": "",
+     "replyText": "",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [],
+     "userCount": 3,
+     "turnAdvanced": false,
+     "narrationOpeners": [],
+     "step": 4,
+     "kind": "say",
+     "literal": "How do I keep sterling silver from tarnishing?"
+    }
+   ]
+  },
+  {
+   "name": "J5-education",
+   "turns": [
+    {
+     "replyHead": "Lab-grown and natural diamonds are chemically identical—both are pure carbon crystallized into diamond form—but they differ in origin, cost, and environmental impact.Natural diamonds form over billion",
+     "replyText": "Lab-grown and natural diamonds are chemically identical—both are pure carbon crystallized into diamond form—but they differ in origin, cost, and environmental impact.Natural diamonds form over billions of years deep in the earth under extreme pressure and heat. They're mined from the ground, which involves environmental disruption and labor considerations. Because of their scarcity and mining costs, natural diamonds command higher prices.Lab-grown diamonds are created in controlled environments in weeks to months using technology that replicates the natural formation process. They're chemically and physically the same as mined diamonds—a jeweler can't tell them apart without specialized equipment—but they cost significantly less, typically 40–60% below comparable natural diamonds. Lab-grown diamonds also have a smaller environmental footprint.For jewelry purposes, the choice often comes down to budget, personal values around sourcing, and whether the origin matters to you. Both hold their beauty and durability equally well.",
+     "bolds": [
+      "Natural diamonds",
+      "Lab-grown diamonds"
+     ],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [
+      "Which is a better investment choice?",
+      "How can I tell them apart visually?",
+      "Are lab-grown diamonds certified?"
+     ],
+     "userCount": 1,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "What is the difference between lab grown and natural diamonds?"
+    },
+    {
+     "replyHead": "I found a nice collection of lab-grown diamond studs at various price points and styles.",
+     "replyText": "I found a nice collection of lab-grown diamond studs at various price points and styles.",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [],
+     "userCount": 2,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 2,
+     "kind": "say",
+     "literal": "Interesting. Show me lab grown diamond studs."
+    },
+    {
+     "replyHead": "I found a nice collection of lab-grown diamond studs at various price points and styles.",
+     "replyText": "I found a nice collection of lab-grown diamond studs at various price points and styles.",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [],
+     "userCount": 2,
+     "turnAdvanced": false,
+     "narrationOpeners": [],
+     "step": 3,
+     "kind": "say",
+     "literal": "Are they really identical in sparkle?"
+    }
+   ]
+  },
+  {
+   "name": "J6-two-meanings",
+   "turns": [
+    {
+     "replyHead": "Moissanite Sets$5,939.09$3,599.99$109.99$329.99Narrow it downWomenMenWhiteYellowRose10% - 20% off50% - 60% off60% - 70% off",
+     "replyText": "Moissanite Sets$5,939.09$3,599.99$109.99$329.99Narrow it downWomenMenWhiteYellowRose10% - 20% off50% - 60% off60% - 70% off",
+     "bolds": [],
+     "tiles": 4,
+     "chips": [
+      "Women",
+      "Men",
+      "White",
+      "Yellow",
+      "Rose",
+      "10% - 20% off",
+      "50% - 60% off",
+      "60% - 70% off"
+     ],
+     "groups": [
+      "Moissanite Sets"
+     ],
+     "suggestions": [
+      "Show me wedding rings under $5000",
+      "What metal types are available?",
+      "Filter by ring size or style"
+     ],
+     "userCount": 1,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "I am shopping for wedding ring sets"
+    },
+    {
+     "step": 2,
+     "kind": "tap",
+     "tapped": "Women",
+     "screenshot": "J6-two-meanings-t2-tap"
+    },
+    {
+     "replyHead": "",
+     "replyText": "",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [],
+     "userCount": 2,
+     "turnAdvanced": true,
+     "narrationOpeners": [],
+     "step": 3,
+     "kind": "say",
+     "literal": "My budget is 800 dollars."
+    },
+    {
+     "replyHead": "",
+     "replyText": "",
+     "bolds": [],
+     "tiles": 0,
+     "chips": [],
+     "groups": [],
+     "suggestions": [],
+     "userCount": 2,
+     "turnAdvanced": false,
+     "narrationOpeners": [],
+     "step": 4,
+     "kind": "say",
+     "literal": "She wants something vintage looking."
+    }
+   ]
+  }
+ ]
+}
