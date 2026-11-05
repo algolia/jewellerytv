@@ -140,7 +140,60 @@ which already grades the behaviours the checklist asks about. Run it once with
 run it again, and compare pass counts and turn durations. If compliance is
 flat, the block is latency with no return.
 
-## 4. Expectation setting
+## 4. The restructure dropped the ban on report styling (§3)
+
+Measured 2026-11-05, "What outfits match gold hoops best?" — 1,328
+characters, seven paragraphs, fourteen sentences, four bold section labels
+(**Casual & Minimalist**, **Layered & Modern**, **Elevated Basics**,
+**Evening & Statement**), zero tiles, and two blog searches.
+
+Two causes, and neither is the model being wordy for no reason.
+
+**The prohibition that forbade this shape is gone.** The prompt the
+restructure replaced carried it twice:
+
+> - Don't: use headings, section labels, italics, report styling.
+>
+> - Don't: use bold section labels, headers or a list. Those are for rules
+>   with deadlines and fees. A comparison has one answer and some nuance, and
+>   sections make three sentences look like a document.
+
+§3's "Avoid:" list has eight items and none of them is this one. The
+principle survived in the Why line — "Bold is reserved so the one action we
+want stands out" — but a reason with no rule attached is not an instruction,
+and the model bolded four labels without breaking any rule it was given. Add
+to the "Avoid:" list:
+
+---8<--- paste from here ---8<---
+
+- Headings, bold section labels, and lists, outside a policy answer with
+  steps or conditions. Sections make three sentences look like a document.
+
+---8<--- paste to here ---8<---
+
+**And the question is not in the length table.** §3 sizes five kinds of
+answer: discovery, product questions, comparisons, education, policies.
+Styling advice is a sixth, so nothing capped it. This is the same gap the
+product-page answer fell through before the restructure closed it, in a
+different place. Add a row:
+
+---8<--- paste from here ---8<---
+
+- **Styling and wear advice:** usually 2 to 3 sentences, and show the pieces
+  rather than describing the looks in prose.
+
+---8<--- paste to here ---8<---
+
+The "show the pieces" half matters as much as the length. The turn searched
+`blog` twice, displayed nothing, and closed by asking "Would you like to
+explore specific hoop styles or see some options to shop?" — a permission
+question for something §5 already tells it to do. Gold hoops are a catalog
+search; the styling guide is the supporting half, not the whole answer.
+
+The second blog search is item 1 again: the model's own words before it were
+"Let me try a broader search."
+
+## 5. Expectation setting
 
 The branch's own battery concluded that the remaining voice failures are
 "model-level across three prompt generations". This restructure is the fourth.
