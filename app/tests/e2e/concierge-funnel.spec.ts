@@ -34,7 +34,7 @@ const REFINED: CatalogRecord = {
 };
 
 const REFINE_FACETS = {
-  Catalog_JewelryMaterialNavigationPurity: { '14K': 6, Sterling: 4 },
+  Catalog_JewelryMaterialNavigationPurity: { '14K': 6, Sterling: 4, 'Silver Plated': 2 },
 };
 
 /** Routes the refine's client search: one result, plus the counts for the
@@ -89,8 +89,8 @@ test('a chip tap refines in place: one client search, no agent turn', async ({ p
     query: 'two-tone rings',
     hits: [RING, REFINED],
     facets: {
-      Catalog_JewelryMaterialNavigationColor: { White: 40, Yellow: 25 },
-      Pricing_PriceRange: { '$100 - $200': 30, '$200 - $500': 12 },
+      Catalog_JewelryMaterialNavigationColor: { White: 40, Yellow: 25, Rose: 18 },
+      Pricing_PriceRange: { '$50 - $100': 20, '$100 - $200': 30, '$200 - $500': 12 },
     },
     groups: [{ title: 'Bands', objectIDs: ['XTP21', 'WHT01'] }],
   });
@@ -109,7 +109,7 @@ test('a chip tap refines in place: one client search, no agent turn', async ({ p
   const params = JSON.parse(refineBodies[0]).requests[0];
   expect(params.query).toBe('two-tone rings');
   expect(params.facetFilters).toEqual(['Catalog_JewelryMaterialNavigationColor:"White"']);
-  expect(params.filters).toBe('Inventory_InStock:true AND NOT Catalog_Condition:"Pre-Owned"');
+  expect(params.filters).toBe('Inventory_InStock:true');
 
   /* The tap itself adds no shopper message and no reply. */
   expect(await panel.locator('.ais-ChatMessage').count()).toBe(userBubbles);
@@ -127,7 +127,7 @@ test('Back restores the grouped shelf and its chips', async ({ page }) => {
     query: 'two-tone rings',
     hits: [RING, REFINED],
     facets: {
-      Catalog_JewelryMaterialNavigationColor: { White: 40, Yellow: 25 },
+      Catalog_JewelryMaterialNavigationColor: { White: 40, Yellow: 25, Rose: 18 },
     },
     groups: [{ title: 'Bands', objectIDs: ['XTP21', 'WHT01'] }],
   });
@@ -149,7 +149,7 @@ test('a failed refine leaves the shelf standing', async ({ page }) => {
     text: 'Two-tone runs deep.',
     query: 'two-tone rings',
     hits: [RING, REFINED],
-    facets: { Catalog_JewelryMaterialNavigationColor: { White: 40, Yellow: 25 } },
+    facets: { Catalog_JewelryMaterialNavigationColor: { White: 40, Yellow: 25, Rose: 18 } },
     groups: [{ title: 'Bands', objectIDs: ['XTP21', 'WHT01'] }],
   });
   /* Abort every search host: the lite client fails over from -dsn.algolia.net

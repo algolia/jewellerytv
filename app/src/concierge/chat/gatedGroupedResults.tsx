@@ -38,19 +38,6 @@ function hasImage(record: Record<string, unknown> | undefined): boolean {
   return typeof record.imageLarge === 'string' || typeof record.image === 'string';
 }
 
-/* Pre-owned never displays, wherever the piece came from: the agent's shelf
- * or the funnel's refine. Arijit's ruling, 2026-11-04: the exclusion is app
- * code applied as a filter, not agent prompt, because the agent is
- * non-deterministic. The 2026-10-27 scope decision ("we deal in new,
- * first-quality pieces") is enforced HERE, deterministically. */
-const PRE_OWNED_CONDITION = 'pre-owned';
-
-function isPreOwned(record: Record<string, unknown> | undefined): boolean {
-  if (!record) return false;
-  const condition = record.Catalog_Condition;
-  return typeof condition === 'string' && condition.trim().toLowerCase() === PRE_OWNED_CONDITION;
-}
-
 /* A shelf is four across, so a group of four fills a row and a group of eight
  * fills two. The shape is the shopper's contract (Arijit, 2026-11-04, ending
  * the 3-vs-4 lottery): every group is complete rows of four. Groups too small
@@ -140,10 +127,6 @@ export function gateGroups(
       const record = records?.get?.(objectID);
       if (record && !hasImage(record)) {
         dropped.push(`${objectID}:no_image`);
-        return false;
-      }
-      if (record && isPreOwned(record)) {
-        dropped.push(`${objectID}:pre_owned`);
         return false;
       }
       seen.add(objectID);
@@ -276,13 +259,11 @@ function searchPartOf(owner: OwnerMessage | undefined): SearchPart | undefined {
  * the params come from `extractTurnRefine` on the message's own search part,
  * never reassembled from screen state.
  *
- * The in-stock and not-pre-owned filters mirror the agent's scope rules so a
- * deeper funnel level never shows a piece the first level could not (Arijit,
- * 2026-11-04: the pre-owned exclusion is app code applied as a filter, not an
- * agent prompt). VERIFY against live turns before merge: the 2026-11-03
- * tool-config snapshot shows no `filters` key, so parity with the agent's own
- * search must be confirmed from real traffic. */
-const REFINE_FILTERS = 'Inventory_InStock:true AND NOT Catalog_Condition:"Pre-Owned"';
+ * The in-stock filter mirrors the agent's tool configuration (which also
+ * carries the pre-owned exclusion), so a deeper funnel level never shows a
+ * piece the first level could not. Arijit, 2026-11-04: no pre-owned code in
+ * the app; the agent configuration filters it. */
+const REFINE_FILTERS = 'Inventory_InStock:true';
 const REFINE_HITS = 8;
 const REFINE_FIELDS = [
   'objectID',
@@ -302,7 +283,6 @@ type FunnelState = {
 
 function hitToTile(raw: Record<string, unknown>): JtvHit | null {
   if (typeof raw.objectID !== 'string' || !hasImage(raw)) return null;
-  if (isPreOwned(raw)) return null;
   return raw as JtvHit;
 }
 
@@ -374,9 +354,11 @@ export function createGatedTools(): Tools {
     const turn = extractTurnRefine(searchPartOf(owner));
     const chipGroups = settled && !turn.multiScope ? narrowChipsFor(searchPartOf(owner)) : [];
 
-    const refine = async (selection: ChipSelection) => {
+    /* One refine runner, three entry points: a chip tap deepens the funnel,
+     * removing an active chip steps back one level, and emptying the list
+     * returns to the unrefined shelf. */
+    const runRefine = async (selections: ChipSelection[]) => {
       if (!turn.queryText && !turn.turnFilters.length) return;
-      const selections = [...(funnel?.selections ?? []), selection];
       setFunnel({ selections, loading: true, hits: null, chips: [] });
       try {
         /* Imported here, not at module scope: `shared/client` throws at import
@@ -433,6 +415,20 @@ export function createGatedTools(): Tools {
       }
     };
 
+    const refine = (selection: ChipSelection) => {
+      void runRefine([...(funnel?.selections ?? []), selection]);
+    };
+
+    /* Removing one active chip steps back a level; removing the last one is
+     * the same as Back to all. */
+    const removeSelection = (selection: ChipSelection) => {
+      const rest = (funnel?.selections ?? []).filter(
+        (s) => !(s.attribute === selection.attribute && s.value === selection.value),
+      );
+      if (rest.length) void runRefine(rest);
+      else setFunnel(null);
+    };
+
     if (funnel?.loading) {
       return (
         <div className="jtv-chat-refine">
@@ -443,14 +439,40 @@ export function createGatedTools(): Tools {
     if (funnel?.hits) {
       return (
         <div className="jtv-chat-refine">
+          {/* The applied selections lead the refined shelf as active chips —
+           * filled, each removable, so the state is apparent without reading
+           * anything (Arijit, 2026-11-05: "there should be something
+           * visually showing that the filter has been applied"). */}
+          {funnel.selections.length ? (
+            <div className="jtv-chat-narrow">
+              <p className="jtv-chat-narrow-lead">Applied filters</p>
+              <ul className="jtv-chat-narrow-list">
+                {funnel.selections.map((selection) => (
+                  <li key={`${selection.attribute}:${selection.value}`}>
+                    <button
+                      type="button"
+                      className="jtv-chat-narrow-chip is-active"
+                      onClick={() => removeSelection(selection)}
+                      aria-label={`Remove ${selection.value} filter`}
+                    >
+                      {selection.value}
+                      <span className="jtv-chat-chip-x" aria-hidden="true">
+                        ×
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <GroupGrid items={funnel.hits} />
           <div className="jtv-chat-narrow">
             <button
               type="button"
-              className="jtv-chat-narrow-chip jtv-chat-narrow-back"
+              className="jtv-chat-narrow-back"
               onClick={() => setFunnel(null)}
             >
-              Back to all
+              ← Back to all
             </button>
           </div>
           {funnel.chips.length ? <NarrowChips groups={funnel.chips} onPick={refine} /> : null}

@@ -175,7 +175,7 @@ test('a narrowing chip refines the shelf without a new turn', async ({ page }) =
     query: 'opal jewelry',
     groups: [{ title: 'Opal rings', objectIDs: [RING.objectID, EARRINGS.objectID] }],
     facets: {
-      Catalog_JewelryMaterialNavigationColor: { White: 400, Yellow: 300 },
+      Catalog_JewelryMaterialNavigationColor: { White: 400, Yellow: 300, Rose: 120 },
     },
   });
   await page.route(/indexes\/\*\/queries/, (route) =>

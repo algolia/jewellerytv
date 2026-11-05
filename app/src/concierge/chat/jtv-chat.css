@@ -549,6 +549,44 @@
     transform 120ms ease;
 }
 
+/* The applied-filter chip: filled, removable. Removing the last one is the
+ * same as Back to all. */
+.jtv-chat-narrow-chip.is-active {
+  border-color: var(--blue, #0076a9);
+  background: var(--blue, #0076a9);
+  color: #fff;
+  box-shadow: none;
+}
+
+.jtv-chat-narrow-chip.is-active:hover {
+  background: #005f87;
+  color: #fff;
+  transform: none;
+}
+
+.jtv-chat-chip-x {
+  margin-left: 7px;
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+/* Back to all: a quiet link, not a slab. */
+.jtv-chat-narrow-back {
+  border: 0;
+  background: none;
+  box-shadow: none;
+  padding: 0.3125rem 0.25rem;
+  color: var(--blue, #0076a9);
+  font-size: 0.8125rem;
+}
+
+.jtv-chat-narrow-back:hover {
+  border: 0;
+  text-decoration: underline;
+  transform: none;
+}
+
 .jtv-chat-narrow-chip:hover {
   border-color: var(--blue, #0076a9);
   color: var(--blue, #0076a9);
