@@ -87,6 +87,39 @@ hit. Replace that bullet with:
 
 ---8<--- replace to here ---8<---
 
+### 2b. One group, and the empty day (measured after the first paste)
+
+With the old bullet gone, two turns in three still spanned the week
+(`verify-on-air-groups.mjs`, 2026-11-05: "What has Misty been showing?" came
+back as 5 November, 4 November and 2 November, one show per group). The pull
+is no longer inside §9 — it is one layer up, in the system prompt:
+
+> Send four pieces to a group, or eight; the shelf is four across, so five
+> leaves one stranded. **Two groups, three at most.**
+
+For a catalog search with several directions in it, that is right. For an
+on-air turn it is an instruction to find three shows, and the only way to find
+three is to reach across days. The model is obeying the more specific-sounding
+number.
+
+So §9 has to say what the shape is for its own turns. Add after the
+one-broadcast bullet:
+
+---8<--- paste from here ---8<---
+
+- Do: expect one group on an on-air turn, not two or three. The broadcast is
+  the direction, so one show is one group; the two-or-three-group shape
+  belongs to a catalog search that holds several directions at once. More than
+  one group only when the day the shopper asked about carried more than one of
+  that host's shows, and then one group per show, never one per style.
+- Do: when the day they named holds nothing for that host or series, say so in
+  one line and show their most recent show instead, headed with its own date.
+  Measured 2026-11-05: "what did Jennifer showcase on yesterday's show?" when
+  she had not been on air for two days returned an empty panel and no
+  explanation, which reads as broken rather than as an answer.
+
+---8<--- paste to here ---8<---
+
 The index-entry changes that go with it (blocks A and C: `hitsPerPage` 24,
 pinned `attributesToRetrieve`, three corrected description claims,
 `maxResultsPerGroup` 8) are unaffected by the restructure and still apply as
