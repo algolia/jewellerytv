@@ -44,10 +44,15 @@ export function displayText(raw: string | undefined): string {
 }
 
 type ChatTextProps = {
-  part: { type?: string; text?: string };
+  part: { type?: string; text?: string; state?: 'streaming' | 'done' };
 };
 
 export function ChatText({ part }: ChatTextProps) {
+  /* A half-arrived sentence flashes and then vanishes: "I" renders, then the
+   * completed "I'll search…" matches the filter and goes blank (measured live
+   * 2026-11-04). The filter reads complete sentences, so partial text renders
+   * nothing at all; the loader carries the wait instead. */
+  if (part?.state === 'streaming') return null;
   const text = displayText(part?.text);
   if (!text) return null;
   return <span>{compiler(text, { disableParsingRawHTML: true })}</span>;

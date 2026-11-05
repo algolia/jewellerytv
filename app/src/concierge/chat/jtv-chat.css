@@ -511,6 +511,24 @@
   color: var(--muted, #707070);
 }
 
+/* One axis per row, and the row says which axis it is: the catalogue carries
+ * sibling facets (metal color, gemstone color, purity) whose values overlap,
+ * and unlabeled rows of "White" and "14K" read as the same question repeated
+ * rather than as different questions (Arijit, 2026-11-04). Quieter than the
+ * lead — a caption above its own chip row. */
+.jtv-chat-narrow-axis {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.jtv-chat-narrow-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  color: var(--muted, #707070);
+}
+
 /* One row per attribute. Colour and price running together as a single
  * wrapped list read as one undifferentiated choice, and a trailing chip
  * stranded on a second row looked like the orphan tile it took a rule to

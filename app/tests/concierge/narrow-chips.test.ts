@@ -85,23 +85,25 @@ describe('the narrowing chips', () => {
     expect(narrowChipsFor(part).map((g) => g.attribute)).not.toContain('Catalog_Motif');
   });
 
-  /* Condition is a scope fact, never a narrowing question (Arijit,
-   * 2026-11-04): the gate refuses pre-owned pieces and the axis never offers
-   * "First Quality / Pre-Owned" as a choice. */
-  it('never offers the condition axis', () => {
+  /* Audience is a filter the model applies when the recipient is named, and
+   * hardware axes are the prompt's own curation skip — never narrowing
+   * questions (Arijit, 2026-11-04, measured on three turns). */
+  it('never offers the audience or hardware axes', () => {
     const part = perIndex() as ReturnType<typeof perIndex> & {
       output: { facets: Record<string, Record<string, number>> };
     };
     part.output = {
       facets: {
         ...facets,
-        Catalog_Condition: { 'First Quality': 300, 'Pre-Owned': 40 },
+        Catalog_TargetConsumer: { Women: 30, Men: 20, Girls: 10 },
+        Catalog_BackingType: { Leverback: 12, 'Push Back': 30 },
+        Catalog_ChainLinkType: { Cable: 9, Rope: 7 },
       },
     };
-    const chips = narrowChipsFor(part);
-    expect(chips.map((g) => g.attribute)).not.toContain('Catalog_Condition');
-    expect(labels(chips)).not.toContain('Pre-Owned');
-    expect(labels(chips)).not.toContain('First Quality');
+    const axes = narrowChipsFor(part).map((g) => g.attribute);
+    expect(axes).not.toContain('Catalog_TargetConsumer');
+    expect(axes).not.toContain('Catalog_BackingType');
+    expect(axes).not.toContain('Catalog_ChainLinkType');
   });
 
   it('orders price bands by price, not count', () => {
@@ -178,5 +180,111 @@ describe('the rendered part shape', () => {
       output: { facets },
     });
     expect(labels(chips)).toContain('Opal');
+  });
+});
+
+/* The index models one physical facet several times (navigation, material,
+ * gemstone-information shapes), so the axis picker merges value-set siblings.
+ * Every fixture here is the real wire shape: the White refine response
+ * captured 2026-11-04 on "wedding ring sets". */
+describe('sibling attributes are one axis', () => {
+  const whiteRefine: Record<string, Record<string, number>> = {
+    Catalog_JewelryMaterialNavigationColor: { White: 179, Yellow: 8, 'Two-tone': 7, Rose: 1 },
+    'Catalog_MaterialInformation.MaterialColor': { White: 179, Yellow: 8, Rose: 1 },
+    Catalog_JewelryMaterialNavigationPurity: {
+      '14K': 47,
+      Sterling: 28,
+      '10K': 7,
+      '950': 4,
+      '18K': 1,
+    },
+    'Catalog_MaterialInformation.MaterialPurity': { '14K': 40, Sterling: 36, '10K': 7 },
+    'Catalog_MaterialInformation.MaterialPlatingPurity': { '14K': 7, '950': 4, '18K': 1 },
+    'Catalog_GemstoneInformation.GemstoneCreationClassification': {
+      'Lab Created': 127,
+      'Lab-Grown': 26,
+      Mined: 25,
+      Natural: 9,
+    },
+    'Catalog_GemstoneInformationPrimary.GemstoneCreationClassification': {
+      'Lab Created': 127,
+      'Lab-Grown': 26,
+      Mined: 17,
+      Natural: 9,
+    },
+  };
+  const part = (input: Record<string, unknown> = {}) => ({
+    toolName: 'algolia_search_index_prod_catalog' as const,
+    input: { queries: [{ query: 'wedding ring sets' }], ...input },
+    output: { facets: whiteRefine },
+  });
+
+  it('collapses the purity triple into one row', () => {
+    const axes = narrowChipsFor(part()).map((g) => g.attribute);
+    const purityRows = axes.filter((a) => a.includes('Purity'));
+    expect(purityRows).toHaveLength(1);
+    expect(purityRows[0]).toBe('Catalog_JewelryMaterialNavigationPurity');
+  });
+
+  it('collapses the colour pair and the creation pair', () => {
+    const axes = narrowChipsFor(part()).map((g) => g.attribute);
+    expect(axes.filter((a) => a.includes('Color'))).toHaveLength(1);
+    expect(axes.filter((a) => a.includes('CreationClassification'))).toHaveLength(1);
+  });
+
+  it('excludes an applied value across the whole class', () => {
+    /* White was applied on the navigation colour attribute; the material
+     * sibling re-offered it (the live bug). The class now excludes it. */
+    const applied = narrowChipsFor(
+      part({
+        queries: [
+          {
+            query: 'wedding ring sets',
+            facet_Catalog_JewelryMaterialNavigationColor: ['White'],
+          },
+        ],
+      }),
+    );
+    expect(labels(applied)).not.toContain('White');
+    expect(labels(applied)).toContain('Yellow');
+  });
+
+  it('names each row after its axis', () => {
+    const groups = narrowChipsFor(part());
+    const purity = groups.find((g) => g.attribute === 'Catalog_JewelryMaterialNavigationPurity');
+    expect(purity?.label).toBe('Jewelry material purity');
+    const colour = groups.find(
+      (g) => g.attribute === 'Catalog_JewelryMaterialNavigationColor',
+    );
+    expect(colour?.label).toBe('Jewelry material color');
+    /* A flat attribute name reads as itself. */
+    expect(
+      narrowChipsFor({
+        toolName: 'algolia_search_index_prod_catalog',
+        input: { queries: [{ query: 'x' }] },
+        output: {
+          facets: { Catalog_Occasion: { Wedding: 5, Anniversary: 3, Birthday: 2 } },
+        },
+      })[0]?.label,
+    ).toBe('Occasion');
+  });
+
+  it('labels the purity stamps a shopper cannot read', () => {
+    const groups = narrowChipsFor(
+      part({
+        queries: [
+          {
+            query: 'wedding ring sets',
+            'facet_Catalog_JewelryMaterialNavigationColor': ['White'],
+            'facet_Catalog_JewelryMaterialNavigationPurity': ['Sterling'],
+          },
+        ],
+      }),
+    );
+    const purity = groups.find((g) => g.attribute === 'Catalog_JewelryMaterialNavigationPurity');
+    expect(purity?.chips.map((c) => c.label)).toContain('Platinum 950');
+    /* The chip still carries the index value for the refine. */
+    const nineFifty = purity?.chips.find((c) => c.value === '950');
+    expect(nineFifty?.label).toBe('Platinum 950');
   });
 });

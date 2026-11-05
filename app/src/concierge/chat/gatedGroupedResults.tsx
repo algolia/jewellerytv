@@ -5,6 +5,7 @@ import { createGroupedResultsToolComponent } from 'instantsearch-ui-components';
 import { recordDisplayEvent } from '../../shared/telemetry';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { narrowChipsFor, type NarrowGroup } from './narrowChips';
+import { displayText } from './chatText';
 import {
   buildRefineParams,
   extractTurnRefine,
@@ -228,11 +229,22 @@ function ownerOf(messages: Array<OwnerMessage> | undefined, part: unknown) {
   return messages?.find((message) => message?.parts?.some((candidate) => candidate === part));
 }
 
-function messageCarriesText(owner: OwnerMessage | undefined): boolean {
+/* Whether the assistant message carrying this tool call wrote prose that
+ * will actually RENDER. The test is the display filter, not the raw part:
+ * measured live 2026-11-04 ("I'm looking for wedding ring sets"), the model
+ * wrote only two narration sentences ("I'll search…", "Now I'll curate…"),
+ * both of which the sentence filter drops. Testing the raw text called that
+ * a voice, suppressed the tool's own intro as a second one, and the panel
+ * showed shelves with not one word of speech above them. */
+/* Exported for the display-gate tests: this predicate decides whether the
+ * tool's intro renders, so a narration-only message must read as silence. */
+export function messageCarriesText(owner: OwnerMessage | undefined): boolean {
   return Boolean(
     owner?.parts?.some(
       (candidate) =>
-        candidate?.type === 'text' && typeof candidate.text === 'string' && candidate.text.trim(),
+        candidate?.type === 'text' &&
+        typeof candidate.text === 'string' &&
+        displayText(candidate.text),
     ),
   );
 }
@@ -297,19 +309,26 @@ function NarrowChips({
     <div className="jtv-chat-narrow">
       <p className="jtv-chat-narrow-lead">Narrow it down</p>
       {groups.map((group) => (
-        <ul key={group.attribute} className="jtv-chat-narrow-list">
-          {group.chips.map((chip) => (
-            <li key={chip.label}>
-              <button
-                type="button"
-                className="jtv-chat-narrow-chip"
-                onClick={() => onPick({ attribute: chip.attribute, value: chip.value })}
-              >
-                {chip.label}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div key={group.attribute} className="jtv-chat-narrow-axis">
+          {/* Each row names its axis: the index carries sibling attributes
+           * ("Metal color", "Gemstone color") whose chip values overlap, and
+           * without the label "White" next to "White" read as the same
+           * question twice (Arijit, 2026-11-04). */}
+          <p className="jtv-chat-narrow-label">{group.label}</p>
+          <ul className="jtv-chat-narrow-list">
+            {group.chips.map((chip) => (
+              <li key={chip.label}>
+                <button
+                  type="button"
+                  className="jtv-chat-narrow-chip"
+                  onClick={() => onPick({ attribute: chip.attribute, value: chip.value })}
+                >
+                  {chip.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       ))}
     </div>
   );
@@ -466,6 +485,7 @@ export function createGatedTools(): Tools {
             </div>
           ) : null}
           <GroupGrid items={funnel.hits} />
+          {funnel.chips.length ? <NarrowChips groups={funnel.chips} onPick={refine} /> : null}
           <div className="jtv-chat-narrow">
             <button
               type="button"
@@ -475,7 +495,6 @@ export function createGatedTools(): Tools {
               ← Back to all
             </button>
           </div>
-          {funnel.chips.length ? <NarrowChips groups={funnel.chips} onPick={refine} /> : null}
         </div>
       );
     }

@@ -1,0 +1,449 @@
+data: {"type": "start", "messageId": "alg_msg_uW2CrvJqc0kNVBGx", "messageMetadata": {"groupedResultsEnabled": true}}
+
+data: {"type": "start-step"}
+
+data: {"type": "text-start", "id": "alg_msg_uW2CrvJqc0kNVBGx"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": "I"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": "'ll search"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": " our"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": " wedding"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": " ring sets"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": " for you."}
+
+data: {"type": "text-end", "id": "alg_msg_uW2CrvJqc0kNVBGx"}
+
+data: {"type": "tool-input-start", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "toolName": "algolia_search_index_prod_catalog"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "{\"queri"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "es\": [{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "\"query\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": ":\"weddi"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "ng ring"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": " sets\"}"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "]"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": ", \"user"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "Intent\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": ": \"User"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": " is loo"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "king to"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": " shop f"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "or wedd"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "ing rin"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "g sets."}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": " Search"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "ing the"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": " catalo"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "g to di"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "splay s"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "uitable"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": " option"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "s for t"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "heir we"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "dding j"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "ewelry "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "needs.\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": ", \"orig"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "inalQue"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "ry\": \"I"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "'m look"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "ing for"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": " weddin"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "g ring "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "sets\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": ", \"sess"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "ionId\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": " \"550e8"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "400-e29"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "b-41d4-"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "a716-44"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "6655440"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "inputTextDelta": "000\"}"}
+
+data: {"type": "tool-input-available", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "toolName": "algolia_search_index_prod_catalog", "input": {"queries": [{"query": "wedding ring sets"}], "userIntent": "User is looking to shop for wedding ring sets. Searching the catalog to display suitable options for their wedding jewelry needs.", "originalQuery": "I'm looking for wedding ring sets", "sessionId": "550e8400-e29b-41d4-a716-446655440000"}}
+
+data: {"type": "tool-output-available", "toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "output": {"hits": [{"Pricing_ActivePrice": 5939.09, "Pricing_PriceRange": "$1000 and above", "Catalog_TitleDescription": "14K White Gold 1.10ctw Diamond Engagement Ring Set", "_enrichments": {"emotional_appeal ": "romantic", "gift_recipient": "bride", "material_finish": "14K white gold, polished", "occasion": {"occasion": "wedding, engagement"}, "quick_semantic": "14K white gold, diamond engagement ring, bridal set", "style_aesthetic": "classic elegant", "target_persona": {"target_persona": "young woman, bride-to-be"}, "use_case": "special occasion, engagement gift"}, "objectID": "112HXA", "Catalog_ConsumerProductCategoryDisplayNames": ["14kt Gold Jewelry", "14kt Gold Rings", "14kt White Gold Jewelry", "14kt White Gold Rings", "All", "All JTV", "Classic Diamonds", "Diamond Engagement Rings", "Diamond Gold Jewelry", "Diamond Jewelry", "Diamond Jewelry Sets", "Diamond Rings", "Diamond White Gold Jewelry", "Engagement Rings", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "Gold Diamond Rings", "Gold Jewelry", "Gold Rings", "Jewelry", "Jewelry Sets", "Made In The USA", "Made In The USA Jewelry", "Made In The USA Rings", "Mined Diamond Jewelry", "Mined Diamond Rings", "Ring Sets", "Rings", "Round Shape Gemstone Rings", "Wedding Sets", "White Diamond Jewelry", "White Diamond Rings", "White Gemstone Rings", "White Gold Diamond Rings", "White Gold Jewelry", "White Gold Rings", "Women's Diamond Jewelry", "Women's Diamond Rings", "Women's Gold Rings", "Women's Jewelry", "Women's Rings"], "Catalog_LongDescription": "This engagement ring set comes with a matching wedding band and has a 0.70ct round diamond in the center and has another 0.40ctw if diamonds in the side.", "Media_Images": ["https://images.jtv.com/jewelry/JTV-112HXA-1.jpg", "https://images.jtv.com/jewelry/JTV-112HXA-2.jpg", "https://images.jtv.com/jewelry/JTV-112HXA-3.jpg", "https://images.jtv.com/jewelry/JTV-112HXA-4.jpg"]}, {"objectID": "18N90A", "Media_Images": ["https://images.jtv.com/jewelry/JTV-18N90A-1.jpg", "https://images.jtv.com/jewelry/JTV-18N90A-2.jpg", "https://images.jtv.com/jewelry/JTV-18N90A-3.jpg", "https://images.jtv.com/jewelry/JTV-18N90A-4.jpg", "https://images.jtv.com/jewelry/JTV-18N90A-5.jpg", "https://images.jtv.com/jewelry/JTV-18N90A-6.jpg", "https://images.jtv.com/jewelry/JTV-18N90A-7.jpg", "https://images.jtv.com/jewelry/JTV-18N90A-8.jpg", "https://images.jtv.com/jewelry/JTV-18N90A-9.jpg", "https://images.jtv.com/jewelry/JTV-18N90A-10.jpg"], "Pricing_ActivePrice": 933.29, "Pricing_PriceRange": "$500 - $1000", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Alternative Wedding Bands", "Band Rings", "Black Diamond Jewelry", "Black Diamond Rings", "Black Gemstone Jewelry", "Black Gemstone Rings", "Bridal and Wedding Jewelry", "Classic Band Rings", "Classic Jewelry Styles", "Color Diamond Rings", "Color Diamonds Jewelry", "Diamond Bands", "Diamond Jewelry", "Diamond Rings", "Diamond Wedding Bands", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "Jewelry", "Men's Band Rings", "Men's Diamond Jewelry", "Men's Diamond Rings", "Men's Jewelry", "Men's Rings", "Men's Wedding Bands", "Mined Diamond Jewelry", "Mined Diamond Rings", "Rings", "Round Shape Gemstone Rings", "Thorsten Rings", "Titanium Rings", "Wedding Band Rings"], "Catalog_LongDescription": "GAUNTLET Steel Chain Titanium Wedding Ring Polished Beveled Edges Set with Round Black Diamonds - 10mm\nFeaturing a steel chain center, GAUNTLET is a great choice for those who seek a unique band. With the black diamonds lined along the beveled edges of the titanium band, this ring provides a withstanding durability to complement your lifestyle.\nThis ring is available in 10mm width.\nTitanium has more durability than gold, platinum, and even stainless steel.\nIt\u2019s a popular choice for jewelry because it\u2019s strong yet lightweight and will not crack under pressure.\nTitanium is also a hypoallergenic metal that does not contain nickel, making it a great choice for people with sensitive skin.", "Catalog_TitleDescription": "GAUNTLET Steel Chain Titanium Wedding Ring Polished Beveled Edges Set with Round Black Diamonds 10mm", "_enrichments": {"emotional_appeal ": "sophisticated", "gift_recipient": "groom", "material_finish": "titanium, polished", "occasion": {"occasion": "wedding, engagement"}, "quick_semantic": "titanium ring, black diamonds, wedding band", "style_aesthetic": "modern elegant", "target_persona": {"target_persona": "groom, modern man"}, "use_case": "alternative wedding band"}}, {"_enrichments": {"emotional_appeal ": "masculine sophistication", "gift_recipient": "groom, husband", "material_finish": "titanium, polished", "occasion": {"occasion": "wedding, engagement"}, "quick_semantic": "black titanium, wedding ring, men's jewelry, black diamonds", "style_aesthetic": "modern industrial", "target_persona": {"target_persona": "modern groom"}, "use_case": "wedding band, special occasion"}, "objectID": "18N90B", "Catalog_TitleDescription": "KNIGHT Steel Chain Black Titanium Wedding Ring Polished Beveled Edges Set with Black Diamonds 10mm", "Media_Images": ["https://images.jtv.com/jewelry/JTV-18N90B-1.jpg", "https://images.jtv.com/jewelry/JTV-18N90B-2.jpg", "https://images.jtv.com/jewelry/JTV-18N90B-3.jpg", "https://images.jtv.com/jewelry/JTV-18N90B-4.jpg", "https://images.jtv.com/jewelry/JTV-18N90B-5.jpg", "https://images.jtv.com/jewelry/JTV-18N90B-6.jpg", "https://images.jtv.com/jewelry/JTV-18N90B-7.jpg", "https://images.jtv.com/jewelry/JTV-18N90B-8.jpg", "https://images.jtv.com/jewelry/JTV-18N90B-9.jpg"], "Pricing_PriceRange": "$500 - $1000", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Alternative Wedding Bands", "Band Rings", "Black Diamond Jewelry", "Black Diamond Rings", "Black Gemstone Jewelry", "Black Gemstone Rings", "Bridal and Wedding Jewelry", "Classic Band Rings", "Classic Jewelry Styles", "Color Diamond Rings", "Color Diamonds Jewelry", "Diamond Bands", "Diamond Jewelry", "Diamond Rings", "Diamond Wedding Bands", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "Jewelry", "Men's Band Rings", "Men's Diamond Jewelry", "Men's Diamond Rings", "Men's Jewelry", "Men's Rings", "Men's Wedding Bands", "Mined Diamond Jewelry", "Mined Diamond Rings", "Rings", "Round Shape Gemstone Rings", "Thorsten Rings", "Titanium Rings", "Wedding Band Rings"], "Catalog_LongDescription": "KNIGHT Steel Chain Black Titanium Wedding Ring Polished Beveled Edges Set with Round Black Diamonds - 10mm\nFeaturing a black steel chain center, KNIGHT is a great choice for individuals who seek a unique band. With the black diamonds lined along the beveled edges of the titanium band, this ring provides a withstanding durability to complement your lifestyle.\nThis ring is available in 10mm width.\nTitanium has more durability than gold, platinum, and even stainless steel.\nIt\u2019s a popular choice for jewelry because it\u2019s strong yet lightweight and will not crack under pressure.\nTitanium is also a hypoallergenic metal that does not contain nickel, making it a great choice for people with sensitive skin.", "Pricing_ActivePrice": 933.29}, {"objectID": "13YQLA", "Catalog_ConsumerProductCategoryDisplayNames": ["14kt Gold Jewelry", "14kt Gold Rings", "14kt White Gold Jewelry", "14kt White Gold Rings", "All", "All JTV", "Band Rings", "Classic Band Rings", "Classic Diamonds", "Classic Jewelry Styles", "Diamond Bands", "Diamond Gold Jewelry", "Diamond Jewelry", "Diamond Rings", "Diamond White Gold Jewelry", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "Gold Band Rings", "Gold Diamond Rings", "Gold Jewelry", "Gold Rings", "Jewelry", "Made In The USA", "Made In The USA Jewelry", "Made In The USA Rings", "Mined Diamond Jewelry", "Mined Diamond Rings", "Rings", "Round Shape Gemstone Rings", "White Diamond Jewelry", "White Diamond Rings", "White Gemstone Rings", "White Gold Band Rings", "White Gold Diamond Rings", "White Gold Jewelry", "White Gold Rings", "Women's Band Rings", "Women's Diamond Jewelry", "Women's Diamond Rings", "Women's Gold Rings", "Women's Jewelry", "Women's Rings"], "Catalog_LongDescription": "1.00ctw Diamond Channel Set Wedding Band Ring in 14k White Gold", "Catalog_TitleDescription": "1.00ctw Diamond Channel Set Wedding Band Ring in 14k White Gold", "Media_Images": ["https://images.jtv.com/jewelry/JTV-13YQLA-1.jpg"], "Pricing_ActivePrice": 3486.59, "Pricing_PriceRange": "$1000 and above", "_enrichments": {"emotional_appeal ": "romantic", "gift_recipient": "bride", "material_finish": "14K white gold, polished", "occasion": {"occasion": "wedding, anniversary, engagement"}, "quick_semantic": "diamond ring, wedding band, white gold, fine jewelry", "style_aesthetic": "classic elegant", "target_persona": {"target_persona": "bridal, young professional"}, "use_case": "special occasion, wedding band, love token"}}, {"Pricing_ActivePrice": 2631.59, "_enrichments": {"emotional_appeal ": "romantic", "gift_recipient": "bride", "material_finish": "14K white gold, polished", "occasion": {"occasion": "wedding, engagement, anniversary"}, "quick_semantic": "diamond, eternity band, white gold, wedding ring", "style_aesthetic": "elegant timeless", "target_persona": {"target_persona": "engaged couple, bride"}, "use_case": "symbol of love, wedding band, commitment ring"}, "objectID": "1CZ51A", "Catalog_ConsumerProductCategoryDisplayNames": ["14kt Gold Jewelry", "14kt Gold Rings", "14kt White Gold Jewelry", "14kt White Gold Rings", "All", "All JTV", "Classic Diamonds", "Classic Jewelry Styles", "Diamond Eternity Bands", "Diamond Gold Jewelry", "Diamond Jewelry", "Diamond Rings", "Diamond White Gold Jewelry", "Eternity Band Rings", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "Gold Diamond Rings", "Gold Jewelry", "Gold Rings", "Jewelry", "Made In The USA", "Made In The USA Jewelry", "Made In The USA Rings", "Mined Diamond Jewelry", "Mined Diamond Rings", "Rings", "Round Shape Gemstone Rings", "White Diamond Jewelry", "White Diamond Rings", "White Gemstone Rings", "White Gold Diamond Rings", "White Gold Jewelry", "White Gold Rings", "Women's Diamond Jewelry", "Women's Diamond Rings", "Women's Gold Rings", "Women's Jewelry", "Women's Rings"], "Catalog_LongDescription": "1.00ctw Channel Set Diamond Eternity Wedding Band Ring in 14k White Gold", "Catalog_TitleDescription": "1.00ctw Channel Set Diamond Eternity Wedding Band Ring in 14k White Gold", "Media_Images": ["https://images.jtv.com/jewelry/JTV-1CZ51A-1.jpg", "https://images.jtv.com/jewelry/JTV-1CZ51A-2.jpg"], "Pricing_PriceRange": "$1000 and above"}, {"Media_Images": ["https://images.jtv.com/jewelry/JTV-RST1315-1.jpg", "https://images.jtv.com/jewelry/JTV-RST1315-2.jpg", "https://images.jtv.com/jewelry/JTV-RST1315-3.jpg"], "Pricing_ActivePrice": 109.99, "Pricing_PriceRange": "$100 - $200", "objectID": "RST1315", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Alternative Engagement Rings", "Blue Gemstone Jewelry", "Blue Gemstone Rings", "Blue Sapphire Jewelry", "Blue Sapphire Rings", "Color Gemstone Bridal Rings", "Color Gemstone Jewelry", "Color Gemstone Jewelry Sets", "Color Gemstone Rings", "Color Gemstone Silver Jewelry", "Color Gemstone Silver Rings", "Engagement Rings", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "Jewelry", "Jewelry Sets", "Lab Created Jewelry", "Lab Created Sapphire Jewelry", "Lab Created Sapphire Rings", "Oval Shape Gemstone Rings", "Ring Sets", "Rings", "Sapphire Jewelry", "Sapphire Rings", "Silver Rings", "Silver Sapphire Jewelry", "Silver Sapphire Rings", "Sterling Silver Jewelry", "Sterling Silver Wedding Sets", "Wedding Sets", "Women's Color Gemstone Jewelry", "Women's Color Gemstone Rings", "Women's Jewelry", "Women's Rings", "Women's Silver Rings"], "_enrichments": {"emotional_appeal ": "sophisticated", "gift_recipient": "n/a", "material_finish": "sterling silver, rhodium over", "occasion": {"occasion": "everyday, special occasion, engagement"}, "quick_semantic": "blue sapphire, lab created, moissanite, silver ring", "style_aesthetic": "modern elegant", "target_persona": {"target_persona": "young professional woman"}, "use_case": "statement piece, alternative engagement ring"}, "Catalog_LongDescription": "1.70ct Oval and 0.23ctw Round Lab Created Blue Sapphire with 0.58ctw Round White Moissanite Rhodium Over Sterling Silver Ring. Measures approximately 0.80\"L x 0.35\"W. Not Sizeable", "Catalog_TitleDescription": "Blue Lab Created Sapphire with White Moissanite Rhodium Over Sterling Silver Ring 2.70ctw"}, {"Catalog_LongDescription": "Park Avenue Collection\u00ae Prazana\u00ae 2.50ct 9.3x7mm elongated cushion white lab-grown diamond center stone with 0.82ctw trillion white lab-grown diamond and 0.43ctw round white lab-grown diamond, rhodium over 14K white gold ring with matching band. Measures approximately 7/16\"W together. Center stone is IGI Certified F color, VS-SI clarity minimum.", "Catalog_TitleDescription": "Certified White Lab-Grown Diamond F VS-SI 14K White Gold Ring With Matching Band 3.75ctw", "Media_Images": ["https://images.jtv.com/jewelry/JTV-PAC873-1.jpg"], "Pricing_ActivePrice": 3599.99, "Pricing_PriceRange": "$1000 and above", "_enrichments": {"emotional_appeal ": "romantic", "gift_recipient": "bride", "material_finish": "14K white gold, polished", "occasion": {"occasion": "engagement, wedding"}, "quick_semantic": "lab-grown diamond, white gold, engagement ring, bridal set", "style_aesthetic": "elegant classic", "target_persona": {"target_persona": "engaged couples"}, "use_case": "special occasion, engagement ring"}, "Catalog_ConsumerProductCategoryDisplayNames": ["14kt Gold Jewelry", "14kt White Gold Jewelry", "14kt White Gold Rings", "All", "All JTV", "Classic Diamonds", "Diamond Engagement Rings", "Diamond Gold Jewelry", "Diamond Jewelry", "Diamond Jewelry Sets", "Diamond Rings", "Diamond White Gold Jewelry", "Engagement Rings", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "Gold Diamond Rings", "Gold Jewelry", "Gold Rings", "JTV Exclusive Brands", "Jewelry", "Jewelry Sets", "Lab Created Jewelry", "Lab-Grown Diamond Gold Jewelry", "Lab-Grown Diamond Gold Rings", "Lab-Grown Diamond Jewelry", "Lab-Grown Diamond Rings", "Park Avenue Jewelry", "Park Avenue Rings", "Ring Sets", "Rings", "Wedding Sets", "White Diamond Jewelry", "White Diamond Rings", "White Gemstone Rings", "White Gold Diamond Rings", "White Gold Jewelry", "White Gold Rings", "Women's Diamond Jewelry", "Women's Diamond Rings", "Women's Gold Rings", "Women's Jewelry", "Women's Rings"], "objectID": "PAC873"}, {"Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Alternative Engagement Rings", "Emerald Cut Gemstone Jewelry", "Engagement Rings", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "Gold Over Silver Jewelry", "Gold Over Silver Moissanite Jewelry", "Gold Over Silver Rings", "JTV Exclusive Brands", "Jewelry", "Jewelry Sets", "Lab Created Jewelry", "Moissanite Fire Jewelry", "Moissanite Fire Rings", "Moissanite Gold Over Silver Rings", "Moissanite Jewelry", "Moissanite Jewelry Sets", "Moissanite Rings", "Rectangle Shape Moissanite Jewelry", "Ring Sets", "Rings", "Wedding Sets", "White Gemstone Gold Over Silver Jewelry", "White Gemstone Jewelry", "White Gemstone Rings", "Women's Gold Over Silver Rings", "Women's Jewelry", "Women's Moissanite Jewelry", "Women's Moissanite Rings", "Women's Rings"], "Catalog_LongDescription": "Moissanite Fire\u00ae 3.55ct diamond equivalent weight rectangular octagonal emerald cut, 14k yellow gold over sterling silver ring with band. Solitaire measures approximately 0.37\"L x 0.48\"W and is not sizeable. Band is 0.09\"W. Actual moissanite weight is 3.24ct.", "Pricing_ActivePrice": 329.99, "Pricing_PriceRange": "$200 - $500", "objectID": "MFP153B", "Catalog_TitleDescription": "Emerald Cut Moissanite 14k Yellow Gold Over Silver Ring With Band 3.55ct DEW", "Media_Images": ["https://images.jtv.com/jewelry/JTV-MFP153B-1.jpg", "https://images.jtv.com/jewelry/JTV-MFP153B-2.jpg", "https://images.jtv.com/jewelry/JTV-MFP153B-3.jpg"], "_enrichments": {"emotional_appeal ": "romantic", "gift_recipient": "engaged couple", "material_finish": "14K yellow gold over sterling silver, polished", "occasion": {"occasion": "proposal, wedding, special occasion"}, "quick_semantic": "emerald cut, moissanite, engagement ring, gold over silver", "style_aesthetic": "elegant vintage", "target_persona": {"target_persona": "bride-to-be"}, "use_case": "special occasion, engagement ring, statement piece"}}, {"Pricing_ActivePrice": 329.99, "Catalog_LongDescription": "Moissanite Fire\u00ae 3.55ct diamond equivalent weight rectangular octagonal emerald cut, Platineve\u00ae ring with band. Solitaire measures approximately 0.37\"L x 0.48\"W and is not sizeable. Band is 0.09\"W. Actual moissanite weight is 3.24ct.", "Media_Images": ["https://images.jtv.com/jewelry/JTV-MFP153A-1.jpg", "https://images.jtv.com/jewelry/JTV-MFP153A-2.jpg", "https://images.jtv.com/jewelry/JTV-MFP153A-3.jpg"], "Pricing_PriceRange": "$200 - $500", "_enrichments": {"emotional_appeal ": "romantic elegance", "gift_recipient": "bride-to-be", "material_finish": "Platineve\u00ae, polished", "occasion": {"occasion": "engagement, wedding, special occasion"}, "quick_semantic": "emerald cut, moissanite, engagement ring, wedding band", "style_aesthetic": "sophisticated vintage", "target_persona": {"target_persona": "young bride, engagement-focused"}, "use_case": "alternative engagement ring, statement piece"}, "objectID": "MFP153A", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Alternative Engagement Rings", "Emerald Cut Gemstone Jewelry", "Engagement Rings", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "JTV Exclusive Brands", "Jewelry", "Jewelry Sets", "Lab Created Jewelry", "Moissanite Fire Jewelry", "Moissanite Fire Rings", "Moissanite Jewelry", "Moissanite Jewelry Sets", "Moissanite Rings", "Platineve Engagement Rings", "Platineve Jewelry", "Platineve Moissanite Jewelry", "Platineve Rings", "Rectangle Shape Moissanite Jewelry", "Ring Sets", "Rings", "Wedding Sets", "White Gemstone Rings", "Women's Jewelry", "Women's Moissanite Jewelry", "Women's Moissanite Rings", "Women's Rings"], "Catalog_TitleDescription": "Emerald Cut Moissanite Platineve Ring With Band 3.55ctw DEW"}, {"Catalog_LongDescription": "Moissanite Fire\u00ae 5.35ct diamond equivalent weight square octagonal step cut, 14k yellow gold over sterling silver ring with band. Measures 0.40\" L x 0.40\" W and is not sizeable. Actual moissanite weight is 4.65ctw.", "Media_Images": ["https://images.jtv.com/jewelry/JTV-MFP140B-1.jpg"], "Pricing_ActivePrice": 562.49, "Pricing_PriceRange": "$500 - $1000", "_enrichments": {"emotional_appeal ": "elegant sophistication", "gift_recipient": "new bride", "material_finish": "14K yellow gold over sterling silver, polished", "occasion": {"occasion": "wedding, engagement, special occasion"}, "quick_semantic": "moissanite ring, yellow gold, engagement, wedding, elegant", "style_aesthetic": "modern vintage", "target_persona": {"target_persona": "young professional"}, "use_case": "special occasion ring, engagement ring, everyday staple jewelry, statement piece"}, "objectID": "MFP140B", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Alternative Engagement Rings", "Clearance Jewelry", "Clearance Moissanite Jewelry", "Clearance Moissanite Rings", "Clearance Rings", "Clearance White Gemstone Jewelry", "Engagement Rings", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "JTV Clearance", "JTV Exclusive Brands", "Jewelry", "Jewelry Sets", "Lab Created Jewelry", "Moissanite Fire Jewelry", "Moissanite Fire Rings", "Moissanite Jewelry", "Moissanite Jewelry Sets", "Moissanite Rings", "Ring Sets", "Rings", "Square Shape Moissanite Jewelry", "Wedding Sets", "White Gemstone Rings", "Women's Jewelry", "Women's Moissanite Jewelry", "Women's Moissanite Rings", "Women's Rings"], "Catalog_TitleDescription": "Square Octangular Step Cut Moissanite 14k Yellow Gold Over Silver Ring With Band 5.35ctw DEW"}, {"Catalog_LongDescription": "Moissanite Fire\u00ae 5.35ct diamond equivalent weight square octagonal step cut, Platineve\u00ae ring with band. Measures 0.40\" L x 0.40\" W and is not sizeable. Actual moissanite weight is 4.65ct.", "Media_Images": ["https://images.jtv.com/jewelry/JTV-MFP140A-1.jpg"], "Pricing_ActivePrice": 562.49, "_enrichments": {"emotional_appeal ": "elegant sophistication", "gift_recipient": "bride-to-be", "material_finish": "Platineve\u00ae, polished", "occasion": {"occasion": "wedding, engagement, special occasion"}, "quick_semantic": "moissanite, elegant ring, wedding set, female jewelry", "style_aesthetic": "modern elegant", "target_persona": {"target_persona": "young woman, engaged couple"}, "use_case": "engagement ring, statement piece, special occasion jewelry"}, "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Alternative Engagement Rings", "Clearance Jewelry", "Clearance Moissanite Jewelry", "Clearance Moissanite Rings", "Clearance Rings", "Clearance White Gemstone Jewelry", "Engagement Rings", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "JTV Clearance", "JTV Exclusive Brands", "Jewelry", "Jewelry Sets", "Lab Created Jewelry", "Moissanite Fire Jewelry", "Moissanite Fire Rings", "Moissanite Jewelry", "Moissanite Jewelry Sets", "Moissanite Rings", "Platineve Jewelry", "Platineve Moissanite Jewelry", "Platineve Rings", "Ring Sets", "Rings", "Square Shape Moissanite Jewelry", "Wedding Sets", "White Gemstone Rings", "Women's Jewelry", "Women's Moissanite Jewelry", "Women's Moissanite Rings", "Women's Rings"], "Catalog_TitleDescription": "Square Octagonal Step Cut Moissanite Platineve Ring With Band 5.35ct DEW", "Pricing_PriceRange": "$500 - $1000", "objectID": "MFP140A"}, {"Catalog_LongDescription": "Moissanite Fire\u00ae 2.00ct diamond equivalent weight marquise brilliant cut, 14k yellow gold over sterling silver ring with band. Measures 0.25\" L x 0.51\" W and is not sizeable. Actual moissanite weight is 1.80ct.", "Catalog_TitleDescription": "Marquise Moissanite 14k Yellow Gold Over Silver Ring With Band 2.00ct DEW", "Media_Images": ["https://images.jtv.com/jewelry/JTV-MFP139A-1.jpg"], "Pricing_ActivePrice": 229.49, "objectID": "MFP139A", "Catalog_ConsumerProductCategoryDisplayNames": ["All", "All JTV", "Alternative Engagement Rings", "Engagement Rings", "Fine Jewelry", "Fine Rings", "Gemstone Jewelry", "Gold Over Silver Jewelry", "Gold Over Silver Moissanite Jewelry", "Gold Over Silver Rings", "JTV Exclusive Brands", "Jewelry", "Jewelry Sets", "Lab Created Jewelry", "Marquise Rings", "Moissanite Fire Jewelry", "Moissanite Fire Rings", "Moissanite Gold Over Silver Rings", "Moissanite Jewelry", "Moissanite Jewelry Sets", "Moissanite Rings", "Ring Sets", "Rings", "Wedding Sets", "White Gemstone Gold Over Silver Jewelry", "White Gemstone Jewelry", "White Gemstone Rings", "Women's Gold Over Silver Rings", "Women's Jewelry", "Women's Moissanite Jewelry", "Women's Moissanite Rings", "Women's Rings"], "Pricing_PriceRange": "$200 - $500", "_enrichments": {"emotional_appeal ": "romantic", "gift_recipient": "engaged couple", "material_finish": "14K yellow gold over sterling silver, polished", "occasion": {"occasion": "engagement, wedding, special occasion"}, "quick_semantic": "moissanite ring, yellow gold, engagement, marquise", "style_aesthetic": "elegant vintage", "target_persona": {"target_persona": "bride-to-be"}, "use_case": "alternative engagement ring, statement piece"}}], "nbHits": 12, "facets": {"Catalog_Condition": {"First Quality": 213}, "Catalog_JewelryMaterialNavigationColor": {"Black": 2, "Multi-color": 1, "Rose": 16, "Tri-color": 2, "Two-tone": 9, "White": 142, "Yellow": 54}, "Catalog_TargetConsumer": {"Men": 4, "Women": 209}, "Pricing_DiscountPercentRange": {"10% - 20% off": 99, "20% - 30% off": 7, "30% - 40% off": 14, "40% - 50% off": 10, "50% - 60% off": 25, "60% - 70% off": 46, "70% - 80% off": 12}, "Pricing_PriceRange": {"$100 - $200": 48, "$1000 and above": 82, "$200 - $500": 30, "$25 - $50": 7, "$50 - $100": 32, "$500 - $1000": 12, "Under $25": 2}}, "queryIDs": ["1444e4557d6caf15dce08a483cf4eb6d"]}}
+
+data: {"type": "data-tool-output-metadata", "data": {"toolCallId": "toolu_01BUKyVyZ66RN5MFrmMqtNgw", "metadata": {"com.algolia/resolved-search-params": [{"query": "wedding ring sets", "attributesToHighlight": [], "responseFields": ["hits", "nbHits", "page", "nbPages", "hitsPerPage", "facets"], "facets": ["Pricing_PriceRange", "Catalog_JewelryMaterialNavigationColor", "Catalog_TargetConsumer", "Pricing_DiscountPercentRange", "Catalog_BasicMaterialInformationPrimary.BasicMaterialColor", "Catalog_BagTypes", "Catalog_Condition"], "clickAnalytics": true, "distinct": false, "page": 0, "hitsPerPage": 12, "attributesToRetrieve": ["Catalog_TitleDescription", "Media_Images", "Catalog_LongDescription", "Catalog_ConsumerProductCategoryDisplayNames", "_enrichments", "Pricing_PriceRange", "Pricing_ActivePrice"], "disableNeuralSearch": false, "filters": "Inventory_InStock:true AND Catalog_Condition:'First Quality'", "facetFilters": [], "numericFilters": []}]}}, "transient": true}
+
+data: {"type": "finish-step"}
+
+data: {"type": "start-step"}
+
+data: {"type": "text-start", "id": "alg_msg_uW2CrvJqc0kNVBGx"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": "Now"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": " I'll"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": " cu"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": "rate the best options"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": " and display"}
+
+data: {"type": "text-delta", "id": "alg_msg_uW2CrvJqc0kNVBGx", "delta": " them."}
+
+data: {"type": "text-end", "id": "alg_msg_uW2CrvJqc0kNVBGx"}
+
+data: {"type": "tool-input-start", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "toolName": "algolia_grouped_results"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "{\"intro"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\": \"Bea"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "utiful "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "wedding"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": " sets t"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "o celeb"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "rate yo"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ur love"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ", from "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "classic"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": " diamon"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ds to m"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "odern a"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "lternat"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ives.\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ", \"grou"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ps\": [{"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\"title\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ":\"Class"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ic Diam"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ond Set"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "s\",\"why"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\":\"Trad"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "itional"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": " bridal"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": " elegan"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ce with"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": " diamon"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ds\",\"re"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "sults\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "[{\"obje"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ctID\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "112HXA\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ",\"why\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\"14K wh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ite gol"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "d with "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "1.10ct "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "diamond"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "s\"},{\"o"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "bjectID"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\":\"PAC8"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "73\",\"wh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "y\":\"Lab"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "-grown "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "diamond"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "s, cert"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ified q"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "uality\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "},{\"obj"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ectID\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\"13YQLA"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\",\"why\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ":\"Delic"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ate cha"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "nnel se"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "t band "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "in whit"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "e gold\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "},{\"obj"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ectID\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\"1CZ51A"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\",\"why\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ":\"Spark"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ling et"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ernity "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "band op"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "tion\"}]"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "},{\"tit"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "le\":\"Mo"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "dern & "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "Alterna"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "tive Se"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ts\",\"wh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "y\":\"Moi"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ssanite"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": " and un"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ique de"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "signs\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\"result"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "s\":[{\"o"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "bjectID"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\":\"MFP1"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "53B\",\"w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "hy\":\"Em"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "erald c"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ut mois"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "sanite,"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": " vintag"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "e flair"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\"},{\"ob"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "jectID\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ":\"MFP14"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "0B\",\"wh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "y\":\"Bol"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "d squar"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "e cut w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ith yel"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "low gol"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "d\"},{\"o"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "bjectID"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\":\"MFP1"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "39A\",\"w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "hy\":\"El"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "egant m"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "arquise"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": " shape,"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": " afford"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "able\"},"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "tID\":\"R"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ST1315\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ",\"why\":"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\"Blue s"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "apphire"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": " with m"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "oissani"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "te, uni"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "que\"}]}"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ",{\"titl"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "e\":\"Gro"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "om's Op"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "tions\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\"why\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "Men's w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "edding "}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "bands\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\"result"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "s\":[{\"o"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "bjectID"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\":\"18N9"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "0A\",\"wh"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "y\":\"Tit"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "anium w"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ith bla"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "ck diam"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "onds\"},"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "{\"objec"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "tID\":\"1"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "8N90B\","}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "\"why\":\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "Black t"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "itanium"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": ", moder"}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "n edge\""}
+
+data: {"type": "tool-input-delta", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "inputTextDelta": "}]}]}"}
+
+data: {"type": "tool-input-available", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "toolName": "algolia_grouped_results", "input": {"intro": "Beautiful wedding sets to celebrate your love, from classic diamonds to modern alternatives.", "groups": [{"title": "Classic Diamond Sets", "why": "Traditional bridal elegance with diamonds", "results": [{"objectID": "112HXA", "why": "14K white gold with 1.10ct diamonds"}, {"objectID": "PAC873", "why": "Lab-grown diamonds, certified quality"}, {"objectID": "13YQLA", "why": "Delicate channel set band in white gold"}, {"objectID": "1CZ51A", "why": "Sparkling eternity band option"}]}, {"title": "Modern & Alternative Sets", "why": "Moissanite and unique designs", "results": [{"objectID": "MFP153B", "why": "Emerald cut moissanite, vintage flair"}, {"objectID": "MFP140B", "why": "Bold square cut with yellow gold"}, {"objectID": "MFP139A", "why": "Elegant marquise shape, affordable"}, {"objectID": "RST1315", "why": "Blue sapphire with moissanite, unique"}]}, {"title": "Groom's Options", "why": "Men's wedding bands", "results": [{"objectID": "18N90A", "why": "Titanium with black diamonds"}, {"objectID": "18N90B", "why": "Black titanium, modern edge"}]}]}}
+
+data: {"type": "tool-output-available", "toolCallId": "toolu_01GjdaKc3gRCDErXx6aqDBkm", "output": {"status": "success"}}
+
+data: {"type": "data-suggestions", "data": {"suggestions": ["Show me wedding ring sets under $5000", "What metals are popular for wedding rings?", "Can you filter by ring style or design?"]}}
+
+data: {"type": "finish-step"}
+
+data: {"type": "finish"}
+
+data: [DONE]

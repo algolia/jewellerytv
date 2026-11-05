@@ -198,9 +198,12 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
            * the loaderPosition the reference UX uses (Arijit, 2026-11-05). */
           loaderComponent={ChatLoader}
           loaderPosition="message-inline"
-          /* Reply-only display (the pre-merge contract): text the model
-           * writes before or between its tool calls is working narration and
-           * never renders; only the reply after the last tool call does. */
+          /* Sentence-level display (the 2026-11-04 contract, see
+           * chatText.tsx): the model narrates its own work in message text
+           * before the display tool and writes nothing after, so position
+           * filters render nothing. Sentences that narrate the work never
+           * render; the human moment does — and when nothing survives, the
+           * tool's intro stands in (the gate checks the FILTERED text). */
           messagesProps={useMemo(
             () => ({ assistantMessageProps: { textComponent: ChatText } }),
             [],

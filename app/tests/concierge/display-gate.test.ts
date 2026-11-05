@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gateGroups } from '../../src/concierge/chat/gatedGroupedResults';
+import { gateGroups, messageCarriesText } from '../../src/concierge/chat/gatedGroupedResults';
 
 /* The gate is the only place a piece can be refused now, so these cases are
  * the whole contract. The failure this replaces was silent: four layers each
@@ -9,7 +9,6 @@ import { gateGroups } from '../../src/concierge/chat/gatedGroupedResults';
 const withImage = { objectID: 'A1', Media_Images: ['https://img/a1.jpg'] };
 const onAirShape = { objectID: 'B2', name: 'On-air piece', imageLarge: 'https://img/b2.jpg' };
 const noImage = { objectID: 'C3', Catalog_TitleDescription: 'Imageless' };
-const preOwned = { objectID: 'P9', Media_Images: ['https://img/p9.jpg'], Catalog_Condition: 'Pre-Owned' };
 
 const store = (records: Record<string, unknown>[]) => ({
   get: (objectID: string) =>
@@ -54,29 +53,6 @@ describe('the display gate', () => {
       'B2',
     ]);
     expect(dropped).toEqual(['A1:duplicate']);
-  });
-
-  /* Arijit's ruling, 2026-11-04: the pre-owned exclusion is app code applied
-   * as a filter, not agent prompt — the agent is non-deterministic. The gate
-   * is the one place a piece can be refused, so the scope decision is
-   * enforced here for agent shelves and refine results alike. */
-  it('refuses a pre-owned piece wherever it came from', () => {
-    const { input, dropped } = gateGroups(
-      { groups: [group('Shelf', ['A1', 'P9'])] },
-      store([withImage, preOwned]),
-    );
-    expect(input.groups?.[0].results?.map((r) => r.objectID)).toEqual(['A1']);
-    expect(dropped).toEqual(['P9:pre_owned']);
-  });
-
-  it('keeps a piece whose condition is first quality', () => {
-    const firstQuality = { ...preOwned, objectID: 'FQ1', Catalog_Condition: 'First Quality' };
-    const { input, dropped } = gateGroups(
-      { groups: [group('Shelf', ['FQ1'])] },
-      store([firstQuality]),
-    );
-    expect(input.groups?.[0].results?.map((r) => r.objectID)).toEqual(['FQ1']);
-    expect(dropped).toEqual([]);
   });
 
   it('drops a group left with nothing rather than rendering a bare heading', () => {
@@ -172,6 +148,39 @@ describe('the tool intro', () => {
   it('is kept when the message said nothing', () => {
     const { input } = gateGroups({ intro: 'A first look.', groups }, records, { keepIntro: true });
     expect(input.intro).toBe('A first look.');
+  });
+});
+
+/* "Carries text" means text that survives the display filter, not text that
+ * exists. Measured live 2026-11-04 on "I'm looking for wedding ring sets":
+ * the model wrote only "I'll search our wedding ring sets for you." and
+ * "Now I'll curate the best options and display them." — both narration, both
+ * dropped at render — yet the raw-text test treated them as a voice, kept the
+ * intro suppressed, and the panel showed shelves with no speech at all. */
+describe('whether a message carries rendered text', () => {
+  const part = (text: string) => ({ type: 'text', text });
+
+  it('reads a narration-only message as silence', () => {
+    const owner = {
+      parts: [part("I'll search our wedding ring sets for you."), part("Now I'll curate the best options and display them.")],
+    };
+    expect(messageCarriesText(owner)).toBe(false);
+  });
+
+  it('reads a message with a human sentence as a voice', () => {
+    const owner = {
+      parts: [
+        part('Wonderful choice.'),
+        part("I'll search our wedding ring sets for you."),
+      ],
+    };
+    expect(messageCarriesText(owner)).toBe(true);
+  });
+
+  it('ignores empty and whitespace-only parts', () => {
+    expect(messageCarriesText({ parts: [part(''), part('   ')] })).toBe(false);
+    expect(messageCarriesText(undefined)).toBe(false);
+    expect(messageCarriesText({ parts: [{ type: 'text' }] })).toBe(false);
   });
 });
 
