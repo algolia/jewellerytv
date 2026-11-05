@@ -1,0 +1,749 @@
+{
+ "startedAt": "2026-11-05T03:21:53.511Z",
+ "app": "http://localhost:5173/",
+ "devAgent": "8129ad66-170b-4bb5-926a-c81d2cb38f22",
+ "journeys": [
+  {
+   "name": "C1-broad-browse",
+   "turns": [
+    {
+     "replyText": "Garnet Jewelry$29.99$49.99$49.99$280.79Loose Garnet Gemstones$126.97$121.50$747$535.50Narrow it down$100 - $200$200 - $500$1000 and aboveYellowWhiteRose10% - 20% off40% - 50% off50% - 60% off",
+     "tiles": [
+      {
+       "title": "",
+       "href": "/product/BRS348"
+      },
+      {
+       "title": "",
+       "href": "/product/BRS352"
+      },
+      {
+       "title": "",
+       "href": "/product/BRS329"
+      },
+      {
+       "title": "",
+       "href": "/product/JMF611"
+      },
+      {
+       "title": "",
+       "href": "/product/NGV053"
+      },
+      {
+       "title": "",
+       "href": "/product/1T8H3A"
+      },
+      {
+       "title": "",
+       "href": "/product/1LRS3A"
+      },
+      {
+       "title": "",
+       "href": "/product/1DT0YA"
+      }
+     ],
+     "chips": [
+      "$100 - $200",
+      "$200 - $500",
+      "$1000 and above",
+      "Yellow",
+      "White",
+      "Rose",
+      "10% - 20% off",
+      "40% - 50% off",
+      "50% - 60% off"
+     ],
+     "groups": [
+      "Garnet Jewelry",
+      "Loose Garnet Gemstones"
+     ],
+     "links": [
+      "/product/BRS348",
+      "/product/BRS352",
+      "/product/BRS329",
+      "/product/JMF611",
+      "/product/NGV053",
+      "/product/1T8H3A",
+      "/product/1LRS3A",
+      "/product/1DT0YA"
+     ],
+     "bolds": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "Can you show me garnet jewelry?",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C2-style-brief",
+   "turns": [
+    {
+     "replyText": "Delicate & Romantic$136.79$100.79$134.99$128.69",
+     "tiles": [
+      {
+       "title": "",
+       "href": "/product/1FR4FB"
+      },
+      {
+       "title": "",
+       "href": "/product/1CH79C"
+      },
+      {
+       "title": "",
+       "href": "/product/1ZGJRA"
+      },
+      {
+       "title": "",
+       "href": "/product/1LQ7DA"
+      }
+     ],
+     "chips": [],
+     "groups": [
+      "Delicate & Romantic"
+     ],
+     "links": [
+      "/product/1FR4FB",
+      "/product/1CH79C",
+      "/product/1ZGJRA",
+      "/product/1LQ7DA"
+     ],
+     "bolds": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "Romantic, delicate jewelry for our anniversary dinner",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C3-gift-recipient",
+   "turns": [
+    {
+     "replyText": "I'd love to help you find something special for her!Perfect! Here's a collection of colorful, age-appropriate pieces that will make her feel special. These bracelets feature playful charms—hearts, flowers, unicorns, elephants—and come in durable metals that hold up to everyday play.Colorful Charm Bracelets$76.49$73.79$96.29$71.99Narrow it down$50 - $100$100 - $200$200 - $500YellowWhiteMulti-color",
+     "tiles": [
+      {
+       "title": "",
+       "href": "/product/1978DA"
+      },
+      {
+       "title": "",
+       "href": "/product/1RG60A"
+      },
+      {
+       "title": "",
+       "href": "/product/1VY1IA"
+      },
+      {
+       "title": "",
+       "href": "/product/1MZ3IA"
+      }
+     ],
+     "chips": [
+      "$50 - $100",
+      "$100 - $200",
+      "$200 - $500",
+      "Yellow",
+      "White",
+      "Multi-color"
+     ],
+     "groups": [
+      "Colorful Charm Bracelets"
+     ],
+     "links": [
+      "/product/1978DA",
+      "/product/1RG60A",
+      "/product/1VY1IA",
+      "/product/1MZ3IA"
+     ],
+     "bolds": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "What should I get my seven year old niece for Christmas?",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C4-correction",
+   "turns": [
+    {
+     "replyText": "Perfect!Classic Gold Hoops$473.91$446.68$538.10$730.80Statement and Large Styles$596.65$803.85$1,004.68$1,017.23Narrow it down$200 - $500$500 - $1000$1000 and aboveUnder 10% off10% - 20% off40% - 50% offYellowWhiteTwo-tone",
+     "tiles": [
+      {
+       "title": "",
+       "href": "/product/VG271"
+      },
+      {
+       "title": "",
+       "href": "/product/VG246"
+      },
+      {
+       "title": "",
+       "href": "/product/VG263"
+      },
+      {
+       "title": "",
+       "href": "/product/VG235C"
+      },
+      {
+       "title": "",
+       "href": "/product/VG248"
+      },
+      {
+       "title": "",
+       "href": "/product/VG269"
+      },
+      {
+       "title": "",
+       "href": "/product/VG247"
+      },
+      {
+       "title": "",
+       "href": "/product/VG270"
+      }
+     ],
+     "chips": [
+      "$200 - $500",
+      "$500 - $1000",
+      "$1000 and above",
+      "Under 10% off",
+      "10% - 20% off",
+      "40% - 50% off",
+      "Yellow",
+      "White",
+      "Two-tone"
+     ],
+     "groups": [
+      "Classic Gold Hoops",
+      "Statement and Large Styles"
+     ],
+     "links": [
+      "/product/VG271",
+      "/product/VG246",
+      "/product/VG263",
+      "/product/VG235C",
+      "/product/VG248",
+      "/product/VG269",
+      "/product/VG247",
+      "/product/VG270"
+     ],
+     "bolds": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "I want to see gold hoops",
+     "turnAdvanced": true
+    },
+    {
+     "replyText": "These results are gold over silver rather than solid silver.The catalog carries mostly gold over sterling silver hoops rather than solid sterling silver. These are plated pieces with a sterling base. If you'd prefer solid sterling hoops without the gold plating, we have a smaller selection. Would you like me to show you what's available in solid sterling silver, or are these gemstone-accented gold-over-silver hoops appealing to you?",
+     "tiles": [],
+     "chips": [],
+     "groups": [],
+     "links": [],
+     "bolds": [],
+     "step": 2,
+     "kind": "say",
+     "literal": "Actually show me silver instead.",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C5-budget",
+   "turns": [
+    {
+     "replyText": "Looking at the results, I have pieces under $250 but also several over that limit.$200–$250$199.99$149$212.49$244.99Narrow it downWhiteYellowRose10% - 20% off40% - 50% off50% - 60% off",
+     "tiles": [
+      {
+       "title": "",
+       "href": "/product/WPD1138"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD495"
+      },
+      {
+       "title": "",
+       "href": "/product/ZNS20"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD2281"
+      }
+     ],
+     "chips": [
+      "White",
+      "Yellow",
+      "Rose",
+      "10% - 20% off",
+      "40% - 50% off",
+      "50% - 60% off"
+     ],
+     "groups": [
+      "$200–$250"
+     ],
+     "links": [
+      "/product/WPD1138",
+      "/product/WPD495",
+      "/product/ZNS20",
+      "/product/WPD2281"
+     ],
+     "bolds": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "Show me tennis bracelets under $250",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C6-thin-honesty",
+   "turns": [
+    {
+     "replyText": "Yes, we do. We carry lab-created alexandrite jewelry in rings, pendants, and necklaces, mostly in gold over silver. Most pieces are in the $100–$500 range, with options for every budget. What type of piece are you drawn to — a ring, pendant, or something else?",
+     "tiles": [],
+     "chips": [],
+     "groups": [],
+     "links": [],
+     "bolds": [
+      "What type of piece are you drawn to — a ring, pendant, or something else?"
+     ],
+     "step": 1,
+     "kind": "say",
+     "literal": "Do you have alexandrite jewelry?",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C7-two-meanings",
+   "turns": [
+    {
+     "replyText": "Statement Opals$72.99$124.99$139.99$69.99Colorful Gemstone Clusters$108.36$99.99$106.99$95.20Narrow it downWhiteYellowTwo-tone$50 - $100$100 - $200$200 - $50010% - 20% off40% - 50% off50% - 60% off",
+     "tiles": [
+      {
+       "title": "",
+       "href": "/product/WPD953"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD830"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD618"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD802"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD909"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD911"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD926"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD578"
+      }
+     ],
+     "chips": [
+      "White",
+      "Yellow",
+      "Two-tone",
+      "$50 - $100",
+      "$100 - $200",
+      "$200 - $500",
+      "10% - 20% off",
+      "40% - 50% off",
+      "50% - 60% off"
+     ],
+     "groups": [
+      "Statement Opals",
+      "Colorful Gemstone Clusters"
+     ],
+     "links": [
+      "/product/WPD953",
+      "/product/WPD830",
+      "/product/WPD618",
+      "/product/WPD802",
+      "/product/WPD909",
+      "/product/WPD911",
+      "/product/WPD926",
+      "/product/WPD578"
+     ],
+     "bolds": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "Show me cluster style rings",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C8-facet-trap",
+   "turns": [
+    {
+     "replyText": "Now I can see the results include both solid sterling silver and gold over sterling silver pieces.Perfect!Solid Sterling Silver$72.24$129.99$89.99$84.99Narrow it down$50 - $100$100 - $200$200 - $50010% - 20% off40% - 50% off50% - 60% offTwo-toneYellowMulti-color",
+     "tiles": [
+      {
+       "title": "",
+       "href": "/product/ZNS7"
+      },
+      {
+       "title": "",
+       "href": "/product/UAH187"
+      },
+      {
+       "title": "",
+       "href": "/product/TTH194P"
+      },
+      {
+       "title": "",
+       "href": "/product/TTH102"
+      }
+     ],
+     "chips": [
+      "$50 - $100",
+      "$100 - $200",
+      "$200 - $500",
+      "10% - 20% off",
+      "40% - 50% off",
+      "50% - 60% off",
+      "Two-tone",
+      "Yellow",
+      "Multi-color"
+     ],
+     "groups": [
+      "Solid Sterling Silver"
+     ],
+     "links": [
+      "/product/ZNS7",
+      "/product/UAH187",
+      "/product/TTH194P",
+      "/product/TTH102"
+     ],
+     "bolds": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "I would like sterling silver pendants",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C9-brand",
+   "turns": [
+    {
+     "replyText": "Statement Rings$1,999.99$2,499.99$4,399.99$1,199.99Gemstone Variety$799.99$768.99$619.99$549.99Narrow it downTwo-toneWhiteYellow$200 - $500$500 - $1000$1000 and above10% - 20% off30% - 40% off40% - 50% off",
+     "tiles": [
+      {
+       "title": "",
+       "href": "/product/GEV678"
+      },
+      {
+       "title": "",
+       "href": "/product/GEV677"
+      },
+      {
+       "title": "",
+       "href": "/product/GEV674"
+      },
+      {
+       "title": "",
+       "href": "/product/GEV676"
+      },
+      {
+       "title": "",
+       "href": "/product/GEV649"
+      },
+      {
+       "title": "",
+       "href": "/product/GEV650"
+      },
+      {
+       "title": "",
+       "href": "/product/GEV663"
+      },
+      {
+       "title": "",
+       "href": "/product/GEV626"
+      }
+     ],
+     "chips": [
+      "Two-tone",
+      "White",
+      "Yellow",
+      "$200 - $500",
+      "$500 - $1000",
+      "$1000 and above",
+      "10% - 20% off",
+      "30% - 40% off",
+      "40% - 50% off"
+     ],
+     "groups": [
+      "Statement Rings",
+      "Gemstone Variety"
+     ],
+     "links": [
+      "/product/GEV678",
+      "/product/GEV677",
+      "/product/GEV674",
+      "/product/GEV676",
+      "/product/GEV649",
+      "/product/GEV650",
+      "/product/GEV663",
+      "/product/GEV626"
+     ],
+     "bolds": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "Gems En Vogue rings please",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C10-education",
+   "turns": [
+    {
+     "replyText": "Pearls need gentle care to keep their luster. Here's what to do:Cleaning:\nUse a soft, slightly damp cloth—microfiber works well—to wipe pearls after wearing. For deeper cleaning, use lukewarm water with a tiny drop of mild dish soap, gently wipe with a soft cloth, rinse with clean water, and dry immediately with another soft cloth.What to avoid:\nDon't use ultrasonic cleaners, steam cleaners, harsh chemicals, or abrasive materials. Pearls are delicate and can be damaged by heat and strong solutions.Storage:\nKeep pearls in a soft pouch or separate compartment, away from other jewelry that might scratch them. Store in a cool, dry place, and avoid prolonged exposure to direct sunlight or extreme heat, which can fade their color.General care:\nPut pearls on last after perfume, lotions, and makeup have dried, since these products can dull the surface. Have pearl strands professionally restrung every few years if worn regularly, as the silk can wear over time.Would you like guidance on pearl jewelry styles, or do you have questions about a specific piece?",
+     "tiles": [],
+     "chips": [],
+     "groups": [],
+     "links": [],
+     "bolds": [
+      "Cleaning:",
+      "What to avoid:",
+      "Storage:",
+      "General care:"
+     ],
+     "step": 1,
+     "kind": "say",
+     "literal": "What is the right way to clean pearls?",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C11-policy",
+   "turns": [
+    {
+     "replyText": "Our 30-day return policy covers most purchases: if you're not completely satisfied, you can return items within 30 days of receipt for an exchange or full refund. You have two refund options: Merchandise Credit (available in your JTV account within hours) or a refund to your original payment method (typically 10 business days, depending on your bank).Key exceptions: Items that have been sized, altered, worn, or sold as non-returnable cannot be returned. Fragrances, CDs, DVDs, and blister-packed items have additional restrictions. Shipping and handling fees are non-refundable, and a $6.99 charge applies when using the JTV return label (unless free return shipping is offered).For a complete guide on how to return an item and more details on refund timing, Merchandise Credit, and special cases, visit our full returns page.",
+     "tiles": [],
+     "chips": [],
+     "groups": [],
+     "links": [
+      "https://www.jtv.com/help/returns"
+     ],
+     "bolds": [
+      "Key exceptions:"
+     ],
+     "step": 1,
+     "kind": "say",
+     "literal": "What is the return policy?",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C12-on-air",
+   "turns": [
+    {
+     "replyText": "This week on air, the hosts have featured a nice variety across several series:Misty and Charles led Moissanite Fire shows, while Jennifer and Charles took another. Wendy hosted back-to-back Warehouse Clearance segments featuring diamonds. Scott and Fatima showcased morganite in Sparkle in Silver, Misty brought Affordable Luxuries with Sophisticated Steel, and Day featured a Warehouse Clearance. Misty also hosted a Markdown Madness with Wolf pieces.The shows span moissanite, diamonds, steel, morganite, and clearance bargains. Want to see what was featured on any particular show or host?",
+     "tiles": [],
+     "chips": [],
+     "groups": [],
+     "links": [],
+     "bolds": [
+      "Misty",
+      "Charles",
+      "Jennifer",
+      "Charles",
+      "Wendy",
+      "Scott",
+      "Fatima",
+      "Misty",
+      "Day",
+      "Misty",
+      "Want to see what was featured on any particular show or host?"
+     ],
+     "step": 1,
+     "kind": "say",
+     "literal": "What did the hosts feature this week on air?",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C13-trending-trap",
+   "turns": [
+    {
+     "replyText": "Gemstone Statement Rings$642.99$1,878.99$1,228.99$963.08Affordable & Accessible$110$97.60$164.99$125.20Narrow it down$50 - $100$100 - $200$1000 and above10% - 20% off50% - 60% off60% - 70% offSilver ToneGold ToneBlue",
+     "tiles": [
+      {
+       "title": "",
+       "href": "/product/WPG647"
+      },
+      {
+       "title": "",
+       "href": "/product/WPG636"
+      },
+      {
+       "title": "",
+       "href": "/product/WPG619"
+      },
+      {
+       "title": "",
+       "href": "/product/WPG611"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD998"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD997"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD996"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD993"
+      }
+     ],
+     "chips": [
+      "$50 - $100",
+      "$100 - $200",
+      "$1000 and above",
+      "10% - 20% off",
+      "50% - 60% off",
+      "60% - 70% off",
+      "Silver Tone",
+      "Gold Tone",
+      "Blue"
+     ],
+     "groups": [
+      "Gemstone Statement Rings",
+      "Affordable & Accessible"
+     ],
+     "links": [
+      "/product/WPG647",
+      "/product/WPG636",
+      "/product/WPG619",
+      "/product/WPG611",
+      "/product/WPD998",
+      "/product/WPD997",
+      "/product/WPD996",
+      "/product/WPD993"
+     ],
+     "bolds": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "Which rings sell best right now?",
+     "turnAdvanced": true
+    }
+   ]
+  },
+  {
+   "name": "C14-product-by-name",
+   "turns": [
+    {
+     "replyText": "Statement Pieces$342.80$168.99$122.99$223.54$134.99$208.24$79.99$59.99Narrow it downWhiteYellowTwo-tone$50 - $100$100 - $200$200 - $50010% - 20% off50% - 60% off60% - 70% off",
+     "tiles": [
+      {
+       "title": "",
+       "href": "/product/WPG153"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD719"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD829"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD916"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD773"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD805"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD803"
+      },
+      {
+       "title": "",
+       "href": "/product/WPD443"
+      }
+     ],
+     "chips": [
+      "White",
+      "Yellow",
+      "Two-tone",
+      "$50 - $100",
+      "$100 - $200",
+      "$200 - $500",
+      "10% - 20% off",
+      "50% - 60% off",
+      "60% - 70% off"
+     ],
+     "groups": [
+      "Statement Pieces"
+     ],
+     "links": [
+      "/product/WPG153",
+      "/product/WPD719",
+      "/product/WPD829",
+      "/product/WPD916",
+      "/product/WPD773",
+      "/product/WPD805",
+      "/product/WPD803",
+      "/product/WPD443"
+     ],
+     "bolds": [],
+     "step": 1,
+     "kind": "say",
+     "literal": "Show me some opal pendants",
+     "turnAdvanced": true
+    },
+    {
+     "step": 2,
+     "kind": "tap"
+    },
+    {
+     "replyText": "Yes, the Ethiopian Opal Rhodium Over 14k White Gold Pendant works beautifully for everyday wear. It's a refined, understated piece—the rectangular cushion opal is elegant without being flashy, and the white gold with diamond accents keeps it sophisticated. At about 0.66 inches long, it's a comfortable size to wear regularly. Are you drawn to that classic white gold look, or would you explore some of the warmer gold tones?",
+     "tiles": [],
+     "chips": [],
+     "groups": [],
+     "links": [
+      "/product/WPG153"
+     ],
+     "bolds": [
+      "Are you drawn to that classic white gold look, or would you explore some of the warmer gold tones?"
+     ],
+     "step": 3,
+     "kind": "say",
+     "literal": "Would the first one work for every day?",
+     "turnAdvanced": true
+    }
+   ]
+  }
+ ]
+}
