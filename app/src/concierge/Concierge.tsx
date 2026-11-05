@@ -120,8 +120,10 @@ export const Concierge = forwardRef<
           onClose?.();
         }}
       />
-      {/* Resize grip, the old panel's corner control. Invisible until focused,
-        * so the panel carries no visible chrome it did not have before. */}
+      {/* Resize grip, the old panel's corner control. Visible and quiet: the
+        * 2026-11-04 restore shipped it without its stylesheet, it rendered as
+        * a bare grey strip, and the panel read as not sizable at all
+        * (Arijit, 2026-11-05). */}
       {!maximized ? (
         <button
           type="button"

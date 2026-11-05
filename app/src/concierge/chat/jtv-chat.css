@@ -49,9 +49,60 @@
   box-shadow: 0 0 2.5rem rgba(9, 9, 11, 0.12);
 }
 
+/* The resize grip: the 2026-11-04 restore brought back the corner control's
+ * markup and drag logic but not its stylesheet, so it rendered as a bare
+ * default button — a grey strip below the composer, no corner, no cursor —
+ * and the panel read as not sizable at all (Arijit, 2026-11-05: "the chat
+ * window was fluid and sizable, what happened to it?"). A quiet but visible
+ * corner handle: invisible chrome helps nobody drag it. */
+.jtv-concierge-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  /* The composer's prompt form stacks above a z-auto sibling and won the hit
+   * test at the corner — every click landed on the composer and the grip
+   * never saw a pointerdown (measured 2026-11-05). */
+  z-index: 20;
+  width: 1.125rem;
+  height: 1.125rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  background-image: linear-gradient(
+    135deg,
+    transparent 0 5px,
+    var(--muted, #9a9a9a) 5px 6px,
+    transparent 6px 9px,
+    var(--muted, #9a9a9a) 9px 10px,
+    transparent 10px 13px,
+    var(--muted, #9a9a9a) 13px 14px,
+    transparent 14px
+  );
+  cursor: nwse-resize;
+  border-bottom-right-radius: 0.75rem;
+  opacity: 0.65;
+}
+
+.jtv-concierge-resize:hover,
+.jtv-concierge-resize:focus-visible {
+  opacity: 1;
+}
+
+.jtv-concierge-resize:focus-visible {
+  outline: 2px solid #0f6f8f;
+  outline-offset: -2px;
+}
+
+/* No pointer resize under the docked-rail breakpoint (the controls hook
+ * refuses it too); a dead control must not render. */
+@media (max-width: 47.9375rem) {
+  .jtv-concierge-resize {
+    display: none;
+  }
+}
+
 /* `display: flex` above would otherwise defeat the `hidden` attribute the
- * shell uses to keep the conversation mounted while the panel is closed. */
-.jtv-concierge[hidden] {
+ * shell uses to keep the conversation mounted while the panel is closed. */.jtv-concierge[hidden] {
   display: none;
 }
 

@@ -2,8 +2,12 @@ export type Viewport = { width: number; height: number };
 export type WindowRect = { x: number; y: number; width: number; height: number };
 
 const EDGE_GAP = 16;
-const MIN_WIDTH = 560;
-const MIN_HEIGHT = 420;
+/* A real window shrinks freely; the floor only keeps the panel legible. The
+ * 2026-11-04 restore kept the pre-merge 560px floor under a 600px default,
+ * which left 40px of shrink and no grow at the docked corner — the panel
+ * read as not sizable at all (Arijit, 2026-11-05). */
+const MIN_WIDTH = 420;
+const MIN_HEIGHT = 360;
 const DEFAULT_WIDTH = 600;
 const DEFAULT_MAX_HEIGHT = 900;
 
