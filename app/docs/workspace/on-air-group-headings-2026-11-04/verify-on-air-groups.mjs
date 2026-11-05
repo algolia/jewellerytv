@@ -178,6 +178,12 @@ for (const { ask, oneDay } of QUESTIONS) {
       console.log(`    ✗ names a day but the pieces span ${dates.size} air dates`);
       problems += 1;
     }
+    /* "3 days ago" is true on the day it renders and wrong the next morning,
+     * so the heading carries the air date instead. */
+    if (relativeClaims.length) {
+      console.log(`    ✗ heading says "${relativeClaims.join(', ')}"; it should carry the date`);
+      problems += 1;
+    }
     if (![...series].some((name) => name && group.title.includes(name))) {
       console.log('    ✗ heading does not name the show behind these pieces');
       problems += 1;

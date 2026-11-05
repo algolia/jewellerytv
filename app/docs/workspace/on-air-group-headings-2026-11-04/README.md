@@ -9,7 +9,7 @@ apart.
 
 Two halves, and the first makes the second possible. **Narrow the search** to
 one day of broadcast: the latest show by default, or the day the shopper
-named. **Then say which one** in the group heading — "Yesterday · Designer
+named. **Then say which one** in the group heading — "3 November · Designer
 Styling - Off Park Collection" — which the display tool already renders and
 every record already has the fields for.
 
@@ -64,12 +64,25 @@ unsayable: the agent can only filter on a day it already knows, and which day
 is latest differs per host. See the next section — it is applied, and it is
 what lets the default cost one search.
 
-**On weekday names.** The headings below use the record's own `relativeDay`
-("Yesterday") or its plain `date` ("3 November"), never "Monday". The agent
-has no clock, and the instructions already forbid it computing calendar dates;
-deriving a weekday from `2026-11-03` is exactly that, and a wrong weekday is a
-mistake a shopper catches immediately. If the weekday matters more than the
-risk, it belongs on the records as a field rather than in the model's head.
+**The heading carries the date, not a relative day.** "3 November · Sparkle
+in Silver", never "3 days ago" and never "Monday". Three reasons, in the
+order they matter:
+
+1. "3 days ago" is not a fact about the broadcast, it is a fact about when
+   the shopper happens to be reading. It stops being true overnight, and a
+   shopper who comes back to the conversation tomorrow reads a heading that
+   has quietly moved.
+2. `relativeDay` is computed at the daily refresh, not at query time.
+   Measured 2026-11-04: `relativeDay:yesterday` returned records dated
+   `2026-11-02` when yesterday was the 3rd, because the refresh had not run.
+   `date` is the air date on the record and cannot drift.
+3. A weekday is the one form to avoid. The agent has no clock and the
+   instructions forbid it computing calendar dates; turning `2026-11-03` into
+   "Monday" is exactly that. A month name is a lookup, not arithmetic, so
+   "3 November" is safe where "Monday" is not.
+
+"Today" and "yesterday" still read better in a sentence than in a heading, so
+the reply line may use them. The heading stays the date.
 
 ---
 
@@ -185,11 +198,11 @@ one. Replace that bullet with everything between the markers.
   comparison such as `recencyDays < 3` for a span. One search either way.
 - Do: group what comes back by the show it aired on, not by style. One show is
   one group; a day that carried two or three of them is two or three groups.
-- Do: head each group with the day and the name in that order, separated by a
-  middle dot: "Yesterday · Sparkle in Silver", "3 November · Moissanite Fire".
-  Take the day from the record's own `relativeDay` for anything in the last few
-  days and from its `date` otherwise, written out as a day and a month. Never
-  work out a weekday yourself.
+- Do: head each group with the date and the name in that order, separated by a
+  middle dot: "3 November · Sparkle in Silver". The date is the record's own
+  `date`, written out as a day and a month. Never "3 days ago", which stops
+  being true overnight, and never a weekday, which you would have to work out.
+  Your line may say "yesterday" or "today" where a sentence carries it better.
 - Do: name the series rather than the full show title. The title repeats the
   hosts, and "Sparkle in Silver featuring Morganite with Scott and Fatima" is
   sixty-one characters over a shelf four tiles wide.
@@ -203,12 +216,12 @@ it belong to no particular broadcast, so the shopper cannot tell what they are
 looking at. One show is a thing that happened, and the heading can say when.
 
 Example, good: on "what did Jennifer showcase yesterday?", yesterday carried
-three of her shows, so the shelves run "Yesterday · Designer Styling - Off Park
-Collection" and "Yesterday · Affordable Luxuries", and the line says she was on
+three of her shows, so the shelves run "3 November · Designer Styling - Off Park
+Collection" and "3 November · Affordable Luxuries", and the line says she was on
 three shows yesterday and what they ran heavy on.
 Example, good: on "what has Misty been showing?", no day is named, so the shelf
-is her latest show under "Today · Moissanite Fire", and the line offers the
-rest of her week.
+is her latest show under "5 November · Moissanite Fire", and the line says it
+aired today and offers the rest of her week.
 Example, bad: twelve tiles drawn from eleven of her shows across eight days,
 under "Elegant Silver & Diamond Rings" and "Gold & Moissanite Sets" (styling
 labels over pieces from broadcasts the shopper cannot identify).

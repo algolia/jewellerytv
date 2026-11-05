@@ -79,10 +79,11 @@ hit. Replace that bullet with:
   rest. Search with the day on it when the shopper names one, `relativeDay`
   on their own word for it or a comparison such as `recencyDays < 3` for a
   span, rather than filtering afterwards. One search either way.
-- Do: head each group with the day and the show, separated by a middle dot:
-  "Yesterday · Sparkle in Silver". Take the day from the record's own
-  `relativeDay`, or its `date` written out as a day and a month. Never work
-  out a weekday yourself.
+- Do: head each group with the date and the show, separated by a middle dot:
+  "3 November · Sparkle in Silver". The date is the record's own `date`
+  written out as a day and a month; never "3 days ago", and never a weekday,
+  which you would have to work out. Say "yesterday" or "today" in your line
+  if it helps, where a sentence can carry it; the heading stays the date.
 
 ---8<--- replace to here ---8<---
 
