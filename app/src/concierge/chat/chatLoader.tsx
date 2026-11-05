@@ -1,4 +1,3 @@
-import { createPortal } from 'react-dom';
 import { loaderTextFor, type LoaderContext } from './loaderText';
 
 type ChatLoaderProps = {
@@ -7,16 +6,14 @@ type ChatLoaderProps = {
   inline?: boolean;
 };
 
-/* The turn status, shown the old panel's way: three pulsing dots and the
- * phase text, overlaid on the composer zone (the old .connected-progress
- * pattern). The library mounts this loader inside the last message article,
- * which is position:relative and would capture an absolutely positioned
- * child — so the status is portaled to the panel shell, whose coordinates
- * the overlay's CSS assumes. */
+/* The turn status, shown in the message stream right under the shopper's
+ * question (Arijit, 2026-11-05, with the Vuori reference): three big pulsing
+ * dots and the phase label, exactly where the answer will land. The library
+ * mounts this component inside the last assistant message article, which is
+ * the position we want — the earlier composer overlay (a714de6) is retired. */
 export function ChatLoader({ translations, context }: ChatLoaderProps) {
   const label = translations?.loaderText || loaderTextFor(context);
-  const shell = document.querySelector('.jtv-concierge');
-  const status = (
+  return (
     <p className="jtv-chat-loader" role="status">
       <span className="jtv-chat-loader-dots" aria-hidden="true">
         <i />
@@ -26,7 +23,4 @@ export function ChatLoader({ translations, context }: ChatLoaderProps) {
       {label}
     </p>
   );
-  /* Outside the panel shell (pre-mount), render in place — the shell exists
-   * for every streamed turn, which is the only time a loader shows. */
-  return shell ? createPortal(status, shell) : status;
 }

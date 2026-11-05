@@ -194,8 +194,10 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
            * reply; copy and feedback actions pass through unchanged. */
           actionsComponent={ChatActions}
           /* Text progress in the conversation, not the library's skeleton
-           * bars. */
+           * bars. Inline in the stream, right under the shopper's question —
+           * the loaderPosition the reference UX uses (Arijit, 2026-11-05). */
           loaderComponent={ChatLoader}
+          loaderPosition="message-inline"
           /* Reply-only display (the pre-merge contract): text the model
            * writes before or between its tool calls is working narration and
            * never renders; only the reply after the last tool call does. */

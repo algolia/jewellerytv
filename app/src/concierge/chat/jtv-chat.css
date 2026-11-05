@@ -147,6 +147,28 @@
   padding: 12px 20px;
 }
 
+/* The product pane as one gray tile (Arijit, 2026-11-05, with the Vuori
+ * reference): when a turn carries a grouped display, the whole message — the
+ * reply line, the capitalized group headings, the 4-across grids and the
+ * narrowing chips — sits on a light gray rounded tile. The follow-up
+ * question suggestions and the composer stay outside it. */
+.jtv-concierge .ais-ChatMessage--left:has(.ais-ChatToolGroupedResults) .ais-ChatMessage-message {
+  background: #f6f7f8;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.jtv-concierge .ais-ChatMessage--left:has(.ais-ChatToolGroupedResults) .ais-ChatMessage-message .ais-ChatToolGroupedResults-group {
+  padding-inline: 2px;
+}
+
+@media (max-width: 48rem) {
+  .jtv-concierge .ais-ChatMessage--left:has(.ais-ChatToolGroupedResults) .ais-ChatMessage-message {
+    padding: 12px;
+    border-radius: 14px;
+  }
+}
+
 .jtv-concierge .ais-ChatMessage-message {
   max-width: 92%;
   padding: 11px 13px;
@@ -183,35 +205,42 @@
 /* The entry field, ported verbatim from the old .connected-prompt: one rule
  * top and bottom (#9caeb5), 44px tall, and Send beside it as a blue 44px
  * button with a 20px gap. */
+/* The pill composer (Arijit, 2026-11-05, with the Vuori reference): one
+ * rounded-full field, the circular dark send button inside its right edge,
+ * and the disclaimer as a quiet line beneath. */
 .jtv-concierge .ais-ChatPrompt-body {
+  position: relative;
   display: flex;
   flex-direction: row;
-  align-items: stretch;
-  gap: 20px;
+  align-items: center;
+  gap: 0;
   padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  border: 1.5px solid #26262b;
+  border-radius: 999px;
+  background: #fff;
   box-shadow: none;
   outline: none;
+  transition: border-color 120ms ease;
+}
+
+.jtv-concierge .ais-ChatPrompt-body:focus-within {
+  border-color: var(--blue, #0076a9);
 }
 
 .jtv-concierge .ais-ChatPrompt-textarea {
   flex: 1;
   min-width: 0;
-  /* The widget auto-grows the textarea with an inline style; the old field
-   * was a fixed 44px single line, so the stylesheet wins here. */
-  height: 44px !important;
-  min-height: 44px !important;
-  max-height: 44px !important;
-  padding: 0 12px;
+  /* The widget auto-grows the textarea with an inline style; the pill is a
+   * fixed-height single line, so the stylesheet wins here. */
+  height: 52px !important;
+  min-height: 52px !important;
+  max-height: 52px !important;
+  padding: 0 60px 0 18px;
   border: 0;
-  border-top: 1px solid #9caeb5;
-  border-bottom: 1px solid #9caeb5;
-  border-radius: 0;
+  border-radius: 999px;
   background: transparent;
   font-size: 15px;
-  line-height: 42px;
+  line-height: 50px;
   resize: none;
   overflow: hidden;
 }
@@ -227,6 +256,10 @@
 }
 
 .jtv-concierge .ais-ChatPrompt-actions {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   padding: 0;
@@ -234,34 +267,36 @@
 
 .jtv-concierge .ais-ChatPrompt-submit {
   flex: none;
-  min-width: 64px;
+  width: 44px !important;
   height: 44px !important;
-  min-height: 44px !important;
-  padding: 0 12px !important;
-  border: 1px solid var(--blue, #0076a9);
-  border-radius: 2px;
-  background: var(--blue, #0076a9);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 50%;
+  background: #1f1f23;
   color: #fff;
   box-sizing: border-box;
 }
 
 .jtv-concierge .ais-ChatPrompt-submit svg {
-  display: none;
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 0 auto;
 }
 
 .jtv-concierge .ais-ChatPrompt-submit::after {
-  content: 'Send';
-  font-size: 15px;
+  content: none;
 }
 
 .jtv-concierge .ais-ChatPrompt-submit:hover:not(:disabled) {
-  background: var(--blue, #0076a9);
+  background: #3a3a40;
   color: #fff;
 }
 
 .jtv-concierge .ais-ChatPrompt-submit:disabled {
-  background: #b5c3c8;
-  border-color: #b5c3c8;
+  background: #c9cdd2;
 }
 
 /* Groups: a grid, not a carousel. At this width a row of cards hides most of
@@ -531,34 +566,33 @@
   transform: translateY(0);
 }
 
-/* The old panel carried no disclaimer line under the composer. */
+/* The disclaimer returns as the reference's quiet line (Arijit, 2026-11-05;
+ * the old panel hid it — flagged for his veto). */
 .jtv-concierge .ais-ChatPrompt-disclaimer {
-  display: none;
+  display: block;
+  margin: 0;
+  padding: 8px 14px 2px;
+  color: #8a8f98;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
 }
 
-/* Turn status: the old panel's .connected-progress pattern, ported — three
- * pulsing dots and the phase text, overlaid on the composer zone. Absolute
- * against the panel (the nearest positioned ancestor) so it pins above the
- * entry field whatever the messages are doing. */
+/* Turn status, in the message stream right under the shopper's question
+ * (Arijit, 2026-11-05, with the Vuori reference): three big pulsing dots and
+ * the phase label, exactly where the answer will land. The library mounts the
+ * loader inside the last assistant message article — that position IS the
+ * spec; the composer overlay this replaces (a714de6) is retired. */
 .jtv-chat-loader {
-  position: absolute;
-  right: 2.375rem;
-  bottom: 1rem;
-  left: 2.375rem;
-  z-index: 3;
   display: flex;
-  gap: 9px;
+  gap: 10px;
   align-items: center;
-  min-width: 0;
   margin: 0;
-  padding: 0 12px;
-  overflow: hidden;
+  padding: 6px 2px;
   color: var(--muted, #707070);
-  font-size: 14px;
-  line-height: 42px;
+  font-size: 15px;
+  line-height: 1.4;
   pointer-events: none;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .jtv-chat-loader-dots {
@@ -569,8 +603,8 @@
 }
 
 .jtv-chat-loader-dots i {
-  width: 5px;
-  height: 5px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--blue, #0076a9);
   animation: jtv-status-pulse 1.4s ease-in-out infinite;
@@ -580,13 +614,6 @@
   animation-delay: 0.16s;
 }
 
-/* Arijit, 2026-11-04: the mood placeholder is an impression, not text, and it
- * yields the moment the entry area is occupied. While the turn status is up
- * the placeholder goes transparent (the status reads alone); typed text hides
- * it natively, which is the same rule from the shopper's side. */
-.jtv-concierge:has(.jtv-chat-loader) .ais-ChatPrompt-textarea::placeholder {
-  color: transparent;
-}
 
 .jtv-chat-loader-dots i:nth-child(3) {
   animation-delay: 0.32s;
