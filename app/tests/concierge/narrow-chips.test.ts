@@ -253,9 +253,7 @@ describe('sibling attributes are one axis', () => {
     const groups = narrowChipsFor(part());
     const purity = groups.find((g) => g.attribute === 'Catalog_JewelryMaterialNavigationPurity');
     expect(purity?.label).toBe('Jewelry material purity');
-    const colour = groups.find(
-      (g) => g.attribute === 'Catalog_JewelryMaterialNavigationColor',
-    );
+    const colour = groups.find((g) => g.attribute === 'Catalog_JewelryMaterialNavigationColor');
     expect(colour?.label).toBe('Jewelry material color');
     /* A flat attribute name reads as itself. */
     expect(
@@ -275,8 +273,8 @@ describe('sibling attributes are one axis', () => {
         queries: [
           {
             query: 'wedding ring sets',
-            'facet_Catalog_JewelryMaterialNavigationColor': ['White'],
-            'facet_Catalog_JewelryMaterialNavigationPurity': ['Sterling'],
+            facet_Catalog_JewelryMaterialNavigationColor: ['White'],
+            facet_Catalog_JewelryMaterialNavigationPurity: ['Sterling'],
           },
         ],
       }),
@@ -286,5 +284,27 @@ describe('sibling attributes are one axis', () => {
     /* The chip still carries the index value for the refine. */
     const nineFifty = purity?.chips.find((c) => c.value === '950');
     expect(nineFifty?.label).toBe('Platinum 950');
+  });
+});
+
+/* The agent moved to `prod_catalog_featured` on 2026-11-06 — the
+ * popularity-ranked replica production relevance is tuned on. An
+ * exact-match guard turned every chip off without a word. */
+describe('the catalogue family', () => {
+  const part = (index: string) => ({
+    toolName: `algolia_search_index_${index}`,
+    output: { facets: { Pricing_PriceRange: { a: 9, b: 8, c: 7 } } },
+  });
+
+  it('offers chips on a catalogue replica', () => {
+    expect(narrowChipsFor(part('prod_catalog_featured')).length).toBeGreaterThan(0);
+    expect(narrowChipsFor(part('prod_catalog_newest')).length).toBeGreaterThan(0);
+    expect(narrowChipsFor(part('prod_catalog')).length).toBeGreaterThan(0);
+  });
+
+  it('still offers none on the other indices', () => {
+    for (const index of ['on_air_products', 'on_air_shows', 'blog', 'help_content']) {
+      expect(narrowChipsFor(part(index)), index).toEqual([]);
+    }
   });
 });
