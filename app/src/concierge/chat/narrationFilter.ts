@@ -1,6 +1,6 @@
 import { DefaultChatTransport } from 'instantsearch.js/es/lib/ai-lite';
 import type { UIMessage } from 'instantsearch.js/es/lib/chat';
-import { isNarration } from './narration';
+import { isFiller, isNarration } from './narration';
 
 /* Drops narration before it reaches the transcript.
  *
@@ -48,6 +48,10 @@ type Pending = {
   start: Chunk | null;
   /** Text arrived but not yet ending on a sentence boundary. */
   buffer: string;
+  /** Interjections waiting for a sentence to belong to. "Perfect!" in front
+   * of a real line is fine; alone over three shelves it is the whole voice,
+   * and it says less than letting the display tool's intro stand in. */
+  filler: string;
   opened: boolean;
 };
 
@@ -63,11 +67,19 @@ export function filterNarration(stream: ReadableStream<Chunk>): ReadableStream<C
     controller: TransformStreamDefaultController<Chunk>,
   ) {
     if (!sentence.trim() || isNarration(sentence)) return;
+    if (isFiller(sentence)) {
+      held.filler += sentence;
+      return;
+    }
     if (!held.opened) {
       if (held.start) controller.enqueue(held.start);
       held.opened = true;
     }
-    controller.enqueue({ type: 'text-delta', id, delta: sentence });
+    /* The interjection rides out in front of the sentence it was waiting
+     * for, in the order the model wrote them. */
+    const text = held.filler + sentence;
+    held.filler = '';
+    controller.enqueue({ type: 'text-delta', id, delta: text });
   }
 
   /** Drains every complete sentence out of the buffer, leaving the tail. */
@@ -97,7 +109,7 @@ export function filterNarration(stream: ReadableStream<Chunk>): ReadableStream<C
         const id = typeof chunk?.id === 'string' ? chunk.id : undefined;
 
         if (chunk?.type === 'text-start' && id) {
-          pending.set(id, { start: chunk, buffer: '', opened: false });
+          pending.set(id, { start: chunk, buffer: '', filler: '', opened: false });
           return;
         }
 

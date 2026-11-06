@@ -5,7 +5,7 @@ import { createGroupedResultsToolComponent } from 'instantsearch-ui-components';
 import { recordDisplayEvent } from '../../shared/telemetry';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { narrowChipsFor, type NarrowGroup } from './narrowChips';
-import { isNarration } from './narration';
+import { hasVoice } from './narration';
 import {
   buildRefineParams,
   extractTurnRefine,
@@ -244,8 +244,7 @@ export function messageCarriesText(owner: OwnerMessage | undefined): boolean {
       (candidate) =>
         candidate?.type === 'text' &&
         typeof candidate.text === 'string' &&
-        candidate.text.trim() &&
-        !isNarration(candidate.text),
+        hasVoice(candidate.text),
     ),
   );
 }
@@ -581,11 +580,7 @@ export function createGatedTools(): Tools {
           </div>
           {funnel.chips.length ? <NarrowChips groups={funnel.chips} onPick={refine} /> : null}
           <div className="jtv-chat-narrow">
-            <button
-              type="button"
-              className="jtv-chat-narrow-back"
-              onClick={() => setFunnel(null)}
-            >
+            <button type="button" className="jtv-chat-narrow-back" onClick={() => setFunnel(null)}>
               ← Back to all
             </button>
           </div>
