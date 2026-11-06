@@ -140,6 +140,67 @@ which already grades the behaviours the checklist asks about. Run it once with
 run it again, and compare pass counts and turn durations. If compliance is
 flat, the block is latency with no return.
 
+## 3b. Verbosity is a routing failure, not a length failure
+
+The length rules are not being ignored. They are not reached.
+
+"What are December birthstone ring styles?" asked five times against the dev
+agent with caching off, 2026-11-06:
+
+| Run | Chars | Sentences | Bold labels | Shelf | Tool calls |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 373 | 2 | 0 | 3 groups | 3 |
+| 2 | 185 | 2 | 0 | 3 groups | 3 |
+| 3 | 402 | 2 | 0 | 3 groups | 3 |
+| 4 | **1086** | **7** | **3** | **none** | **1** |
+| 5 | 300 | 2 | 0 | 3 groups | 3 |
+
+Four runs in five answer in two sentences with twelve tiles under them. The
+fifth searches `blog`, stops there, and writes an essay with three bold
+headings. Same question, same prompt, same model.
+
+The same split runs through the whole battery baseline: every over-length
+class had zero tiles (education 962 chars, policy 941, the product question
+552), and every compliant one had a shelf. The correlation is exact, in
+nineteen measured turns, with no exception either way.
+
+So the thing to fix is the fork, not the word count. Once the model commits
+to answering in prose, nothing holds it: §3's education row says one to three
+sentences, and a model that has decided to be thorough reads that as a
+suggestion about a different kind of question. Where the shelf exists, the
+tiles carry the content and two sentences is natural — nobody has to enforce
+it.
+
+Two edits, and the first is the one that matters.
+
+**Make the shelf the default for anything product-shaped.** §5 already lists
+"visual education" and "style exploration" among the search-and-display
+cases; it just does not say that the shelf settles the question. Add to §5:
+
+---8<--- paste from here ---8<---
+
+**A question that names a stone, a metal, a category or a style is a shopping
+question, whatever its grammar.** "What are December birthstone ring styles",
+"what outfits suit gold hoops", "how do emerald and tsavorite differ" all end
+in a shelf: a sentence or two of the answer, then the pieces. Prose alone is
+for questions the catalog cannot show — a policy, a care instruction, a
+definition with nothing to point at. When in doubt, show the pieces; a
+shopper who wanted only the words has lost nothing by seeing them.
+
+---8<--- paste to here ---8<---
+
+**And cap the prose path, without having to classify it.** The length table
+sizes five named kinds of answer; a question that is none of them arrives
+uncapped. Add a default under the table:
+
+---8<--- paste from here ---8<---
+
+Any answer not listed above: three sentences. The list names the common
+shapes, not the permitted ones, and an unfamiliar question is not a licence
+to write at length.
+
+---8<--- paste to here ---8<---
+
 ## 4. Too many blocks, not the wrong format (§3)
 
 Measured 2026-11-05, "What outfits match gold hoops best?" — 1,328
