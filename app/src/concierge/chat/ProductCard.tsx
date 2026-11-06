@@ -63,7 +63,6 @@ export function ProductCard({ item }: RecommendItemComponentProps<JtvHit>) {
       <span className="jtv-chat-card-image">
         {image ? <img src={image} alt={name} loading="lazy" /> : <span>Image unavailable</span>}
       </span>
-      <span className="jtv-chat-card-title">{label}</span>
     </a>
   );
 }
