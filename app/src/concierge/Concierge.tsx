@@ -38,8 +38,11 @@ export const Concierge = forwardRef<
     context?: () => Record<string, string>;
     /** Embed panel hook: tells the host frame the shopper closed the panel. */
     onClose?: () => void;
+    /** Hands a storefront link from inside the panel to the host's router,
+     * so opening a product keeps the conversation. */
+    onNavigate?: (path: string) => void;
   }
->(function Concierge({ context, onClose }, ref) {
+>(function Concierge({ context, onClose, onNavigate }, ref) {
   const [open, setOpen] = useState(false);
   const [askToken, setAskToken] = useState(0);
   const chat = useRef<ChatHandle>(null);
@@ -105,15 +108,16 @@ export const Concierge = forwardRef<
       hidden={!open}
     >
       {/* The header lives inside the widget: only the widget can reach
-        * `clearMessages`, which is what the new-conversation control needs.
-        * Kept mounted while closed so reopening returns to the same
-        * conversation instead of restarting the stream. */}
+       * `clearMessages`, which is what the new-conversation control needs.
+       * Kept mounted while closed so reopening returns to the same
+       * conversation instead of restarting the stream. */}
       <JtvChat
         ref={chat}
         context={turnContext}
         maximized={maximized}
         onToggleMaximized={() => setMaximized((current) => !current)}
         onHeaderPointerDown={controls.beginHeaderMove}
+        onNavigate={onNavigate}
         onClose={() => {
           setMaximized(false);
           setOpen(false);
@@ -121,9 +125,9 @@ export const Concierge = forwardRef<
         }}
       />
       {/* Resize grip, the old panel's corner control. Visible and quiet: the
-        * 2026-11-04 restore shipped it without its stylesheet, it rendered as
-        * a bare grey strip, and the panel read as not sizable at all
-        * (Arijit, 2026-11-05). */}
+       * 2026-11-04 restore shipped it without its stylesheet, it rendered as
+       * a bare grey strip, and the panel read as not sizable at all
+       * (Arijit, 2026-11-05). */}
       {!maximized ? (
         <button
           type="button"

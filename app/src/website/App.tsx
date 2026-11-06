@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BrowserRouter, Link, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Link,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
 import {
   Configure,
   InstantSearch,
@@ -141,6 +149,7 @@ function HomeProducts() {
 }
 
 function Experience() {
+  const navigate = useNavigate();
   const location = useLocation();
   const { indexUiState, results, status, error } = useInstantSearch({ catchError: true });
   const { items } = useHits();
@@ -298,7 +307,10 @@ function Experience() {
             <DevInspector state={contextState} />
           )}
       </Shell>
-      <Concierge ref={chat} context={getContext} />
+      {/* The panel follows a tile's link through the router. A plain anchor
+       * would reload the storefront, remount the panel closed and lose the
+       * conversation the tile came from. */}
+      <Concierge ref={chat} context={getContext} onNavigate={navigate} />
     </>
   );
 }
