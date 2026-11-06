@@ -1,20 +1,17 @@
 import type { RecommendItemComponentProps, RecordWithObjectID } from 'instantsearch-ui-components';
 
-/* A `prod_catalog` record as the chat tiles read it.
+/* A catalogue record as the chat tiles read it.
  *
- * The label under a catalogue tile is the price band, not the name. JTV's
- * names are catalogue descriptions — "Ethiopian Opal Rhodium Over 14K White
- * Gold Ring 2.50ctw" — which truncate mid-phrase at this width and tell a
- * shopper less than the photograph already does; the band is short, scannable
- * and the thing they are deciding on.
+ * The tile is the photograph and nothing else (2026-11-06). It carried a
+ * price under it before, and before that a name; JTV asked for neither. A
+ * name here is a catalogue description — "Ethiopian Opal Rhodium Over 14K
+ * White Gold Ring 2.50ctw" — that truncates mid-phrase at this width, and a
+ * price beside an answer about fit or style reads as a quote and goes stale
+ * between the search and the glance. The photograph outperforms both, and
+ * the product page carries the rest.
  *
- * A band rather than the exact price on purpose. An exact figure beside an
- * answer about fit and style reads as a quote and goes stale between the
- * search and the glance; a band stays true far longer and promises less.
- *
- * On-air records have no price of their own, so they keep their name. That is
- * also the test for which shape a record is: no `Pricing_PriceRange`, no
- * band. */
+ * The name is still read: it is the image's alt text, which is the only
+ * thing a shopper who cannot see the photograph has. */
 export type JtvRecord = {
   Catalog_TitleDescription?: string | null;
   Media_Images?: string[] | null;
@@ -32,34 +29,27 @@ export type JtvRecord = {
 
 export type JtvHit = RecordWithObjectID<JtvRecord>;
 
-/* A bare `57.97` next to a photograph is not a price, and `129` beside it
- * reads as a different kind of number again. Whole amounts lose the cents so
- * a shelf does not fill with ".00"; anything else keeps them. */
-const WHOLE = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-const CENTS = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-function money(value: number): string {
-  return Number.isInteger(value) ? WHOLE.format(value) : CENTS.format(value);
-}
-
 export function ProductCard({ item }: RecommendItemComponentProps<JtvHit>) {
+  /* On-air records are a different shape — `image`/`imageLarge` rather than
+   * `Media_Images` — so all three are tried before the tile gives up. */
   const image = item.Media_Images?.[0] || item.imageLarge || item.image || undefined;
-  /* Falls back to the name when there is no band — an on-air piece, or a
-   * catalogue record whose retrieved attributes do not include
-   * `Pricing_PriceRange`. A tile with no label at all is worse than a long
-   * one. */
   const name = item.Catalog_TitleDescription || item.name || '';
-  /* `|| name` would swallow a zero-priced piece and label it with its title
-   * instead, so the test is for a number rather than for truthiness. */
-  const label = typeof item.Pricing_ActivePrice === 'number' ? money(item.Pricing_ActivePrice) : name;
   return (
-    <a className="jtv-chat-card" href={`/product/${encodeURIComponent(item.objectID)}`}>
-      {/* A record without imagery still has to occupy the same tile box, or the
-       * carousel rows jump as results stream in.
+    <a
+      className="jtv-chat-card"
+      href={`/product/${encodeURIComponent(item.objectID)}`}
+      /* The tile has no visible text, so the link needs its name here. The
+       * alt text covers the case where an image rendered; this covers the
+       * case where one did not, which would otherwise be a link announcing
+       * nothing but its URL. */
+      aria-label={name || item.objectID}
+    >
+      {/* A record without imagery still has to occupy the same tile box, or
+       * the shelf reflows as pieces stream in.
        *
-       * The image carries the name. With the band as the visible label, the
-       * link's accessible name would otherwise be "$25 - $50" and nothing
-       * else — the one reader who cannot see the photograph would be the one
-       * told least about the piece. */}
+       * The alt text is the whole accessible name of the link, since there is
+       * no visible text in the tile at all: without it the one reader who
+       * cannot see the photograph would be told nothing about the piece. */}
       <span className="jtv-chat-card-image">
         {image ? <img src={image} alt={name} loading="lazy" /> : <span>Image unavailable</span>}
       </span>
