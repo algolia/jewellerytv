@@ -40,6 +40,37 @@ const MAX_LENGTH = 160;
 const INTRODUCES_WORK = /:\s*$/;
 const MAX_LENGTH_WITH_COLON = 240;
 
+/* An interjection is not a voice.
+ *
+ * The model opens a shelf turn with "Perfect!" and then narrates, and the
+ * sentence filter does exactly what it was built to do: drops the narration,
+ * keeps the interjection. What the shopper reads above three shelves of rings
+ * is the single word "Perfect!" (measured 2026-11-05, "Show me blue topaz
+ * December rings"), which says less than silence would, because silence at
+ * least lets the display tool's own intro stand in.
+ *
+ * So filler is held back until a sentence with something in it follows, and
+ * dropped if none does. The list is interjections only; anything carrying a
+ * noun is a sentence about the jewelry and stays. */
+const FILLER =
+  /^\s*(?:ok(?:ay)?|perfect|great|wonderful|excellent|absolutely|sure|nice|lovely|amazing|got it|of course|certainly|alright|good(?: news)?)\s*[!.,…]*\s*$/i;
+
+/** Whether a sentence is an interjection and nothing else. */
+export function isFiller(sentence: string | undefined): boolean {
+  return Boolean(sentence && FILLER.test(sentence));
+}
+
+/** Whether a block of text has anything in it the shopper should read: not
+ * narration, not bare filler. The display gate asks this to decide whether
+ * the tool's own intro has to stand in as the voice. */
+export function hasVoice(text: string | undefined): boolean {
+  if (!text?.trim()) return false;
+  if (isNarration(text)) return false;
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .some((sentence) => sentence.trim() && !isFiller(sentence) && !isNarration(sentence));
+}
+
 /** Whether a block of assistant text is the model narrating its own work. */
 export function isNarration(text: string | undefined): boolean {
   if (!text) return false;

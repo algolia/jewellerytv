@@ -34,56 +34,39 @@ describe('the product tile', () => {
     expect(html).toContain('https://img/mfp125.jpg');
   });
 
-  /* The label is the price now. An on-air record has none, which is what
-   * distinguishes the two shapes, so it keeps its name. */
-  it('labels a catalogue piece with its price and an on-air piece with its name', () => {
-    const catalogue = render({
+  /* The tile is the photograph and nothing else (2026-11-06): no price, no
+   * name under it. What a tile must still guarantee is that the piece is
+   * identifiable without seeing the picture. */
+  it('carries the piece name without printing it', () => {
+    const html = render({
       objectID: 'XTP21',
       Catalog_TitleDescription: 'Sterling Silver Chain',
       Media_Images: ['https://img/xtp21.jpg'],
       Pricing_ActivePrice: 158.99,
     } as unknown as JtvHit);
-    expect(catalogue).toContain('>$158.99<');
-    /* The name is not lost — it carries the tile's accessible name, since the
-     * label alone would tell a reader who cannot see the photograph only what
-     * the piece costs. */
-    expect(catalogue).toContain('alt="Sterling Silver Chain"');
-
-    const onAir = render({
-      objectID: 'MFP125',
-      name: 'Moissanite Platineve Ring',
-      imageLarge: 'https://img/mfp125.jpg',
-    } as JtvHit);
-    expect(onAir).toContain('>Moissanite Platineve Ring<');
+    expect(html).toContain('alt="Sterling Silver Chain"');
+    expect(html).toContain('aria-label="Sterling Silver Chain"');
   });
 
-  it('formats a whole amount without empty cents', () => {
-    const html = render({
-      objectID: 'R1',
-      Catalog_TitleDescription: 'Band',
-      Pricing_ActivePrice: 129,
-    } as unknown as JtvHit);
-    expect(html).toContain('>$129<');
-  });
-
-  /* Truthiness would swallow this one and label it with its title. */
-  it('labels a zero-priced piece with its price, not its name', () => {
-    const html = render({
-      objectID: 'Z1',
-      Catalog_TitleDescription: 'Gift With Purchase',
-      Pricing_ActivePrice: 0,
-    } as unknown as JtvHit);
-    expect(html).toContain('>$0<');
+  it('prints no price, whatever the record carries', () => {
+    for (const price of [158.99, 129, 0]) {
+      const html = render({
+        objectID: 'R1',
+        Catalog_TitleDescription: 'Band',
+        Pricing_ActivePrice: price,
+      } as unknown as JtvHit);
+      expect(html, String(price)).not.toContain('$');
+    }
   });
 
   /* The gate refuses imageless pieces whose record it has, but a record still
    * streaming reaches the tile. It has to hold its box rather than collapse
-   * the carousel row. */
+   * the row, and still say which piece it is. */
   it('holds the tile box when a record arrives with no image', () => {
     const html = render({ objectID: 'C3', Catalog_TitleDescription: 'Imageless' } as JtvHit);
     expect(html).toContain('jtv-chat-card-image');
     expect(html).toContain('Image unavailable');
-    expect(html).toContain('Imageless');
+    expect(html).toContain('aria-label="Imageless"');
   });
 
   it('falls back to the objectID when a record has no name at all', () => {

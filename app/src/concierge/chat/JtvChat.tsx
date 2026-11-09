@@ -2,13 +2,15 @@ import { forwardRef, useCallback, useMemo, useState } from 'react';
 import type { ComponentProps, MouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { Maximize2, Minimize2, Plus, X } from 'lucide-react';
 import { liteClient } from 'algoliasearch/lite';
-import { Chat, ChatInlineLayout, InstantSearch } from 'react-instantsearch';
+import { Chat, ChatInlineLayout, InstantSearch, CompareBar } from 'react-instantsearch';
 import type { ChatHandle } from 'react-instantsearch';
 import { Chat as ChatInstance } from 'instantsearch.js/es/lib/chat';
 import type { UIMessage } from 'instantsearch.js/es/lib/chat';
 import { NarrationFilteringTransport } from './narrationFilter';
 import { ChatActions } from './chatActions';
 import { ChatLoader } from './chatLoader';
+import { keepLoaderUp } from './loaderVisibility';
+import { linkIntent } from './linkTarget';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { StarterChips } from './StarterChips';
 import { createGatedTools } from './gatedGroupedResults';
@@ -117,13 +119,16 @@ export type JtvChatProps = {
   onToggleMaximized?: () => void;
   /** Drags the panel from the header (shell window controls). */
   onHeaderPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  /** Follows a storefront link from inside the panel without a page load,
+   * so the conversation survives opening a product. */
+  onNavigate?: (path: string) => void;
 };
 
 /* The ref exposes the widget's own handle (`setOpen`, `setInput`,
  * `sendMessage`), which is how the storefront's "Ask JTV" chip hands the
  * current search text to the panel. */
 export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
-  { context, onClose, maximized, onToggleMaximized, onHeaderPointerDown },
+  { context, onClose, maximized, onToggleMaximized, onHeaderPointerDown, onNavigate },
   ref,
 ) {
   const { appId, apiKey, agentId } = useMemo(readConfig, []);
@@ -166,24 +171,44 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
    * attributes, so the alternative was forking the text component. Modified
    * and non-primary clicks are left alone, since the browser already opens
    * those in a new tab or window. */
-  const openExternally = useCallback((event: MouseEvent<HTMLDivElement>) => {
-    if (event.defaultPrevented || event.button !== 0) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    const anchor = (event.target as HTMLElement | null)?.closest?.('a[href]');
-    if (!(anchor instanceof HTMLAnchorElement)) return;
-    if (!/^https?:/i.test(anchor.getAttribute('href') ?? '')) return;
-    if (anchor.host === window.location.host) return;
-    event.preventDefault();
-    window.open(anchor.href, '_blank', 'noopener,noreferrer');
-  }, []);
+  const followLink = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      const anchor = (event.target as HTMLElement | null)?.closest?.('a[href]');
+      const intent = linkIntent(
+        event,
+        anchor instanceof HTMLAnchorElement ? anchor : null,
+        window.location.host,
+      );
+      if (intent.kind === 'external') {
+        event.preventDefault();
+        window.open(intent.href, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      /* A product tile is a route, not a page load. Without the host's
+       * router the anchor reloads the storefront and the panel comes back
+       * closed and empty, so the tile that opened a product used to cost the
+       * conversation. Where no router was given — the standalone embed — the
+       * default stands. */
+      if (intent.kind === 'internal' && onNavigate) {
+        event.preventDefault();
+        onNavigate(intent.path);
+      }
+    },
+    [onNavigate],
+  );
 
   return (
     <InstantSearch indexName={INDEX_NAME} searchClient={searchClient} insights={false}>
-      <div className="jtv-chat-panel" onClick={openExternally}>
+      <div className="jtv-chat-panel" onClick={followLink}>
         {/* The inline layout is always visible, which is what lets the panel
          * live on its own route without a `<ChatTrigger />` next to it. The
          * default tools, built from `itemComponent`, render the search
          * carousels, grouped results and comparisons. */}
+        <CompareBar
+          minItems={2}
+          maxItems={4}
+          configurationId="algolia_comparison_fab671ca-870d-49bd-bd7b-ddf7293bc095"
+        />
         <Chat<JtvHit>
           ref={ref}
           chat={chat}
@@ -197,6 +222,10 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
            * the loaderPosition the reference UX uses (Arijit, 2026-11-05). */
           loaderComponent={ChatLoader}
           loaderPosition="message-inline"
+          /* The status holds through the gap between the model's last
+           * sentence and the display tool's first byte — see
+           * `loaderVisibility.ts`, where that gap is measured. */
+          messagesProps={useMemo(() => ({ shouldShowLoader: keepLoaderUp }), [])}
           /* No display-side text filter. Narration is dropped upstream by the
            * transport (`narrationFilter.ts`), which is the only place it can
            * be dropped without the shopper watching it appear and vanish, and

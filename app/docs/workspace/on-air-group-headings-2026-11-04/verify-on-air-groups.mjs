@@ -35,9 +35,51 @@ const {
 /* `oneDay` is the shelf-scope expectation: a turn that names no day, or one
  * day, should put every tile inside a single broadcast per group. A turn that
  * names a span is allowed to range wider, but each group still belongs to one
- * show. */
+ * show.
+ *
+ * The named-day question picks its host at run time. It was pinned to
+ * "Jennifer" and "yesterday", and on 2026-11-05 that combination held zero
+ * records — her most recent show was two days old — so the turn correctly
+ * displayed nothing and the run read it as a failure. The eight-day window
+ * moves every night; a literal written against it goes stale in a day. */
+async function namedDayQuestion() {
+  const env2 = Object.fromEntries(
+    readFileSync(new URL('../../../.env', import.meta.url), 'utf8')
+      .split('\n')
+      .filter((line) => line.includes('=') && !line.startsWith('#'))
+      .map((line) => [
+        line.slice(0, line.indexOf('=')).trim(),
+        line.slice(line.indexOf('=') + 1).trim(),
+      ]),
+  );
+  const res = await fetch(
+    `https://${env2.ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/on_air_products/query`,
+    {
+      method: 'POST',
+      headers: {
+        'x-algolia-application-id': env2.ALGOLIA_APP_ID,
+        'x-algolia-api-key': env2.ALGOLIA_SEARCH_API_KEY,
+      },
+      body: JSON.stringify({
+        query: '',
+        facetFilters: [['relativeDay:yesterday']],
+        hitsPerPage: 0,
+        facets: ['hosts'],
+        maxValuesPerFacet: 50,
+      }),
+    },
+  );
+  const facets = (await res.json())?.facets?.hosts ?? {};
+  const [host] = Object.entries(facets).sort((a, b) => b[1] - a[1])[0] ?? [];
+  if (!host) return null;
+  return { ask: `What did ${host} showcase on yesterday's show?`, oneDay: true };
+}
+
+const named = await namedDayQuestion();
+if (!named) console.log('no host aired yesterday in the window; skipping the named-day turn');
+
 const QUESTIONS = [
-  { ask: "What did Jennifer showcase on yesterday's show?", oneDay: true },
+  ...(named ? [named] : []),
   { ask: 'What has Misty been showing?', oneDay: true },
   { ask: 'What did Misty feature this week?', oneDay: false },
 ];

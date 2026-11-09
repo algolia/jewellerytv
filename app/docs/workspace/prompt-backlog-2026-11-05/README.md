@@ -87,6 +87,39 @@ hit. Replace that bullet with:
 
 ---8<--- replace to here ---8<---
 
+### 2b. One group, and the empty day (measured after the first paste)
+
+With the old bullet gone, two turns in three still spanned the week
+(`verify-on-air-groups.mjs`, 2026-11-05: "What has Misty been showing?" came
+back as 5 November, 4 November and 2 November, one show per group). The pull
+is no longer inside §9 — it is one layer up, in the system prompt:
+
+> Send four pieces to a group, or eight; the shelf is four across, so five
+> leaves one stranded. **Two groups, three at most.**
+
+For a catalog search with several directions in it, that is right. For an
+on-air turn it is an instruction to find three shows, and the only way to find
+three is to reach across days. The model is obeying the more specific-sounding
+number.
+
+So §9 has to say what the shape is for its own turns. Add after the
+one-broadcast bullet:
+
+---8<--- paste from here ---8<---
+
+- Do: expect one group on an on-air turn, not two or three. The broadcast is
+  the direction, so one show is one group; the two-or-three-group shape
+  belongs to a catalog search that holds several directions at once. More than
+  one group only when the day the shopper asked about carried more than one of
+  that host's shows, and then one group per show, never one per style.
+- Do: when the day they named holds nothing for that host or series, say so in
+  one line and show their most recent show instead, headed with its own date.
+  Measured 2026-11-05: "what did Jennifer showcase on yesterday's show?" when
+  she had not been on air for two days returned an empty panel and no
+  explanation, which reads as broken rather than as an answer.
+
+---8<--- paste to here ---8<---
+
 The index-entry changes that go with it (blocks A and C: `hitsPerPage` 24,
 pinned `attributesToRetrieve`, three corrected description claims,
 `maxResultsPerGroup` 8) are unaffected by the restructure and still apply as
@@ -107,7 +140,125 @@ which already grades the behaviours the checklist asks about. Run it once with
 run it again, and compare pass counts and turn durations. If compliance is
 flat, the block is latency with no return.
 
-## 4. Expectation setting
+## 3b. Verbosity is a routing failure, not a length failure
+
+The length rules are not being ignored. They are not reached.
+
+"What are December birthstone ring styles?" asked five times against the dev
+agent with caching off, 2026-11-06:
+
+| Run | Chars | Sentences | Bold labels | Shelf | Tool calls |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 373 | 2 | 0 | 3 groups | 3 |
+| 2 | 185 | 2 | 0 | 3 groups | 3 |
+| 3 | 402 | 2 | 0 | 3 groups | 3 |
+| 4 | **1086** | **7** | **3** | **none** | **1** |
+| 5 | 300 | 2 | 0 | 3 groups | 3 |
+
+Four runs in five answer in two sentences with twelve tiles under them. The
+fifth searches `blog`, stops there, and writes an essay with three bold
+headings. Same question, same prompt, same model.
+
+The same split runs through the whole battery baseline: every over-length
+class had zero tiles (education 962 chars, policy 941, the product question
+552), and every compliant one had a shelf. The correlation is exact, in
+nineteen measured turns, with no exception either way.
+
+So the thing to fix is the fork, not the word count. Once the model commits
+to answering in prose, nothing holds it: §3's education row says one to three
+sentences, and a model that has decided to be thorough reads that as a
+suggestion about a different kind of question. Where the shelf exists, the
+tiles carry the content and two sentences is natural — nobody has to enforce
+it.
+
+Two edits, and the first is the one that matters.
+
+**Make the shelf the default for anything product-shaped.** §5 already lists
+"visual education" and "style exploration" among the search-and-display
+cases; it just does not say that the shelf settles the question. Add to §5:
+
+---8<--- paste from here ---8<---
+
+**A question that names a stone, a metal, a category or a style is a shopping
+question, whatever its grammar.** "What are December birthstone ring styles",
+"what outfits suit gold hoops", "how do emerald and tsavorite differ" all end
+in a shelf: a sentence or two of the answer, then the pieces. Prose alone is
+for questions the catalog cannot show — a policy, a care instruction, a
+definition with nothing to point at. When in doubt, show the pieces; a
+shopper who wanted only the words has lost nothing by seeing them.
+
+---8<--- paste to here ---8<---
+
+**And cap the prose path, without having to classify it.** The length table
+sizes five named kinds of answer; a question that is none of them arrives
+uncapped. Add a default under the table:
+
+---8<--- paste from here ---8<---
+
+Any answer not listed above: three sentences. The list names the common
+shapes, not the permitted ones, and an unfamiliar question is not a licence
+to write at length.
+
+---8<--- paste to here ---8<---
+
+## 4. Too many blocks, not the wrong format (§3)
+
+Measured 2026-11-05, "What outfits match gold hoops best?" — 1,328
+characters, seven paragraphs, fourteen sentences, four bold section labels
+(**Casual & Minimalist**, **Layered & Modern**, **Elevated Basics**,
+**Evening & Statement**), zero tiles, and two blog searches.
+
+Two causes, and neither is the model being wordy for no reason.
+
+**Nothing limits how many blocks an answer has.** The prompt the restructure
+replaced banned the format outright — "Don't: use headings, section labels,
+italics, report styling" — and that is not what we want back: labelled
+sections are fine, and §10 depends on them for policy steps. Four parallel
+ones for a question about hoops are not. Elias, 2026-11-05: "I'm ok with the
+headings, section labels but I don't know that we need that many blocks for
+any question."
+
+So the rule is a count, not a prohibition. §3's "Avoid:" list has eight items
+and nothing about quantity; add a ninth:
+
+---8<--- paste from here ---8<---
+
+- More than two labelled sections in one answer. A label earns its place
+  when the block under it says something the others do not; if the labels
+  could be deleted and the answer still reads, they were decoration. A policy
+  answer with steps or conditions is the exception, and even there the steps
+  are the list, not four headed essays.
+
+---8<--- paste to here ---8<---
+
+Two rather than three because the measured failures are four and five labels,
+and because §3's length limits leave room for little else: a 2-to-3-sentence
+answer with three headings is one sentence per heading.
+
+**And the question is not in the length table.** §3 sizes five kinds of
+answer: discovery, product questions, comparisons, education, policies.
+Styling advice is a sixth, so nothing capped it. This is the same gap the
+product-page answer fell through before the restructure closed it, in a
+different place. Add a row:
+
+---8<--- paste from here ---8<---
+
+- **Styling and wear advice:** usually 2 to 3 sentences, or two short
+  labelled blocks where the directions are genuinely different, and show the
+  pieces rather than describing the looks in prose.
+
+---8<--- paste to here ---8<---
+
+The "show the pieces" half matters as much as the length. The turn searched
+`blog` twice, displayed nothing, and closed by asking "Would you like to
+explore specific hoop styles or see some options to shop?" — a permission
+question for something §5 already tells it to do. Gold hoops are a catalog
+search; the styling guide is the supporting half, not the whole answer.
+
+The second blog search is item 1 again: the model's own words before it were
+"Let me try a broader search."
+
+## 5. Expectation setting
 
 The branch's own battery concluded that the remaining voice failures are
 "model-level across three prompt generations". This restructure is the fourth.

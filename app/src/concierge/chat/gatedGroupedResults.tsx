@@ -4,8 +4,8 @@ import type { Tool, Tools } from 'react-instantsearch';
 import { createGroupedResultsToolComponent } from 'instantsearch-ui-components';
 import { recordDisplayEvent } from '../../shared/telemetry';
 import { ProductCard, type JtvHit } from './ProductCard';
-import { narrowChipsFor, type NarrowGroup } from './narrowChips';
-import { isNarration } from './narration';
+import { indexOf, narrowChipsFor, type NarrowGroup } from './narrowChips';
+import { hasVoice } from './narration';
 import {
   buildRefineParams,
   extractTurnRefine,
@@ -244,8 +244,7 @@ export function messageCarriesText(owner: OwnerMessage | undefined): boolean {
       (candidate) =>
         candidate?.type === 'text' &&
         typeof candidate.text === 'string' &&
-        candidate.text.trim() &&
-        !isNarration(candidate.text),
+        hasVoice(candidate.text),
     ),
   );
 }
@@ -455,6 +454,11 @@ export function createGatedTools(): Tools {
      * returns to the unrefined shelf. */
     const runRefine = async (selections: ChipSelection[]) => {
       if (!turn.queryText && !turn.turnFilters.length) return;
+      /* The refine re-issues the turn's own search, so it belongs on the
+       * index that turn actually used. Hardcoding `prod_catalog` would have
+       * re-ranked the shelf the moment the agent moved to the
+       * popularity-ranked replica production relevance is tuned on. */
+      const refineIndex = indexOf(searchPartOf(owner)) ?? 'prod_catalog';
       setFunnel({ selections, loading: true, hits: null, chips: [] });
       try {
         /* Imported here, not at module scope: `shared/client` throws at import
@@ -463,7 +467,7 @@ export function createGatedTools(): Tools {
         const { searchClient } = await import('../../shared/client');
         const response = await searchClient.search([
           {
-            indexName: 'prod_catalog',
+            indexName: refineIndex,
             params: {
               ...buildRefineParams(turn, selections),
               filters: REFINE_FILTERS,
@@ -487,7 +491,7 @@ export function createGatedTools(): Tools {
          * already picked excluded so the funnel only ever deepens. */
         const facets = (result.facets as Record<string, Record<string, number>> | undefined) ?? {};
         const refinePart: SearchPart = {
-          toolName: 'algolia_search_index_prod_catalog',
+          toolName: `algolia_search_index_${refineIndex}`,
           input: {
             queries: [
               {
@@ -581,11 +585,7 @@ export function createGatedTools(): Tools {
           </div>
           {funnel.chips.length ? <NarrowChips groups={funnel.chips} onPick={refine} /> : null}
           <div className="jtv-chat-narrow">
-            <button
-              type="button"
-              className="jtv-chat-narrow-back"
-              onClick={() => setFunnel(null)}
-            >
+            <button type="button" className="jtv-chat-narrow-back" onClick={() => setFunnel(null)}>
               ← Back to all
             </button>
           </div>

@@ -20,7 +20,18 @@ import type { SearchPart } from './refineSearch';
  * `seriesName`, `showId`, `relativeDay`) which narrow a broadcast rather than
  * a shopper's taste. */
 
-const CATALOGUE_INDEX = 'prod_catalog';
+/* The catalogue family, not one index name. Production relevance work is
+ * done on `prod_catalog_featured`, a popularity-ranked replica, and the
+ * agent was pointed at it on 2026-11-06; an exact-match guard here silently
+ * turned every chip off, because `prod_catalog_featured` is not
+ * `prod_catalog`. A replica shares its parent's records and facets, so any
+ * of them narrows the same way. The on-air, blog and help indices still do
+ * not: their facets narrow a broadcast or an article, not a taste. */
+const CATALOGUE_PREFIX = 'prod_catalog';
+
+export function isCatalogueIndex(index: string | undefined): boolean {
+  return typeof index === 'string' && index.startsWith(CATALOGUE_PREFIX);
+}
 const MAX_ATTRIBUTES = 3;
 const MAX_VALUES = 3;
 /** A facet with more distinct values than this reads as a spec sheet, not a
@@ -227,7 +238,7 @@ function alreadyFiltered(part: SearchPart | undefined): Set<string> {
  * was applied (measured 2026-11-04).
  */
 export function narrowChipsFor(part: SearchPart | undefined): NarrowGroup[] {
-  if (indexOf(part) !== CATALOGUE_INDEX) return [];
+  if (!isCatalogueIndex(indexOf(part))) return [];
   const facets = part?.output?.facets;
   if (!facets) return [];
   const applied = alreadyFiltered(part);
@@ -268,8 +279,7 @@ export function narrowChipsFor(part: SearchPart | undefined): NarrowGroup[] {
     .map((members) => representative(members, byAttribute))
     .sort(
       (aName, bName) =>
-        Object.keys(byAttribute.get(aName)!).length -
-          Object.keys(byAttribute.get(bName)!).length ||
+        Object.keys(byAttribute.get(aName)!).length - Object.keys(byAttribute.get(bName)!).length ||
         aName.localeCompare(bName),
     )
     .slice(0, MAX_ATTRIBUTES);
@@ -300,9 +310,7 @@ export function narrowChipsFor(part: SearchPart | undefined): NarrowGroup[] {
     /* Fewer values than the floor after the applied-filter exclusion means
      * the axis stopped being a choice; drop the row rather than strand it. */
     if (picked.length < MIN_VALUES) continue;
-    const ordered = ORDERED[attribute]
-        ? [...picked].sort(ORDERED[attribute])
-        : picked;
+    const ordered = ORDERED[attribute] ? [...picked].sort(ORDERED[attribute]) : picked;
     groups.push({
       attribute,
       label: axisLabel(attribute),
