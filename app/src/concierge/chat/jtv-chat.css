@@ -1,10 +1,10 @@
 /* Panel chrome and tile styling. Everything else comes from
  * instantsearch.css/components/chat.css, imported by the host app.
  *
- * The chrome is JTV's own dark header (2026-11-12): a near-black bar with a
- * violet leading edge. Everything below the header stays on the storefront
- * palette (`src/website/styles.css`) so the body of the panel still reads as
- * part of the same shop. */
+ * The chrome is JTV's own dark header (2026-11-12): a near-black bar.
+ * Everything below the header stays on the storefront palette
+ * (`src/website/styles.css`) so the body of the panel still reads as part of
+ * the same shop. */
 
 /* The panel.
  *
@@ -35,8 +35,6 @@
 
   --jtv-concierge-header-bg: var(--color-neutral-grays-neutral-800, #333333);
   --jtv-concierge-header-fg: #fff;
-  --jtv-concierge-accent: #8c56f9;
-  --jtv-concierge-header-edge: 3px;
   --jtv-concierge-pill-border: #ffffff59;
   --jtv-concierge-control-hover: #ffffff1f;
 }
@@ -143,10 +141,6 @@
   padding: 0.75rem 1rem;
   background: var(--jtv-concierge-header-bg);
   color: var(--jtv-concierge-header-fg);
-  /* On the header, not the panel: the panel clips its corners, and when the
-   * panel is collapsed the bar is the panel, so the edge runs its full
-   * height. */
-  border-left: var(--jtv-concierge-header-edge) solid var(--jtv-concierge-accent);
 }
 
 .jtv-concierge-header-title {
