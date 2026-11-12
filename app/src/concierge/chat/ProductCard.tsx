@@ -21,10 +21,6 @@ export type JtvRecord = {
   name?: string | null;
   image?: string | null;
   imageLarge?: string | null;
-  Pricing_PriceRange: string | null;
-  Pricing_ActivePrice: number | null;
-  price: number | null;
-  listPrice: number | null;
 };
 
 export type JtvHit = RecordWithObjectID<JtvRecord>;

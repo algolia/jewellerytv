@@ -204,11 +204,6 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
          * live on its own route without a `<ChatTrigger />` next to it. The
          * default tools, built from `itemComponent`, render the search
          * carousels, grouped results and comparisons. */}
-        <CompareBar
-          minItems={2}
-          maxItems={4}
-          configurationId="algolia_comparison_fab671ca-870d-49bd-bd7b-ddf7293bc095"
-        />
         <Chat<JtvHit>
           ref={ref}
           chat={chat}
