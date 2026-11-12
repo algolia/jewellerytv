@@ -49,12 +49,19 @@
   --jtv-concierge-control-hover: #ffffff1f;
 }
 
-/* Between 768px and 800px the search bar wraps to its own row and the header
- * grows, which `.mega-menu` tracks with its own 192px. The panel is not yet
- * full-screen here, so it has to track it too. */
+/* The header grows as it reflows, so the offset follows it. All three
+ * numbers are measured off `.main-nav` rather than summed from the
+ * stylesheet or copied from `.mega-menu`, whose own 192px at this width is
+ * 6px short of where the nav actually ends. */
 @media (max-width: 50rem) {
   .jtv-concierge {
-    --jtv-concierge-top: 12rem;
+    --jtv-concierge-top: 12.375rem;
+  }
+}
+
+@media (max-width: 37.5rem) {
+  .jtv-concierge {
+    --jtv-concierge-top: 12.125rem;
   }
 }
 
@@ -519,9 +526,13 @@
     border-radius: 0;
   }
 
+  /* Collapsed, the bar hangs under the navigation bar here too rather than
+   * dropping to the foot of the screen: the shopper's eye is already at the
+   * top, and a bar at the bottom reads as a separate thing from the panel it
+   * came out of. */
   .jtv-concierge--minimized {
-    top: auto;
-    bottom: 0;
+    top: var(--jtv-concierge-top);
+    bottom: auto;
     height: auto;
   }
 }

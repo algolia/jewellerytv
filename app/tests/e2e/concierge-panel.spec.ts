@@ -72,14 +72,17 @@ test('the panel collapses to its title bar and stays docked there', async ({ pag
 
   const bar = (await panel.boundingBox())!;
   expect(bar.height).toBeLessThan(80);
-  /* "In place" is the claim being tested, and which edge carries it depends
-   * on which edge the panel hangs from. On the desktop card that is the top,
-   * anchored under the navigation bar. Full-screen on a phone it is the
-   * bottom: a bar pinned up there would cover the site header, and down
-   * there it is under the thumb. */
+  /* The bar hangs under the navigation bar at every width. On the desktop
+   * card that is also where the panel's own top edge was, so nothing moves;
+   * full-screen on a phone the panel starts at the top of the viewport, so
+   * the bar drops to the nav rather than staying put. Either way it is the
+   * nav that decides, which is what this asserts. */
+  const navBottom = await page
+    .locator('.main-nav')
+    .evaluate((el) => Math.round(el.getBoundingClientRect().bottom));
+  expect(Math.round(bar.y)).toBe(navBottom);
   const wide = (page.viewportSize()?.width ?? 0) > 768;
   if (wide) expect(Math.round(bar.y)).toBe(Math.round(card.y));
-  else expect(Math.round(bar.y + bar.height)).toBe(Math.round(card.y + card.height));
   await expect(page.locator(COMPOSER)).toBeHidden();
 
   /* The whole bar is a target, not just the chevron. */
