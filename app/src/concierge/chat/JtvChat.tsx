@@ -286,7 +286,10 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
            * "Ask about jewellery" competed with them; this invites the
            * shopper past them. */
           translations={{
-            prompt: { textareaPlaceholder: 'Shall we find something delighting?' },
+            prompt: {
+              textareaPlaceholder: 'Ask something else?',
+              disclaimer: 'AI can make mistakes. Review responses.',
+            },
             /* The widget calls this with the loader's own context on every
              * render, so the words track the turn rather than a timer. */
             messages: { loaderText: loaderTextFor },

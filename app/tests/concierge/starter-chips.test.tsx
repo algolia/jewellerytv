@@ -8,9 +8,10 @@ import {
 } from '../../src/concierge/chat/starterQuestions';
 import { signalsToLabels } from '../../src/concierge/chat/starterSignals';
 
-/* The pool's standing rule is that a set shows nine and never fewer than six,
- * with variety enforced across theme and voice so a set does not read as one
- * sentence with the nouns swapped. */
+/* `selectStarterSet` still defaults to nine and enforces variety across theme
+ * and voice so a set does not read as one sentence with the nouns swapped.
+ * The panel asks it for five (JTV, 2026-11-12); the pool rules are unchanged,
+ * which is why the selector tests below still use the default size. */
 
 const seeded = (values: number[]) => {
   let index = 0;
@@ -56,37 +57,46 @@ describe('the starter set', () => {
 });
 
 describe('the empty state', () => {
-  it('renders every starter as its own sendable control', () => {
+  it('renders five starters, each its own sendable control', () => {
     const html = renderToStaticMarkup(<StarterChips sendMessage={() => undefined} />);
-    expect(html.match(/class="jtv-chat-starter"/g)).toHaveLength(9);
-    expect(html).toContain('Not sure where to start? Try one of these.');
-    /* The full wordmark, per the accepted welcome-screen design. */
-    expect(html).toContain('/assets/jtv-logo-full.png');
+    expect(html.match(/class="jtv-chat-starter"/g)).toHaveLength(5);
+  });
+
+  /* The wordmark gave way to a heading and a sentence (JTV, 2026-11-12): a
+   * shopper who has never used this needs telling what it is, and the brand
+   * is already on the page behind the panel. */
+  it('says what the thing is instead of showing the wordmark', () => {
+    const html = renderToStaticMarkup(<StarterChips sendMessage={() => undefined} />);
+    expect(html).toContain('What can we help you find?');
+    expect(html).toContain('your personal jewelry shopper');
+    expect(html).not.toContain('jtv-logo-full.png');
+    expect(html).not.toContain('Not sure where to start');
   });
 
   /* Mid-turn everything goes down: dealing a new set under a streaming answer
-   * would move the panel while it is being read. There is no re-roll control
-   * in the accepted design; the nine chips are the whole surface. */
+   * would move the panel while it is being read. The re-roll lives in the
+   * header's New search control, not here. */
   it('disables the chips mid-turn', () => {
     const html = renderToStaticMarkup(
       <StarterChips sendMessage={() => undefined} status="streaming" />,
     );
-    expect(html.match(/disabled=""/g)).toHaveLength(9);
+    expect(html.match(/disabled=""/g)).toHaveLength(5);
   });
 
   /* Without a sender the chips can do nothing, so they render disabled
    * rather than lying about what a click will do. */
   it('disables the chips when the widget hands over no sender', () => {
     const html = renderToStaticMarkup(<StarterChips />);
-    expect(html.match(/disabled=""/g)).toHaveLength(9);
+    expect(html.match(/disabled=""/g)).toHaveLength(5);
   });
 
-  /* The stagger is JTV's own layout: one centered list, the offset applied
-   * presentationally in CSS to the even slots. */
-  it('lays the starters out as the centered staggered list', () => {
+  /* One plain list; the single left-aligned column and the even spread are
+   * CSS. The nine-chip stagger it replaced needed a presentational offset on
+   * the even slots, and that is gone with it. */
+  it('lays the starters out as one list', () => {
     const html = renderToStaticMarkup(<StarterChips sendMessage={() => undefined} />);
     expect(html).toContain('jtv-chat-starters-list');
-    expect(html.match(/class="jtv-chat-starter"/g)).toHaveLength(9);
+    expect(html.match(/<li>/g)).toHaveLength(5);
   });
 });
 
