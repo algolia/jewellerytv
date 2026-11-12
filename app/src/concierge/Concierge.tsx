@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import type { ChatHandle } from 'react-instantsearch';
 import { JtvChat } from './chat/JtvChat';
+import { readPanelState, writePanelState, type PanelSize } from './panelState';
 import { useConciergeWindowControls } from './useConciergeWindowControls';
 import { trackConciergeVisibility } from '../website/analytics';
 
@@ -41,9 +42,20 @@ export const Concierge = forwardRef<
     /** Hands a storefront link from inside the panel to the host's router,
      * so opening a product keeps the conversation. */
     onNavigate?: (path: string) => void;
+    /** Whether the open and collapsed choices outlive a reload. The embed
+     * opts out: it shares an origin with the storefront, so two mounts would
+     * fight over one key, and the host owns the frame's chrome. */
+    persistState?: boolean;
   }
->(function Concierge({ context, onClose, onNavigate }, ref) {
-  const [open, setOpen] = useState(false);
+>(function Concierge({ context, onClose, onNavigate, persistState = true }, ref) {
+  /* Read once, in the initialiser, so the first render already has the shape
+   * the shopper left behind and there is nothing to flash. */
+  const [restored] = useState(() =>
+    persistState && typeof window !== 'undefined'
+      ? readPanelState(window.sessionStorage)
+      : { open: false, size: 'normal' as PanelSize },
+  );
+  const [open, setOpen] = useState(restored.open);
   const [askToken, setAskToken] = useState(0);
   const chat = useRef<ChatHandle>(null);
   const pendingDraft = useRef('');
@@ -51,6 +63,8 @@ export const Concierge = forwardRef<
     ref,
     () => ({
       ask: (text?: string) => {
+        /* A question handed to a collapsed bar has to land on a composer. */
+        setSize('normal');
         /* The draft cannot be handed over here: the panel is still hidden, so
          * the widget has not revealed its composer and the value is dropped.
          * Park it and let the reveal effect below apply it. The token makes a
@@ -88,23 +102,39 @@ export const Concierge = forwardRef<
       return {};
     }
   }, [context]);
-  /* The panel sits bottom-right at a readable height by default, which is
-   * what JTV asked for; full height is a choice the shopper makes, not the
-   * only shape on offer. Kept here rather than in the widget because the
-   * class belongs to the shell, and reset on close so the next open starts
-   * from the smaller panel again. */
-  const [maximized, setMaximized] = useState(false);
+  /* The panel sits bottom-right at a readable height; collapsing it to its
+   * title bar is a choice the shopper makes. Kept here rather than in the
+   * widget because the class belongs to the shell. */
+  const [size, setSize] = useState<PanelSize>(restored.size);
+  /* One write covering every path that changes either value — the header
+   * controls, `ask()`, close — rather than one beside each setter. */
+  useEffect(() => {
+    if (persistState && typeof window !== 'undefined')
+      writePanelState(window.sessionStorage, { open, size });
+  }, [persistState, open, size]);
+  const restore = useCallback(() => setSize('normal'), []);
+  const minimize = useCallback(() => setSize('minimized'), []);
+  /* Stable identities matter here: the header is built by a factory that the
+   * widget memoizes on these props, so a fresh arrow each render would change
+   * the component type and remount the header subtree. */
+  const closePanel = useCallback(() => {
+    /* Reopening to a bar with nothing in it reads as broken, so the size
+     * normalises on the way out even though the conversation does not. */
+    setSize('normal');
+    setOpen(false);
+    onClose?.();
+  }, [onClose]);
   /* The old panel was a window: drag by the header, resize by the corner,
    * fluid anywhere on the screen (restored 2026-11-04 from the pre-merge
    * implementation; presentation only, nothing about the agent changes). */
-  const controls = useConciergeWindowControls();
+  const controls = useConciergeWindowControls(size);
   return (
     <div
       ref={controls.panelRef}
-      className={maximized ? 'jtv-concierge jtv-concierge--maximized' : 'jtv-concierge'}
+      className={size === 'minimized' ? 'jtv-concierge jtv-concierge--minimized' : 'jtv-concierge'}
       style={controls.style}
       data-open={open}
-      data-maximized={maximized}
+      data-size={size}
       hidden={!open}
     >
       {/* The header lives inside the widget: only the widget can reach
@@ -114,21 +144,18 @@ export const Concierge = forwardRef<
       <JtvChat
         ref={chat}
         context={turnContext}
-        maximized={maximized}
-        onToggleMaximized={() => setMaximized((current) => !current)}
+        size={size}
+        onRestore={restore}
+        onMinimize={minimize}
         onHeaderPointerDown={controls.beginHeaderMove}
         onNavigate={onNavigate}
-        onClose={() => {
-          setMaximized(false);
-          setOpen(false);
-          onClose?.();
-        }}
+        onClose={closePanel}
       />
       {/* Resize grip, the old panel's corner control. Visible and quiet: the
        * 2026-11-04 restore shipped it without its stylesheet, it rendered as
        * a bare grey strip, and the panel read as not sizable at all
        * (Arijit, 2026-11-05). */}
-      {!maximized ? (
+      {size === 'normal' ? (
         <button
           type="button"
           className="jtv-concierge-resize"
