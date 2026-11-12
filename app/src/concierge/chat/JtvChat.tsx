@@ -59,7 +59,6 @@ function createHeader(
   onRestore?: () => void,
   onMinimize?: () => void,
   onHeaderPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void,
-  onNewDeal?: () => void,
 ) {
   const minimized = size === 'minimized';
   return function JtvChatHeader({ onClose, onClear, canClear }: HeaderProps) {
@@ -77,35 +76,36 @@ function createHeader(
           Ask JTV
           <Sparkles size={14} aria-hidden="true" />
         </h2>
-        <button
-          type="button"
-          className="jtv-concierge-new-search"
-          /* The visible words are the accessible name, so the control reads
-           * the same aloud as on screen, and the locator stops colliding with
-           * the identically named button on the error card. */
-          onClick={() => {
-            /* Only clear when there is something to clear. The widget's clear
-             * is a fade: it sets `isClearing`, which hides the empty state
-             * until a `transitionend` commits it (`ChatMessages.js:480`). On
-             * an already-empty panel that bought nothing and cost a blank
-             * screen for the length of the fade, and a second click landed
-             * while `isClearing` was still true, where it is a no-op — so
-             * every other press appeared to do nothing at all.
-             *
-             * The button stays enabled either way: on an empty panel it
-             * still deals a fresh set, which is the whole point of it. */
-            if (canClear) onClear?.();
-            onNewDeal?.();
-          }}
-        >
-          <Plus size={14} aria-hidden="true" />
-          New search
-        </button>
+        {/* Not on a collapsed bar: there is no conversation in view to clear,
+         * and on a narrow screen the pill sits dead centre — where a tap
+         * meant for the bar lands. A disabled button swallows that tap
+         * without bubbling, so the bar stopped reopening. */}
+        {minimized ? null : (
+          <button
+            type="button"
+            className="jtv-concierge-new-search"
+            /* The visible words are the accessible name, so the control reads
+             * the same aloud as on screen, and the locator stops colliding with
+             * the identically named button on the error card. */
+            /* Dead on an empty panel, and says so. It used to stay enabled
+             * because pressing it dealt a fresh set of questions; the five are
+             * fixed now, so with nothing to clear there is nothing it can do.
+             * Leaving it lit also meant pressing it ran the widget's clear
+             * *fade* over an empty panel — `isClearing` gates the empty state
+             * off until a `transitionend` commits it (`ChatMessages.js:480`),
+             * so the chips vanished and came back for no reason. */
+            disabled={!canClear}
+            onClick={() => onClear?.()}
+          >
+            <Plus size={14} aria-hidden="true" />
+            New search
+          </button>
+        )}
         <div className="jtv-concierge-header-actions">
           {/* Two steps along one axis rather than two toggles, so the pair is
-            * never in a state that contradicts itself. The unavailable end is
-            * disabled rather than hidden: dropping a button shifts the others
-            * sideways under a cursor that is about to click. */}
+           * never in a state that contradicts itself. The unavailable end is
+           * disabled rather than hidden: dropping a button shifts the others
+           * sideways under a cursor that is about to click. */}
           <button
             type="button"
             className="jtv-concierge-header-button"
@@ -170,9 +170,6 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
   ref,
 ) {
   const { appId, apiKey, agentId } = useMemo(readConfig, []);
-
-  /* Bumped by "New search" so the starter chips re-deal. */
-  const [deal, setDeal] = useState(0);
 
   /* One instance per mount. Recreating it on every render would drop the
    * conversation and restart the stream. */
@@ -265,25 +262,11 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
           showReasoning={false}
           tools={useMemo(() => createGatedTools(), [])}
           layoutComponent={ChatInlineLayout}
-          /* `key` on the starter chips: React keeps component state across the
-           * widget's clear (same element slot, same type), so "New
-           * conversation" showed the same nine questions every time. A deal
-           * counter bumped by the header's clear remounts the chips and
-           * re-rolls the set. */
-          emptyComponent={useMemo(
-            () =>
-              function JtvStarters(props: ComponentProps<typeof StarterChips>) {
-                return <StarterChips key={deal} {...props} />;
-              },
-            [deal],
-          )}
+          emptyComponent={StarterChips}
           /* Every dependency must be listed: this memo returns a component
            * *type*, so a new identity remounts the whole header subtree. */
           headerComponent={useMemo(
-            () =>
-              createHeader(onClose, size, onRestore, onMinimize, onHeaderPointerDown, () =>
-                setDeal((d) => d + 1),
-              ),
+            () => createHeader(onClose, size, onRestore, onMinimize, onHeaderPointerDown),
             [onClose, size, onRestore, onMinimize, onHeaderPointerDown],
           )}
           requiresSearch={false}

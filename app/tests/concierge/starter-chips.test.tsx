@@ -1,65 +1,47 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { StarterChips } from '../../src/concierge/chat/StarterChips';
-import {
-  STARTER_QUESTION_POOL,
-  selectStarterSet,
-  type StarterQuestion,
-} from '../../src/concierge/chat/starterQuestions';
-import { signalsToLabels } from '../../src/concierge/chat/starterSignals';
+import { STARTER_QUESTIONS, StarterChips } from '../../src/concierge/chat/StarterChips';
 
-/* `selectStarterSet` still defaults to nine and enforces variety across theme
- * and voice so a set does not read as one sentence with the nouns swapped.
- * The panel asks it for five (JTV, 2026-11-12); the pool rules are unchanged,
- * which is why the selector tests below still use the default size. */
-
-const seeded = (values: number[]) => {
-  let index = 0;
-  return () => values[index++ % values.length];
-};
+/* The welcome screen is five fixed suggestions (2026-11-12), down from a
+ * 31-question pool with variety rules, a weighted selector and two more
+ * chips derived from live facet counts. What is left worth asserting is the
+ * shape of the set and that every one of them can be sent. */
 
 describe('the starter set', () => {
-  it('picks nine from the pool', () => {
-    const set = selectStarterSet(STARTER_QUESTION_POOL, [], seeded([0.1, 0.5, 0.9, 0.3, 0.7]));
-    expect(set).toHaveLength(9);
-    expect(new Set(set.map((q) => q.label)).size).toBe(9);
+  it('is five, and they are distinct', () => {
+    expect(STARTER_QUESTIONS).toHaveLength(5);
+    expect(new Set(STARTER_QUESTIONS).size).toBe(5);
   });
 
-  it('spreads across themes and voices rather than repeating one shape', () => {
-    const set = selectStarterSet(STARTER_QUESTION_POOL, [], seeded([0.2, 0.8, 0.4, 0.6, 0.05]));
-    const perTheme = new Map<string, number>();
-    const perVoice = new Map<string, number>();
-    for (const question of set) {
-      perTheme.set(question.theme, (perTheme.get(question.theme) ?? 0) + 1);
-      perVoice.set(question.voice, (perVoice.get(question.voice) ?? 0) + 1);
+  /* The five are picked to show the range rather than to be the best five:
+   * two about what has been on air, two about finding a piece, one about
+   * service. Drop the on-air pair and a shopper never learns the panel can
+   * answer that; drop the service one and they never learn it should. */
+  it('covers broadcast, the catalogue and service', () => {
+    const onAir = STARTER_QUESTIONS.filter((q) => /on air|Jewel School/i.test(q));
+    const service = STARTER_QUESTIONS.filter((q) => /returns/i.test(q));
+    expect(onAir).toHaveLength(2);
+    expect(service).toHaveLength(1);
+    expect(STARTER_QUESTIONS.length - onAir.length - service.length).toBe(2);
+  });
+
+  /* The agent cannot see the live schedule and the prompt forbids it saying
+   * what is on now, so a starter must never ask. */
+  it('never asks what is on air right now', () => {
+    for (const q of STARTER_QUESTIONS) {
+      expect(q, q).not.toMatch(/right now|on now|currently|live now/i);
     }
-    expect(Math.max(...perTheme.values())).toBeLessThanOrEqual(3);
-    expect(Math.max(...perVoice.values())).toBeLessThanOrEqual(3);
-  });
-
-  it('avoids labels already shown this session', () => {
-    const first = selectStarterSet(STARTER_QUESTION_POOL, [], seeded([0.3, 0.6, 0.9]));
-    const second = selectStarterSet(
-      STARTER_QUESTION_POOL,
-      first.map((q) => q.label),
-      seeded([0.3, 0.6, 0.9]),
-    );
-    const repeated = second.filter((q) => first.some((seen) => seen.label === q.label));
-    expect(repeated).toEqual([]);
-  });
-
-  /* The pool is bigger than one set, but a caller asking for more than it
-   * holds must still get a usable set rather than an exception. */
-  it('still returns a set when the pool is smaller than the request', () => {
-    const tiny = STARTER_QUESTION_POOL.slice(0, 3) as readonly StarterQuestion[];
-    expect(selectStarterSet(tiny, [], seeded([0.5]))).toHaveLength(3);
   });
 });
 
 describe('the empty state', () => {
-  it('renders five starters, each its own sendable control', () => {
+  it('renders every starter as its own sendable control', () => {
     const html = renderToStaticMarkup(<StarterChips sendMessage={() => undefined} />);
     expect(html.match(/class="jtv-chat-starter"/g)).toHaveLength(5);
+    for (const question of STARTER_QUESTIONS) {
+      // Apostrophes render as entities, so compare on the escaped form.
+      expect(html).toContain(question.replace(/'/g, '&#x27;'));
+    }
   });
 
   /* The wordmark gave way to a heading and a sentence (JTV, 2026-11-12): a
@@ -70,12 +52,10 @@ describe('the empty state', () => {
     expect(html).toContain('What can we help you find?');
     expect(html).toContain('your personal jewelry shopper');
     expect(html).not.toContain('jtv-logo-full.png');
-    expect(html).not.toContain('Not sure where to start');
   });
 
-  /* Mid-turn everything goes down: dealing a new set under a streaming answer
-   * would move the panel while it is being read. The re-roll lives in the
-   * header's New search control, not here. */
+  /* Mid-turn everything goes down: sending a second question under a
+   * streaming answer would queue one the shopper cannot see. */
   it('disables the chips mid-turn', () => {
     const html = renderToStaticMarkup(
       <StarterChips sendMessage={() => undefined} status="streaming" />,
@@ -90,48 +70,9 @@ describe('the empty state', () => {
     expect(html.match(/disabled=""/g)).toHaveLength(5);
   });
 
-  /* One plain list; the single left-aligned column and the even spread are
-   * CSS. The nine-chip stagger it replaced needed a presentational offset on
-   * the even slots, and that is gone with it. */
   it('lays the starters out as one list', () => {
     const html = renderToStaticMarkup(<StarterChips sendMessage={() => undefined} />);
     expect(html).toContain('jtv-chat-starters-list');
     expect(html.match(/<li>/g)).toHaveLength(5);
-  });
-});
-
-/* The live half of the set. These labels are derived from facet counts rather
- * than written down, which is the whole point: a label that names a series
- * only appears because the index says that series aired. */
-describe('the live starters', () => {
-  it("names the week's series and host", () => {
-    expect(signalsToLabels({ series: ['Jewel School'], hosts: ['Melissa'] })).toEqual([
-      'What was on Jewel School this week?',
-      'What did Melissa feature this week?',
-    ]);
-  });
-
-  it('offers nothing when the broadcast window is empty', () => {
-    expect(signalsToLabels({ series: [], hosts: [] })).toEqual([]);
-  });
-
-  /* A quiet week can have shows without a named host, or the reverse. Either
-   * half alone is still a true chip. */
-  it('offers whichever half it has', () => {
-    expect(signalsToLabels({ series: ['Warehouse Clearance'], hosts: [] })).toEqual([
-      'What was on Warehouse Clearance this week?',
-    ]);
-    expect(signalsToLabels({ series: [], hosts: ['Susan'] })).toEqual([
-      'What did Susan feature this week?',
-    ]);
-  });
-
-  it('never takes more than its two slots', () => {
-    expect(
-      signalsToLabels({
-        series: ['Jewel School', 'Prazana Lab-Grown Diamonds'],
-        hosts: ['Melissa', 'Susan'],
-      }),
-    ).toHaveLength(2);
   });
 });

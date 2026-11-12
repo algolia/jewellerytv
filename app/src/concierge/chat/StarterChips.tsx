@@ -1,67 +1,44 @@
-import { useEffect, useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
-import { STARTER_QUESTION_POOL, selectStarterSet } from './starterQuestions';
-import { readStarterSignals, signalsToLabels } from './starterSignals';
 
 /* The empty state. The widget renders nothing before the first turn, which
  * leaves a shopper with a blank panel and a cursor.
  *
- * Five chips in one left-aligned column (JTV, 2026-11-12), down from nine
- * staggered ones, with the wordmark replaced by a heading and a sentence
- * saying what the thing is. Nine chips read as a menu to work through; five
- * read as examples.
+ * Five fixed suggestions (2026-11-12). This replaced a 31-question pool with
+ * theme and voice variety rules, a weighted selector, and two more chips
+ * derived from live facet counts — roughly 190 lines and a network request
+ * to decide what five buttons should say. None of that was visible to a
+ * shopper, who sees one set once.
  *
- * Four come from the curated, analytics-grounded pool: the labels map to
- * aggregate search demand (see the provenance note in starterQuestions.ts)
- * and `selectStarterSet` enforces the variety rules, so a set never reads as
- * one sentence with the nouns swapped. One is derived from live facet counts,
- * so the panel opens on something that actually aired this week.
+ * The five are chosen to show the range rather than to be the five best
+ * questions: two about what has been on air, two about finding a piece, one
+ * about service. On air is the half nobody guesses a chat box can answer,
+ * and service is the half nobody guesses it should.
  *
- * The curated set paints first and the live chip joins it when the facet
- * query resolves. Waiting on the network before showing anything would trade
- * a blank panel for a slower one. */
+ * These are fixed UI labels, never agent output. Each one was checked
+ * against the indices on 2026-11-12: "Jewel School this week" matches 82
+ * pieces, "yesterday" 440. */
 
 export type StarterChipsProps = {
   sendMessage?: (params: { text: string }) => void;
   status?: string;
 };
 
-const LIVE_SLOTS = 1;
-const SET_SIZE = 5;
+export const STARTER_QUESTIONS = [
+  /* On air. The series name is the one label here with a shelf life: it is
+   * JTV's long-running flagship, but a static label naming a show will
+   * outlive the show eventually. */
+  'What was on air yesterday?',
+  'What was on Jewel School this week?',
+  /* Finding a piece. The first is a plain product search, the second a
+   * budget, which is the axis shoppers reach for most and the one the agent
+   * has to turn into a price-band filter rather than query words. */
+  'Do you have gold hoop earrings?',
+  "What's good under $200?",
+  /* Service, answered from `help_content` rather than the catalogue. */
+  'How do returns work?',
+] as const;
 
 export function StarterChips({ sendMessage, status }: StarterChipsProps) {
-  /* One set per mount, re-rolled only when the shopper asks. Reshuffling on
-   * every render would move a chip out from under the pointer. */
-  const [curated] = useState(() =>
-    selectStarterSet(STARTER_QUESTION_POOL, [], Math.random, SET_SIZE),
-  );
-  const [live, setLive] = useState<string[]>([]);
-
-  useEffect(() => {
-    let current = true;
-    void readStarterSignals().then((signals) => {
-      if (current) setLive(signalsToLabels(signals));
-    });
-    return () => {
-      current = false;
-    };
-  }, []);
-
-  /* New search deals a fresh set, excluding everything already offered this
-   * session, so a shopper who asks again gets different examples rather than
-   * a reshuffle of the same five. The live on-air chip leads: it is the one
-   * label that could not have been written in advance. */
-  const labels = useMemo(() => {
-    const curatedLabels = curated.map((question) => question.label);
-    /* A live chip can restate a curated one (the pool carries a Jewel School
-     * label of its own), so dedupe before trimming to the set size. */
-    const merged = [
-      ...live.slice(0, LIVE_SLOTS),
-      ...curatedLabels.filter((label) => !live.includes(label)),
-    ];
-    return merged.slice(0, SET_SIZE);
-  }, [curated, live]);
-
   const busy = status === 'submitted' || status === 'streaming';
   return (
     <div className="jtv-chat-starters">
@@ -74,11 +51,11 @@ export function StarterChips({ sendMessage, status }: StarterChipsProps) {
           you&rsquo;ll love.
         </span>
       </p>
-      {/* One left-aligned column, evenly spread. The nine-chip stagger it
-       * replaced was there to stop a long list reading as a form; at five
-       * there is no list to break up. */}
+      {/* One left-aligned column. The nine-chip stagger it replaced was there
+       * to stop a long list reading as a form; at five there is no list to
+       * break up. */}
       <ul className="jtv-chat-starters-list">
-        {labels.slice(0, SET_SIZE).map((label) => (
+        {STARTER_QUESTIONS.map((label) => (
           <li key={label}>
             <button
               type="button"

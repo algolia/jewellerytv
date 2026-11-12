@@ -406,18 +406,17 @@ test('the new-search control clears the turn and keeps the panel open', async ({
   /* The control lives in the widget's header slot, not the shell: only the
    * widget can reach `clearMessages`.
    *
-   * It is never disabled, which is deliberate and was asserted the other way
-   * round until 2026-11-12. On an empty panel there is nothing to clear, but
-   * the click still deals a fresh set of starter questions, so the control
-   * always does something. Its accessible name is now the visible "New
-   * search", which also stops this locator matching the identically named
-   * button on the error card below. */
+   * It is dead until there is something to clear. It stayed enabled for a
+   * while, back when pressing it also dealt a fresh set of questions; the
+   * five are fixed now, so on an empty panel there is nothing it can do and
+   * it says so. Its accessible name is the visible "New search", which also
+   * stops this locator matching the identically named button on the error
+   * card below. */
   const newSearch = panel.getByRole('button', { name: 'New search' });
-  await expect(newSearch).toBeEnabled();
+  await expect(newSearch).toBeDisabled();
 
   const starters = panel.locator('.jtv-chat-starter');
-  const firstDeal = await starters.allInnerTexts();
-  expect(firstDeal.length).toBeGreaterThan(0);
+  await expect(starters).toHaveCount(5);
 
   const composer = panel.locator(COMPOSER);
   await composer.fill('hello');
@@ -429,35 +428,25 @@ test('the new-search control clears the turn and keeps the panel open', async ({
   await expect(panel.locator('.ais-ChatMessage')).toHaveCount(0);
   // Clearing is not closing: the shopper is still in the conversation.
   await expect(panel).toHaveAttribute('data-open', 'true');
-  await expect(newSearch).toBeEnabled();
-
-  // And on the now-empty panel it re-deals rather than sitting dead.
-  await expect(starters.first()).toBeVisible();
+  // The welcome screen comes back, and the control goes dead again with it.
+  await expect(starters).toHaveCount(5);
+  await expect(newSearch).toBeDisabled();
 });
 
-/* Pressing it again on a panel that is already empty used to blank the
- * screen. The widget's clear is a fade — it hides the empty state until a
- * `transitionend` commits it — so on an empty panel it bought nothing and
- * cost a blank for the length of the fade, and the press after that landed
- * while the fade was still running, where it does nothing at all. The result
- * was that every other press appeared dead. */
-test('new search keeps dealing on an already-empty panel', async ({ page }) => {
+/* Pressing it on an empty panel used to blank the screen: the widget's clear
+ * is a fade, and `isClearing` gates the empty state off until a
+ * `transitionend` commits it, so with nothing to clear the chips vanished
+ * and came back for no reason — and the press after that landed mid-fade,
+ * where it does nothing, so every other press looked dead. The control is
+ * disabled there now, which is both honest and unreachable. */
+test('new search cannot be pressed when there is nothing to clear', async ({ page }) => {
   await stubAgentTurn(page, { text: 'Unused.' });
   const panel = await openPanel(page);
   const starters = panel.locator('.jtv-chat-starter');
   await expect(starters).toHaveCount(5);
-
-  const seen: string[][] = [];
-  for (let press = 0; press < 4; press += 1) {
-    await panel.getByRole('button', { name: 'New search' }).click();
-    await expect(starters).toHaveCount(5);
-    seen.push(await starters.allInnerTexts());
-  }
-
-  /* Dealing, not merely surviving: four presses off a pool this size should
-   * not return the same five every time. */
-  const distinct = new Set(seen.map((set) => set.join('|')));
-  expect(distinct.size).toBeGreaterThan(1);
+  await expect(panel.getByRole('button', { name: 'New search' })).toBeDisabled();
+  // The welcome screen is still there, not faded out behind a dead control.
+  await expect(starters.first()).toBeVisible();
 });
 
 test('the display gate refuses a repeat and an unphotographed piece', async ({ page }) => {
