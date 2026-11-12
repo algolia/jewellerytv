@@ -309,12 +309,13 @@
   z-index: 2;
 }
 
-/* The entry field, ported verbatim from the old .connected-prompt: one rule
- * top and bottom (#9caeb5), 44px tall, and Send beside it as a blue 44px
- * button with a 20px gap. */
 /* The pill composer (Arijit, 2026-11-05, with the Vuori reference): one
- * rounded-full field, the circular dark send button inside its right edge,
- * and the disclaimer as a quiet line beneath. */
+ * rounded-full field, the send control inside its right edge, and the
+ * disclaimer as a quiet line beneath.
+ *
+ * Lightened 2026-11-12 to JTV's revision: a hairline rule instead of the
+ * 1.5px near-black one, and a bare chevron instead of a filled dark disc.
+ * Two heavy elements were competing with the chips above them. */
 .jtv-concierge .ais-ChatPrompt-body {
   position: relative;
   display: flex;
@@ -322,7 +323,7 @@
   align-items: center;
   gap: 0;
   padding: 0;
-  border: 1.5px solid #26262b;
+  border: 1px solid #b9bec4;
   border-radius: 999px;
   background: #fff;
   box-shadow: none;
@@ -381,15 +382,15 @@
   padding: 0 !important;
   border: 0;
   border-radius: 50%;
-  background: #1f1f23;
-  color: #fff;
+  background: transparent;
+  color: #1f1f23;
   box-sizing: border-box;
 }
 
 .jtv-concierge .ais-ChatPrompt-submit svg {
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   margin: 0 auto;
 }
 
@@ -398,12 +399,13 @@
 }
 
 .jtv-concierge .ais-ChatPrompt-submit:hover:not(:disabled) {
-  background: #3a3a40;
-  color: #fff;
+  background: #f0f2f4;
+  color: #1f1f23;
 }
 
 .jtv-concierge .ais-ChatPrompt-submit:disabled {
-  background: #c9cdd2;
+  background: transparent;
+  color: #c9cdd2;
 }
 
 /* Links in a reply read as plain text without this. The storefront's reset
@@ -505,94 +507,88 @@
   }
 }
 
-/* Empty state: JTV's own welcome screen, restored.
+/* Empty state (JTV, 2026-11-12): a heading, a sentence saying what this is,
+ * and five suggestions in one left-aligned column spread down the panel.
  *
- * Logo, an invitation, nine chips staggered left and right, and a way to see
- * a different nine. The stagger is the part that makes it read as an offer
- * rather than a form — nine full-width rows is a menu, and the alternating
- * indent breaks the column without hiding anything behind an interaction. */
+ * It replaced the wordmark and nine staggered chips. The stagger existed to
+ * stop nine full-width rows reading as a form; five do not need breaking up,
+ * and the sentence does the work the logo was doing — a shopper who has
+ * never used this needs to be told what it is, not shown a brand they are
+ * already looking at. */
 .jtv-chat-starters {
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
   flex: 1;
   width: 100%;
   margin: 0;
-  padding: 28px 12px;
+  padding: 28px 20px;
+  text-align: left;
+}
+
+.jtv-chat-starters-title {
+  margin: 0 0 18px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
   text-align: center;
+  color: var(--text, #454545);
 }
 
-/* Sized for the full-size logo asset; crisp because it renders at native
- * resolution. The old panel's clamp. */
-.jtv-chat-starters-logo {
-  display: block;
-  width: clamp(180px, 55%, 260px);
-  height: auto;
-  margin: 0 auto;
-}
-
+/* The sparkle hangs in its own column so the three wrapped lines align with
+ * each other rather than with the icon. */
 .jtv-chat-starters-lead {
-  margin: 0 0 22px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
   font-size: 15px;
-  line-height: 1.4;
-  color: var(--muted, #707070);
+  line-height: 1.5;
+  color: var(--text, #454545);
 }
 
+.jtv-chat-starters-mark {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* One column under the sentence, at a fixed rhythm. It used to take the
+ * panel's full height with `space-evenly`, which on a tall panel pushed the
+ * five chips about 90px apart and read as five unrelated buttons rather than
+ * one set to choose from. A fixed gap keeps the spacing the same whatever
+ * the panel's height; 30px is the figure JTV settled on. */
 .jtv-chat-starters-list {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  gap: 30px 14px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 30px;
   width: 100%;
   margin: 0;
-  padding: 0 8px;
+  padding: 22px 0 0;
   list-style: none;
 }
 
-/* Jagged rhythm, ported from the old panel: alternate chips sit lower and
- * natural label widths break the rows into an organic cloud. */
-.jtv-chat-starters-list li:nth-child(even) {
-  transform: translateY(12px);
-}
-
 .jtv-chat-starter {
-  padding: 11px 16px;
+  max-width: 100%;
+  padding: 11px 18px;
   border: 1px solid #d3dce1;
   border-radius: 999px;
-  background: linear-gradient(180deg, #ffffff 0%, #f6f9fb 100%);
+  background: #fff;
   color: var(--text, #454545);
   font: inherit;
   font-size: 14px;
   line-height: 1.35;
-  text-align: center;
-  white-space: nowrap;
+  text-align: left;
   cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 #ffffff,
-    0 1px 2px rgba(23, 62, 75, 0.09),
-    0 4px 9px rgba(23, 62, 75, 0.08);
   transition:
     border-color 120ms ease,
-    box-shadow 120ms ease,
-    transform 120ms ease;
+    color 120ms ease,
+    background-color 120ms ease;
 }
 
 .jtv-chat-starter:hover:not(:disabled) {
   border-color: var(--blue, #0076a9);
   color: var(--blue, #0076a9);
-  box-shadow:
-    inset 0 1px 0 #ffffff,
-    0 2px 4px rgba(23, 62, 75, 0.1),
-    0 8px 16px rgba(0, 118, 169, 0.14);
-  transform: translateY(-1px);
-}
-
-
-.jtv-chat-starter:hover:not(:disabled) {
-  border-color: var(--blue, #0076a9);
-  color: var(--blue, #0076a9);
-  box-shadow: 0 2px 6px rgba(9, 9, 11, 0.1);
+  background: #f6f9fb;
 }
 
 .jtv-chat-starter:disabled {

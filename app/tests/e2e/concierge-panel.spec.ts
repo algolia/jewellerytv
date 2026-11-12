@@ -314,7 +314,7 @@ test('the empty panel offers curated starters that send on click', async ({ page
    * analytics-grounded labels, not model-generated openers: the follow-up
    * suggestions after a turn are the generated surface. */
   const starters = panel.locator('.jtv-chat-starter');
-  await expect(starters).toHaveCount(9);
+  await expect(starters).toHaveCount(5);
 
   const first = await starters.first().innerText();
   await starters.first().click();
