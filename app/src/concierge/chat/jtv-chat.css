@@ -554,12 +554,13 @@
 /* One column under the sentence, at a fixed rhythm. It used to take the
  * panel's full height with `space-evenly`, which on a tall panel pushed the
  * five chips about 90px apart and read as five unrelated buttons rather than
- * one set to choose from. */
+ * one set to choose from. A fixed gap keeps the spacing the same whatever
+ * the panel's height; 30px is the figure JTV settled on. */
 .jtv-chat-starters-list {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
+  gap: 30px;
   width: 100%;
   margin: 0;
   padding: 22px 0 0;
