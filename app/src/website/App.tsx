@@ -310,7 +310,13 @@ function Experience() {
       {/* The panel follows a tile's link through the router. A plain anchor
        * would reload the storefront, remount the panel closed and lose the
        * conversation the tile came from. */}
-      <Concierge ref={chat} context={getContext} onNavigate={navigate} />
+      <Concierge
+        ref={chat}
+        context={getContext}
+        onNavigate={navigate}
+        /* The panel hangs from the nav and tracks it as the page scrolls. */
+        anchorSelector=".main-nav"
+      />
     </>
   );
 }

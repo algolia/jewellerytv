@@ -14,11 +14,12 @@
  * same constraint that put the entry chip in the search bar rather than on a
  * floating launcher.
  *
- * 186px is measured, not guessed: announcement 32 + header 104 + nav 50. It
- * is the same offset `.mega-menu` uses in `website/styles.css`, so the two
- * open flush with each other. The header is `position: relative` and scrolls
- * away, so once the page moves this reads as a top margin rather than an
- * alignment — a known consequence of anchoring here, not an oversight.
+ * `--jtv-concierge-top` is written from JavaScript on every scroll frame
+ * (`concierge/panelAnchor.ts`): it is the live bottom edge of the navigation
+ * bar, clamped to a gutter. The 186px here is only the fallback for the
+ * first paint and for a document with no anchor to measure. Hardcoded
+ * breakpoint variants used to live below; they were right only at the top of
+ * the page, and two of them had drifted from where the nav actually ends.
  *
  * The shopper's one size choice is to collapse it to its title bar and back.
  *
@@ -47,22 +48,6 @@
   --jtv-concierge-header-fg: #fff;
   --jtv-concierge-pill-border: #ffffff59;
   --jtv-concierge-control-hover: #ffffff1f;
-}
-
-/* The header grows as it reflows, so the offset follows it. All three
- * numbers are measured off `.main-nav` rather than summed from the
- * stylesheet or copied from `.mega-menu`, whose own 192px at this width is
- * 6px short of where the nav actually ends. */
-@media (max-width: 50rem) {
-  .jtv-concierge {
-    --jtv-concierge-top: 12.375rem;
-  }
-}
-
-@media (max-width: 37.5rem) {
-  .jtv-concierge {
-    --jtv-concierge-top: 12.125rem;
-  }
 }
 
 /* The resize grip: the 2026-11-04 restore brought back the corner control's
@@ -529,7 +514,9 @@
   /* Collapsed, the bar hangs under the navigation bar here too rather than
    * dropping to the foot of the screen: the shopper's eye is already at the
    * top, and a bar at the bottom reads as a separate thing from the panel it
-   * came out of. */
+   * came out of. Once the nav has scrolled away the tracker clamps this to
+   * zero rather than to a gutter, because the full-screen panel is edge to
+   * edge and a bar floating below the top would read as another component. */
   .jtv-concierge--minimized {
     top: var(--jtv-concierge-top);
     bottom: auto;

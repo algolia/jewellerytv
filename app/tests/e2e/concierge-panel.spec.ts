@@ -91,6 +91,71 @@ test('the panel collapses to its title bar and stays docked there', async ({ pag
   await expect(page.locator(COMPOSER)).toBeVisible();
 });
 
+/* The panel hangs from the navigation bar, and the nav moves. Measuring it
+ * live rather than hardcoding an offset is what lets one rule cover a sticky
+ * header (jtv.com desktop: the bottom never moves, so the panel never
+ * moves), a header that scrolls away (jtv.com mobile and this demo: the
+ * panel rides up with it and stops at the gutter), and no header at all (the
+ * embed frame). */
+test('the panel rides up with the nav and stops at the gutter', async ({ page }) => {
+  const panel = await openPanel(page);
+  const wide = (page.viewportSize()?.width ?? 0) > 768;
+  /* Full-screen on a phone, the expanded panel is `inset: 0` and ignores the
+   * offset altogether; there it is the collapsed bar that hangs from the
+   * nav, so that is what gets tested. */
+  if (!wide) {
+    await page.getByRole('button', { name: 'Minimize the panel to its title bar' }).click();
+    await expect(panel).toHaveAttribute('data-size', 'minimized');
+  }
+  const navBottom = () =>
+    page
+      .locator('.main-nav')
+      .evaluate((el) => Math.round(el.getBoundingClientRect().bottom));
+  const panelTop = async () => Math.round((await panel.boundingBox())!.y);
+
+  // At rest it is flush under the nav.
+  expect(await panelTop()).toBe(await navBottom());
+
+  // Part way: the demo's header is not sticky, so the nav is still on screen
+  // and the panel is still touching it.
+  await page.evaluate(() => window.scrollTo(0, 80));
+  await expect.poll(panelTop).toBe(await navBottom());
+
+  /* Well past the header. The gutter is 24px on the desktop card and nothing
+   * on the full-screen mobile panel, which is edge to edge. */
+  const gutter = wide ? 24 : 0;
+  await page.evaluate(() => window.scrollTo(0, 1200));
+  await expect.poll(panelTop).toBe(gutter);
+  expect(await navBottom()).toBeLessThan(gutter);
+
+  // And back: it returns to the nav rather than staying pinned.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(panelTop).toBe(await navBottom());
+});
+
+/* Once the shopper has moved the panel it is theirs, and the nav stops
+ * having an opinion about where it lives. */
+test('a panel the shopper has dragged ignores the nav', async ({ page }) => {
+  const panel = await openPanel(page);
+  if ((page.viewportSize()?.width ?? 0) <= 768) return; // no dragging on mobile
+
+  const header = panel.locator('.jtv-concierge-header');
+  const start = (await header.boundingBox())!;
+  await page.mouse.move(start.x + 40, start.y + start.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(start.x - 120, start.y + 160, { steps: 8 });
+  await page.mouse.up();
+
+  const dragged = Math.round((await panel.boundingBox())!.y);
+  expect(dragged).not.toBe(
+    await page.locator('.main-nav').evaluate((el) => Math.round(el.getBoundingClientRect().bottom)),
+  );
+
+  await page.evaluate(() => window.scrollTo(0, 1200));
+  await page.waitForTimeout(100);
+  expect(Math.round((await panel.boundingBox())!.y)).toBe(dragged);
+});
+
 test('collapsing keeps the conversation, and the chevrons bound at each end', async ({ page }) => {
   const panel = await openPanel(page);
   await page.locator(COMPOSER).fill('Do you have opal rings?');
