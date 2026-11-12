@@ -6,6 +6,7 @@ import {
   type PointerEvent,
   type KeyboardEvent,
 } from 'react';
+import type { PanelSize } from './panelSize';
 import {
   clampWindowRect,
   defaultWindowRect,
@@ -26,12 +27,14 @@ function viewport() {
   return { width: window.innerWidth, height: window.innerHeight };
 }
 
-export function useConciergeWindowControls() {
+/* Dragging and resizing belong to the docked card. A collapsed bar has
+ * nothing to resize and is meant to stay where the shopper left it, so every
+ * interaction is gated on the size rather than disabled control by control. */
+export function useConciergeWindowControls(size: PanelSize) {
   const panelRef = useRef<HTMLDivElement>(null);
   const interaction = useRef<Interaction | null>(null);
   const [rect, setRect] = useState<WindowRect | null>(null);
-  const [restoreRect, setRestoreRect] = useState<WindowRect | null>(null);
-  const [maximized, setMaximized] = useState(false);
+  const movable = size === 'normal';
 
   const currentRect = useCallback((): WindowRect => {
     if (rect) return rect;
@@ -46,7 +49,7 @@ export function useConciergeWindowControls() {
 
   const begin = useCallback(
     (kind: Interaction['kind'], event: PointerEvent<HTMLElement>) => {
-      if (window.matchMedia('(max-width: 767px)').matches || event.button !== 0 || maximized)
+      if (window.matchMedia('(max-width: 767px)').matches || event.button !== 0 || !movable)
         return;
       event.preventDefault();
       interaction.current = {
@@ -57,7 +60,7 @@ export function useConciergeWindowControls() {
         rect: currentRect(),
       };
     },
-    [currentRect, maximized],
+    [currentRect, movable],
   );
 
   const beginHeaderMove = useCallback(
@@ -90,9 +93,15 @@ export function useConciergeWindowControls() {
     }
     function onResize() {
       const currentViewport = viewport();
-      if (currentViewport.width < 768) return;
+      /* Below the breakpoint the panel is full-screen by stylesheet, and an
+       * inline rect from a desktop drag would override it. Dropping the rect
+       * rather than returning early is what keeps the mobile layout honest
+       * after a window is narrowed. */
+      if (currentViewport.width < 768) {
+        setRect(null);
+        return;
+      }
       setRect((current) => (current ? clampWindowRect(current, currentViewport) : current));
-      setRestoreRect((current) => (current ? clampWindowRect(current, currentViewport) : current));
     }
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', endInteraction);
@@ -106,20 +115,6 @@ export function useConciergeWindowControls() {
     };
   }, []);
 
-  function handleMoveKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
-    const distances: Record<string, [number, number]> = {
-      ArrowUp: [0, -24],
-      ArrowDown: [0, 24],
-      ArrowLeft: [-24, 0],
-      ArrowRight: [24, 0],
-    };
-    const delta = distances[event.key];
-    if (!delta || maximized) return;
-    event.preventDefault();
-    const scale = event.shiftKey ? 3 : 1;
-    setRect(moveWindowRect(currentRect(), delta[0] * scale, delta[1] * scale, viewport()));
-  }
-
   function handleResizeKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     const distances: Record<string, [number, number]> = {
       ArrowUp: [0, -24],
@@ -128,25 +123,19 @@ export function useConciergeWindowControls() {
       ArrowRight: [24, 0],
     };
     const delta = distances[event.key];
-    if (!delta || maximized) return;
+    if (!delta || !movable) return;
     event.preventDefault();
     const scale = event.shiftKey ? 3 : 1;
     setRect(resizeWindowRect(currentRect(), delta[0] * scale, delta[1] * scale, viewport()));
   }
 
-  function toggleMaximized() {
-    if (maximized) {
-      setRect(clampWindowRect(restoreRect ?? defaultWindowRect(viewport()), viewport()));
-      setMaximized(false);
-      return;
-    }
-    setRestoreRect(currentRect());
-    interaction.current = null;
-    setMaximized(true);
-  }
-
-  const style =
-    rect && !maximized
+  /* A collapsed bar keeps the corner the shopper dragged it to but must not
+   * keep the card's height, or it renders as an empty box with a title in it.
+   * Dropping `height` lets the bar shrink-wrap its own content while `left`
+   * and `top` hold it in place. */
+  const style = !rect
+    ? undefined
+    : movable
       ? {
           left: `${rect.x}px`,
           top: `${rect.y}px`,
@@ -156,17 +145,19 @@ export function useConciergeWindowControls() {
           height: `${rect.height}px`,
           maxHeight: 'none',
         }
-      : undefined;
+      : {
+          left: `${rect.x}px`,
+          top: `${rect.y}px`,
+          right: 'auto',
+          bottom: 'auto',
+          width: `${rect.width}px`,
+        };
 
   return {
     panelRef,
     style,
-    maximized,
     beginHeaderMove,
-    beginMove: (event: PointerEvent<HTMLElement>) => begin('move', event),
     beginResize: (event: PointerEvent<HTMLElement>) => begin('resize', event),
-    handleMoveKeyDown,
     handleResizeKeyDown,
-    toggleMaximized,
   };
 }

@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useMemo, useState } from 'react';
 import type { ComponentProps, MouseEvent, PointerEvent as ReactPointerEvent } from 'react';
-import { Maximize2, Minimize2, Plus, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Sparkles, X } from 'lucide-react';
 import { liteClient } from 'algoliasearch/lite';
 import { Chat, ChatInlineLayout, InstantSearch, CompareBar } from 'react-instantsearch';
 import type { ChatHandle } from 'react-instantsearch';
@@ -11,6 +11,7 @@ import { ChatActions } from './chatActions';
 import { ChatLoader } from './chatLoader';
 import { keepLoaderUp } from './loaderVisibility';
 import { linkIntent } from './linkTarget';
+import type { PanelSize } from '../panelSize';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { StarterChips } from './StarterChips';
 import { createGatedTools } from './gatedGroupedResults';
@@ -54,53 +55,78 @@ type HeaderProps = {
  * header outside would have had no way to reach it. */
 function createHeader(
   onPanelClose?: () => void,
-  maximized?: boolean,
-  onToggleMaximized?: () => void,
+  size: PanelSize = 'normal',
+  onRestore?: () => void,
+  onMinimize?: () => void,
   onHeaderPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void,
   onNewDeal?: () => void,
 ) {
+  const minimized = size === 'minimized';
   return function JtvChatHeader({ onClose, onClear, canClear: _canClear }: HeaderProps) {
     return (
-      <div className="jtv-concierge-header" onPointerDown={onHeaderPointerDown}>
-        <h2>JTV Concierge</h2>
+      <div
+        className="jtv-concierge-header"
+        onPointerDown={onHeaderPointerDown}
+        /* The whole bar is the way back. Dragging is gated to the expanded
+         * panel, so a click here while collapsed can only have been a click.
+         * No role or tabindex: the chevron is already the keyboard path, and
+         * a second focus stop announcing the same action is noise. */
+        onClick={minimized ? onRestore : undefined}
+      >
+        <h2 className="jtv-concierge-header-title">
+          Ask JTV
+          <Sparkles size={14} aria-hidden="true" />
+        </h2>
+        <button
+          type="button"
+          className="jtv-concierge-new-search"
+          /* The visible words are the accessible name, so the control reads
+           * the same aloud as on screen, and the locator stops colliding with
+           * the identically named button on the error card. */
+          onClick={() => {
+            onClear?.();
+            onNewDeal?.();
+          }}
+        >
+          <Plus size={14} aria-hidden="true" />
+          New search
+        </button>
         <div className="jtv-concierge-header-actions">
-          {onToggleMaximized ? (
-            <button
-              type="button"
-              className="jtv-concierge-header-button"
-              aria-label={maximized ? 'Shrink the panel' : 'Expand the panel to full height'}
-              title={maximized ? 'Shrink' : 'Expand'}
-              aria-pressed={maximized}
-              onClick={onToggleMaximized}
-            >
-              {maximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            </button>
-          ) : null}
+          {/* Two steps along one axis rather than two toggles, so the pair is
+            * never in a state that contradicts itself. The unavailable end is
+            * disabled rather than hidden: dropping a button shifts the others
+            * sideways under a cursor that is about to click. */}
           <button
             type="button"
-            className="jtv-concierge-header-button jtv-concierge-new-chat"
-            aria-label="Start a new conversation"
-            title="New conversation"
-            /* Always active: on an empty panel there is nothing to clear, but
-             * the click still deals a fresh set of starter questions, which is
-             * how the previous panel behaved. */
-            onClick={() => {
-              onClear?.();
-              onNewDeal?.();
-            }}
+            className="jtv-concierge-header-button"
+            aria-label="Restore the panel"
+            title="Restore"
+            disabled={!minimized}
+            onClick={onRestore}
           >
-            <Plus size={18} />
+            <ChevronUp size={18} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="jtv-concierge-header-button"
+            aria-label="Minimize the panel to its title bar"
+            title="Minimize"
+            disabled={minimized}
+            onClick={onMinimize}
+          >
+            <ChevronDown size={18} aria-hidden="true" />
           </button>
           <button
             type="button"
             className="jtv-concierge-header-button jtv-concierge-close"
             aria-label="Close the jewelry concierge"
+            title="Close"
             onClick={() => {
               onClose();
               onPanelClose?.();
             }}
           >
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -113,10 +139,12 @@ export type JtvChatProps = {
   context?: Record<string, string> | (() => Record<string, string>);
   /** Lets the header's close control dismiss the panel shell around it. */
   onClose?: () => void;
-  /** Whether the shell is at full height; drives the header's control. */
-  maximized?: boolean;
-  /** Toggles the shell between the default panel and full height. */
-  onToggleMaximized?: () => void;
+  /** Whether the shell is the docked card or collapsed to its title bar. */
+  size?: PanelSize;
+  /** Opens a collapsed panel back up. */
+  onRestore?: () => void;
+  /** Collapses the panel to its title bar. */
+  onMinimize?: () => void;
   /** Drags the panel from the header (shell window controls). */
   onHeaderPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void;
   /** Follows a storefront link from inside the panel without a page load,
@@ -128,12 +156,12 @@ export type JtvChatProps = {
  * `sendMessage`), which is how the storefront's "Ask JTV" chip hands the
  * current search text to the panel. */
 export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
-  { context, onClose, maximized, onToggleMaximized, onHeaderPointerDown, onNavigate },
+  { context, onClose, size, onRestore, onMinimize, onHeaderPointerDown, onNavigate },
   ref,
 ) {
   const { appId, apiKey, agentId } = useMemo(readConfig, []);
 
-  /* Bumped by "New conversation" so the starter chips re-deal. */
+  /* Bumped by "New search" so the starter chips re-deal. */
   const [deal, setDeal] = useState(0);
 
   /* One instance per mount. Recreating it on every render would drop the
@@ -142,13 +170,6 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
     () =>
       new ChatInstance<UIMessage>({
         transport: new NarrationFilteringTransport({
-          /* cache=true is the platform default, stated here so it reads as a
-           * decision. It caches the whole response, not the prompt prefix:
-           * measured 2026-10-29, an identical question returns a byte-identical
-           * reply with identical product ids in 0.2 to 0.4s against 13.4s
-           * uncached. `cache=false` bypasses it at full cost. The tradeoff is
-           * freshness: on-air data refreshes daily and stock moves, so a cached
-           * answer can outlive what it describes. */
           api: `https://${appId}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5&cache=true`,
           headers: {
             'x-algolia-application-id': appId,
@@ -251,12 +272,14 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
               },
             [deal],
           )}
+          /* Every dependency must be listed: this memo returns a component
+           * *type*, so a new identity remounts the whole header subtree. */
           headerComponent={useMemo(
             () =>
-              createHeader(onClose, maximized, onToggleMaximized, onHeaderPointerDown, () =>
+              createHeader(onClose, size, onRestore, onMinimize, onHeaderPointerDown, () =>
                 setDeal((d) => d + 1),
               ),
-            [onClose, maximized, onToggleMaximized, onHeaderPointerDown],
+            [onClose, size, onRestore, onMinimize, onHeaderPointerDown],
           )}
           requiresSearch={false}
           /* Positions the chips as optional rather than as the only way in.

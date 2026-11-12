@@ -58,30 +58,90 @@ test('the Ask JTV chip opens the panel with the search text as a draft', async (
   await expect(composer).toHaveValue('tanzanite ring under 18 inches');
 });
 
-/* JTV asked for the floating panel back, with full height as a choice rather
- * than the only shape. Below the breakpoint neither shape leaves room for the
- * store, so the panel takes the screen and the control has nothing to do. */
-test('the panel opens as a card and expands to full height on request', async ({ page }) => {
+/* The shopper's one size choice (2026-11-12): collapse the panel to its title
+ * bar and open it again. The bar has to stay where the panel was, or it is a
+ * disappearing act rather than a minimise. Replaced the full-height rail,
+ * which JTV did not ask to keep. */
+test('the panel collapses to its title bar and stays docked there', async ({ page }) => {
   const panel = await openPanel(page);
-  const viewport = page.viewportSize()!;
   const card = (await panel.boundingBox())!;
+  expect(card.height).toBeGreaterThan(200);
 
-  if (viewport.width <= 768) {
-    expect(card.height).toBe(viewport.height);
-    return;
-  }
+  await page.getByRole('button', { name: 'Minimize the panel to its title bar' }).click();
+  await expect(panel).toHaveAttribute('data-size', 'minimized');
 
-  expect(card.height).toBeLessThan(viewport.height);
-  expect(card.y).toBeGreaterThan(0);
+  const bar = (await panel.boundingBox())!;
+  expect(bar.height).toBeLessThan(80);
+  /* "In place" is the claim being tested: the bottom edge must not move, so
+   * the bar is where the shopper's eye and cursor already are. */
+  expect(Math.round(bar.y + bar.height)).toBe(Math.round(card.y + card.height));
+  await expect(page.locator(COMPOSER)).toBeHidden();
 
-  await page.getByRole('button', { name: 'Expand the panel to full height' }).click();
-  await expect(panel).toHaveAttribute('data-maximized', 'true');
-  const full = (await panel.boundingBox())!;
-  expect(full.y).toBe(0);
-  expect(full.height).toBe(viewport.height);
+  /* The whole bar is a target, not just the chevron. */
+  await panel.locator('.jtv-concierge-header').click();
+  await expect(panel).toHaveAttribute('data-size', 'normal');
+  await expect(page.locator(COMPOSER)).toBeVisible();
+});
 
-  await page.getByRole('button', { name: 'Shrink the panel' }).click();
-  await expect(panel).toHaveAttribute('data-maximized', 'false');
+test('collapsing keeps the conversation, and the chevrons bound at each end', async ({ page }) => {
+  const panel = await openPanel(page);
+  await page.locator(COMPOSER).fill('Do you have opal rings?');
+  await page.locator(COMPOSER).press('Enter');
+  await expect(page.locator(TRANSCRIPT)).toContainText('opal');
+
+  const restore = page.getByRole('button', { name: 'Restore the panel' });
+  const minimize = page.getByRole('button', { name: 'Minimize the panel to its title bar' });
+  await expect(restore).toBeDisabled();
+  await expect(minimize).toBeEnabled();
+
+  await minimize.click();
+  await expect(restore).toBeEnabled();
+  await expect(minimize).toBeDisabled();
+
+  await restore.click();
+  await expect(page.locator(TRANSCRIPT)).toContainText('opal');
+});
+
+/* Closing the tab is not the same as wanting the panel back at full size, so
+ * the choice outlives a reload. The conversation does not — the chat instance
+ * is a `useMemo` — which is exactly why `open` is not stored with it. */
+test('the collapsed choice survives a reload, and the panel does not reopen itself', async ({
+  page,
+}) => {
+  const panel = await openPanel(page);
+  await page.getByRole('button', { name: 'Minimize the panel to its title bar' }).click();
+  await expect(panel).toHaveAttribute('data-size', 'minimized');
+
+  await page.reload();
+  const reloaded = page.locator(PANEL);
+  await expect(reloaded).toHaveAttribute('data-open', 'false');
+  await expect(reloaded).toHaveAttribute('data-size', 'minimized');
+
+  /* A question handed to a collapsed bar has to land on a composer. */
+  await page.getByRole('button', { name: 'Ask JTV', exact: true }).click();
+  await expect(reloaded).toHaveAttribute('data-size', 'normal');
+  await expect(page.locator(COMPOSER)).toBeVisible();
+});
+
+/* Closing is not clearing. `storefront.spec.ts` proves reopening fires no
+ * model call; this proves there was something to come back to, which is the
+ * half a request count cannot see. */
+test('closing keeps the conversation, and reopens at the normal size', async ({ page }) => {
+  await stubAgentTurn(page, { text: 'Opals suit an October birthday.' });
+  const panel = await openPanel(page);
+  await ask(page, 'Show me opal rings');
+  await expect(page.locator(TRANSCRIPT)).toContainText('October');
+
+  await page.getByRole('button', { name: 'Minimize the panel to its title bar' }).click();
+  await page.getByRole('button', { name: 'Close the jewelry concierge' }).click();
+  await expect(panel).toHaveAttribute('data-open', 'false');
+
+  await page.getByRole('button', { name: 'Ask JTV', exact: true }).click();
+  await expect(panel).toHaveAttribute('data-open', 'true');
+  await expect(page.locator(TRANSCRIPT)).toContainText('October');
+  /* Closing normalises the size, so reopening is never a bar with nothing in
+   * it and no obvious way back. */
+  await expect(panel).toHaveAttribute('data-size', 'normal');
 });
 
 test('the panel starts closed and the chip is the only way in', async ({ page }) => {
@@ -89,6 +149,7 @@ test('the panel starts closed and the chip is the only way in', async ({ page })
   await page.goto('/');
   const panel = page.locator(PANEL);
   await expect(panel).toHaveAttribute('data-open', 'false');
+  await expect(panel).toHaveAttribute('data-size', 'normal');
   await expect(panel).toBeHidden();
   await expect(page.locator('.concierge-launcher')).toHaveCount(0);
 });
@@ -109,9 +170,7 @@ test('a scripted reply renders, markdown emphasis included', async ({ page }) =>
   await expect(transcript).not.toContainText('**');
 });
 
-test('a grouped-results call renders one tile per piece, imaged, titled and linked', async ({
-  page,
-}) => {
+test('a grouped-results call renders one tile per piece, imaged and linked', async ({ page }) => {
   await stubAgentTurn(page, {
     text: 'Two directions worth a look.',
     hits: [RING, EARRINGS],
@@ -134,17 +193,20 @@ test('a grouped-results call renders one tile per piece, imaged, titled and link
   const ring = panel.locator(`${CARD}[href="/product/${RING.objectID}"]`);
   await expect(ring).toHaveCount(1);
   await expect(ring.locator('.jtv-chat-card-image img')).toHaveCount(1);
-  /* A catalogue tile is labelled with its price, not its name: JTV's names
-   * are catalogue descriptions that truncate mid-phrase at this width. The
-   * name rides the image's alt text so the link still identifies the piece to
-   * a reader who cannot see it. */
-  await expect(ring.locator('.jtv-chat-card-title')).toHaveText('$189.99');
+  /* The tile is the photograph and nothing else (2026-11-06, JTV's call): no
+   * price under it and no name. The piece is still named for anyone who
+   * cannot see the picture, through the alt text and the link's own label. */
+  await expect(ring.locator('.jtv-chat-card-title')).toHaveCount(0);
   await expect(ring.locator('img')).toHaveAttribute('alt', RING.Catalog_TitleDescription);
+  await expect(ring).toHaveAttribute('aria-label', RING.Catalog_TitleDescription);
 
   const earrings = panel.locator(`${CARD}[href="/product/${EARRINGS.objectID}"]`);
   await expect(earrings).toHaveCount(1);
   await expect(earrings.locator('.jtv-chat-card-image img')).toHaveCount(1);
-  await expect(earrings.locator('.jtv-chat-card-title')).toHaveText('$94.99');
+  await expect(earrings.locator('img')).toHaveAttribute(
+    'alt',
+    EARRINGS.Catalog_TitleDescription,
+  );
 });
 
 /* With the display tool's settings tightened the agent stopped writing any
@@ -204,7 +266,11 @@ test('a narrowing chip refines the shelf without a new turn', async ({ page }) =
  * protecting against survives: a price must never appear in the agent's
  * prose, where it reads as a quote and goes stale between the search and the
  * glance. */
-test('a price appears on the tiles and never in the reply', async ({ page }) => {
+/* No price reaches the shopper from the panel at all. It used to sit under
+ * each tile; JTV asked for the photograph alone (2026-11-06), and the reply
+ * was never allowed to quote a figure because the text goes stale against the
+ * record the moment the price moves. */
+test('no price appears on the tiles or in the reply', async ({ page }) => {
   await stubAgentTurn(page, {
     text: 'Both are in stock.',
     hits: [RING, EARRINGS],
@@ -214,9 +280,8 @@ test('a price appears on the tiles and never in the reply', async ({ page }) => 
   await ask(page, 'What do you have in stock?');
   await expect(panel.locator(CARD)).toHaveCount(2);
 
-  await expect(
-    panel.locator(`${CARD}[href="/product/${RING.objectID}"] .jtv-chat-card-title`),
-  ).toHaveText('$189.99');
+  const tiles = (await panel.locator(CARD).allInnerTexts()).join(' ');
+  expect(tiles).not.toMatch(/[$£€]\s?\d/);
 
   const prose = (await panel.locator('.ais-ChatMessage-text').allInnerTexts()).join(' ');
   expect(prose).not.toMatch(/[$£€]\s?\d/);
@@ -244,27 +309,40 @@ test('the empty panel offers curated starters that send on click', async ({ page
   await expect(starters).toHaveCount(0);
 });
 
-test('the new-conversation control clears the turn and keeps the panel open', async ({ page }) => {
+test('the new-search control clears the turn and keeps the panel open', async ({ page }) => {
   await stubAgentTurn(page, { text: 'A short reply.' });
   const panel = await openPanel(page);
 
   /* The control lives in the widget's header slot, not the shell: only the
-   * widget can reach `clearMessages`. It is dead until there is something to
-   * clear, which is the library's `canClear`. */
-  const newConversation = panel.getByRole('button', { name: 'Start a new conversation' });
-  await expect(newConversation).toBeDisabled();
+   * widget can reach `clearMessages`.
+   *
+   * It is never disabled, which is deliberate and was asserted the other way
+   * round until 2026-11-12. On an empty panel there is nothing to clear, but
+   * the click still deals a fresh set of starter questions, so the control
+   * always does something. Its accessible name is now the visible "New
+   * search", which also stops this locator matching the identically named
+   * button on the error card below. */
+  const newSearch = panel.getByRole('button', { name: 'New search' });
+  await expect(newSearch).toBeEnabled();
+
+  const starters = panel.locator('.jtv-chat-starter');
+  const firstDeal = await starters.allInnerTexts();
+  expect(firstDeal.length).toBeGreaterThan(0);
 
   const composer = panel.locator(COMPOSER);
   await composer.fill('hello');
   await composer.press('Enter');
   await expect(panel.locator('.ais-ChatMessage')).toHaveCount(2);
-  await expect(newConversation).toBeEnabled();
+  await expect(newSearch).toBeEnabled();
 
-  await newConversation.click();
+  await newSearch.click();
   await expect(panel.locator('.ais-ChatMessage')).toHaveCount(0);
   // Clearing is not closing: the shopper is still in the conversation.
   await expect(panel).toHaveAttribute('data-open', 'true');
-  await expect(newConversation).toBeDisabled();
+  await expect(newSearch).toBeEnabled();
+
+  // And on the now-empty panel it re-deals rather than sitting dead.
+  await expect(starters.first()).toBeVisible();
 });
 
 test('the display gate refuses a repeat and an unphotographed piece', async ({ page }) => {
