@@ -525,20 +525,6 @@
   text-align: left;
 }
 
-/* The empty state has to fill the scroll area before it can spread anything
- * down it: the widget's `-content` is a block child sized to its content
- * (423px of a 718px scroller, measured 2026-11-12), so `space-evenly` had
- * nothing to distribute and the five chips bunched under the heading. */
-.jtv-concierge .ais-ChatMessages-scroll:has(.jtv-chat-starters) {
-  display: flex;
-  flex-direction: column;
-}
-
-.jtv-concierge .ais-ChatMessages-content:has(.jtv-chat-starters) {
-  flex: 1;
-  min-height: 0;
-}
-
 .jtv-chat-starters-title {
   margin: 0 0 18px;
   font-size: 20px;
@@ -565,19 +551,18 @@
   margin-top: 2px;
 }
 
-/* Spread down whatever room the panel has: `flex: 1` takes the space the
- * heading and the sentence leave, and `space-evenly` distributes the five.
- * A short panel closes the gaps rather than scrolling. */
+/* One column under the sentence, at a fixed rhythm. It used to take the
+ * panel's full height with `space-evenly`, which on a tall panel pushed the
+ * five chips about 90px apart and read as five unrelated buttons rather than
+ * one set to choose from. */
 .jtv-chat-starters-list {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: space-evenly;
-  flex: 1;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   margin: 0;
-  padding: 24px 0 0;
+  padding: 22px 0 0;
   list-style: none;
 }
 
