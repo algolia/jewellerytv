@@ -435,6 +435,31 @@ test('the new-search control clears the turn and keeps the panel open', async ({
   await expect(starters.first()).toBeVisible();
 });
 
+/* Pressing it again on a panel that is already empty used to blank the
+ * screen. The widget's clear is a fade — it hides the empty state until a
+ * `transitionend` commits it — so on an empty panel it bought nothing and
+ * cost a blank for the length of the fade, and the press after that landed
+ * while the fade was still running, where it does nothing at all. The result
+ * was that every other press appeared dead. */
+test('new search keeps dealing on an already-empty panel', async ({ page }) => {
+  await stubAgentTurn(page, { text: 'Unused.' });
+  const panel = await openPanel(page);
+  const starters = panel.locator('.jtv-chat-starter');
+  await expect(starters).toHaveCount(5);
+
+  const seen: string[][] = [];
+  for (let press = 0; press < 4; press += 1) {
+    await panel.getByRole('button', { name: 'New search' }).click();
+    await expect(starters).toHaveCount(5);
+    seen.push(await starters.allInnerTexts());
+  }
+
+  /* Dealing, not merely surviving: four presses off a pool this size should
+   * not return the same five every time. */
+  const distinct = new Set(seen.map((set) => set.join('|')));
+  expect(distinct.size).toBeGreaterThan(1);
+});
+
 test('the display gate refuses a repeat and an unphotographed piece', async ({ page }) => {
   await stubAgentTurn(page, {
     text: 'A few to compare.',

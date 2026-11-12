@@ -62,7 +62,7 @@ function createHeader(
   onNewDeal?: () => void,
 ) {
   const minimized = size === 'minimized';
-  return function JtvChatHeader({ onClose, onClear, canClear: _canClear }: HeaderProps) {
+  return function JtvChatHeader({ onClose, onClear, canClear }: HeaderProps) {
     return (
       <div
         className="jtv-concierge-header"
@@ -84,7 +84,17 @@ function createHeader(
            * the same aloud as on screen, and the locator stops colliding with
            * the identically named button on the error card. */
           onClick={() => {
-            onClear?.();
+            /* Only clear when there is something to clear. The widget's clear
+             * is a fade: it sets `isClearing`, which hides the empty state
+             * until a `transitionend` commits it (`ChatMessages.js:480`). On
+             * an already-empty panel that bought nothing and cost a blank
+             * screen for the length of the fade, and a second click landed
+             * while `isClearing` was still true, where it is a no-op — so
+             * every other press appeared to do nothing at all.
+             *
+             * The button stays enabled either way: on an empty panel it
+             * still deals a fresh set, which is the whole point of it. */
+            if (canClear) onClear?.();
             onNewDeal?.();
           }}
         >
