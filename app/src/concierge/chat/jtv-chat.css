@@ -8,23 +8,33 @@
 
 /* The panel.
  *
- * A floating card bottom-right, at a height that reads as a conversation
- * beside the store rather than a second page of it. The shopper's one size
- * choice is to collapse it to its title bar and back; the full-height rail
- * that used to sit behind an expand control was dropped on 2026-11-12 in
- * favour of that pair.
+ * A floating card at the top right, its top edge flush with the bottom of
+ * the navigation bar (JTV, 2026-11-12). It sat bottom-right until then; the
+ * bottom-right corner belongs to the support widget on jtv.com, which is the
+ * same constraint that put the entry chip in the search bar rather than on a
+ * floating launcher.
+ *
+ * 186px is measured, not guessed: announcement 32 + header 104 + nav 50. It
+ * is the same offset `.mega-menu` uses in `website/styles.css`, so the two
+ * open flush with each other. The header is `position: relative` and scrolls
+ * away, so once the page moves this reads as a top margin rather than an
+ * alignment — a known consequence of anchoring here, not an oversight.
+ *
+ * The shopper's one size choice is to collapse it to its title bar and back.
  *
  * The header's colours are declared here, once, so the brand can change them
  * in a single block rather than hunting hexes through the file. */
 .jtv-concierge {
+  --jtv-concierge-top: 11.625rem;
+
   position: fixed;
   right: 1.5rem;
-  bottom: 1.5rem;
+  top: var(--jtv-concierge-top);
   z-index: 60;
   display: flex;
   flex-direction: column;
   width: min(37.5rem, calc(100vw - 3rem));
-  height: min(56.25rem, calc(100dvh - 7rem));
+  height: min(56.25rem, calc(100dvh - var(--jtv-concierge-top) - 1.5rem));
   background: #fff;
   border: 1px solid var(--line, #ddd);
   border-radius: 0.75rem;
@@ -37,6 +47,15 @@
   --jtv-concierge-header-fg: #fff;
   --jtv-concierge-pill-border: #ffffff59;
   --jtv-concierge-control-hover: #ffffff1f;
+}
+
+/* Between 768px and 800px the search bar wraps to its own row and the header
+ * grows, which `.mega-menu` tracks with its own 192px. The panel is not yet
+ * full-screen here, so it has to track it too. */
+@media (max-width: 50rem) {
+  .jtv-concierge {
+    --jtv-concierge-top: 12rem;
+  }
 }
 
 /* The resize grip: the 2026-11-04 restore brought back the corner control's
@@ -93,9 +112,9 @@
 
 /* Collapsed to its title bar.
  *
- * The bar stays where the panel was — undragged that is the bottom-right
- * corner, which `bottom` already anchors; dragged, the shell's inline `top`
- * holds it under the spot the shopper grabbed. Only `height` is given up.
+ * The bar stays where the panel's top edge was — undragged that is under the
+ * navigation bar, which `top` already anchors; dragged, the shell's inline
+ * `top` holds it where the shopper left it. Only `height` is given up.
  *
  * Deliberately carries no `display`: it has the same specificity as the
  * `[hidden]` rule below and would otherwise be able to reveal a closed panel

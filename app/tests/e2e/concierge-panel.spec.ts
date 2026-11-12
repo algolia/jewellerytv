@@ -72,9 +72,14 @@ test('the panel collapses to its title bar and stays docked there', async ({ pag
 
   const bar = (await panel.boundingBox())!;
   expect(bar.height).toBeLessThan(80);
-  /* "In place" is the claim being tested: the bottom edge must not move, so
-   * the bar is where the shopper's eye and cursor already are. */
-  expect(Math.round(bar.y + bar.height)).toBe(Math.round(card.y + card.height));
+  /* "In place" is the claim being tested, and which edge carries it depends
+   * on which edge the panel hangs from. On the desktop card that is the top,
+   * anchored under the navigation bar. Full-screen on a phone it is the
+   * bottom: a bar pinned up there would cover the site header, and down
+   * there it is under the thumb. */
+  const wide = (page.viewportSize()?.width ?? 0) > 768;
+  if (wide) expect(Math.round(bar.y)).toBe(Math.round(card.y));
+  else expect(Math.round(bar.y + bar.height)).toBe(Math.round(card.y + card.height));
   await expect(page.locator(COMPOSER)).toBeHidden();
 
   /* The whole bar is a target, not just the chevron. */
