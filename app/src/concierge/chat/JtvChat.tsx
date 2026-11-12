@@ -11,7 +11,7 @@ import { ChatActions } from './chatActions';
 import { ChatLoader } from './chatLoader';
 import { keepLoaderUp } from './loaderVisibility';
 import { linkIntent } from './linkTarget';
-import type { PanelSize } from '../panelSize';
+import type { PanelSize } from '../panelState';
 import { ProductCard, type JtvHit } from './ProductCard';
 import { StarterChips } from './StarterChips';
 import { createGatedTools } from './gatedGroupedResults';

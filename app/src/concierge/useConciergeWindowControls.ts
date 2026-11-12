@@ -6,7 +6,7 @@ import {
   type PointerEvent,
   type KeyboardEvent,
 } from 'react';
-import type { PanelSize } from './panelSize';
+import type { PanelSize } from './panelState';
 import {
   clampWindowRect,
   defaultWindowRect,

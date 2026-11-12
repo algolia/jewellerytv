@@ -102,25 +102,42 @@ test('collapsing keeps the conversation, and the chevrons bound at each end', as
   await expect(page.locator(TRANSCRIPT)).toContainText('opal');
 });
 
-/* Closing the tab is not the same as wanting the panel back at full size, so
- * the choice outlives a reload. The conversation does not — the chat instance
- * is a `useMemo` — which is exactly why `open` is not stored with it. */
-test('the collapsed choice survives a reload, and the panel does not reopen itself', async ({
-  page,
-}) => {
+/* A refresh is not a request to undo what the shopper chose. Both the open
+ * panel and the collapsed bar come back, so nobody has to hunt for the Ask
+ * JTV chip again after every reload.
+ *
+ * The conversation does not come back — the chat instance is a `useMemo` —
+ * so a restored panel is on its welcome screen. That is the ordinary empty
+ * state and nothing claims otherwise, which is what makes reopening safe. */
+test('an open panel survives a reload, collapsed or not', async ({ page }) => {
   const panel = await openPanel(page);
+  await page.reload();
+  await expect(page.locator(PANEL)).toHaveAttribute('data-open', 'true');
+  await expect(page.locator(COMPOSER)).toBeVisible();
+
   await page.getByRole('button', { name: 'Minimize the panel to its title bar' }).click();
   await expect(panel).toHaveAttribute('data-size', 'minimized');
 
   await page.reload();
   const reloaded = page.locator(PANEL);
-  await expect(reloaded).toHaveAttribute('data-open', 'false');
+  await expect(reloaded).toHaveAttribute('data-open', 'true');
   await expect(reloaded).toHaveAttribute('data-size', 'minimized');
 
-  /* A question handed to a collapsed bar has to land on a composer. */
+  /* A question handed to a collapsed bar still has to land on a composer. */
   await page.getByRole('button', { name: 'Ask JTV', exact: true }).click();
   await expect(reloaded).toHaveAttribute('data-size', 'normal');
   await expect(page.locator(COMPOSER)).toBeVisible();
+});
+
+/* Closing is a decision too, and the one the refresh must not override. */
+test('a closed panel stays closed across a reload', async ({ page }) => {
+  const panel = await openPanel(page);
+  await page.getByRole('button', { name: 'Close the jewelry concierge' }).click();
+  await expect(panel).toHaveAttribute('data-open', 'false');
+
+  await page.reload();
+  await expect(page.locator(PANEL)).toHaveAttribute('data-open', 'false');
+  await expect(page.locator(PANEL)).toBeHidden();
 });
 
 /* Closing is not clearing. `storefront.spec.ts` proves reopening fires no

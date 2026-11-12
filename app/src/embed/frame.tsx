@@ -79,9 +79,10 @@ function Frame() {
         context={() => ({ route: 'embed' })}
         onClose={() => post({ type: 'closed' }, hostOrigin.current ?? '*')}
         /* The frame shares an origin with the storefront, so a remembered
-         * size would be one key fought over by two mounts, and the host owns
-         * this frame's chrome anyway. Every embed starts expanded. */
-        persistSize={false}
+         * panel would be one key fought over by two mounts, and the host owns
+         * this frame's chrome anyway. Every embed starts closed and
+         * expanded. */
+        persistState={false}
       />
     </div>
   );
