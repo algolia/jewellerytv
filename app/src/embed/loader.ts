@@ -51,7 +51,10 @@ function injectStyle(): void {
     '.jtv-ask-chip:hover{background:#dceef6}',
     '.jtv-ask-chip--floating{position:fixed;left:0;top:45%;z-index:2147483000;border-radius:0 18px 18px 0;',
     'min-height:38px;padding:0 14px 0 10px}',
-    '.jtv-embed-frame{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);z-index:2147483000;',
+    /* `height` is explicit because an iframe is a replaced element: with
+       `height:auto` the spec resolves it to the intrinsic 150px and ignores
+       `bottom`, so top/bottom alone left the panel a clipped sliver. */
+    '.jtv-embed-frame{position:fixed;top:0;right:0;bottom:0;height:100dvh;width:min(520px,100%);z-index:2147483000;',
     'border:0;box-shadow:-8px 0 24px rgba(0,0,0,.18);background:#fff}',
     '@media(max-width:640px){.jtv-embed-frame{width:100%;height:100dvh}}',
   ].join('');

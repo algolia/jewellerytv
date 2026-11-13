@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Fake host page — Ask JTV embed</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; color: #222; }
+      .bar { background: #123; color: #fff; padding: 14px 24px; font-weight: 700; }
+      .nav { background: #f1f1f1; padding: 12px 24px; display: flex; gap: 24px; font-size: 14px; }
+      form { display: flex; align-items: center; gap: 8px; max-width: 520px; margin: 24px auto; }
+      input { flex: 1; padding: 10px 16px; border: 1px solid #aaa; border-radius: 22px; }
+      button { background: #123; border: 0; color: #fff; border-radius: 22px; padding: 10px 18px; }
+      main { max-width: 900px; margin: 0 auto; padding: 0 24px 600px; }
+      .tile { height: 180px; background: #eee; margin: 12px 0; border-radius: 8px; }
+    </style>
+  </head>
+  <body>
+    <!-- Deliberately NOT the JTV storefront. This is a stand-in for any page
+         we do not own, so the only thing connecting it to the panel is the
+         one script tag at the bottom. -->
+    <div class="bar">Some other shop</div>
+    <div class="nav"><span>Shop</span><span>New</span><span>Sale</span></div>
+    <form id="siteSearchForm" action="/search" method="get">
+      <input type="search" name="q" placeholder="Search" />
+      <button type="submit">SEARCH</button>
+    </form>
+    <main>
+      <p>Scroll me. The panel is in an iframe pinned to the right edge.</p>
+      <div class="tile"></div><div class="tile"></div><div class="tile"></div>
+      <div class="tile"></div><div class="tile"></div><div class="tile"></div>
+    </main>
+
+    <script
+      src="http://localhost:5173/concierge/loader.js"
+      data-jtv-target="#siteSearchForm"
+      data-jtv-pdp-template="https://www.jtv.com/product/{id}"
+      data-jtv-panel-url="http://localhost:5173/src/embed/frame.html"
+      defer
+    ></script>
+  </body>
+</html>
