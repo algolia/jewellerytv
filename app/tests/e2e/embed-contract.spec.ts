@@ -106,6 +106,33 @@ test.describe('Ask JTV embed contract', () => {
     await expect(panel.locator('.ais-ChatMessage')).toHaveCount(0);
   });
 
+  /* Geometry had no coverage, and that is how the frame shipped at 150px —
+   * the browser's intrinsic iframe height — with the panel crushed into a
+   * sliver. Every other assertion here passes on an unusable panel. */
+  test('the frame fills the viewport and shrinks to the bar when collapsed', async ({ page }) => {
+    await page.goto(HOST);
+    await page.locator('#siteSearchForm .jtv-ask-chip').click();
+    const frame = page.locator('.jtv-embed-frame');
+    const viewport = page.viewportSize()!;
+    await expect
+      .poll(async () => Math.round((await frame.boundingBox())!.height))
+      .toBe(viewport.height);
+
+    /* Collapsed, the frame has to follow. Left full height it would keep a
+     * blank column over the host page that still swallows clicks. */
+    const panel = page.frameLocator('.jtv-embed-frame');
+    await panel.getByRole('button', { name: 'Minimize the panel to its title bar' }).click();
+    await expect
+      .poll(async () => Math.round((await frame.boundingBox())!.height))
+      .toBeLessThan(100);
+    await expect(frame).toHaveCSS('top', '0px');
+
+    await panel.getByRole('button', { name: 'Restore the panel' }).click();
+    await expect
+      .poll(async () => Math.round((await frame.boundingBox())!.height))
+      .toBe(viewport.height);
+  });
+
   test('a product click in the panel resolves the PDP template and navigates the host', async ({
     page,
   }) => {

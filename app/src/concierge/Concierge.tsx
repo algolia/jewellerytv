@@ -48,6 +48,11 @@ export const Concierge = forwardRef<
      * opts out: it shares an origin with the storefront, so two mounts would
      * fight over one key, and the host owns the frame's chrome. */
     persistState?: boolean;
+    /** Told whenever the panel changes size, so a host that owns the frame
+     * around it can follow. The embed resizes its iframe from this: without
+     * it a collapsed panel leaves a full-height blank column over the host
+     * page, still swallowing clicks. */
+    onSizeChange?: (size: PanelSize) => void;
     /** CSS selector for the page furniture the panel hangs from, usually the
      * navigation bar. Deliberately has no default: the panel is mounted in
      * the embed frame as well, where that element does not exist, and a
@@ -55,7 +60,7 @@ export const Concierge = forwardRef<
      * to markup it does not own. Without one the panel keeps a gutter. */
     anchorSelector?: string;
   }
->(function Concierge({ context, onClose, onNavigate, persistState = true, anchorSelector }, ref) {
+>(function Concierge({ context, onClose, onNavigate, persistState = true, anchorSelector, onSizeChange }, ref) {
   /* Read once, in the initialiser, so the first render already has the shape
    * the shopper left behind and there is nothing to flash. */
   const [restored] = useState(() =>
@@ -120,6 +125,11 @@ export const Concierge = forwardRef<
     if (persistState && typeof window !== 'undefined')
       writePanelState(window.sessionStorage, { open, size });
   }, [persistState, open, size]);
+  /* Fires on mount too, so a host starts in step rather than waiting for the
+   * shopper's first collapse to learn the panel's shape. */
+  useEffect(() => {
+    onSizeChange?.(size);
+  }, [onSizeChange, size]);
   const restore = useCallback(() => setSize('normal'), []);
   const minimize = useCallback(() => setSize('minimized'), []);
   /* Stable identities matter here: the header is built by a factory that the

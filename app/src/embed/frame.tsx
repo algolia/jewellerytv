@@ -78,6 +78,24 @@ function Frame() {
         ref={handle}
         context={() => ({ route: 'embed' })}
         onClose={() => post({ type: 'closed' }, hostOrigin.current ?? '*')}
+        /* The iframe is the panel's window, and only the host can resize it.
+         * Collapsed, the panel is a 54px bar inside a full-height frame, so
+         * without this the host page keeps a blank column over it that still
+         * swallows clicks. Measured after layout rather than assumed, so the
+         * bar's real height travels. */
+        onSizeChange={(size) => {
+          requestAnimationFrame(() => {
+            const panel = document.querySelector('.jtv-concierge');
+            post(
+              {
+                type: 'resize',
+                minimized: size === 'minimized',
+                height: Math.ceil(panel?.getBoundingClientRect().height ?? 0),
+              },
+              hostOrigin.current ?? '*',
+            );
+          });
+        }}
         /* The frame shares an origin with the storefront, so a remembered
          * panel would be one key fought over by two mounts, and the host owns
          * this frame's chrome anyway. Every embed starts closed and

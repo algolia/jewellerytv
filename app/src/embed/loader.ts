@@ -20,7 +20,14 @@ type LoaderConfig = {
   origin: string;
 };
 
-type PanelMessage = { source?: string; type?: string; productId?: string; text?: string };
+type PanelMessage = {
+  source?: string;
+  type?: string;
+  productId?: string;
+  text?: string;
+  minimized?: boolean;
+  height?: number;
+};
 
 const MESSAGE_SOURCE = 'jtv-concierge';
 const PRODUCT_ID_PATTERN = /^[A-Za-z0-9_.-]{1,64}$/;
@@ -120,6 +127,23 @@ function setup(): void {
     if (data.type === 'ready') {
       ready = true;
       while (pending.length) post(pending.shift() as PanelMessage);
+      return;
+    }
+    if (data.type === 'resize') {
+      /* The panel collapsed or reopened. Collapsed, the frame shrinks to the
+       * bar so the host page underneath is usable again; otherwise the inline
+       * height is dropped and the stylesheet's full height applies. `bottom`
+       * is released either way: with an explicit height on a replaced element
+       * the two are over-constrained. */
+      if (!frame) return;
+      const height = Number(data.height);
+      if (data.minimized && Number.isFinite(height) && height > 0 && height < 400) {
+        frame.style.height = `${Math.round(height)}px`;
+        frame.style.bottom = 'auto';
+      } else {
+        frame.style.height = '';
+        frame.style.bottom = '';
+      }
       return;
     }
     if (data.type === 'product-click') {
