@@ -8,23 +8,34 @@
 
 /* The panel.
  *
- * A floating card bottom-right, at a height that reads as a conversation
- * beside the store rather than a second page of it. The shopper's one size
- * choice is to collapse it to its title bar and back; the full-height rail
- * that used to sit behind an expand control was dropped on 2026-11-12 in
- * favour of that pair.
+ * A floating card at the top right, its top edge flush with the bottom of
+ * the navigation bar (JTV, 2026-11-12). It sat bottom-right until then; the
+ * bottom-right corner belongs to the support widget on jtv.com, which is the
+ * same constraint that put the entry chip in the search bar rather than on a
+ * floating launcher.
+ *
+ * `--jtv-concierge-top` is written from JavaScript on every scroll frame
+ * (`concierge/panelAnchor.ts`): it is the live bottom edge of the navigation
+ * bar, clamped to a gutter. The 186px here is only the fallback for the
+ * first paint and for a document with no anchor to measure. Hardcoded
+ * breakpoint variants used to live below; they were right only at the top of
+ * the page, and two of them had drifted from where the nav actually ends.
+ *
+ * The shopper's one size choice is to collapse it to its title bar and back.
  *
  * The header's colours are declared here, once, so the brand can change them
  * in a single block rather than hunting hexes through the file. */
 .jtv-concierge {
+  --jtv-concierge-top: 11.625rem;
+
   position: fixed;
   right: 1.5rem;
-  bottom: 1.5rem;
+  top: var(--jtv-concierge-top);
   z-index: 60;
   display: flex;
   flex-direction: column;
   width: min(37.5rem, calc(100vw - 3rem));
-  height: min(56.25rem, calc(100dvh - 7rem));
+  height: min(56.25rem, calc(100dvh - var(--jtv-concierge-top) - 1.5rem));
   background: #fff;
   border: 1px solid var(--line, #ddd);
   border-radius: 0.75rem;
@@ -93,9 +104,9 @@
 
 /* Collapsed to its title bar.
  *
- * The bar stays where the panel was — undragged that is the bottom-right
- * corner, which `bottom` already anchors; dragged, the shell's inline `top`
- * holds it under the spot the shopper grabbed. Only `height` is given up.
+ * The bar stays where the panel's top edge was — undragged that is under the
+ * navigation bar, which `top` already anchors; dragged, the shell's inline
+ * `top` holds it where the shopper left it. Only `height` is given up.
  *
  * Deliberately carries no `display`: it has the same specificity as the
  * `[hidden]` rule below and would otherwise be able to reveal a closed panel
@@ -500,9 +511,15 @@
     border-radius: 0;
   }
 
+  /* Collapsed, the bar hangs under the navigation bar here too rather than
+   * dropping to the foot of the screen: the shopper's eye is already at the
+   * top, and a bar at the bottom reads as a separate thing from the panel it
+   * came out of. Once the nav has scrolled away the tracker clamps this to
+   * zero rather than to a gutter, because the full-screen panel is edge to
+   * edge and a bar floating below the top would read as another component. */
   .jtv-concierge--minimized {
-    top: auto;
-    bottom: 0;
+    top: var(--jtv-concierge-top);
+    bottom: auto;
     height: auto;
   }
 }

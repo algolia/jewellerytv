@@ -72,15 +72,88 @@ test('the panel collapses to its title bar and stays docked there', async ({ pag
 
   const bar = (await panel.boundingBox())!;
   expect(bar.height).toBeLessThan(80);
-  /* "In place" is the claim being tested: the bottom edge must not move, so
-   * the bar is where the shopper's eye and cursor already are. */
-  expect(Math.round(bar.y + bar.height)).toBe(Math.round(card.y + card.height));
+  /* The bar hangs under the navigation bar at every width. On the desktop
+   * card that is also where the panel's own top edge was, so nothing moves;
+   * full-screen on a phone the panel starts at the top of the viewport, so
+   * the bar drops to the nav rather than staying put. Either way it is the
+   * nav that decides, which is what this asserts. */
+  const navBottom = await page
+    .locator('.main-nav')
+    .evaluate((el) => Math.round(el.getBoundingClientRect().bottom));
+  expect(Math.round(bar.y)).toBe(navBottom);
+  const wide = (page.viewportSize()?.width ?? 0) > 768;
+  if (wide) expect(Math.round(bar.y)).toBe(Math.round(card.y));
   await expect(page.locator(COMPOSER)).toBeHidden();
 
   /* The whole bar is a target, not just the chevron. */
   await panel.locator('.jtv-concierge-header').click();
   await expect(panel).toHaveAttribute('data-size', 'normal');
   await expect(page.locator(COMPOSER)).toBeVisible();
+});
+
+/* The panel hangs from the navigation bar, and the nav moves. Measuring it
+ * live rather than hardcoding an offset is what lets one rule cover a sticky
+ * header (jtv.com desktop: the bottom never moves, so the panel never
+ * moves), a header that scrolls away (jtv.com mobile and this demo: the
+ * panel rides up with it and stops at the gutter), and no header at all (the
+ * embed frame). */
+test('the panel rides up with the nav and stops at the gutter', async ({ page }) => {
+  const panel = await openPanel(page);
+  const wide = (page.viewportSize()?.width ?? 0) > 768;
+  /* Full-screen on a phone, the expanded panel is `inset: 0` and ignores the
+   * offset altogether; there it is the collapsed bar that hangs from the
+   * nav, so that is what gets tested. */
+  if (!wide) {
+    await page.getByRole('button', { name: 'Minimize the panel to its title bar' }).click();
+    await expect(panel).toHaveAttribute('data-size', 'minimized');
+  }
+  const navBottom = () =>
+    page
+      .locator('.main-nav')
+      .evaluate((el) => Math.round(el.getBoundingClientRect().bottom));
+  const panelTop = async () => Math.round((await panel.boundingBox())!.y);
+
+  // At rest it is flush under the nav.
+  expect(await panelTop()).toBe(await navBottom());
+
+  // Part way: the demo's header is not sticky, so the nav is still on screen
+  // and the panel is still touching it.
+  await page.evaluate(() => window.scrollTo(0, 80));
+  await expect.poll(panelTop).toBe(await navBottom());
+
+  /* Well past the header. The gutter is 24px on the desktop card and nothing
+   * on the full-screen mobile panel, which is edge to edge. */
+  const gutter = wide ? 24 : 0;
+  await page.evaluate(() => window.scrollTo(0, 1200));
+  await expect.poll(panelTop).toBe(gutter);
+  expect(await navBottom()).toBeLessThan(gutter);
+
+  // And back: it returns to the nav rather than staying pinned.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(panelTop).toBe(await navBottom());
+});
+
+/* Once the shopper has moved the panel it is theirs, and the nav stops
+ * having an opinion about where it lives. */
+test('a panel the shopper has dragged ignores the nav', async ({ page }) => {
+  const panel = await openPanel(page);
+  if ((page.viewportSize()?.width ?? 0) <= 768) return; // no dragging on mobile
+
+  const header = panel.locator('.jtv-concierge-header');
+  const start = (await header.boundingBox())!;
+  await page.mouse.move(start.x + 40, start.y + start.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(start.x - 120, start.y + 160, { steps: 8 });
+  await page.mouse.up();
+
+  const dragged = Math.round((await panel.boundingBox())!.y);
+  expect(dragged).not.toBe(
+    await page.locator('.main-nav').evaluate((el) => Math.round(el.getBoundingClientRect().bottom)),
+  );
+
+  await page.evaluate(() => window.scrollTo(0, 1200));
+  await page.waitForTimeout(100);
+  expect(Math.round((await panel.boundingBox())!.y)).toBe(dragged);
 });
 
 test('collapsing keeps the conversation, and the chevrons bound at each end', async ({ page }) => {
@@ -333,18 +406,17 @@ test('the new-search control clears the turn and keeps the panel open', async ({
   /* The control lives in the widget's header slot, not the shell: only the
    * widget can reach `clearMessages`.
    *
-   * It is never disabled, which is deliberate and was asserted the other way
-   * round until 2026-11-12. On an empty panel there is nothing to clear, but
-   * the click still deals a fresh set of starter questions, so the control
-   * always does something. Its accessible name is now the visible "New
-   * search", which also stops this locator matching the identically named
-   * button on the error card below. */
+   * It is dead until there is something to clear. It stayed enabled for a
+   * while, back when pressing it also dealt a fresh set of questions; the
+   * five are fixed now, so on an empty panel there is nothing it can do and
+   * it says so. Its accessible name is the visible "New search", which also
+   * stops this locator matching the identically named button on the error
+   * card below. */
   const newSearch = panel.getByRole('button', { name: 'New search' });
-  await expect(newSearch).toBeEnabled();
+  await expect(newSearch).toBeDisabled();
 
   const starters = panel.locator('.jtv-chat-starter');
-  const firstDeal = await starters.allInnerTexts();
-  expect(firstDeal.length).toBeGreaterThan(0);
+  await expect(starters).toHaveCount(5);
 
   const composer = panel.locator(COMPOSER);
   await composer.fill('hello');
@@ -356,9 +428,24 @@ test('the new-search control clears the turn and keeps the panel open', async ({
   await expect(panel.locator('.ais-ChatMessage')).toHaveCount(0);
   // Clearing is not closing: the shopper is still in the conversation.
   await expect(panel).toHaveAttribute('data-open', 'true');
-  await expect(newSearch).toBeEnabled();
+  // The welcome screen comes back, and the control goes dead again with it.
+  await expect(starters).toHaveCount(5);
+  await expect(newSearch).toBeDisabled();
+});
 
-  // And on the now-empty panel it re-deals rather than sitting dead.
+/* Pressing it on an empty panel used to blank the screen: the widget's clear
+ * is a fade, and `isClearing` gates the empty state off until a
+ * `transitionend` commits it, so with nothing to clear the chips vanished
+ * and came back for no reason — and the press after that landed mid-fade,
+ * where it does nothing, so every other press looked dead. The control is
+ * disabled there now, which is both honest and unreachable. */
+test('new search cannot be pressed when there is nothing to clear', async ({ page }) => {
+  await stubAgentTurn(page, { text: 'Unused.' });
+  const panel = await openPanel(page);
+  const starters = panel.locator('.jtv-chat-starter');
+  await expect(starters).toHaveCount(5);
+  await expect(panel.getByRole('button', { name: 'New search' })).toBeDisabled();
+  // The welcome screen is still there, not faded out behind a dead control.
   await expect(starters.first()).toBeVisible();
 });
 

@@ -1,6 +1,8 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { ChatHandle } from 'react-instantsearch';
 import { JtvChat } from './chat/JtvChat';
+import { usePanelAnchorTop } from './panelAnchor';
 import { readPanelState, writePanelState, type PanelSize } from './panelState';
 import { useConciergeWindowControls } from './useConciergeWindowControls';
 import { trackConciergeVisibility } from '../website/analytics';
@@ -46,8 +48,14 @@ export const Concierge = forwardRef<
      * opts out: it shares an origin with the storefront, so two mounts would
      * fight over one key, and the host owns the frame's chrome. */
     persistState?: boolean;
+    /** CSS selector for the page furniture the panel hangs from, usually the
+     * navigation bar. Deliberately has no default: the panel is mounted in
+     * the embed frame as well, where that element does not exist, and a
+     * component that reaches for the storefront's DOM on its own is coupled
+     * to markup it does not own. Without one the panel keeps a gutter. */
+    anchorSelector?: string;
   }
->(function Concierge({ context, onClose, onNavigate, persistState = true }, ref) {
+>(function Concierge({ context, onClose, onNavigate, persistState = true, anchorSelector }, ref) {
   /* Read once, in the initialiser, so the first render already has the shape
    * the shopper left behind and there is nothing to flash. */
   const [restored] = useState(() =>
@@ -128,11 +136,25 @@ export const Concierge = forwardRef<
    * fluid anywhere on the screen (restored 2026-11-04 from the pre-merge
    * implementation; presentation only, nothing about the agent changes). */
   const controls = useConciergeWindowControls(size);
+  /* Once the shopper drags the panel it is theirs: the inline rect sets
+   * `top` directly, which beats the custom property, so there is nothing for
+   * the tracker to do but stop measuring. */
+  const anchored = usePanelAnchorTop(anchorSelector, !controls.style);
   return (
     <div
       ref={controls.panelRef}
       className={size === 'minimized' ? 'jtv-concierge jtv-concierge--minimized' : 'jtv-concierge'}
-      style={controls.style}
+      /* The measured offset rides in as a custom property rather than as
+       * `top`, so the stylesheet keeps deciding what reads it — the panel's
+       * own top edge, and the height derived from it. */
+      style={
+        anchored === null
+          ? controls.style
+          : ({
+              ...controls.style,
+              '--jtv-concierge-top': `${anchored}px`,
+            } as unknown as CSSProperties)
+      }
       data-open={open}
       data-size={size}
       hidden={!open}
