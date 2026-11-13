@@ -58,12 +58,20 @@ function injectStyle(): void {
     '.jtv-ask-chip:hover{background:#dceef6}',
     '.jtv-ask-chip--floating{position:fixed;left:0;top:45%;z-index:2147483000;border-radius:0 18px 18px 0;',
     'min-height:38px;padding:0 14px 0 10px}',
-    /* `height` is explicit because an iframe is a replaced element: with
+    /* The frame is the panel's window, so the frame carries the card: a
+       floating rounded box in the top right rather than a full-height rail
+       pinned to the edge. The panel inside sees a viewport under its own
+       768px breakpoint and renders edge to edge, which is what we want —
+       the chrome belongs to the thing that can actually be sized.
+
+       `height` is explicit because an iframe is a replaced element: with
        `height:auto` the spec resolves it to the intrinsic 150px and ignores
-       `bottom`, so top/bottom alone left the panel a clipped sliver. */
-    '.jtv-embed-frame{position:fixed;top:0;right:0;bottom:0;height:100dvh;width:min(520px,100%);z-index:2147483000;',
-    'border:0;box-shadow:-8px 0 24px rgba(0,0,0,.18);background:#fff}',
-    '@media(max-width:640px){.jtv-embed-frame{width:100%;height:100dvh}}',
+       `bottom`, which is how this shipped as a 150px sliver. */
+    '.jtv-embed-frame{position:fixed;top:24px;right:24px;z-index:2147483000;',
+    'width:min(504px,calc(100% - 32px));height:min(804px,calc(100dvh - 48px));',
+    'border:0;border-radius:12px;box-shadow:0 12px 40px rgba(9,9,11,.22);background:#fff}',
+    /* A card on a phone is just a smaller page. Full bleed below the fold. */
+    '@media(max-width:640px){.jtv-embed-frame{inset:0;width:100%;height:100dvh;border-radius:0}}',
   ].join('');
   document.head.appendChild(style);
 }

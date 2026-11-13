@@ -108,15 +108,27 @@ test.describe('Ask JTV embed contract', () => {
 
   /* Geometry had no coverage, and that is how the frame shipped at 150px —
    * the browser's intrinsic iframe height — with the panel crushed into a
-   * sliver. Every other assertion here passes on an unusable panel. */
-  test('the frame fills the viewport and shrinks to the bar when collapsed', async ({ page }) => {
+   * sliver. Every other assertion here passes on an unusable panel.
+   *
+   * The frame is the panel's window, so the frame carries the card: a
+   * floating box with a gutter on a desktop, full bleed on a phone, where a
+   * card is just a smaller page. */
+  test('the frame is a floating card and shrinks to the bar when collapsed', async ({ page }) => {
     await page.goto(HOST);
     await page.locator('#siteSearchForm .jtv-ask-chip').click();
     const frame = page.locator('.jtv-embed-frame');
     const viewport = page.viewportSize()!;
+    const wide = viewport.width > 640;
+    const expectedHeight = wide ? Math.min(804, viewport.height - 48) : viewport.height;
     await expect
       .poll(async () => Math.round((await frame.boundingBox())!.height))
-      .toBe(viewport.height);
+      .toBe(expectedHeight);
+    const box = (await frame.boundingBox())!;
+    if (wide) {
+      // A gutter on every side it touches, not flush to the edge.
+      expect(Math.round(box.y)).toBe(24);
+      expect(Math.round(viewport.width - (box.x + box.width))).toBe(24);
+    }
 
     /* Collapsed, the frame has to follow. Left full height it would keep a
      * blank column over the host page that still swallows clicks. */
@@ -125,12 +137,11 @@ test.describe('Ask JTV embed contract', () => {
     await expect
       .poll(async () => Math.round((await frame.boundingBox())!.height))
       .toBeLessThan(100);
-    await expect(frame).toHaveCSS('top', '0px');
 
     await panel.getByRole('button', { name: 'Restore the panel' }).click();
     await expect
       .poll(async () => Math.round((await frame.boundingBox())!.height))
-      .toBe(viewport.height);
+      .toBe(expectedHeight);
   });
 
   test('a product click in the panel resolves the PDP template and navigates the host', async ({
