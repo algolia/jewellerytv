@@ -39,61 +39,27 @@ function hasImage(record: Record<string, unknown> | undefined): boolean {
   return typeof record.imageLarge === 'string' || typeof record.image === 'string';
 }
 
-/* A shelf is four across, so a group of four fills a row and a group of eight
- * fills two. The shape is the shopper's contract (Arijit, 2026-11-04, ending
- * the 3-vs-4 lottery): every group is complete rows of four. Groups too small
- * to fill a row fold into a neighbour; a remainder beyond a full row is
- * dropped and logged; a shelf too thin to fill one row renders as it is
- * rather than emptying. */
-const COLUMNS = 4;
+/* The shelf is a four-column grid, so a group whose size is not a multiple
+ * of four ends on a partial row.
+ *
+ * It used to be reshaped so that could not happen: groups under four were
+ * merged into a neighbour and every group was trimmed back to its last
+ * complete row. Removed 2026-11-13. The cost was out of proportion to a
+ * ragged last row, which the storefront's own product grid — also four
+ * columns — has on every filtered category:
+ *
+ *   - merging destroyed the grouping the display tool exists to express.
+ *     Three shelves of two or three became one shelf of eight.
+ *   - a trailing merge inherited the previous group's heading, so on-air
+ *     pieces were shown under another show's name and date.
+ *   - trimming dropped pieces outright. A group of seven rendered four, and
+ *     the agent had found all seven worth showing.
+ *
+ * Groups now render as the agent sent them. The eligibility rules below —
+ * no repeats, no unphotographed pieces — are the gate's real work. */
 
-/* Trims a group down to its last complete row. Bounded by construction: it
- * can only remove the one to three pieces that would sit in a partial row,
- * and every removal is logged like any other refusal. */
-function trimToCompleteRows(results: GroupResult[]): {
-  results: GroupResult[];
-  dropped: GroupResult[];
-} {
-  const fullRows = Math.floor(results.length / COLUMNS) * COLUMNS;
-  if (fullRows === results.length) return { results, dropped: [] };
-  return { results: results.slice(0, fullRows), dropped: results.slice(fullRows) };
-}
-
-/* A group too small to fill a row keeps its pieces but not its own row:
- * a trailing one folds back into the group before it, a leading one folds
- * forward into the group after it. A lone small group has nowhere to fold, so
- * it stays — a thin shelf beats an empty one. */
-function foldSmallGroups(groups: Group[]): { folded: Group[]; foldedAway: GroupResult[] } {
-  const folded: Group[] = [];
-  const foldedAway: GroupResult[] = [];
-  for (const group of groups) {
-    const results = Array.isArray(group.results) ? group.results : [];
-    const previous = folded[folded.length - 1];
-    if (results.length < COLUMNS && previous) {
-      previous.results = [...(previous.results ?? []), ...results];
-      continue;
-    }
-    if (results.length < COLUMNS && groups.length > 1) {
-      /* Leading small group: merge forward. The next group keeps its heading;
-       * this one's heading goes, because a heading over pieces that moved
-       * claims a direction the shelf no longer shows. */
-      const next = groups[groups.indexOf(group) + 1];
-      if (next && Array.isArray(next.results)) {
-        next.results = [...results, ...next.results];
-        continue;
-      }
-      /* No next group after all (malformed tail): keep the pieces. */
-      folded.push({ ...group, title: undefined, results });
-      continue;
-    }
-    folded.push({ ...group, results });
-  }
-  return { folded, foldedAway };
-}
-
-/** Returns the input with ineligible pieces dropped, small groups folded and
- * every group ending on a complete row, and, usually, the tool's own intro
- * removed.
+/** Returns the input with ineligible pieces dropped and, usually, the tool's
+ * own intro removed. Groups themselves are left as the agent grouped them.
  *
  * The intro is normally a second voice: the model writes its reply in the
  * message and then says the same thing again above the shelves (measured
@@ -143,29 +109,12 @@ export function gateGroups(
     kept.push({ ...group, why: undefined, results: items });
   }
 
-  const { folded, foldedAway } = foldSmallGroups(kept);
-  for (const piece of foldedAway) {
-    if (typeof piece.objectID === 'string') dropped.push(`${piece.objectID}:folded`);
-  }
-
-  /* Complete rows, except where the shelf is too thin to fill one: a lone
-   * group under four pieces renders as it is rather than trimming to zero. */
-  const shaped =
-    folded.length === 1 && (folded[0].results?.length ?? 0) < COLUMNS
-      ? folded
-      : folded.map((group) => {
-          const { results, dropped: trimmed } = trimToCompleteRows(group.results ?? []);
-          for (const piece of trimmed) {
-            if (typeof piece.objectID === 'string') dropped.push(`${piece.objectID}:orphan_row`);
-          }
-          return { ...group, results };
-        });
 
   return {
     input: {
       ...input,
       intro: keepIntro ? input.intro : undefined,
-      groups: shaped.filter((g) => (g.results?.length ?? 0) > 0),
+      groups: kept.filter((g) => (g.results?.length ?? 0) > 0),
     },
     dropped,
   };
@@ -393,33 +342,6 @@ export function regroupRefinedHits(
   return groups;
 }
 
-/* Exported for the display-gate tests: the refined shelf's fold must never
- * land a surviving title on the wrong pieces. */
-export function shapeRefinedGroups(
-  groups: { title?: string; results: JtvHit[] }[],
-): { title?: string; results: JtvHit[] }[] {
-  const byId = new Map<string, JtvHit>();
-  for (const group of groups) for (const hit of group.results) byId.set(hit.objectID, hit);
-  const foldable: Group[] = groups.map((group) => ({
-    title: group.title,
-    results: group.results.map((hit) => ({ objectID: hit.objectID })),
-  }));
-  const { folded } = foldSmallGroups(foldable);
-  const shaped =
-    folded.length === 1 && (folded[0].results?.length ?? 0) < COLUMNS
-      ? folded
-      : folded.map((group) => ({
-          ...group,
-          results: trimToCompleteRows(group.results ?? []).results,
-        }));
-  return shaped.map((group) => ({
-    title: typeof group.title === 'string' ? group.title : undefined,
-    results: (group.results ?? [])
-      .map((result) => byId.get(String(result.objectID)))
-      .filter((hit): hit is JtvHit => hit !== undefined),
-  }));
-}
-
 export function createGatedTools(): Tools {
   const defaults = createDefaultTools<JtvHit>(ProductCard);
   const grouped = defaults[GroupedResultsToolType] as Tool;
@@ -541,7 +463,7 @@ export function createGatedTools(): Tools {
        * as the unfiltered one: the product pane's gray tile and the heading
        * styles both hook on `ais-ChatToolGroupedResults`, so without them the
        * second screen lost its shape entirely (Arijit, 2026-11-05). */
-      const refined = shapeRefinedGroups(regroupRefinedHits(funnel.hits, input.groups ?? []));
+      const refined = regroupRefinedHits(funnel.hits, input.groups ?? []);
       return (
         <div className="jtv-chat-refine">
           {/* The applied selections lead the refined shelf as active chips —

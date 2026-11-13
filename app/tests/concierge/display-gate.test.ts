@@ -3,7 +3,6 @@ import {
   gateGroups,
   messageCarriesText,
   regroupRefinedHits,
-  shapeRefinedGroups,
 } from '../../src/concierge/chat/gatedGroupedResults';
 
 /* The gate is the only place a piece can be refused now, so these cases are
@@ -84,11 +83,13 @@ describe('the display gate', () => {
   });
 });
 
-/* A shelf is four across, and the shape is deterministic: Arijit's 2026-11-04
- * call is complete rows of four, ending the 3-vs-4 lottery. Small groups fold
- * into a neighbour, remainders beyond a full row are dropped and logged, and a
- * shelf too thin to fill one row renders as-is rather than empty. */
-describe('undersized groups', () => {
+/* Groups render as the agent grouped them. They used to be reshaped into
+ * complete rows of four — small groups merged into a neighbour, remainders
+ * trimmed away — which is gone as of 2026-11-13: it destroyed the grouping
+ * the display tool exists to express, inherited headings onto pieces that
+ * had moved, and dropped stock to keep a rectangle tidy. A ragged last row
+ * is what the storefront's own four-column grid does too. */
+describe('groups smaller than a row', () => {
   const record = { Media_Images: ['https://img.test/a.jpg'] };
   const records = { get: () => record };
   const group = (title: string, ids: string[]) => ({
@@ -96,40 +97,48 @@ describe('undersized groups', () => {
     results: ids.map((objectID) => ({ objectID })),
   });
 
-  it('folds a trailing group of one into the group before it', () => {
+  it('keeps a trailing group of one as its own shelf', () => {
     const { input, dropped } = gateGroups(
       { groups: [group('Rings', ['a', 'b', 'c', 'd']), group('Pendants', ['e'])] },
       records,
     );
-    expect(input.groups).toHaveLength(1);
-    expect(input.groups?.[0].title).toBe('Rings');
-    /* The merged group ends on a complete row: the folded piece would sit
-     * alone under four, so the row contract drops it and logs it. */
-    expect(input.groups?.[0].results?.map((r) => r.objectID)).toEqual(['a', 'b', 'c', 'd']);
-    expect(dropped).toEqual(['e:orphan_row']);
+    expect(input.groups).toHaveLength(2);
+    expect(input.groups?.map((g) => g.title)).toEqual(['Rings', 'Pendants']);
+    expect(input.groups?.[1].results?.map((r) => r.objectID)).toEqual(['e']);
+    expect(dropped).toEqual([]);
   });
 
-  it('folds a small leading group forward so the shelf still fills rows', () => {
+  it('keeps a small leading group with its own heading', () => {
     const { input, dropped } = gateGroups(
       { groups: [group('Odd one', ['a', 'b', 'c']), group('Rings', ['d', 'e', 'f', 'g'])] },
       records,
     );
-    expect(input.groups).toHaveLength(1);
-    expect(input.groups?.[0].results?.map((r) => r.objectID)).toEqual(['a', 'b', 'c', 'd']);
-    expect(dropped).toEqual(['e:orphan_row', 'f:orphan_row', 'g:orphan_row']);
+    expect(input.groups).toHaveLength(2);
+    expect(input.groups?.[0].title).toBe('Odd one');
+    expect(input.groups?.[0].results?.map((r) => r.objectID)).toEqual(['a', 'b', 'c']);
+    expect(dropped).toEqual([]);
   });
 
-  it('folds two small groups into one full row', () => {
+  /* The case that prompted the removal: an on-air turn returning three shows
+   * with two or three pieces each rendered as one shelf of eight, under one
+   * show's name and date. */
+  it('keeps three thin groups as three shelves', () => {
     const { input, dropped } = gateGroups(
-      { groups: [group('Rings', ['a', 'b', 'c']), group('Pendants', ['d', 'e', 'f'])] },
+      {
+        groups: [
+          group('Jewel School · November 10th', ['a', 'b', 'c']),
+          group('Moissanite Fire · November 11th', ['d', 'e']),
+          group('Gems En Vogue · November 12th', ['f', 'g', 'h']),
+        ],
+      },
       records,
     );
-    expect(input.groups).toHaveLength(1);
-    expect(input.groups?.[0].results).toHaveLength(4);
-    expect(dropped).toEqual(['e:orphan_row', 'f:orphan_row']);
+    expect(input.groups).toHaveLength(3);
+    expect(input.groups?.map((g) => g.results?.length)).toEqual([3, 2, 3]);
+    expect(dropped).toEqual([]);
   });
 
-  it('leaves a lone small group alone rather than emptying the shelf', () => {
+  it('leaves a lone small group alone', () => {
     const { input } = gateGroups({ groups: [group('Rings', ['a', 'b'])] }, records);
     expect(input.groups).toHaveLength(1);
     expect(input.groups?.[0].results).toHaveLength(2);
@@ -189,52 +198,31 @@ describe('whether a message carries rendered text', () => {
   });
 });
 
-/* Four across, and the shape is the shopper's contract: a group is complete
- * rows, not a row and a straggler. Remainders beyond a full row are dropped
- * and logged; the piece count per group ends deterministic. */
-describe('a trailing row beyond the first', () => {
+/* Nothing is dropped to make a group fit the grid. A group of seven renders
+ * seven: the agent found all seven worth showing, and withholding three of
+ * them to end on a flush row is withholding stock. */
+describe('a group that does not fill whole rows', () => {
   const records = { get: () => ({ Media_Images: ['https://img.test/a.jpg'] }) };
   const ids = (n: number) => Array.from({ length: n }, (_, i) => ({ objectID: `p${i}` }));
 
-  it('trims the fifth piece rather than stranding it', () => {
-    const { input, dropped } = gateGroups(
-      { groups: [{ title: 'Bands', results: ids(5) }] },
-      records,
-    );
-    expect(input.groups?.[0].results).toHaveLength(4);
-    expect(dropped).toEqual(['p4:orphan_row']);
-  });
-
-  it('trims six and seven down to one full row', () => {
-    for (const n of [6, 7]) {
+  it('renders every piece, whatever the remainder', () => {
+    for (const n of [1, 2, 3, 5, 6, 7, 9]) {
       const { input, dropped } = gateGroups(
         { groups: [{ title: 'Bands', results: ids(n) }] },
         records,
       );
-      expect(input.groups?.[0].results).toHaveLength(4);
-      expect(dropped).toHaveLength(n - 4);
-      for (const drop of dropped) expect(drop).toMatch(/:orphan_row$/);
+      expect(input.groups?.[0].results, `${n} pieces`).toHaveLength(n);
+      expect(dropped, `${n} pieces`).toEqual([]);
     }
   });
 
-  it('leaves exact rows alone', () => {
-    for (const n of [4, 8]) {
-      const { input, dropped } = gateGroups(
-        { groups: [{ title: 'Bands', results: ids(n) }] },
-        records,
-      );
-      expect(input.groups?.[0].results).toHaveLength(n);
-      expect(dropped).toEqual([]);
-    }
-  });
-
-  it('never trims a shelf too thin to fill one row', () => {
+  it('still refuses pieces for the reasons that matter', () => {
     const { input, dropped } = gateGroups(
-      { groups: [{ title: 'Bands', results: ids(3) }] },
+      { groups: [{ title: 'Bands', results: [...ids(3), { objectID: 'p0' }] }] },
       records,
     );
     expect(input.groups?.[0].results).toHaveLength(3);
-    expect(dropped).toEqual([]);
+    expect(dropped).toEqual(['p0:duplicate']);
   });
 });
 
@@ -293,25 +281,4 @@ describe('the refined shelf regroup', () => {
   });
 });
 
-/* The fold law runs on the refined groups too, and the hits travel by
- * objectID: a folded heading must never land on the wrong pieces. */
-describe('the refined shelf shape', () => {
-  const hit = (id: string) => ({ objectID: id }) as never;
 
-  it('folds a trailing two-piece group forward and keeps the title honest', () => {
-    const shaped = shapeRefinedGroups([
-      { title: 'First', results: [hit('a'), hit('b'), hit('c'), hit('d')] },
-      { title: 'Second', results: [hit('e'), hit('f')] },
-    ]);
-    expect(shaped).toHaveLength(1);
-    expect(shaped[0].title).toBe('First');
-    expect(shaped[0].results.map((h) => h.objectID)).toEqual(['a', 'b', 'c', 'd']);
-  });
-
-  it('keeps a lone thin group with its title rather than emptying it', () => {
-    const shaped = shapeRefinedGroups([{ title: 'Only', results: [hit('a'), hit('b')] }]);
-    expect(shaped).toHaveLength(1);
-    expect(shaped[0].title).toBe('Only');
-    expect(shaped[0].results).toHaveLength(2);
-  });
-});
