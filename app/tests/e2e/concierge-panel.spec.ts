@@ -179,9 +179,10 @@ test('collapsing keeps the conversation, and the chevrons bound at each end', as
  * panel and the collapsed bar come back, so nobody has to hunt for the Ask
  * JTV chip again after every reload.
  *
- * The conversation does not come back — the chat instance is a `useMemo` —
- * so a restored panel is on its welcome screen. That is the ordinary empty
- * state and nothing claims otherwise, which is what makes reopening safe. */
+ * The conversation comes back with it: the widget persists the transcript,
+ * so this restores a shopper to where they were rather than to an empty
+ * panel wearing the look of a resumed one. Closing is the opposite and ends
+ * the conversation deliberately. */
 test('an open panel survives a reload, collapsed or not', async ({ page }) => {
   const panel = await openPanel(page);
   await page.reload();
@@ -213,10 +214,12 @@ test('a closed panel stays closed across a reload', async ({ page }) => {
   await expect(page.locator(PANEL)).toBeHidden();
 });
 
-/* Closing is not clearing. `storefront.spec.ts` proves reopening fires no
- * model call; this proves there was something to come back to, which is the
- * half a request count cannot see. */
-test('closing keeps the conversation, and reopens at the normal size', async ({ page }) => {
+/* Closing ends the conversation; reopening starts a new one. Done by
+ * replacing the chat instance rather than running the widget's clear, which
+ * fades the transcript out and only commits on `transitionend` — the panel
+ * is hidden on the same tick, a hidden element fires no transition, and the
+ * widget would be stuck mid-clear. */
+test('closing ends the conversation, and reopens fresh at the normal size', async ({ page }) => {
   await stubAgentTurn(page, { text: 'Opals suit an October birthday.' });
   const panel = await openPanel(page);
   await ask(page, 'Show me opal rings');
@@ -228,9 +231,12 @@ test('closing keeps the conversation, and reopens at the normal size', async ({ 
 
   await page.getByRole('button', { name: 'Ask JTV', exact: true }).click();
   await expect(panel).toHaveAttribute('data-open', 'true');
-  await expect(page.locator(TRANSCRIPT)).toContainText('October');
-  /* Closing normalises the size, so reopening is never a bar with nothing in
-   * it and no obvious way back. */
+  await expect(panel.locator('.ais-ChatMessage')).toHaveCount(0);
+  /* Back on the welcome screen, not an empty transcript, and ready to take a
+   * question rather than needing another nudge. */
+  await expect(panel.locator('.jtv-chat-starter')).toHaveCount(5);
+  await expect(page.locator(COMPOSER)).toBeEnabled();
+  // Closing also normalises the size, so reopening is never a dead bar.
   await expect(panel).toHaveAttribute('data-size', 'normal');
 });
 

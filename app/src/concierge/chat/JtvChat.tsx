@@ -1,8 +1,8 @@
 import { forwardRef, useCallback, useMemo, useState } from 'react';
-import type { ComponentProps, MouseEvent, PointerEvent as ReactPointerEvent } from 'react';
+import type { MouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { ChevronDown, ChevronUp, Plus, Sparkles, X } from 'lucide-react';
 import { liteClient } from 'algoliasearch/lite';
-import { Chat, ChatInlineLayout, InstantSearch, CompareBar } from 'react-instantsearch';
+import { Chat, ChatInlineLayout, InstantSearch } from 'react-instantsearch';
 import type { ChatHandle } from 'react-instantsearch';
 import { Chat as ChatInstance } from 'instantsearch.js/es/lib/chat';
 import type { UIMessage } from 'instantsearch.js/es/lib/chat';
@@ -19,6 +19,14 @@ import { loaderTextFor } from './loaderText';
 import './jtv-chat.css';
 
 const INDEX_NAME = 'prod_catalog';
+
+/* Where the widget persists the transcript so a reload resumes it. There is
+ * no public handle on this: `ChatState` builds the key as `CACHE_KEY + '-' +
+ * id` (`instantsearch.js/es/lib/chat/Chat.js`), but the `id` never reaches it
+ * through the widget — passing one leaves the key unsuffixed and the old
+ * conversation restores itself. Measured 2026-11-16. So ending a session
+ * means removing this key by name. */
+const CHAT_CACHE_KEY = 'instantsearch-chat-initial-messages';
 
 /* Step 1 of the migration: this panel talks to Agent Studio straight from the
  * browser, so the only credentials it can hold are the public ones. Missing
@@ -59,6 +67,7 @@ function createHeader(
   onRestore?: () => void,
   onMinimize?: () => void,
   onHeaderPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void,
+  onEndSession?: () => void,
 ) {
   const minimized = size === 'minimized';
   return function JtvChatHeader({ onClose, onClear, canClear }: HeaderProps) {
@@ -131,9 +140,16 @@ function createHeader(
             className="jtv-concierge-header-button jtv-concierge-close"
             aria-label="Close the jewelry concierge"
             title="Close"
+            /* Closing ends the conversation; reopening starts a new one.
+             * Not the widget's clear, which fades the transcript out and
+             * only commits on `transitionend` — the panel is hidden on the
+             * same tick, a hidden element fires no transition, and the
+             * widget would be left mid-clear. Ending the session replaces
+             * the chat instance outright. */
             onClick={() => {
               onClose();
               onPanelClose?.();
+              onEndSession?.();
             }}
           >
             <X size={18} aria-hidden="true" />
@@ -171,8 +187,13 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
 ) {
   const { appId, apiKey, agentId } = useMemo(readConfig, []);
 
-  /* One instance per mount. Recreating it on every render would drop the
-   * conversation and restart the stream. */
+  /* Bumped when the shopper closes the panel, so the next open is a new
+   * conversation rather than the last one resumed. */
+  const [session, setSession] = useState(0);
+
+  /* One instance per session. Recreating it on every render would drop the
+   * conversation and restart the stream; recreating it on `session` is
+   * exactly how a closed conversation is ended. */
   const chat = useMemo(
     () =>
       new ChatInstance<UIMessage>({
@@ -184,8 +205,24 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
           },
         }),
       }),
-    [appId, apiKey, agentId],
+    /* `session` is a cache key, not a value the instance reads, which is
+     * what the rule objects to. Bumping it is the whole mechanism. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [appId, apiKey, agentId, session],
   );
+
+  /* Drop the stored transcript, then bump the session so a fresh instance
+   * replaces the old one. Both halves are needed: without the removal the
+   * replacement restores the conversation it was created to end. */
+  const endSession = useCallback(() => {
+    try {
+      window.sessionStorage.removeItem(CHAT_CACHE_KEY);
+    } catch {
+      /* Storage can be denied. A conversation that will not be forgotten is
+       * a smaller problem than a panel that throws while closing. */
+    }
+    setSession((current) => current + 1);
+  }, []);
 
   const searchClient = useMemo(() => liteClient(appId, apiKey), [appId, apiKey]);
 
@@ -266,8 +303,9 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
           /* Every dependency must be listed: this memo returns a component
            * *type*, so a new identity remounts the whole header subtree. */
           headerComponent={useMemo(
-            () => createHeader(onClose, size, onRestore, onMinimize, onHeaderPointerDown),
-            [onClose, size, onRestore, onMinimize, onHeaderPointerDown],
+            () =>
+              createHeader(onClose, size, onRestore, onMinimize, onHeaderPointerDown, endSession),
+            [onClose, size, onRestore, onMinimize, onHeaderPointerDown, endSession],
           )}
           requiresSearch={false}
           /* Positions the chips as optional rather than as the only way in.

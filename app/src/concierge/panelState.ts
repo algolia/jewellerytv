@@ -5,10 +5,10 @@
  * refresh is not a request to undo them — having to find the Ask JTV chip
  * again after every reload is the complaint this exists to answer.
  *
- * The conversation itself does not survive: the chat instance is a `useMemo`
- * in `chat/JtvChat`. So a restored panel comes back on its welcome screen
- * rather than mid-thread. That is the ordinary empty state, which is why
- * reopening is safe — nothing claims the thread was kept.
+ * The conversation survives with it: the widget persists the transcript to
+ * sessionStorage of its own accord, so a restored panel comes back
+ * mid-thread rather than pretending to. Closing the panel is the deliberate
+ * opposite and ends the conversation (`chat/JtvChat`, `endSession`).
  *
  * `minimized` replaced a full-height `maximized` on 2026-11-12: the control
  * JTV asked for restores a collapsed bar, and a third size nobody asked for
