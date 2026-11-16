@@ -9,7 +9,7 @@ docs/workspace/**/run-*/
 docs/workspace/stories-*/
 evidence/live-agent*.json
 evidence/agent-*.json
-
+docs/workspace/ab-haiku55-2026-11-16/*
 !.env.example
 
 .vercel/
