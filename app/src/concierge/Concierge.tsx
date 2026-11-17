@@ -12,6 +12,8 @@ export interface ConciergeHandle {
   ask: (text?: string) => void;
   /** Close the Concierge panel (embed host control, plan 5.3). */
   close: () => void;
+  /** Minimize the Concierge panel to its title bar (mobile PDP navigation). */
+  minimize: () => void;
 }
 
 export const demoTrace: {
@@ -90,6 +92,7 @@ export const Concierge = forwardRef<
         setOpen(true);
       },
       close: () => setOpen(false),
+      minimize: () => setSize('minimized'),
     }),
     [],
   );
