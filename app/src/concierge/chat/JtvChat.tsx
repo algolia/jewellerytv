@@ -65,6 +65,7 @@ function createHeader(
   onPanelClose?: () => void,
   size: PanelSize = 'normal',
   onRestore?: () => void,
+  onRestoreFromBar?: () => void,
   onMinimize?: () => void,
   onHeaderPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void,
   onEndSession?: () => void,
@@ -79,12 +80,12 @@ function createHeader(
          * panel, so a click here while collapsed can only have been a click.
          * No role or tabindex: the chevron is already the keyboard path, and
          * a second focus stop announcing the same action is noise. */
-        onClick={minimized ? onRestore : undefined}
+        onClick={minimized ? onRestoreFromBar : undefined}
       >
         <h2 className="jtv-concierge-header-title">
           Ask JTV
           {/* JTV's own mark, supplied 2026-11-17, in the light cut for a dark
-            * bar. Decorative: the heading already says the name. */}
+           * bar. Decorative: the heading already says the name. */}
           <img src="/assets/jtv-star-light.png" alt="" width={14} height={14} />
         </h2>
         {/* Not on a collapsed bar: there is no conversation in view to clear,
@@ -171,6 +172,9 @@ export type JtvChatProps = {
   size?: PanelSize;
   /** Opens a collapsed panel back up. */
   onRestore?: () => void;
+  /** The same, from a click on the bar itself, which must ignore the
+   * release at the end of a drag. */
+  onRestoreFromBar?: () => void;
   /** Collapses the panel to its title bar. */
   onMinimize?: () => void;
   /** Drags the panel from the header (shell window controls). */
@@ -184,7 +188,16 @@ export type JtvChatProps = {
  * `sendMessage`), which is how the storefront's "Ask JTV" chip hands the
  * current search text to the panel. */
 export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
-  { context, onClose, size, onRestore, onMinimize, onHeaderPointerDown, onNavigate },
+  {
+    context,
+    onClose,
+    size,
+    onRestore,
+    onRestoreFromBar,
+    onMinimize,
+    onHeaderPointerDown,
+    onNavigate,
+  },
   ref,
 ) {
   const { appId, apiKey, agentId } = useMemo(readConfig, []);
@@ -306,8 +319,24 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
            * *type*, so a new identity remounts the whole header subtree. */
           headerComponent={useMemo(
             () =>
-              createHeader(onClose, size, onRestore, onMinimize, onHeaderPointerDown, endSession),
-            [onClose, size, onRestore, onMinimize, onHeaderPointerDown, endSession],
+              createHeader(
+                onClose,
+                size,
+                onRestore,
+                onRestoreFromBar,
+                onMinimize,
+                onHeaderPointerDown,
+                endSession,
+              ),
+            [
+              onClose,
+              size,
+              onRestore,
+              onRestoreFromBar,
+              onMinimize,
+              onHeaderPointerDown,
+              endSession,
+            ],
           )}
           requiresSearch={false}
           /* Positions the chips as optional rather than as the only way in.

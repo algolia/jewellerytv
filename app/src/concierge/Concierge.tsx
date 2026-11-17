@@ -60,7 +60,10 @@ export const Concierge = forwardRef<
      * to markup it does not own. Without one the panel keeps a gutter. */
     anchorSelector?: string;
   }
->(function Concierge({ context, onClose, onNavigate, persistState = true, anchorSelector, onSizeChange }, ref) {
+>(function Concierge(
+  { context, onClose, onNavigate, persistState = true, anchorSelector, onSizeChange },
+  ref,
+) {
   /* Read once, in the initialiser, so the first render already has the shape
    * the shopper left behind and there is nothing to flash. */
   const [restored] = useState(() =>
@@ -146,6 +149,13 @@ export const Concierge = forwardRef<
    * fluid anywhere on the screen (restored 2026-11-04 from the pre-merge
    * implementation; presentation only, nothing about the agent changes). */
   const controls = useConciergeWindowControls(size);
+  /* The collapsed bar is its own restore target, and also its own drag
+   * handle. A release at the end of a drag is still a click, so the bar
+   * asks the controls whether the pointer actually travelled. */
+  const restoreFromBar = useCallback(() => {
+    if (!controls.wasDragged()) setSize('normal');
+  }, [controls]);
+
   /* Once the shopper drags the panel it is theirs: the inline rect sets
    * `top` directly, which beats the custom property, so there is nothing for
    * the tracker to do but stop measuring. */
@@ -178,6 +188,7 @@ export const Concierge = forwardRef<
         context={turnContext}
         size={size}
         onRestore={restore}
+        onRestoreFromBar={restoreFromBar}
         onMinimize={minimize}
         onHeaderPointerDown={controls.beginHeaderMove}
         onNavigate={onNavigate}
