@@ -265,15 +265,14 @@
   padding: 12px 20px;
 }
 
-/* The product pane as one gray tile (Arijit, 2026-11-05, with the Vuori
- * reference): when a turn carries a grouped display, the whole message — the
- * reply line, the capitalized group headings, the 4-across grids and the
- * narrowing chips — sits on a light gray rounded tile. The follow-up
- * question suggestions and the composer stay outside it. */
+/* The product pane sits on the panel rather than on a tile of its own (JTV,
+ * 2026-11-17). It was a light gray rounded card holding the reply, the
+ * headings and the grids; the gray has moved onto the photographs instead,
+ * so the pieces read as a contact sheet on white rather than a panel inside
+ * a panel. Padding stays: the grids still need to clear the edge. */
 .jtv-concierge .ais-ChatMessage--left:has(.ais-ChatToolGroupedResults) .ais-ChatMessage-message {
-  background: #f6f7f8;
-  border-radius: 16px;
-  padding: 16px;
+  background: transparent;
+  padding: 16px 16px 4px;
 }
 
 .jtv-concierge .ais-ChatMessage--left:has(.ais-ChatToolGroupedResults) .ais-ChatMessage-message .ais-ChatToolGroupedResults-group {
@@ -335,7 +334,7 @@
   gap: 0;
   padding: 0;
   border: 1px solid #b9bec4;
-  border-radius: 999px;
+  border-radius: 26px;
   background: #fff;
   box-shadow: none;
   outline: none;
@@ -349,19 +348,27 @@
 .jtv-concierge .ais-ChatPrompt-textarea {
   flex: 1;
   min-width: 0;
-  /* The widget auto-grows the textarea with an inline style; the pill is a
-   * fixed-height single line, so the stylesheet wins here. */
-  height: 52px !important;
-  min-height: 52px !important;
-  max-height: 52px !important;
-  padding: 0 60px 0 18px;
+  /* Grows with the text (JTV, 2026-11-17). It was pinned to one line, so a
+   * question long enough to wrap scrolled its own first line out of sight
+   * and the shopper could not read what they had typed. The widget sets an
+   * inline height as the content grows; the stylesheet now only bounds it,
+   * and hands the overflow to a scrollbar once it is tall enough.
+   *
+   * `line-height` has to be a ratio rather than the old 50px, which centred
+   * a single line by filling the box and would stripe a wrapped one. */
+  /* The widget renders the textarea with `rows="2"`, so its scrollHeight —
+   * which is what the inline height follows — never drops below two lines.
+   * The padding is therefore what sets the resting height, not min-height. */
+  min-height: 52px;
+  max-height: 148px;
+  padding: 10px 60px 10px 18px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 26px;
   background: transparent;
   font-size: 15px;
-  line-height: 50px;
+  line-height: 1.4;
   resize: none;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .jtv-concierge .ais-ChatPrompt-textarea:focus {
@@ -377,8 +384,9 @@
 .jtv-concierge .ais-ChatPrompt-actions {
   position: absolute;
   right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
+  /* Anchored to the bottom, not centred: on a grown composer a centred
+   * button drifts into the middle of the text. */
+  bottom: 4px;
   display: flex;
   align-items: center;
   padding: 0;
@@ -463,7 +471,9 @@
   justify-content: center;
   aspect-ratio: 1;
   overflow: hidden;
-  background: #fff;
+  /* The catalogue shoots on white, so a tinted square is what separates one
+   * piece from the next now that the pane behind them is white too. */
+  background: #f4f4f5;
   font-size: 0.75rem;
   color: var(--muted, #707070);
 }
