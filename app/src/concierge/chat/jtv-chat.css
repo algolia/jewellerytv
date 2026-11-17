@@ -427,6 +427,41 @@
   color: #c9cdd2;
 }
 
+/* JTV's mark before the agent's reply (supplied 2026-11-17), in the dark cut
+ * for text on white. Done here rather than in a component because the reply
+ * body is the widget's own markup, and a pseudo-element cannot be read by a
+ * screen reader — which is right: it is decoration, and the message already
+ * identifies who is speaking.
+ *
+ * Only the assistant's side, and only where the sentence actually is. The
+ * reply renders as a bare `span` inside the message with no class of its
+ * own, and `span:first-child` is what distinguishes a turn that opens with
+ * words from one that is tiles alone. The second selector covers the turn
+ * where the agent writes into the display tool's intro instead, which it
+ * does often enough that a mark on only one of the two would look like a
+ * bug. */
+/* A hanging indent so a wrapped reply aligns under its own first word
+ * rather than running back under the mark. */
+.jtv-concierge .ais-ChatMessage--left .ais-ChatMessage-message > span:first-child,
+.jtv-concierge .ais-ChatToolGroupedResults-intro {
+  display: inline-block;
+  padding-left: 1.375rem;
+  text-indent: -1.375rem;
+}
+
+.jtv-concierge .ais-ChatMessage--left .ais-ChatMessage-message > span:first-child::before,
+.jtv-concierge .ais-ChatToolGroupedResults-intro::before {
+  content: '';
+  display: inline-block;
+  width: 0.9375rem;
+  height: 0.9375rem;
+  margin-right: 0.4375rem;
+  /* Nudged onto the text's optical baseline; the glyph is centred in a
+   * square and otherwise rides high against the first line. */
+  vertical-align: -0.1875rem;
+  background: url('/assets/jtv-star-dark.png') no-repeat center / contain;
+}
+
 /* Links in a reply read as plain text without this. The storefront's reset
  * (`website/styles.css`) strips every anchor to `color: inherit` with no
  * underline until hover, which is right for a nav bar and wrong here: a

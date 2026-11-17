@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useMemo, useState } from 'react';
 import type { MouseEvent, PointerEvent as ReactPointerEvent } from 'react';
-import { ChevronDown, ChevronUp, Plus, Sparkles, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
 import { liteClient } from 'algoliasearch/lite';
 import { Chat, ChatInlineLayout, InstantSearch } from 'react-instantsearch';
 import type { ChatHandle } from 'react-instantsearch';
@@ -83,7 +83,9 @@ function createHeader(
       >
         <h2 className="jtv-concierge-header-title">
           Ask JTV
-          <Sparkles size={14} aria-hidden="true" />
+          {/* JTV's own mark, supplied 2026-11-17, in the light cut for a dark
+            * bar. Decorative: the heading already says the name. */}
+          <img src="/assets/jtv-star-light.png" alt="" width={14} height={14} />
         </h2>
         {/* Not on a collapsed bar: there is no conversation in view to clear,
          * and on a narrow screen the pill sits dead centre — where a tap
