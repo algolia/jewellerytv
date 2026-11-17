@@ -361,7 +361,8 @@
    * The padding is therefore what sets the resting height, not min-height. */
   min-height: 52px;
   max-height: 148px;
-  padding: 10px 60px 10px 18px;
+  padding: 8px 60px 8px 18px;
+  transition: height 90ms ease;
   border: 0;
   border-radius: 26px;
   background: transparent;
@@ -369,6 +370,18 @@
   line-height: 1.4;
   resize: none;
   overflow-y: auto;
+}
+
+/* Empty, the box is pinned to one line and the placeholder is centred in it.
+ * A textarea's `rows` defaults to 2 and the widget's `adjustHeight` measures
+ * against `height: auto`, so its natural resting size is two lines however
+ * little is in it — which left the placeholder sitting against the top of a
+ * tall box with a band of nothing under it. `maxRows` is the only sizing
+ * prop the component exposes, so this is the available lever. */
+.jtv-concierge .ais-ChatPrompt-textarea:placeholder-shown {
+  height: 52px !important;
+  padding-top: 15px;
+  padding-bottom: 15px;
 }
 
 .jtv-concierge .ais-ChatPrompt-textarea:focus {
