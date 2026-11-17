@@ -469,13 +469,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   aspect-ratio: 1;
   overflow: hidden;
-  /* The catalogue shoots on white, so a tinted square is what separates one
-   * piece from the next now that the pane behind them is white too. */
-  background: #f4f4f5;
+  background: #fff;
   font-size: 0.75rem;
   color: var(--muted, #707070);
+}
+
+/* JTV's own `.pdp-image-overlay` treatment, supplied 2026-11-17 and matched
+ * here so the chat tiles and the product page knock a photograph back the
+ * same way. It is an overlay rather than a backdrop: 2.5% black over the
+ * whole square tints the photograph itself, not just the letterboxing
+ * around it, which is what separates one piece from the next now that the
+ * pane behind them is white. */
+.jtv-chat-card-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background-color: #000;
+  opacity: 0.025;
+  pointer-events: none;
 }
 
 .jtv-chat-card-image img {
