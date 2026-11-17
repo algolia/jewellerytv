@@ -40,17 +40,34 @@ export function useConciergeWindowControls(size: PanelSize) {
   /* Set once a pointer has travelled far enough to be a drag. The bar's own
    * click restores the panel, and releasing a drag must not count as one. */
   const dragged = useRef(false);
+  /* The height the panel actually had while expanded. The geometry default
+   * is a reasonable guess but not this panel's guess: the stylesheet sizes
+   * it from the viewport, so restoring to the default visibly resizes a
+   * panel the shopper never resized. */
+  const lastNormalHeight = useRef<number | null>(null);
 
+  /* Collapsed, the panel measures about 50px, and a drag that captured that
+   * as the rect's height left the restored panel 360px tall — the geometry
+   * floor, applied on the way back up. The bar carries the position; the
+   * height it would report is not a height anyone chose, so the last one
+   * that was is kept instead. */
   const currentRect = useCallback((): WindowRect => {
-    if (rect) return rect;
+    const keptHeight =
+      rect?.height ?? lastNormalHeight.current ?? defaultWindowRect(viewport()).height;
+    if (rect) return resizable ? rect : { ...rect, height: keptHeight };
     const bounds = panelRef.current?.getBoundingClientRect();
     return bounds
       ? clampWindowRect(
-          { x: bounds.left, y: bounds.top, width: bounds.width, height: bounds.height },
+          {
+            x: bounds.left,
+            y: bounds.top,
+            width: bounds.width,
+            height: resizable ? bounds.height : keptHeight,
+          },
           viewport(),
         )
       : defaultWindowRect(viewport());
-  }, [rect]);
+  }, [rect, resizable]);
 
   const begin = useCallback(
     (kind: Interaction['kind'], event: PointerEvent<HTMLElement>) => {
@@ -81,6 +98,22 @@ export function useConciergeWindowControls(size: PanelSize) {
     },
     [begin],
   );
+
+  /* Watched rather than measured on a render, because the panel is `hidden`
+   * until the shopper opens it: a one-shot read at mount sees zero, and the
+   * size never changes on the way to being visible. The observer catches
+   * the reveal, a resize by the grip, and a viewport change alike. */
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      if (size !== 'normal') return;
+      const measured = panel.getBoundingClientRect().height;
+      if (measured > 100) lastNormalHeight.current = measured;
+    });
+    observer.observe(panel);
+    return () => observer.disconnect();
+  }, [size]);
 
   useEffect(() => {
     function onPointerMove(event: globalThis.PointerEvent) {
