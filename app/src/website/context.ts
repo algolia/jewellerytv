@@ -1,42 +1,10 @@
 export interface PageContextState {
  selectedProductId?: string | null;
  selectedSize?: string | null;
- productHit?: ProductHit | null;
-}
-
-interface ProductHit {
- objectID: string;
- Product_Name?: string;
- Product_LongDescription?: string;
- Catalog_ProductCategoryDisplayName?: string;
- Material_Information?: string;
- Stone_Information?: string;
- Metal_Purity?: string;
- Pricing_SalePrice?: number;
- Pricing_DiscountPercent?: number;
- Jewelry_ApproximateLength?: string;
- Jewelry_ApproximateWeight?: string;
- [key: string]: unknown;
+ productHit?: {objectID: string; [key: string]: unknown} | null;
 }
 
 const bytes = (value: string) => new TextEncoder().encode(value).length;
-
-/** Filter full product record to essential fields only */
-function slimProduct(hit: ProductHit): Record<string, unknown> {
- return {
-  objectID: hit.objectID,
-  name: hit.Product_Name,
-  description: hit.Product_LongDescription,
-  category: hit.Catalog_ProductCategoryDisplayName,
-  material: hit.Material_Information,
-  stone: hit.Stone_Information,
-  metal: hit.Metal_Purity,
-  price: hit.Pricing_SalePrice,
-  discount: hit.Pricing_DiscountPercent,
-  length: hit.Jewelry_ApproximateLength,
-  weight: hit.Jewelry_ApproximateWeight,
- };
-}
 
 /** Capture an immutable, bounded snapshot. Oversize constraints are an explicit error. */
 export function buildContext(state: PageContextState): Record<string,string> {
@@ -51,9 +19,9 @@ export function buildContext(state: PageContextState): Record<string,string> {
  add('currentDateTime', new Date().toISOString());
  add('userTimezone', Intl.DateTimeFormat().resolvedOptions().timeZone);
 
- // Include product details only when on PDP
- if(state.productHit) {
-  add('product', JSON.stringify(slimProduct(state.productHit)));
+ // Include product ID only when on PDP
+ if(state.productHit?.objectID) {
+  add('product', state.productHit.objectID);
  }
 
  if(Object.keys(result).length>32) throw new Error('Page context exceeds 32 fields.');

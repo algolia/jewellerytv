@@ -453,26 +453,38 @@
  * where the agent writes into the display tool's intro instead, which it
  * does often enough that a mark on only one of the two would look like a
  * bug. */
-/* A hanging indent so a wrapped reply aligns under its own first word
- * rather than running back under the mark. */
+/* Grid layout: star in left column, content in right column */
 .jtv-concierge .ais-ChatMessage--left .ais-ChatMessage-message > span:first-child,
 .jtv-concierge .ais-ChatToolGroupedResults-intro {
-  display: inline-block;
-  padding-left: 1.375rem;
-  text-indent: -1.375rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4375rem;
+  align-items: start;
 }
 
+/* Star icon positioned in first grid column */
 .jtv-concierge .ais-ChatMessage--left .ais-ChatMessage-message > span:first-child::before,
 .jtv-concierge .ais-ChatToolGroupedResults-intro::before {
   content: '';
-  display: inline-block;
+  display: block;
   width: 0.9375rem;
   height: 0.9375rem;
-  margin-right: 0.4375rem;
-  /* Nudged onto the text's optical baseline; the glyph is centred in a
-   * square and otherwise rides high against the first line. */
-  vertical-align: -0.1875rem;
+  /* Adjust to align with text baseline - match line-height */
+  margin-top: 0.125rem;
   background: url('/assets/jtv-star-dark.png') no-repeat center / contain;
+}
+
+/* Content flows in second grid column - all direct children after ::before */
+.jtv-concierge .ais-ChatMessage--left .ais-ChatMessage-message > span:first-child > *,
+.jtv-concierge .ais-ChatToolGroupedResults-intro > * {
+  grid-column: 2;
+  margin: 0;
+}
+
+/* Restore spacing between paragraphs and lists */
+.jtv-concierge .ais-ChatMessage--left .ais-ChatMessage-message > span:first-child > * + *,
+.jtv-concierge .ais-ChatToolGroupedResults-intro > * + * {
+  margin-top: 0.75em;
 }
 
 /* Links in a reply read as plain text without this. The storefront's reset
@@ -485,6 +497,42 @@
   color: var(--blue, #0076a9);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* Markdown formatting within messages */
+.jtv-concierge .ais-ChatMessage-message p {
+  margin: 0.75em 0;
+}
+
+.jtv-concierge .ais-ChatMessage-message p:first-child {
+  margin-top: 0;
+}
+
+.jtv-concierge .ais-ChatMessage-message p:last-child {
+  margin-bottom: 0;
+}
+
+.jtv-concierge .ais-ChatMessage-message strong {
+  font-weight: 600;
+  color: var(--text-dark, #2c2c2c);
+}
+
+.jtv-concierge .ais-ChatMessage-message ul,
+.jtv-concierge .ais-ChatMessage-message ol {
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+
+.jtv-concierge .ais-ChatMessage-message li {
+  margin: 0.5em 0;
+}
+
+.jtv-concierge .ais-ChatMessage-message ul {
+  list-style-type: disc;
+}
+
+.jtv-concierge .ais-ChatMessage-message ol {
+  list-style-type: decimal;
 }
 
 /* Groups: a grid, not a carousel. At this width a row of cards hides most of
