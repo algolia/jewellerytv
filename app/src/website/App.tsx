@@ -155,6 +155,7 @@ function Experience() {
   const { items } = useHits();
   const chat = useRef<ConciergeHandle>(null);
   const selection = useRef<{ id: string | null; size: string | null }>({ id: null, size: null });
+  const productHit = useRef<any>(null);
   const contextState = useRef<PageContextState>({});
   const readiness = useRef('');
   const revision = useRef(0);
@@ -199,31 +200,17 @@ function Experience() {
     sameRefinements(resultState?.disjunctiveFacetsRefinements, indexUiState.refinementList) &&
     samePriceRange(indexUiState.range, resultState?.numericRefinements);
   contextState.current = {
-    route: location.pathname,
-    category: category?.label,
-    query: indexUiState.query || '',
-    sort: indexUiState.sortBy || 'prod_catalog_featured',
-    refinements: {
-      refinementList: indexUiState.refinementList || {},
-      range: indexUiState.range || {},
-      ...(filters ? { filters } : {}),
-      ...agentConstraints,
-    },
-    visibleProductIds: visibleResultIds(
-      location.pathname,
-      ready,
-      items.map((i) => i.objectID),
-    ),
     selectedProductId: selection.current.id,
     selectedSize: selection.current.size,
-    revision: revision.current,
+    productHit: productHit.current,
   };
   useEffect(() => {
     revision.current++;
   }, [location, indexUiState, results]);
-  const onSelection = useCallback((id: string | null, size: string | null) => {
+  const onSelection = useCallback((id: string | null, size: string | null, hit?: Record<string, unknown> | null) => {
     selection.current = { id, size };
-    contextState.current = { ...contextState.current, selectedProductId: id, selectedSize: size };
+    productHit.current = (hit as any) || null;
+    contextState.current = { selectedProductId: id, selectedSize: size, productHit: productHit.current as any };
     revision.current++;
   }, []);
   const getContext = useCallback(() => {
@@ -238,6 +225,16 @@ function Experience() {
       throw e;
     }
   }, []);
+
+  /* Auto-minimize chat on mobile when navigating to PDP */
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    const isPDP = location.pathname.startsWith('/product/');
+    if (isMobile && isPDP) {
+      chat.current?.minimize();
+    }
+  }, [location.pathname]);
+
   let contextError = '';
   try {
     buildContext(contextState.current);

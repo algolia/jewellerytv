@@ -240,6 +240,75 @@ test('closing ends the conversation, and reopens fresh at the normal size', asyn
   await expect(panel).toHaveAttribute('data-size', 'normal');
 });
 
+/* The collapsed bar is both the restore target and the drag handle, and its
+ * whole width is the target — so until 2026-11-17 a pointer could only ever
+ * reopen it and the bar could not be moved at all. A release at the end of a
+ * drag is still a click, hence the four-pixel slack: travel means move, a
+ * shaky press still means open. */
+test('a collapsed bar can be dragged, and dragging does not reopen it', async ({ page }) => {
+  if ((page.viewportSize()?.width ?? 0) <= 768) return; // no dragging on a phone
+  await stubAgentTurn(page, { text: 'Unused.' });
+  const panel = await openPanel(page);
+  await page.getByRole('button', { name: 'Minimize the panel to its title bar' }).click();
+  await expect(panel).toHaveAttribute('data-size', 'minimized');
+
+  const before = (await panel.boundingBox())!;
+  const header = panel.locator('.jtv-concierge-header');
+  const grab = (await header.boundingBox())!;
+  await page.mouse.move(grab.x + 30, grab.y + grab.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(grab.x - 180, grab.y + 200, { steps: 10 });
+  await page.mouse.up();
+
+  const after = (await panel.boundingBox())!;
+  expect(Math.round(after.x)).not.toBe(Math.round(before.x));
+  expect(Math.round(after.y)).not.toBe(Math.round(before.y));
+  await expect(panel).toHaveAttribute('data-size', 'minimized');
+
+  // A press that goes nowhere is still how the bar reopens.
+  await page.mouse.click(after.x + 30, after.y + after.height / 2);
+  await expect(panel).toHaveAttribute('data-size', 'normal');
+});
+
+/* Collapsing, dragging the bar and reopening used to leave the panel 360px
+ * tall — the geometry floor. The drag captured the collapsed bar's ~50px as
+ * the rect's height and the clamp raised it on the way back up. A height the
+ * shopper did choose, with the grip, still has to survive the same trip. */
+test('a collapsed drag does not resize the panel', async ({ page }) => {
+  if ((page.viewportSize()?.width ?? 0) <= 768) return; // no dragging on a phone
+  await stubAgentTurn(page, { text: 'Unused.' });
+  const panel = await openPanel(page);
+  const height = async () => Math.round((await panel.boundingBox())!.height);
+  const opened = await height();
+  expect(opened).toBeGreaterThan(400);
+
+  const collapseDragRestore = async () => {
+    await page.getByRole('button', { name: 'Minimize the panel to its title bar' }).click();
+    const grab = (await panel.locator('.jtv-concierge-header').boundingBox())!;
+    await page.mouse.move(grab.x + 30, grab.y + grab.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(grab.x - 120, grab.y + 120, { steps: 8 });
+    await page.mouse.up();
+    await page.getByRole('button', { name: 'Restore the panel' }).click();
+  };
+
+  await collapseDragRestore();
+  await expect.poll(height).toBe(opened);
+
+  /* And the other direction: a height chosen with the grip is not a default
+   * to be forgotten the next time the panel is collapsed. */
+  const grip = (await panel.locator('.jtv-concierge-resize').boundingBox())!;
+  await page.mouse.move(grip.x + 4, grip.y + 4);
+  await page.mouse.down();
+  await page.mouse.move(grip.x + 4, grip.y - 150, { steps: 8 });
+  await page.mouse.up();
+  const chosen = await height();
+  expect(chosen).toBeLessThan(opened);
+
+  await collapseDragRestore();
+  await expect.poll(height).toBe(chosen);
+});
+
 test('the panel starts closed and the chip is the only way in', async ({ page }) => {
   await stubAgentTurn(page, { text: 'Unused.' });
   await page.goto('/');
