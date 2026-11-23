@@ -158,7 +158,6 @@ function Experience() {
   const productHit = useRef<any>(null);
   const contextState = useRef<PageContextState>({});
   const readiness = useRef('');
-  const revision = useRef(0);
   const slug = location.pathname.startsWith('/category/')
     ? location.pathname.split('/')[2]
     : location.pathname.startsWith('/product/')
@@ -205,13 +204,12 @@ function Experience() {
     productHit: productHit.current,
   };
   useEffect(() => {
-    revision.current++;
+    // Context state updated by location/search changes
   }, [location, indexUiState, results]);
   const onSelection = useCallback((id: string | null, size: string | null, hit?: Record<string, unknown> | null) => {
     selection.current = { id, size };
     productHit.current = (hit as any) || null;
     contextState.current = { selectedProductId: id, selectedSize: size, productHit: productHit.current as any };
-    revision.current++;
   }, []);
   const getContext = useCallback(() => {
     try {
@@ -235,15 +233,8 @@ function Experience() {
     }
   }, [location.pathname]);
 
-  let contextError = '';
-  try {
-    buildContext(contextState.current);
-  } catch (e: unknown) {
-    contextError = e instanceof Error ? e.message : 'Page context could not be prepared';
-  }
   const blocked =
     agentError ||
-    contextError ||
     ((location.pathname === '/' ||
       location.pathname === '/search' ||
       location.pathname.startsWith('/category/')) &&
@@ -252,7 +243,7 @@ function Experience() {
       : '');
   // Pending page search already contributes no visible product IDs. It must not
   // prevent an independent Concierge request from reaching the agent.
-  readiness.current = agentError || contextError;
+  readiness.current = agentError;
   demoTrace.contextError = blocked;
   useEffect(() => {
     Object.assign(window, { __JTV_DEMO_TRACE__: demoTrace });
