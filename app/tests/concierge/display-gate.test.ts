@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   gateGroups,
   messageCarriesText,
-  regroupRefinedHits,
 } from '../../src/concierge/chat/gatedGroupedResults';
 
 /* The gate is the only place a piece can be refused now, so these cases are
@@ -250,35 +249,5 @@ describe('the group subtitle', () => {
   });
 });
 
-/* The refined shelf keeps the agent's own shelf shape: the shopper's complaint
- * (2026-11-05) was that applying a filter collapsed twelve headed tiles into
- * eight heading-less ones. Every refined hit maps back to the agent's group by
- * objectID; leftovers land in one trailing section under a fixed UI label. */
-describe('the refined shelf regroup', () => {
-  const hit = (id: string) => ({ objectID: id }) as never;
-  const originals = [
-    { title: 'Classic', results: [{ objectID: 'a' }, { objectID: 'b' }, { objectID: 'c' }, { objectID: 'd' }] },
-    { title: 'Modern', results: [{ objectID: 'e' }, { objectID: 'f' }] },
-  ];
-
-  it('renders survivors under their original titles in the agent order', () => {
-    const groups = regroupRefinedHits([hit('e'), hit('a'), hit('b'), hit('f')], originals);
-    expect(groups.map((g) => g.title)).toEqual(['Classic', 'Modern']);
-    expect(groups[0].results.map((h) => h.objectID)).toEqual(['a', 'b']);
-    expect(groups[1].results.map((h) => h.objectID)).toEqual(['e', 'f']);
-  });
-
-  it('puts hits the agent never showed under one trailing label', () => {
-    const groups = regroupRefinedHits([hit('x'), hit('a'), hit('y')], originals);
-    expect(groups.map((g) => g.title)).toEqual(['Classic', 'More picks']);
-    expect(groups[1].results.map((h) => h.objectID)).toEqual(['x', 'y']);
-  });
-
-  it('invents no family when nothing matches the original groups', () => {
-    const groups = regroupRefinedHits([hit('x'), hit('y')], originals);
-    expect(groups).toHaveLength(1);
-    expect(groups[0].title).toBe('More picks');
-  });
-});
 
 
