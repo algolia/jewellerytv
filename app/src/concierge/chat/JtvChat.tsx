@@ -113,29 +113,19 @@ function createHeader(
           </button>
         )}
         <div className="jtv-concierge-header-actions">
-          {/* Two steps along one axis rather than two toggles, so the pair is
-           * never in a state that contradicts itself. The unavailable end is
-           * disabled rather than hidden: dropping a button shifts the others
-           * sideways under a cursor that is about to click. */}
+          {/* Single toggle button switches between minimize/restore states */}
           <button
             type="button"
             className="jtv-concierge-header-button"
-            aria-label="Restore the panel"
-            title="Restore"
-            disabled={!minimized}
-            onClick={onRestore}
+            aria-label={minimized ? 'Restore the panel' : 'Minimize the panel to its title bar'}
+            title={minimized ? 'Restore' : 'Minimize'}
+            onClick={minimized ? onRestore : onMinimize}
           >
-            <ChevronUp size={18} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className="jtv-concierge-header-button"
-            aria-label="Minimize the panel to its title bar"
-            title="Minimize"
-            disabled={minimized}
-            onClick={onMinimize}
-          >
-            <ChevronDown size={18} aria-hidden="true" />
+            {minimized ? (
+              <ChevronUp size={18} aria-hidden="true" />
+            ) : (
+              <ChevronDown size={18} aria-hidden="true" />
+            )}
           </button>
           <button
             type="button"
