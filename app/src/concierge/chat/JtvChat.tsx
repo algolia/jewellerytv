@@ -106,7 +106,10 @@ function createHeader(
              * off until a `transitionend` commits it (`ChatMessages.js:480`),
              * so the chips vanished and came back for no reason. */
             disabled={!canClear}
-            onClick={() => onClear?.()}
+            onClick={() => {
+              onClear?.();
+              onEndSession?.();
+            }}
           >
             <Plus size={14} aria-hidden="true" />
             New search
@@ -132,16 +135,12 @@ function createHeader(
             className="jtv-concierge-header-button jtv-concierge-close"
             aria-label="Close the jewelry concierge"
             title="Close"
-            /* Closing ends the conversation; reopening starts a new one.
-             * Not the widget's clear, which fades the transcript out and
-             * only commits on `transitionend` — the panel is hidden on the
-             * same tick, a hidden element fires no transition, and the
-             * widget would be left mid-clear. Ending the session replaces
-             * the chat instance outright. */
+            /* Closing hides the panel but preserves the conversation.
+             * Reopening continues where it left off. Only "New search"
+             * ends the session and starts fresh. */
             onClick={() => {
               onClose();
               onPanelClose?.();
-              onEndSession?.();
             }}
           >
             <X size={18} aria-hidden="true" />
