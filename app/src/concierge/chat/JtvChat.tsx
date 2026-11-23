@@ -331,7 +331,7 @@ export const JtvChat = forwardRef<ChatHandle, JtvChatProps>(function JtvChat(
            * shopper past them. */
           translations={{
             prompt: {
-              textareaPlaceholder: 'Ask something else?',
+              textareaPlaceholder: 'Ask JTV',
               disclaimer: 'AI can make mistakes. Review responses.',
             },
             /* The widget calls this with the loader's own context on every
