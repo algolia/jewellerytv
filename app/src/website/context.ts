@@ -16,7 +16,10 @@ export function buildContext(state: PageContextState): Record<string,string> {
  };
 
  // Always include datetime and timezone
- add('currentDateTime', new Date().toISOString());
+ // Day precision only (YYYY-MM-DD) for cache-friendly context
+ const now = new Date();
+ const dateOnly = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+ add('currentDateTime', dateOnly);
  add('userTimezone', Intl.DateTimeFormat().resolvedOptions().timeZone);
 
  // Include product ID only when on PDP
