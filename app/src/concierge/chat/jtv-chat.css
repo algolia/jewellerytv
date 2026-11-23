@@ -534,14 +534,74 @@
   list-style-type: decimal;
 }
 
-/* Groups: a grid, not a carousel. At this width a row of cards hides most of
- * a shelf behind arrows, and the shopper cannot see what they are choosing
- * between.
- *
- * Four across rather than auto-fill. Auto-fill gave three and left a fourth
- * piece alone on its own row, which reads as a mistake; a fixed four makes a
- * group of four or eight a clean block and keeps the shelf compact enough
- * that two groups fit without scrolling. */
+/* Groups: horizontal carousel with larger images. Shows ~3-4 items with
+ * smooth scroll. Allows larger product images than grid layout. */
+.jtv-chat-carousel-wrapper {
+  position: relative;
+}
+
+.jtv-chat-carousel {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-block: 0.5rem;
+  padding-inline: 0.25rem;
+}
+
+.jtv-chat-carousel > * {
+  flex: 0 0 auto;
+  width: min(32%, 180px);
+  scroll-snap-align: start;
+}
+
+/* Hide scrollbar but keep functionality */
+.jtv-chat-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.jtv-chat-carousel {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Navigation arrows */
+.jtv-chat-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #333;
+  z-index: 1;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.jtv-chat-carousel-arrow:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.jtv-chat-carousel-arrow--left {
+  left: -0.5rem;
+}
+
+.jtv-chat-carousel-arrow--right {
+  right: -0.5rem;
+}
+
+/* Grid layout (kept for reference, not currently used) */
 .jtv-chat-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

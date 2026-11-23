@@ -1,4 +1,4 @@
-import { createElement, Fragment, useEffect, useRef } from 'react';
+import { createElement, Fragment, useEffect, useRef, useState } from 'react';
 import { createDefaultTools, GroupedResultsToolType } from 'react-instantsearch';
 import type { Tool, Tools } from 'react-instantsearch';
 import { createGroupedResultsToolComponent } from 'instantsearch-ui-components';
@@ -191,19 +191,67 @@ export function messageCarriesText(owner: OwnerMessage | undefined): boolean {
   );
 }
 
-function GroupGrid({ items }: { items: JtvHit[] }) {
+function GroupCarousel({ items, sendEvent }: { items: JtvHit[]; sendEvent: (event: unknown) => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkScroll);
+    return () => el.removeEventListener('scroll', checkScroll);
+  }, [items]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const scrollAmount = el.clientWidth * 0.8;
+    el.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+  };
+
   return (
-    <div className="jtv-chat-grid">
-      {items.map((item) => (
-        <ProductCard key={item.objectID} item={item} sendEvent={() => undefined} />
-      ))}
+    <div className="jtv-chat-carousel-wrapper">
+      {canScrollLeft && (
+        <button
+          className="jtv-chat-carousel-arrow jtv-chat-carousel-arrow--left"
+          onClick={() => scroll('left')}
+          aria-label="Previous products"
+        >
+          ‹
+        </button>
+      )}
+      <div ref={scrollRef} className="jtv-chat-carousel">
+        {items.map((item) => (
+          <ProductCard key={item.objectID} item={item} sendEvent={sendEvent} />
+        ))}
+      </div>
+      {canScrollRight && (
+        <button
+          className="jtv-chat-carousel-arrow jtv-chat-carousel-arrow--right"
+          onClick={() => scroll('right')}
+          aria-label="Next products"
+        >
+          ›
+        </button>
+      )}
     </div>
   );
 }
 
+
 export function createGatedTools(): Tools {
   const defaults = createDefaultTools<JtvHit>(ProductCard);
   const grouped = defaults[GroupedResultsToolType] as Tool;
+
   const Gated: NonNullable<Tool['layoutComponent']> = (props) => {
     const message = props.context?.message ?? props.message;
     const raw = (message?.input ?? {}) as ToolInput;
@@ -228,7 +276,7 @@ export function createGatedTools(): Tools {
           message: gatedMessage,
           context: { ...props.context, message: gatedMessage },
         }}
-        groupCarouselComponent={({ items }) => <GroupGrid items={items as JtvHit[]} />}
+        groupCarouselComponent={GroupCarousel}
       />
     );
   };
